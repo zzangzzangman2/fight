@@ -1,48 +1,49 @@
-# 조선 무협 전술 RPG v0.3
+# 조선 무협 SRPG v0.4
 
-이 폴더는 기존 `10x8 격자 + 원형 말` 느낌을 줄이고, Unity로 옮길 때 기준이 될 수 있도록 만든 **2D 전장형 HTML 프로토타입**입니다.
+이 버전은 기존 v0.3의 “전술 노드/2D 전장” 방향을 버리고, 고전 Fire Emblem식 SRPG 흐름으로 다시 잡은 HTML 프로토타입입니다.
+
+## 핵심 변경
+
+- 아군 페이즈 / 적 페이즈 구조
+- 아군 유닛 클릭 → 이동 가능 칸 표시 → 이동 → 무공/지형/대기 선택
+- 행동 완료 유닛 회색 처리
+- 사거리 안 적 선택 시 d20 공격 판정
+- 반격 가능 무공이 있으면 자동 반격
+- 민첩 차이가 크면 추격 공격
+- 캐릭터마다 완전히 다른 무공 구성
+- 무공별 내공 비용, 사용 횟수, 쿨다운
+- 실제 2D 타일맵처럼 보이는 지형
+- 사람형 임시 스프라이트 토큰
+- 대나무숲, 지붕, 벼랑, 물가, 다리, 제단, 등불, 향로, 술수레, 대나무 덫 등 지형 활용
 
 ## 실행
 
-`index.html`을 브라우저로 열면 됩니다.
+브라우저에서 `index.html`을 열면 됩니다.
 
-## Unity C# 골격
+## Unity 이전 방향
 
-`UnityScaffold` 폴더를 추가했습니다. Unity Hub에서 아래 폴더를 프로젝트로 열면 v0.3 요청서 기준의 ScriptableObject/런타임 클래스 골격을 확인할 수 있습니다.
-
-```text
-C:\Users\sjpark\Downloads\joseon-murim-tactics-work\joseon-murim-tactics-v0_3\UnityScaffold
-```
-
-세부 사용 순서는 `UnityScaffold/README_UNITY.md`에 정리했습니다.
-
-## v0.3에서 바꾼 점
-
-- 바둑판식 격자를 전면에 보이지 않게 하고, 압록강 폐사당/누각/대나무숲/여울/잔해/제단을 하나의 2D 맵처럼 구성했습니다.
-- 내부적으로는 전술 노드를 사용하지만, 화면에서는 `전술 노드 표시` 버튼을 눌렀을 때만 보이게 했습니다.
-- 캐릭터 말은 원형 바둑알 대신 `캐릭터 에셋 자리`가 들어간 임시 카드형 토큰으로 표현했습니다.
-- 박성준, 윤서화, 백련, 한비연, 도아린이 각자 다른 무공 체계를 갖도록 분리했습니다.
-- 무공마다 주행동/보조행동/반응, 내공 비용, 쿨다운, 전투당 사용횟수, d20 판정, 사거리, 파훼 수치가 다릅니다.
-- 등불, 향로, 술상, 대나무숲, 낡은 다리, 무너진 불상 같은 지형지물을 직접 전투에 활용할 수 있습니다.
-- d20 기회/불리, 고저차, 엄폐, 물가/빙공 연계, 잠행/암기 연계가 들어갔습니다.
-
-## 핵심 의도
-
-Unity에서는 화면에 사각 격자를 노출하지 말고, 다음 구조로 가는 것을 추천합니다.
+Unity에서는 다음 구조를 추천합니다.
 
 ```text
-보이는 것:
-- 실제 2D 배경 맵
-- 캐릭터 스프라이트/애니메이션
-- 이동 가능 영역 하이라이트
-- 지형지물 상호작용 아이콘
+Grid
+ ├─ Tilemap_Ground
+ ├─ Tilemap_Height
+ ├─ Tilemap_Props
+ ├─ Tilemap_Highlight
+ └─ UnitLayer
 
-내부 데이터:
-- Tilemap/Grid/NavNode
-- TerrainZone
-- InteractableObject
-- Cover/Elevation/Hazard
-- DiceRoller와 SkillResolver
+Core Scripts
+ ├─ PhaseTurnController.cs
+ ├─ UnitSelectionController.cs
+ ├─ MovementRangeService.cs
+ ├─ AttackRangeService.cs
+ ├─ CombatResolver.cs
+ ├─ CounterResolver.cs
+ ├─ TerrainInteractionSystem.cs
+ ├─ BattleForecastPresenter.cs
+ └─ EnemyPhaseAI.cs
 ```
 
-즉, 전투 시스템은 타일/노드 기반이어도 플레이어에게는 “그림 같은 2D 전장”으로 보여줘야 합니다.
+## 주인공/동료 방향
+
+박성준은 성인 호색한/풍류 문주 기믹을 유지하되, 전투 시스템에서는 노골적 묘사가 아니라 심리전, 허세, 도발, 동료 승인도 리스크로 처리합니다. 여성 동료들은 모두 독립적인 성인 고수이며 각자 무공, 전투 역할, 개인 목표, 정치적 입장이 있습니다.
