@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>조선 무협 전술 RPG v0.3 - 실제 2D 전장 프로토타입</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="stage-panel">
+      <header class="stage-header">
+        <div>
+          <p class="eyebrow">Joseon Murim Tactical RPG / v0.3</p>
+          <h1>압록강 폐사당 전투</h1>
+          <p class="subtitle">보이는 격자 대신 2D 전장 위에서 지형지물·고저차·엄폐·무공 상성을 쓰는 발더스식 무협 전술 프로토타입</p>
+        </div>
+        <div class="battle-rules">
+          <span>5인 파티</span>
+          <span>d20 필수</span>
+          <span>주행동/보조행동/반응</span>
+          <span>무공별 내공·쿨다운·사용횟수</span>
+        </div>
+        <div class="header-actions">
+          <button id="restartButton" type="button">새 전투</button>
+          <button id="gridToggle" type="button" aria-pressed="false">전술 노드 표시</button>
+        </div>
+      </header>
+
+      <div id="battleMap" class="battle-map" aria-label="압록강 폐사당 2D 전장">
+        <div class="map-paint river"></div>
+        <div class="map-paint river-edge"></div>
+        <div class="map-paint courtyard"></div>
+        <div class="map-paint ruined-wall wall-a"></div>
+        <div class="map-paint ruined-wall wall-b"></div>
+        <div class="map-paint bridge bridge-a"></div>
+        <div class="map-paint bridge bridge-b"></div>
+        <div class="map-paint pavilion"></div>
+        <div class="map-paint roof"></div>
+        <div class="map-paint bamboo"></div>
+        <div class="map-paint reeds"></div>
+        <div class="map-paint cliff"></div>
+        <div class="map-paint altar-bg"></div>
+        <div class="map-paint path-ink p1"></div>
+        <div class="map-paint path-ink p2"></div>
+        <div class="map-paint path-ink p3"></div>
+
+        <div class="map-label label-river">압록강 여울<br><small>물가 · 미끄러짐 · 빙공 강화</small></div>
+        <div class="map-label label-roof">누각 지붕<br><small>고지 · 원거리 유리</small></div>
+        <div class="map-label label-bamboo">대나무숲<br><small>강엄폐 · 잠행</small></div>
+        <div class="map-label label-courtyard">폐사당 마당<br><small>전열 충돌지</small></div>
+
+        <div id="nodesLayer" class="nodes-layer"></div>
+        <div id="objectsLayer" class="objects-layer"></div>
+        <div id="unitsLayer" class="units-layer"></div>
+      </div>
+    </section>
+
+    <aside class="command-panel">
+      <section class="round-card">
+        <div>
+          <span>Round</span>
+          <strong id="roundCounter">1</strong>
+        </div>
+        <div>
+          <span>Active</span>
+          <strong id="activeName">-</strong>
+        </div>
+      </section>
+
+      <section class="panel-block objective-card">
+        <h2>전투 목표</h2>
+        <p>정도맹 사절단을 비살상 제압하거나, 기세를 꺾어 항복시켜 조선 문파 연합의 첫 명분을 확보한다.</p>
+      </section>
+
+      <section class="panel-block">
+        <h2>턴 순서</h2>
+        <ol id="turnTrack" class="turn-track"></ol>
+      </section>
+
+      <section id="selectedPanel" class="panel-block selected-panel"></section>
+
+      <section class="panel-block action-panel">
+        <h2>무공 / 행동</h2>
+        <div id="actionBar" class="action-bar"></div>
+      </section>
+
+      <section class="panel-block terrain-panel">
+        <h2>근처 지형지물</h2>
+        <div id="terrainActions" class="terrain-actions"></div>
+      </section>
+    </aside>
+
+    <section class="log-panel">
+      <div class="log-title">
+        <h2>전투 로그</h2>
+        <span id="seedLabel">seed</span>
+      </div>
+      <ol id="combatLog" class="combat-log"></ol>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

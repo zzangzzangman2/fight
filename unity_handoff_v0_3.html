@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>조선 무협 전술 RPG Unity 인수 설계서 v0.3</title>
+<style>
+:root{--bg:#15100c;--paper:#fff7e8;--ink:#22160e;--muted:#715f4a;--line:rgba(34,22,14,.16);--red:#9a302b;--jade:#176a55;--gold:#bd8b3f;--blue:#376982}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0%,rgba(154,48,43,.28),transparent 28%),linear-gradient(135deg,#1b140f,#0d0b09);color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;line-height:1.62}.page{max-width:1180px;margin:0 auto;padding:32px 20px 56px}.hero,.card{background:var(--paper);border:1px solid rgba(255,255,255,.18);border-radius:20px;box-shadow:0 18px 44px rgba(0,0,0,.26)}.hero{padding:30px;margin-bottom:18px;background:linear-gradient(135deg,#fff8ec,#ead8b7)}.eyebrow{margin:0 0 8px;color:var(--jade);font-weight:900;letter-spacing:.05em;text-transform:uppercase;font-size:12px}h1{margin:0;font-size:34px;line-height:1.16}h2{font-size:23px;margin:0 0 12px}h3{font-size:17px;margin:18px 0 8px}p{margin:0 0 10px}.lead{margin-top:12px;color:var(--muted);font-size:16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{padding:22px;margin:16px 0}.pillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.pill{padding:6px 10px;border-radius:999px;background:#2f2016;color:#fff7e8;font-size:12px;font-weight:800}table{width:100%;border-collapse:collapse;margin-top:10px;background:#fffdf7;border-radius:12px;overflow:hidden}th,td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}th{background:#372418;color:#fff7e8;font-size:13px}td{font-size:14px}.tag{display:inline-block;margin:2px 4px 2px 0;padding:2px 7px;border-radius:999px;background:rgba(23,106,85,.1);color:#114d3e;font-weight:800;font-size:12px}pre{white-space:pre-wrap;background:#20150f;color:#fff3df;padding:16px;border-radius:14px;overflow:auto}.warn{border-left:5px solid var(--red);padding:12px 14px;background:#fff0e9;border-radius:12px;color:#5e251d}.ok{border-left:5px solid var(--jade);padding:12px 14px;background:#edf8f3;border-radius:12px;color:#184c3d}ul{margin:8px 0 0;padding-left:20px}@media(max-width:820px){.grid{grid-template-columns:1fr}.page{padding:18px 12px}h1{font-size:27px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <section class="hero">
+    <p class="eyebrow">Unity Handoff / v0.3</p>
+    <h1>조선 무협 전술 RPG: 발더스식 파티 전술을 무협으로 변환</h1>
+    <p class="lead">목표는 “바둑판 위 말싸움”이 아니라, 실제 2D 전장 위에서 동료별 무공·d20 판정·지형지물·고저차·엄폐·파훼가 맞물리는 파티 전술 전투다.</p>
+    <div class="pillrow"><span class="pill">Unity 2D URP</span><span class="pill">Tilemap/NavNode 내부화</span><span class="pill">d20 필수</span><span class="pill">주행동/보조행동/반응</span><span class="pill">ScriptableObject</span><span class="pill">Timeline/Cinemachine</span><span class="pill">Firebase AI Logic + Gemini</span></div>
+  </section>
+
+  <section class="card">
+    <h2>1. 현재 문제와 v0.3 방향</h2>
+    <div class="grid">
+      <div class="warn"><strong>피해야 할 느낌</strong><br>정사각 격자가 항상 보이고, 캐릭터가 원형 바둑알처럼 보이며, 모든 캐릭터가 비슷한 검격/장법만 쓰는 상태.</div>
+      <div class="ok"><strong>목표 느낌</strong><br>전술 데이터는 타일/노드 기반이지만, 플레이어에게는 강가·누각·대나무숲·잔해·향로·등불이 있는 2D 전장으로 보인다.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. Unity에서 쓸 기본 툴</h2>
+    <table>
+      <tr><th>분야</th><th>추천</th><th>용도</th></tr>
+      <tr><td>엔진</td><td>Unity 2D URP</td><td>2D 전장, 캐릭터 스프라이트, 파티 전술 UI.</td></tr>
+      <tr><td>맵</td><td>Tilemap + 내부 NavNode</td><td>보이는 맵은 그림처럼, 내부 이동/거리/엄폐 판정은 노드나 타일 데이터로 처리.</td></tr>
+      <tr><td>데이터</td><td>ScriptableObject</td><td>캐릭터, 무공, 지형, 상호작용 오브젝트를 데이터화.</td></tr>
+      <tr><td>연출</td><td>Timeline + Cinemachine</td><td>절기 컷인, 카메라 줌, 경공 이동, 지형 폭발 연출.</td></tr>
+      <tr><td>대화</td><td>Yarn Spinner</td><td>전투 전후 선택지, 동료 승인도, 항복 권유, 문파 이벤트.</td></tr>
+      <tr><td>AI</td><td>Firebase AI Logic + Gemini</td><td>전투 묘사, 적 대사, 자유 대사 태그화. 판정과 수치는 Unity 코드가 담당.</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>3. 전투 기본 규칙</h2>
+    <table>
+      <tr><th>항목</th><th>규칙</th></tr>
+      <tr><td>파티</td><td>박성준 + 여성 동료 4명 = 5인 파티. 적은 5명 또는 다수.</td></tr>
+      <tr><td>턴</td><td>민첩 + d20 + 고저차 보너스로 이니셔티브 결정.</td></tr>
+      <tr><td>행동 경제</td><td>턴마다 주행동 1, 보조행동 1, 반응 1, 이동력.</td></tr>
+      <tr><td>d20 공격</td><td>d20 + 스탯 보정 + 숙련 + 무공 보정 + 지형/상태 보정 ≥ 대상 방어도.</td></tr>
+      <tr><td>기회/불리</td><td>고지, 은신 암기, 파훼 대상, 물가 빙공은 기회. 강엄폐 원거리, 미끄러운 물가, 넘어짐은 불리.</td></tr>
+      <tr><td>무공 제한</td><td>내공 비용, 쿨다운, 전투당 사용횟수, 행동 슬롯 제한.</td></tr>
+      <tr><td>승리</td><td>살상/비살상 제압/항복/기세 붕괴/파훼 후 절기 제압.</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>4. 캐릭터별 무공 정체성</h2>
+    <table>
+      <tr><th>캐릭터</th><th>역할</th><th>무공</th><th>전투 재미</th></tr>
+      <tr><td>박성준</td><td>해동문 문주, 풍류검, 심리전</td><td><span class="tag">사군자검</span><span class="tag">농월추파</span><span class="tag">태평농월보</span><span class="tag">문주호령</span></td><td>호색한 기믹은 노골적 성적 묘사가 아니라 도발/심리전/동료 승인도 리스크로 처리.</td></tr>
+      <tr><td>윤서화</td><td>예검 반격수</td><td><span class="tag">월하반조검</span><span class="tag">검로재기</span><span class="tag">예검반격 예약</span></td><td>상대 공격을 읽고 반응으로 받아쳐 파훼를 쌓는다.</td></tr>
+      <tr><td>백련</td><td>빙공, 치유, 지형 제어</td><td><span class="tag">빙백장</span><span class="tag">설화심법</span><span class="tag">한설봉로</span></td><td>물가/여울을 얼리고 둔화, 회복, 정화로 장기전을 담당.</td></tr>
+      <tr><td>한비연</td><td>암기, 독공, 잠행</td><td><span class="tag">비화독침</span><span class="tag">흑립잠행</span><span class="tag">만천화우</span></td><td>대나무숲/연막/고지와 연계해 원거리 독공을 넣는다.</td></tr>
+      <tr><td>도아린</td><td>권장, 밀치기, 비살상 제압</td><td><span class="tag">파산권</span><span class="tag">철산고</span><span class="tag">금나수</span></td><td>벼랑, 다리, 물가로 밀쳐 지형 피해를 만들고 항복/제압 조건을 연다.</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>5. 맵 설계: 바둑판 대신 2D 전장</h2>
+    <p>Unity 내부 구현은 노드/타일을 써도 된다. 중요한 것은 플레이어가 정사각 바둑판을 보는 게 아니라 “압록강 폐사당”이라는 장소를 보는 것이다.</p>
+    <table>
+      <tr><th>지형</th><th>효과</th><th>연계 무공</th></tr>
+      <tr><td>압록강 여울</td><td>미끄러짐, 이동 방해, 빙공 강화</td><td>백련 빙백장/한설봉로</td></tr>
+      <tr><td>누각 지붕</td><td>고지, 원거리 명중 보너스</td><td>한비연 암기, 적 궁수</td></tr>
+      <tr><td>대나무숲</td><td>강엄폐, 잠행, 시야 차단</td><td>한비연 흑립잠행/비화독침</td></tr>
+      <tr><td>객잔 술상</td><td>걷어차서 엄폐 생성, 넘어짐</td><td>도아린 파산권, 박성준 보법</td></tr>
+      <tr><td>향로</td><td>연막 생성, 암기/은신 강화</td><td>한비연, 윤서화 간파</td></tr>
+      <tr><td>등불</td><td>화염 지대, 화상</td><td>밀치기/도발로 적을 유도</td></tr>
+      <tr><td>낡은 다리</td><td>파괴 가능, 여울 추락</td><td>도아린 철산고/파산권</td></tr>
+      <tr><td>무너진 불상</td><td>내공 판정으로 파편 폭발, 파훼 증가</td><td>백련/박성준 내공계</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>6. Codex에 그대로 줄 구현 요청 요약</h2>
+<pre>Unity 2D URP 프로젝트를 만든다.
+전투는 5인 파티 턴제이고 d20 판정이 필수다.
+화면에는 정사각 격자를 노출하지 말고, 실제 2D 전장처럼 보이게 한다.
+내부적으로는 BattleNode 또는 Tilemap 데이터를 써서 이동, 거리, 고저차, 엄폐, 지형 효과를 계산한다.
+
+필수 클래스:
+- TurnManager
+- ActionEconomy
+- DiceRoller
+- SkillResolver
+- TerrainResolver
+- MovementResolver
+- CombatLog
+- BattleCameraDirector
+- TimelineCuePlayer
+- GeminiNarrationClientMock
+
+필수 ScriptableObject:
+- CombatantData
+- SkillData
+- BattleMapData
+- BattleNodeData
+- InteractableObjectData
+
+아군 5명은 모두 다른 무공 체계를 가진다.
+박성준은 풍류검/심리전/문주 지휘.
+윤서화는 반격검/파훼.
+백련은 빙공/치유/지형 제어.
+한비연은 암기/독공/잠행.
+도아린은 권장/밀치기/비살상 제압.
+
+Gemini는 판정하지 않는다.
+Gemini는 전투 묘사, 적 대사, 자유 대사 intent_tag, timeline_cue만 JSON으로 반환한다.</pre>
+  </section>
+</div>
+</body>
+</html>

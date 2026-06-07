@@ -1,0 +1,30 @@
+# Unity generated files
+UnityScaffold/Library/
+UnityScaffold/Temp/
+UnityScaffold/Obj/
+UnityScaffold/Build/
+UnityScaffold/Builds/
+UnityScaffold/Logs/
+UnityScaffold/UserSettings/
+UnityScaffold/MemoryCaptures/
+UnityScaffold/Recordings/
+UnityScaffold/*.csproj
+UnityScaffold/*.sln
+UnityScaffold/*.user
+UnityScaffold/*.pidb
+UnityScaffold/*.booproj
+UnityScaffold/*.svd
+UnityScaffold/*.pdb
+UnityScaffold/*.mdb
+UnityScaffold/unity-compile.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vs/
+.vscode/
+
+# Local runtime logs
+*.log
+*.tmp
