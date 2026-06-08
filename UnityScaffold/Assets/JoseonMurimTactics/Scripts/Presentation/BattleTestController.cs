@@ -48,8 +48,13 @@ namespace JoseonMurimTactics
         private ThreatRangeService threatRangeService;
         private ObjectiveManager objectiveManager;
         private EnemyTacticsAI enemyTacticsAI;
+        private FollowUpResolver followUpResolver;
         private BattleForecastPanel battleForecastPanel;
         private BattleForecast currentForecast;
+        private readonly Stack<BattleSnapshot> rewindStack = new Stack<BattleSnapshot>();
+        private readonly List<BattleTerrainObject> terrainObjects = new List<BattleTerrainObject>();
+        private int rewindUsesRemaining = 3;
+        private bool showLog;
 
         private void Start()
         {
@@ -114,10 +119,22 @@ namespace JoseonMurimTactics
             {
                 GuardActiveUnit();
             }
+            else if (Input.GetKeyDown(KeyCode.Alpha5))
+            {
+                SetCommandMode(BattleCommandMode.Terrain);
+            }
             else if (Input.GetKeyDown(KeyCode.T))
             {
                 showThreatRange = !showThreatRange;
                 RefreshHighlights();
+            }
+            else if (Input.GetKeyDown(KeyCode.Z))
+            {
+                RewindLastAction();
+            }
+            else if (Input.GetKeyDown(KeyCode.L))
+            {
+                showLog = !showLog;
             }
 
             if (Input.GetMouseButtonDown(0))
@@ -161,9 +178,9 @@ namespace JoseonMurimTactics
             string hp = activeUnit == null ? string.Empty : $"{activeUnit.hp}/{activeUnit.definition.maxHp}";
 
             GUI.Label(new Rect(34f, 30f, 344f, 26f), "Scenario Objective", titleStyle);
-            GUI.Label(new Rect(34f, 58f, 344f, 20f), objectiveManager != null ? objectiveManager.ScenarioTitle : "Battle Test", labelStyle);
+            GUI.Label(new Rect(34f, 58f, 344f, 20f), "Amnok Shrine Reclamation v0.6", labelStyle);
             GUI.Label(new Rect(34f, 84f, 344f, 20f), "Main: Defeat the Central Inspector", smallStyle);
-            GUI.Label(new Rect(34f, 106f, 344f, 20f), "Bonus: win by round 8, preserve altar", smallStyle);
+            GUI.Label(new Rect(34f, 106f, 344f, 20f), $"Bonus: win by round 8, preserve altar, use terrain x2", smallStyle);
             GUI.Label(new Rect(34f, 128f, 344f, 20f), "Defeat: Park or Baek down, round 12 over", warningStyle);
 
             if (activeUnit != null)
@@ -190,7 +207,7 @@ namespace JoseonMurimTactics
 
         private void DrawCommandMenu()
         {
-            Rect panel = new Rect(Screen.width - 232f, 206f, 214f, 342f);
+            Rect panel = new Rect(Screen.width - 232f, 206f, 214f, 370f);
             GUI.Box(panel, GUIContent.none, panelStyle);
             GUI.Label(new Rect(panel.x + 16f, panel.y + 14f, panel.width - 32f, 24f), "Commands", titleStyle);
 
@@ -220,19 +237,34 @@ namespace JoseonMurimTactics
             }
 
             y += 42f;
-            if (DrawCommandButton(new Rect(panel.x + 16f, y, 182f, 36f), "Space  Wait", playerTurn, false))
+            if (DrawCommandButton(new Rect(panel.x + 16f, y, 86f, 36f), "5 Terrain", playerTurn && !activeUnit.acted, commandMode == BattleCommandMode.Terrain))
+            {
+                SetCommandMode(BattleCommandMode.Terrain);
+            }
+
+            if (DrawCommandButton(new Rect(panel.x + 112f, y, 86f, 36f), "Wait", playerTurn, false))
             {
                 EndTurn();
             }
 
             y += 48f;
-            if (DrawCommandButton(new Rect(panel.x + 16f, y, 86f, 32f), showThreatRange ? "Threat On" : "Threat", true, showThreatRange))
+            if (DrawCommandButton(new Rect(panel.x + 16f, y, 62f, 32f), showThreatRange ? "Danger" : "Threat", true, showThreatRange))
             {
                 showThreatRange = !showThreatRange;
                 RefreshHighlights();
             }
 
-            if (DrawCommandButton(new Rect(panel.x + 112f, y, 86f, 32f), "Reset", true, false))
+            if (DrawCommandButton(new Rect(panel.x + 82f, y, 52f, 32f), $"Z {rewindUsesRemaining}", rewindUsesRemaining > 0 && rewindStack.Count > 0 && !busy, false))
+            {
+                RewindLastAction();
+            }
+
+            if (DrawCommandButton(new Rect(panel.x + 138f, y, 60f, 32f), showLog ? "Log On" : "Log", true, showLog))
+            {
+                showLog = !showLog;
+            }
+
+            if (DrawCommandButton(new Rect(panel.x + 16f, y + 38f, 182f, 28f), "Reset Battle", true, false))
             {
                 BuildBattle();
             }
@@ -240,8 +272,8 @@ namespace JoseonMurimTactics
             if (activeUnit != null)
             {
                 string cooldown = activeUnit.specialCooldownLeft > 0 ? $"CD {activeUnit.specialCooldownLeft}" : "Ready";
-                GUI.Label(new Rect(panel.x + 16f, panel.y + 286f, 182f, 18f), $"Skill: {activeUnit.definition.specialName}", tinyStyle);
-                GUI.Label(new Rect(panel.x + 16f, panel.y + 306f, 182f, 18f), $"Range {activeUnit.definition.specialRange}  {cooldown}", tinyStyle);
+                GUI.Label(new Rect(panel.x + 16f, panel.y + 318f, 182f, 18f), $"Skill: {activeUnit.definition.specialName}", tinyStyle);
+                GUI.Label(new Rect(panel.x + 16f, panel.y + 336f, 182f, 18f), $"Range {activeUnit.definition.specialRange}  {cooldown}", tinyStyle);
             }
         }
 
@@ -265,6 +297,14 @@ namespace JoseonMurimTactics
 
         private void DrawLogPanel()
         {
+            if (!showLog)
+            {
+                Rect collapsed = new Rect(Screen.width - 170f, Screen.height - 196f, 152f, 34f);
+                GUI.Box(collapsed, GUIContent.none, panelStyle);
+                GUI.Label(new Rect(collapsed.x + 12f, collapsed.y + 8f, collapsed.width - 24f, 18f), "Log collapsed (L)", tinyStyle);
+                return;
+            }
+
             float x = Screen.width - 348f;
             float y = Screen.height - 380f;
             GUI.Box(new Rect(x, y, 330f, 222f), GUIContent.none, panelStyle);
@@ -337,7 +377,8 @@ namespace JoseonMurimTactics
             DrawLegendItem(rect.x + 120f, rect.y + 10f, new Color(1f, 0.18f, 0.16f, 0.9f), "Attack");
             DrawLegendItem(rect.x + 224f, rect.y + 10f, new Color(0.72f, 0.28f, 1f, 0.9f), "Skill");
             DrawLegendItem(rect.x + 326f, rect.y + 10f, new Color(1f, 0.76f, 0.18f, 0.9f), "Active");
-            DrawLegendItem(rect.x + 430f, rect.y + 10f, new Color(1f, 0.12f, 0.08f, 0.55f), "Enemy threat");
+            DrawLegendItem(rect.x + 430f, rect.y + 10f, new Color(1f, 0.76f, 0.18f, 0.9f), "Terrain");
+            DrawLegendItem(rect.x + 518f, rect.y + 10f, new Color(0.72f, 0.16f, 0.85f, 0.55f), "Threat");
         }
 
         private void DrawLegendItem(float x, float y, Color color, string text)
@@ -366,7 +407,10 @@ namespace JoseonMurimTactics
             FillRect(new Rect(rect.x + 10f, rect.y + 32f, (rect.width - 20f) * hpRatio, 8f), unit.defeated ? new Color(0.4f, 0.4f, 0.4f, 1f) : new Color(0.78f, 0.18f, 0.13f, 1f));
 
             string status = unit.defeated ? "Down" : unit.turnEnded ? "Done" : UnitStatusText(unit);
-            GUI.Label(new Rect(rect.x + 10f, rect.y + 44f, rect.width - 86f, 18f), $"HP {unit.hp}/{unit.definition.maxHp}  {status}", tinyStyle);
+            BattleTestTile tile = TileAt(unit.cell);
+            string terrain = tile != null ? tile.terrain.ToString() : "None";
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 44f, rect.width - 86f, 18f), $"HP {unit.hp}/{unit.definition.maxHp}  Inner {unit.inner}/{unit.definition.maxInner}", tinyStyle);
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 60f, rect.width - 86f, 18f), $"{status}  Agi {unit.definition.agility}  {terrain}  {(unit.supported ? "Support" : string.Empty)}", tinyStyle);
 
             bool canSelect = phaseTurnController != null && phaseTurnController.Phase == BattlePhase.PlayerPhase && !unit.defeated && !unit.turnEnded && !busy && !battleOver;
             bool oldEnabled = GUI.enabled;
@@ -421,6 +465,11 @@ namespace JoseonMurimTactics
                 return "Purple cells are skill targets. Check forecast before confirming.";
             }
 
+            if (commandMode == BattleCommandMode.Terrain)
+            {
+                return "Gold cells are terrain objects. Use brazier, lantern, bell, or rope for tactical effects.";
+            }
+
             return "Finish the unit with attack, skill, guard, or wait.";
         }
 
@@ -452,6 +501,10 @@ namespace JoseonMurimTactics
             battleOver = false;
             commandMode = BattleCommandMode.Move;
             showThreatRange = false;
+            showLog = false;
+            rewindUsesRemaining = 3;
+            rewindStack.Clear();
+            terrainObjects.Clear();
             hoveredTile = null;
             hoveredUnit = null;
             currentForecast = default;
@@ -459,7 +512,8 @@ namespace JoseonMurimTactics
             unitSelectionController = new UnitSelectionController();
             breakResolver = new BreakResolver();
             counterattackService = new CounterattackService();
-            battleForecastService = new BattleForecastService(breakResolver, counterattackService);
+            followUpResolver = new FollowUpResolver();
+            battleForecastService = new BattleForecastService(breakResolver, counterattackService, followUpResolver);
             threatRangeService = new ThreatRangeService();
             objectiveManager = new ObjectiveManager();
             enemyTacticsAI = new EnemyTacticsAI(breakResolver, battleForecastService);
@@ -467,10 +521,11 @@ namespace JoseonMurimTactics
 
             diamondSprite = diamondSprite == null ? CreateDiamondSprite() : diamondSprite;
             CreateTerrain();
+            CreateTerrainObjects();
             SpawnUnits();
             CenterCamera();
 
-            AddLog(objectiveManager.ScenarioTitle);
+            AddLog("Amnok Shrine Reclamation v0.6");
             AddLog("Player Phase: choose allies in any order.");
             phaseTurnController.StartBattle(units);
             BeginPlayerPhase();
@@ -537,9 +592,126 @@ namespace JoseonMurimTactics
                     tile.walkable = profile.walkable;
                     tile.moveCost = profile.moveCost;
                     tile.coverBonus = profile.coverBonus;
+                    tile.baseRenderer = renderer;
                     tile.highlightRenderer = highlightRenderer;
                     tiles[x, y] = tile;
                 }
+            }
+        }
+
+        private void CreateTerrainObjects()
+        {
+            Transform objectRoot = new GameObject("Terrain Objects").transform;
+            objectRoot.SetParent(transform, false);
+
+            AddTerrainObject(objectRoot, "Incense Brazier", TerrainObjectKind.IncenseBrazier, new Vector2Int(6, 4), 12);
+            AddTerrainObject(objectRoot, "Oil Lantern", TerrainObjectKind.OilLantern, new Vector2Int(9, 3), 10);
+            AddTerrainObject(objectRoot, "Shrine Bell", TerrainObjectKind.ShrineBell, new Vector2Int(7, 6), 14);
+            AddTerrainObject(objectRoot, "Bridge Rope", TerrainObjectKind.BridgeRope, new Vector2Int(5, 5), 8);
+        }
+
+        private void AddTerrainObject(Transform root, string displayName, TerrainObjectKind kind, Vector2Int cell, int hp)
+        {
+            if (!IsInside(cell))
+            {
+                return;
+            }
+
+            GameObject objectGameObject = new GameObject(displayName);
+            objectGameObject.transform.SetParent(root, false);
+            objectGameObject.transform.position = UnitWorldPosition(cell) + new Vector3(0f, 0.18f, -0.03f);
+
+            SpriteRenderer renderer = objectGameObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = diamondSprite;
+            renderer.color = TerrainObjectColor(kind);
+            renderer.sortingOrder = 4200;
+            objectGameObject.transform.localScale = new Vector3(tileWidth * 0.34f, tileWidth * 0.34f, 1f);
+
+            TextMesh label = CreateTerrainObjectLabel(objectGameObject.transform, displayName);
+            BattleTerrainObject terrainObject = objectGameObject.AddComponent<BattleTerrainObject>();
+            terrainObject.displayName = displayName;
+            terrainObject.kind = kind;
+            terrainObject.cell = cell;
+            terrainObject.hp = hp;
+            terrainObject.maxHp = hp;
+            terrainObject.interactRange = 1;
+            terrainObject.renderer = renderer;
+            terrainObject.label = label;
+            terrainObjects.Add(terrainObject);
+        }
+
+        private TextMesh CreateTerrainObjectLabel(Transform parent, string displayName)
+        {
+            GameObject labelObject = new GameObject("Terrain Object Label");
+            labelObject.transform.SetParent(parent, false);
+            labelObject.transform.localPosition = new Vector3(0f, -0.42f, -0.04f);
+
+            TextMesh mesh = labelObject.AddComponent<TextMesh>();
+            mesh.text = displayName;
+            mesh.anchor = TextAnchor.MiddleCenter;
+            mesh.alignment = TextAlignment.Center;
+            mesh.fontSize = 34;
+            mesh.characterSize = 0.014f;
+            mesh.color = new Color(0.96f, 0.88f, 0.58f, 1f);
+
+            MeshRenderer meshRenderer = labelObject.GetComponent<MeshRenderer>();
+            meshRenderer.sortingLayerName = "Default";
+            meshRenderer.sortingOrder = 5001;
+            return mesh;
+        }
+
+        private Color TerrainObjectColor(TerrainObjectKind kind)
+        {
+            switch (kind)
+            {
+                case TerrainObjectKind.IncenseBrazier:
+                    return new Color(0.80f, 0.74f, 0.52f, 0.95f);
+                case TerrainObjectKind.OilLantern:
+                    return new Color(1f, 0.52f, 0.16f, 0.95f);
+                case TerrainObjectKind.BridgeRope:
+                    return new Color(0.54f, 0.34f, 0.18f, 0.95f);
+                case TerrainObjectKind.ShrineBell:
+                    return new Color(0.96f, 0.76f, 0.22f, 0.95f);
+                default:
+                    return Color.white;
+            }
+        }
+
+        private Color HazardColor(TerrainType terrain, HazardType hazard)
+        {
+            switch (hazard)
+            {
+                case HazardType.Smoke:
+                    return new Color(0.58f, 0.62f, 0.58f, 1f);
+                case HazardType.Fire:
+                    return new Color(0.86f, 0.30f, 0.12f, 1f);
+                case HazardType.Ice:
+                    return new Color(0.64f, 0.82f, 0.92f, 1f);
+                case HazardType.Slippery:
+                    return new Color(0.34f, 0.50f, 0.56f, 1f);
+                default:
+                    return TerrainColor(terrain);
+            }
+        }
+
+        private Color TerrainColor(TerrainType terrain)
+        {
+            switch (terrain)
+            {
+                case TerrainType.Bamboo:
+                    return new Color(0.40f, 0.58f, 0.34f, 1f);
+                case TerrainType.Water:
+                    return new Color(0.40f, 0.62f, 0.72f, 1f);
+                case TerrainType.Bridge:
+                    return new Color(0.62f, 0.44f, 0.24f, 1f);
+                case TerrainType.Roof:
+                    return new Color(0.68f, 0.34f, 0.23f, 1f);
+                case TerrainType.Cliff:
+                    return new Color(0.46f, 0.40f, 0.32f, 1f);
+                case TerrainType.Wall:
+                    return new Color(0.36f, 0.34f, 0.32f, 1f);
+                default:
+                    return new Color(0.66f, 0.60f, 0.46f, 1f);
             }
         }
 
@@ -714,6 +886,21 @@ namespace JoseonMurimTactics
                 return;
             }
 
+            if (commandMode == BattleCommandMode.Terrain)
+            {
+                BattleTerrainObject terrainObject = clickedTile != null ? TerrainObjectAt(clickedTile.cell) : null;
+                if (terrainObject != null && TryUseTerrainObject(activeUnit, terrainObject))
+                {
+                    CompleteActiveUnit("used terrain.");
+                }
+                else
+                {
+                    AddLog("No usable terrain object in range.");
+                }
+
+                return;
+            }
+
             if (commandMode == BattleCommandMode.Move && clickedTile != null)
             {
                 TryMove(activeUnit, clickedTile);
@@ -770,6 +957,7 @@ namespace JoseonMurimTactics
                 return;
             }
 
+            SaveRewindSnapshot("before move");
             unit.cell = destination.cell;
             unit.moved = true;
             ApplyTileEntryEffect(unit, destination);
@@ -798,17 +986,19 @@ namespace JoseonMurimTactics
             }
 
             int distance = GridDistance(attacker.cell, target.cell);
-            if (distance > attacker.definition.attackRange)
+            if (distance > attacker.definition.attackRange || distance < attacker.definition.attackMinRange)
             {
                 AddLog("Target out of range.");
                 return false;
             }
 
+            SaveRewindSnapshot("before attack");
             bool hit = ResolveAttack(attacker, target, false);
             attacker.acted = true;
             if (hit)
             {
                 ResolveCounterIfPossible(target, attacker);
+                ResolveFollowUpIfPossible(attacker, target, false);
             }
 
             RefreshUnits();
@@ -842,7 +1032,8 @@ namespace JoseonMurimTactics
             }
 
             int styleBonus = breakResolver.AttackModifier(attacker.definition.style, target.definition.style);
-            int attackBonus = attacker.definition.attackBonus + styleBonus + (special ? attacker.definition.specialAttackBonus : 0);
+            int supportBonus = attacker.supported ? 1 : 0;
+            int attackBonus = attacker.definition.attackBonus + styleBonus + supportBonus + (special ? attacker.definition.specialAttackBonus : 0);
             int attackTotal = d20 + attackBonus + heightBonus;
             int defense = DefenseValue(target, to);
             bool critical = d20 == 20;
@@ -909,6 +1100,23 @@ namespace JoseonMurimTactics
             ResolveAttack(defender, attacker, false);
         }
 
+        private void ResolveFollowUpIfPossible(BattleTestUnit attacker, BattleTestUnit target, bool special)
+        {
+            if (followUpResolver == null || !followUpResolver.CanFollowUp(attacker, target, special))
+            {
+                return;
+            }
+
+            if (attacker.defeated || target.defeated)
+            {
+                return;
+            }
+
+            attacker.inner = Mathf.Max(0, attacker.inner - 1);
+            AddLog($"{attacker.definition.displayName} follows up.");
+            ResolveAttack(attacker, target, false);
+        }
+
         private bool TrySpecial(BattleTestUnit actor, BattleTestUnit target)
         {
             if (!CanUseSpecial(actor))
@@ -924,12 +1132,13 @@ namespace JoseonMurimTactics
             }
 
             int distance = GridDistance(actor.cell, target.cell);
-            if (distance > actor.definition.specialRange)
+            if (distance > actor.definition.specialRange || distance < actor.definition.specialMinRange)
             {
                 AddLog("Skill target out of range.");
                 return false;
             }
 
+            SaveRewindSnapshot("before skill");
             actor.inner -= actor.definition.specialCost;
             actor.specialCooldownLeft = actor.definition.specialCooldown;
             actor.acted = true;
@@ -1207,6 +1416,194 @@ namespace JoseonMurimTactics
             }
         }
 
+        private BattleTerrainObject TerrainObjectAt(Vector2Int cell)
+        {
+            for (int i = 0; i < terrainObjects.Count; i++)
+            {
+                BattleTerrainObject terrainObject = terrainObjects[i];
+                if (terrainObject != null && !terrainObject.destroyed && terrainObject.cell == cell)
+                {
+                    return terrainObject;
+                }
+            }
+
+            return null;
+        }
+
+        private bool TryUseTerrainObject(BattleTestUnit unit, BattleTerrainObject terrainObject)
+        {
+            if (unit == null || terrainObject == null || terrainObject.used || terrainObject.destroyed)
+            {
+                return false;
+            }
+
+            if (GridDistance(unit.cell, terrainObject.cell) > terrainObject.interactRange)
+            {
+                return false;
+            }
+
+            SaveRewindSnapshot("before terrain");
+            terrainObject.used = true;
+            unit.acted = true;
+
+            switch (terrainObject.kind)
+            {
+                case TerrainObjectKind.IncenseBrazier:
+                    ApplyAreaHazard(terrainObject.cell, 1, HazardType.Smoke);
+                    AddLog($"{unit.definition.displayName} spreads incense smoke.");
+                    break;
+                case TerrainObjectKind.OilLantern:
+                    ApplyAreaHazard(terrainObject.cell, 1, HazardType.Fire);
+                    DamageUnitsInRadius(terrainObject.cell, 1, 5, Faction.Enemy);
+                    terrainObject.destroyed = true;
+                    AddLog($"{unit.definition.displayName} breaks an oil lantern.");
+                    break;
+                case TerrainObjectKind.ShrineBell:
+                    BreakEnemiesInRadius(terrainObject.cell, 2, 18);
+                    AddLog($"{unit.definition.displayName} rings the shrine bell.");
+                    break;
+                case TerrainObjectKind.BridgeRope:
+                    ApplyAreaHazard(terrainObject.cell, 1, HazardType.Slippery);
+                    terrainObject.destroyed = true;
+                    AddLog($"{unit.definition.displayName} cuts the bridge rope.");
+                    break;
+            }
+
+            RefreshTerrainObjects();
+            RefreshHighlights();
+            RefreshUnits();
+            CheckBattleEnd();
+            return true;
+        }
+
+        private void ApplyAreaHazard(Vector2Int center, int radius, HazardType hazard)
+        {
+            for (int y = center.y - radius; y <= center.y + radius; y++)
+            {
+                for (int x = center.x - radius; x <= center.x + radius; x++)
+                {
+                    Vector2Int cell = new Vector2Int(x, y);
+                    if (GridDistance(center, cell) > radius)
+                    {
+                        continue;
+                    }
+
+                    BattleTestTile tile = TileAt(cell);
+                    if (tile == null || !tile.walkable)
+                    {
+                        continue;
+                    }
+
+                    tile.hazard = hazard;
+                    tile.SetBaseColor(HazardColor(tile.terrain, hazard));
+                }
+            }
+        }
+
+        private void DamageUnitsInRadius(Vector2Int center, int radius, int damage, Faction targetFaction)
+        {
+            for (int i = 0; i < units.Count; i++)
+            {
+                BattleTestUnit unit = units[i];
+                if (unit.defeated || unit.definition.faction != targetFaction || GridDistance(center, unit.cell) > radius)
+                {
+                    continue;
+                }
+
+                unit.hp = Mathf.Max(0, unit.hp - damage);
+                AddLog($"{unit.definition.displayName} takes {damage} terrain damage.");
+                if (unit.hp == 0)
+                {
+                    unit.defeated = true;
+                    unit.view.SetDefeated(true);
+                }
+            }
+        }
+
+        private void BreakEnemiesInRadius(Vector2Int center, int radius, int amount)
+        {
+            for (int i = 0; i < units.Count; i++)
+            {
+                BattleTestUnit unit = units[i];
+                if (unit.defeated || unit.definition.faction != Faction.Enemy || GridDistance(center, unit.cell) > radius)
+                {
+                    continue;
+                }
+
+                breakResolver.ApplyBreak(unit, amount);
+                unit.marked = true;
+                AddLog($"{unit.definition.displayName} break +{amount}.");
+            }
+        }
+
+        private void RefreshTerrainObjects()
+        {
+            for (int i = 0; i < terrainObjects.Count; i++)
+            {
+                BattleTerrainObject terrainObject = terrainObjects[i];
+                if (terrainObject != null)
+                {
+                    terrainObject.Refresh();
+                }
+            }
+        }
+
+        private void SaveRewindSnapshot(string reason)
+        {
+            if (phaseTurnController == null
+                || phaseTurnController.Phase != BattlePhase.PlayerPhase
+                || activeUnit == null
+                || activeUnit.definition.faction != Faction.Ally
+                || battleOver)
+            {
+                return;
+            }
+
+            rewindStack.Push(BattleSnapshot.Capture(units, tiles, terrainObjects, activeUnit, commandMode, reason));
+            while (rewindStack.Count > 6)
+            {
+                BattleSnapshot[] snapshots = rewindStack.ToArray();
+                rewindStack.Clear();
+                for (int i = snapshots.Length - 2; i >= 0; i--)
+                {
+                    rewindStack.Push(snapshots[i]);
+                }
+            }
+        }
+
+        private void RewindLastAction()
+        {
+            if (rewindUsesRemaining <= 0 || rewindStack.Count == 0 || busy)
+            {
+                AddLog("No rewind available.");
+                return;
+            }
+
+            BattleSnapshot snapshot = rewindStack.Pop();
+            snapshot.Restore(units, tiles, terrainObjects, HazardColor);
+            activeUnit = FindUnitById(snapshot.activeUnitId);
+            commandMode = snapshot.commandMode;
+            currentForecast = default;
+            rewindUsesRemaining--;
+            AddLog($"Rewind used: {snapshot.reason}. Remaining {rewindUsesRemaining}.");
+            RefreshTerrainObjects();
+            RefreshHighlights();
+            RefreshUnits();
+        }
+
+        private BattleTestUnit FindUnitById(string id)
+        {
+            for (int i = 0; i < units.Count; i++)
+            {
+                if (units[i].definition.id == id)
+                {
+                    return units[i];
+                }
+            }
+
+            return null;
+        }
+
         private int EffectiveMoveRange(BattleTestUnit unit)
         {
             int range = unit.definition.moveRange;
@@ -1356,6 +1753,12 @@ namespace JoseonMurimTactics
                 return;
             }
 
+            if (mode == BattleCommandMode.Terrain && activeUnit.acted)
+            {
+                AddLog("Action already spent. Wait to finish this unit.");
+                return;
+            }
+
             commandMode = mode;
             if (hoveredUnit != null && hoveredUnit.definition.faction != activeUnit.definition.faction)
             {
@@ -1441,13 +1844,27 @@ namespace JoseonMurimTactics
         private Dictionary<Vector2Int, int> GetReachableCells(BattleTestUnit unit)
         {
             Dictionary<Vector2Int, int> cost = new Dictionary<Vector2Int, int>();
-            Queue<Vector2Int> frontier = new Queue<Vector2Int>();
+            List<Vector2Int> frontier = new List<Vector2Int>();
             cost[unit.cell] = 0;
-            frontier.Enqueue(unit.cell);
+            frontier.Add(unit.cell);
 
             while (frontier.Count > 0)
             {
-                Vector2Int current = frontier.Dequeue();
+                int bestIndex = 0;
+                int bestCost = cost[frontier[0]];
+                for (int i = 1; i < frontier.Count; i++)
+                {
+                    int candidateCost = cost[frontier[i]];
+                    if (candidateCost < bestCost)
+                    {
+                        bestCost = candidateCost;
+                        bestIndex = i;
+                    }
+                }
+
+                Vector2Int current = frontier[bestIndex];
+                frontier.RemoveAt(bestIndex);
+
                 foreach (Vector2Int next in Neighbors(current))
                 {
                     BattleTestTile tile = TileAt(next);
@@ -1462,7 +1879,7 @@ namespace JoseonMurimTactics
                         continue;
                     }
 
-                    int nextCost = cost[current] + Mathf.Max(1, tile.moveCost);
+                    int nextCost = cost[current] + MoveCost(unit, TileAt(current), tile);
                     if (nextCost > EffectiveMoveRange(unit))
                     {
                         continue;
@@ -1474,11 +1891,71 @@ namespace JoseonMurimTactics
                     }
 
                     cost[next] = nextCost;
-                    frontier.Enqueue(next);
+                    if (!frontier.Contains(next))
+                    {
+                        frontier.Add(next);
+                    }
                 }
             }
 
             return cost;
+        }
+
+        private int MoveCost(BattleTestUnit unit, BattleTestTile from, BattleTestTile to)
+        {
+            int cost = Mathf.Max(1, to.moveCost);
+            if (from != null && Mathf.Abs(to.elevation - from.elevation) > 0)
+            {
+                cost += Mathf.Abs(to.elevation - from.elevation);
+            }
+
+            if (to.terrain == TerrainType.Water && unit.definition.style != SkillStyle.Ice)
+            {
+                cost += 1;
+            }
+
+            if (to.terrain == TerrainType.Bamboo && unit.definition.style != SkillStyle.HiddenWeapon)
+            {
+                cost += 1;
+            }
+
+            if (to.hazard == HazardType.Slippery || to.hazard == HazardType.Fire)
+            {
+                cost += 1;
+            }
+
+            if (unit.chilled)
+            {
+                cost += 1;
+            }
+
+            if (IsEnemyThreatenedCell(unit.definition.faction, to.cell))
+            {
+                cost += 1;
+            }
+
+            return cost;
+        }
+
+        private bool IsEnemyThreatenedCell(Faction movingFaction, Vector2Int cell)
+        {
+            Faction enemyFaction = movingFaction == Faction.Ally ? Faction.Enemy : Faction.Ally;
+            for (int i = 0; i < units.Count; i++)
+            {
+                BattleTestUnit unit = units[i];
+                if (unit.defeated || unit.definition.faction != enemyFaction)
+                {
+                    continue;
+                }
+
+                int range = Mathf.Max(unit.definition.attackRange, unit.definition.specialRange);
+                if (GridDistance(unit.cell, cell) <= range)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private IEnumerable<Vector2Int> Neighbors(Vector2Int cell)
@@ -1501,7 +1978,7 @@ namespace JoseonMurimTactics
                     BattleTestTile tile = TileAt(cell);
                     if (tile != null)
                     {
-                        tile.SetHighlight(new Color(1f, 0.12f, 0.08f, 0.26f));
+                        tile.SetHighlight(new Color(0.72f, 0.16f, 0.85f, 0.30f));
                     }
                 }
             }
@@ -1543,7 +2020,8 @@ namespace JoseonMurimTactics
                         continue;
                     }
 
-                    if (GridDistance(activeUnit.cell, target.cell) <= activeUnit.definition.attackRange)
+                    int distance = GridDistance(activeUnit.cell, target.cell);
+                    if (distance <= activeUnit.definition.attackRange && distance >= activeUnit.definition.attackMinRange)
                     {
                         BattleTestTile tile = TileAt(target.cell);
                         if (tile != null)
@@ -1563,7 +2041,8 @@ namespace JoseonMurimTactics
                         continue;
                     }
 
-                    if (GridDistance(activeUnit.cell, target.cell) <= activeUnit.definition.specialRange)
+                    int distance = GridDistance(activeUnit.cell, target.cell);
+                    if (distance <= activeUnit.definition.specialRange && distance >= activeUnit.definition.specialMinRange)
                     {
                         BattleTestTile tile = TileAt(target.cell);
                         if (tile != null)
@@ -1572,6 +2051,27 @@ namespace JoseonMurimTactics
                                 ? new Color(0.18f, 1f, 0.62f, 0.48f)
                                 : new Color(0.72f, 0.28f, 1f, 0.50f);
                             tile.SetHighlight(color);
+                        }
+                    }
+                }
+            }
+
+            if (commandMode == BattleCommandMode.Terrain && !activeUnit.acted)
+            {
+                for (int i = 0; i < terrainObjects.Count; i++)
+                {
+                    BattleTerrainObject terrainObject = terrainObjects[i];
+                    if (terrainObject == null || terrainObject.used || terrainObject.destroyed)
+                    {
+                        continue;
+                    }
+
+                    if (GridDistance(activeUnit.cell, terrainObject.cell) <= terrainObject.interactRange)
+                    {
+                        BattleTestTile tile = TileAt(terrainObject.cell);
+                        if (tile != null)
+                        {
+                            tile.SetHighlight(new Color(1f, 0.76f, 0.18f, 0.62f));
                         }
                     }
                 }
@@ -1605,9 +2105,38 @@ namespace JoseonMurimTactics
 
         private void RefreshUnits()
         {
+            UpdateSupportLinks();
             foreach (BattleTestUnit unit in units)
             {
                 unit.view.Refresh(unit == activeUnit);
+            }
+        }
+
+        private void UpdateSupportLinks()
+        {
+            for (int i = 0; i < units.Count; i++)
+            {
+                BattleTestUnit unit = units[i];
+                unit.supported = false;
+                if (unit.defeated)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < units.Count; j++)
+                {
+                    BattleTestUnit other = units[j];
+                    if (unit == other || other.defeated || other.definition.faction != unit.definition.faction)
+                    {
+                        continue;
+                    }
+
+                    if (GridDistance(unit.cell, other.cell) <= 2)
+                    {
+                        unit.supported = true;
+                        break;
+                    }
+                }
             }
         }
 
@@ -1675,50 +2204,55 @@ namespace JoseonMurimTactics
 
         private TerrainProfile ResolveTerrain(int x, int y)
         {
-            if ((x == 6 && y == 5) || (x == 7 && y == 5) || (x == 8 && y == 5))
+            if ((x >= 8 && x <= 10 && y == 7) || (x == 10 && y == 8))
             {
-                return new TerrainProfile(TerrainType.Wall, new Color(0.22f, 0.21f, 0.22f, 1f), 1, 0, 99, false);
+                return new TerrainProfile(TerrainType.Wall, new Color(0.36f, 0.34f, 0.32f, 1f), 1, 0, 99, false);
             }
 
-            if ((x == 5 && y == 2) || (x == 6 && y == 2))
+            if ((x == 6 && y == 4) || (x == 7 && y == 4))
             {
-                return new TerrainProfile(TerrainType.Stone, new Color(0.42f, 0.42f, 0.43f, 1f), 0, 2, 1, true, HazardType.Smoke);
+                return new TerrainProfile(TerrainType.Stone, new Color(0.58f, 0.62f, 0.58f, 1f), 0, 2, 1, true, HazardType.Smoke);
             }
 
-            if (x == 7 && y == 2)
+            if (x == 9 && y == 3)
             {
-                return new TerrainProfile(TerrainType.Stone, new Color(0.70f, 0.20f, 0.12f, 1f), 0, 0, 2, true, HazardType.Fire);
+                return new TerrainProfile(TerrainType.Stone, new Color(0.86f, 0.30f, 0.12f, 1f), 0, 0, 2, true, HazardType.Fire);
             }
 
-            if (x == 6 && y == 4)
+            if (x == 11 && y == 5)
             {
-                return new TerrainProfile(TerrainType.Water, new Color(0.62f, 0.78f, 0.86f, 1f), 0, 0, 2, true, HazardType.Ice);
+                return new TerrainProfile(TerrainType.Water, new Color(0.64f, 0.82f, 0.92f, 1f), 0, 0, 2, true, HazardType.Ice);
             }
 
-            if (y == 3 && x >= 2 && x <= 7)
+            if (y == 5 && x >= 2 && x <= 11)
             {
-                bool bridge = x == 4 || x == 5;
+                bool bridge = x == 5 || x == 6;
                 return bridge
-                    ? new TerrainProfile(TerrainType.Bridge, new Color(0.49f, 0.31f, 0.16f, 1f), 0, 0, 1, true)
-                    : new TerrainProfile(TerrainType.Water, new Color(0.16f, 0.37f, 0.50f, 1f), 0, 0, 3, true, HazardType.Slippery);
+                    ? new TerrainProfile(TerrainType.Bridge, new Color(0.62f, 0.44f, 0.24f, 1f), 0, 0, 1, true)
+                    : new TerrainProfile(TerrainType.Water, new Color(0.40f, 0.62f, 0.72f, 1f), 0, 0, 3, true, HazardType.Slippery);
             }
 
-            if (x <= 2 && y >= 4)
+            if (x <= 3 && y >= 7)
             {
-                return new TerrainProfile(TerrainType.Bamboo, new Color(0.22f, 0.42f, 0.24f, 1f), 0, 1, 2, true);
+                return new TerrainProfile(TerrainType.Bamboo, new Color(0.40f, 0.58f, 0.34f, 1f), 0, 1, 2, true);
             }
 
-            if (x >= 8 && y <= 2)
+            if (x >= 12 && y <= 4)
             {
-                return new TerrainProfile(TerrainType.Roof, new Color(0.54f, 0.23f, 0.16f, 1f), 1, 0, 1, true);
+                return new TerrainProfile(TerrainType.Roof, new Color(0.68f, 0.34f, 0.23f, 1f), 1, 0, 1, true);
             }
 
-            if (x >= 9 && y >= 5)
+            if (x >= 14 && y >= 8)
             {
-                return new TerrainProfile(TerrainType.Cliff, new Color(0.33f, 0.30f, 0.26f, 1f), 1, 2, 2, true);
+                return new TerrainProfile(TerrainType.Cliff, new Color(0.46f, 0.40f, 0.32f, 1f), 1, 2, 2, true);
             }
 
-            return new TerrainProfile(TerrainType.Stone, new Color(0.47f, 0.43f, 0.34f, 1f), 0, 0, 1, true);
+            if (x >= 6 && x <= 9 && y >= 6 && y <= 8)
+            {
+                return new TerrainProfile(TerrainType.Stone, new Color(0.70f, 0.64f, 0.48f, 1f), 0, 1, 1, true);
+            }
+
+            return new TerrainProfile(TerrainType.Stone, new Color(0.66f, 0.60f, 0.46f, 1f), 0, 0, 1, true);
         }
 
         private void CenterCamera()
@@ -1738,7 +2272,7 @@ namespace JoseonMurimTactics
             camera.orthographic = true;
             camera.orthographicSize = Mathf.Max(4.15f, height * 0.48f);
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.08f, 0.075f, 0.065f, 1f);
+            camera.backgroundColor = new Color(0.74f, 0.80f, 0.76f, 1f);
         }
 
         private bool PointerOverHud(Vector3 screenPosition)
@@ -1749,7 +2283,7 @@ namespace JoseonMurimTactics
             Rect inspectPanel = new Rect(18f, 218f, 380f, 140f);
             Rect phaseBanner = new Rect((Screen.width * 0.5f) - 300f, 18f, 600f, 108f);
             Rect readyPanel = new Rect(Screen.width - 292f, 18f, 274f, 176f);
-            Rect commandPanel = new Rect(Screen.width - 232f, 206f, 214f, 342f);
+            Rect commandPanel = new Rect(Screen.width - 232f, 206f, 214f, 370f);
             Rect logPanel = new Rect(Screen.width - 348f, Screen.height - 380f, 330f, 222f);
             Rect forecastPanel = new Rect((Screen.width * 0.5f) - 390f, Screen.height - 322f, 780f, 160f);
             Rect bottomPanel = new Rect(18f, Screen.height - 142f, Screen.width - 36f, 124f);
@@ -1803,58 +2337,58 @@ namespace JoseonMurimTactics
             }
 
             panelStyle = new GUIStyle(GUI.skin.box);
-            panelStyle.normal.background = MakeTexture(new Color(0.08f, 0.07f, 0.055f, 0.84f));
+            panelStyle.normal.background = MakeTexture(new Color(0.91f, 0.86f, 0.74f, 0.90f));
             panelStyle.border = new RectOffset(6, 6, 6, 6);
 
             labelStyle = new GUIStyle(GUI.skin.label);
-            labelStyle.normal.textColor = new Color(0.96f, 0.88f, 0.72f, 1f);
+            labelStyle.normal.textColor = new Color(0.08f, 0.22f, 0.25f, 1f);
             labelStyle.fontSize = 16;
             labelStyle.fontStyle = FontStyle.Bold;
 
             titleStyle = new GUIStyle(GUI.skin.label);
-            titleStyle.normal.textColor = new Color(1f, 0.89f, 0.58f, 1f);
+            titleStyle.normal.textColor = new Color(0.06f, 0.25f, 0.30f, 1f);
             titleStyle.fontSize = 18;
             titleStyle.fontStyle = FontStyle.Bold;
 
             smallStyle = new GUIStyle(GUI.skin.label);
-            smallStyle.normal.textColor = new Color(0.82f, 0.78f, 0.68f, 1f);
+            smallStyle.normal.textColor = new Color(0.20f, 0.18f, 0.14f, 1f);
             smallStyle.fontSize = 13;
             smallStyle.wordWrap = true;
 
             logStyle = new GUIStyle(GUI.skin.label);
-            logStyle.normal.textColor = new Color(0.86f, 0.82f, 0.74f, 1f);
+            logStyle.normal.textColor = new Color(0.18f, 0.16f, 0.12f, 1f);
             logStyle.fontSize = 13;
             logStyle.wordWrap = true;
 
             phaseStyle = new GUIStyle(GUI.skin.box);
-            phaseStyle.normal.background = MakeTexture(new Color(0.06f, 0.08f, 0.09f, 0.88f));
+            phaseStyle.normal.background = MakeTexture(new Color(0.78f, 0.88f, 0.84f, 0.92f));
             phaseStyle.border = new RectOffset(8, 8, 8, 8);
 
             commandStyle = new GUIStyle(GUI.skin.button);
-            commandStyle.normal.textColor = new Color(0.92f, 0.88f, 0.78f, 1f);
+            commandStyle.normal.textColor = new Color(0.10f, 0.24f, 0.28f, 1f);
             commandStyle.fontSize = 16;
             commandStyle.fontStyle = FontStyle.Bold;
             commandStyle.alignment = TextAnchor.MiddleLeft;
             commandStyle.padding = new RectOffset(16, 8, 0, 0);
 
             commandActiveStyle = new GUIStyle(commandStyle);
-            commandActiveStyle.normal.textColor = new Color(1f, 0.88f, 0.42f, 1f);
-            commandActiveStyle.normal.background = MakeTexture(new Color(0.26f, 0.19f, 0.08f, 0.95f));
+            commandActiveStyle.normal.textColor = new Color(0.07f, 0.16f, 0.18f, 1f);
+            commandActiveStyle.normal.background = MakeTexture(new Color(0.86f, 0.72f, 0.34f, 0.95f));
 
             cardStyle = new GUIStyle(GUI.skin.box);
-            cardStyle.normal.background = MakeTexture(new Color(0.10f, 0.095f, 0.08f, 0.92f));
+            cardStyle.normal.background = MakeTexture(new Color(0.88f, 0.84f, 0.70f, 0.92f));
             cardStyle.border = new RectOffset(6, 6, 6, 6);
 
             cardActiveStyle = new GUIStyle(cardStyle);
-            cardActiveStyle.normal.background = MakeTexture(new Color(0.22f, 0.18f, 0.08f, 0.96f));
+            cardActiveStyle.normal.background = MakeTexture(new Color(0.76f, 0.86f, 0.80f, 0.96f));
 
             warningStyle = new GUIStyle(GUI.skin.label);
-            warningStyle.normal.textColor = new Color(1f, 0.55f, 0.42f, 1f);
+            warningStyle.normal.textColor = new Color(0.58f, 0.14f, 0.08f, 1f);
             warningStyle.fontSize = 13;
             warningStyle.fontStyle = FontStyle.Bold;
 
             tinyStyle = new GUIStyle(GUI.skin.label);
-            tinyStyle.normal.textColor = new Color(0.76f, 0.73f, 0.66f, 1f);
+            tinyStyle.normal.textColor = new Color(0.22f, 0.22f, 0.18f, 1f);
             tinyStyle.fontSize = 12;
             tinyStyle.wordWrap = true;
         }
@@ -1926,7 +2460,9 @@ namespace JoseonMurimTactics
         public int maxHp = 30;
         public int maxInner = 3;
         public int initiative = 10;
+        public int agility = 10;
         public int moveRange = 4;
+        public int attackMinRange = 1;
         public int attackRange = 1;
         public string basicAttackName = "Basic Strike";
         public int attackBonus = 5;
@@ -1934,9 +2470,11 @@ namespace JoseonMurimTactics
         public int damageMin = 5;
         public int damageMax = 9;
         public bool canCounter = true;
+        public bool followUpAllowed = true;
         public int counterRange = 1;
         public int counterInnerCost;
         public string specialName = "Special";
+        public int specialMinRange = 1;
         public int specialRange = 1;
         public int specialCost = 1;
         public int specialCooldown = 2;
@@ -1949,7 +2487,8 @@ namespace JoseonMurimTactics
     {
         Move,
         Attack,
-        Skill
+        Skill,
+        Terrain
     }
 
     public enum BattleSpecialEffect
@@ -1963,6 +2502,47 @@ namespace JoseonMurimTactics
         BreakGuard
     }
 
+    public enum TerrainObjectKind
+    {
+        IncenseBrazier,
+        OilLantern,
+        ShrineBell,
+        BridgeRope
+    }
+
+    public sealed class BattleTerrainObject : MonoBehaviour
+    {
+        public string displayName;
+        public TerrainObjectKind kind;
+        public Vector2Int cell;
+        public int hp;
+        public int maxHp;
+        public int interactRange = 1;
+        public bool used;
+        public bool destroyed;
+        public SpriteRenderer renderer;
+        public TextMesh label;
+
+        public void Refresh()
+        {
+            if (renderer != null)
+            {
+                float alpha = destroyed ? 0.15f : used ? 0.36f : 0.95f;
+                Color color = renderer.color;
+                color.a = alpha;
+                renderer.color = color;
+            }
+
+            if (label != null)
+            {
+                label.text = destroyed ? displayName + " (broken)" : used ? displayName + " (used)" : displayName;
+                label.color = destroyed
+                    ? new Color(0.65f, 0.60f, 0.52f, 0.55f)
+                    : new Color(0.96f, 0.88f, 0.58f, used ? 0.62f : 1f);
+            }
+        }
+    }
+
     public sealed class BattleTestTile : MonoBehaviour
     {
         public Vector2Int cell;
@@ -1972,6 +2552,7 @@ namespace JoseonMurimTactics
         public int moveCost = 1;
         public int coverBonus;
         public HazardType hazard;
+        public SpriteRenderer baseRenderer;
         public SpriteRenderer highlightRenderer;
 
         public void SetHighlight(Color color)
@@ -1979,6 +2560,14 @@ namespace JoseonMurimTactics
             if (highlightRenderer != null)
             {
                 highlightRenderer.color = color;
+            }
+        }
+
+        public void SetBaseColor(Color color)
+        {
+            if (baseRenderer != null)
+            {
+                baseRenderer.color = color;
             }
         }
     }
@@ -2066,6 +2655,7 @@ namespace JoseonMurimTactics
         public bool poisoned;
         public bool chilled;
         public bool marked;
+        public bool supported;
 
         public BattleTestUnit(BattleTestUnitDefinition definition, BattleTestUnitView view)
         {
@@ -2074,6 +2664,214 @@ namespace JoseonMurimTactics
             cell = definition.startCell;
             hp = definition.maxHp;
             inner = definition.maxInner;
+        }
+    }
+
+    public sealed class BattleSnapshot
+    {
+        public string activeUnitId;
+        public string reason;
+        public BattleCommandMode commandMode;
+        public UnitSnapshot[] units;
+        public TileSnapshot[] tiles;
+        public TerrainObjectSnapshot[] terrainObjects;
+
+        public static BattleSnapshot Capture(
+            IReadOnlyList<BattleTestUnit> units,
+            BattleTestTile[,] tiles,
+            IReadOnlyList<BattleTerrainObject> terrainObjects,
+            BattleTestUnit activeUnit,
+            BattleCommandMode commandMode,
+            string reason)
+        {
+            BattleSnapshot snapshot = new BattleSnapshot
+            {
+                activeUnitId = activeUnit != null ? activeUnit.definition.id : string.Empty,
+                commandMode = commandMode,
+                reason = reason,
+                units = new UnitSnapshot[units.Count],
+                tiles = CaptureTiles(tiles),
+                terrainObjects = new TerrainObjectSnapshot[terrainObjects.Count]
+            };
+
+            for (int i = 0; i < units.Count; i++)
+            {
+                snapshot.units[i] = UnitSnapshot.Capture(units[i]);
+            }
+
+            for (int i = 0; i < terrainObjects.Count; i++)
+            {
+                snapshot.terrainObjects[i] = TerrainObjectSnapshot.Capture(terrainObjects[i]);
+            }
+
+            return snapshot;
+        }
+
+        public void Restore(
+            IReadOnlyList<BattleTestUnit> targetUnits,
+            BattleTestTile[,] targetTiles,
+            IReadOnlyList<BattleTerrainObject> targetObjects,
+            System.Func<TerrainType, HazardType, Color> hazardColor)
+        {
+            for (int i = 0; i < units.Length && i < targetUnits.Count; i++)
+            {
+                units[i].Restore(targetUnits[i]);
+            }
+
+            RestoreTiles(targetTiles, hazardColor);
+
+            for (int i = 0; i < terrainObjects.Length && i < targetObjects.Count; i++)
+            {
+                terrainObjects[i].Restore(targetObjects[i]);
+            }
+        }
+
+        private static TileSnapshot[] CaptureTiles(BattleTestTile[,] tiles)
+        {
+            int width = tiles.GetLength(0);
+            int height = tiles.GetLength(1);
+            TileSnapshot[] result = new TileSnapshot[width * height];
+            int index = 0;
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    result[index++] = TileSnapshot.Capture(tiles[x, y]);
+                }
+            }
+
+            return result;
+        }
+
+        private void RestoreTiles(BattleTestTile[,] targetTiles, System.Func<TerrainType, HazardType, Color> hazardColor)
+        {
+            int width = targetTiles.GetLength(0);
+            int height = targetTiles.GetLength(1);
+            int index = 0;
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width && index < tiles.Length; x++)
+                {
+                    tiles[index++].Restore(targetTiles[x, y], hazardColor);
+                }
+            }
+        }
+    }
+
+    public struct UnitSnapshot
+    {
+        public Vector2Int cell;
+        public Vector3 worldPosition;
+        public int hp;
+        public int inner;
+        public int specialCooldownLeft;
+        public int breakGauge;
+        public bool moved;
+        public bool acted;
+        public bool turnEnded;
+        public bool defeated;
+        public bool guarded;
+        public bool counterSpent;
+        public bool broken;
+        public bool disarmed;
+        public bool prone;
+        public bool poisoned;
+        public bool chilled;
+        public bool marked;
+        public bool supported;
+
+        public static UnitSnapshot Capture(BattleTestUnit unit)
+        {
+            return new UnitSnapshot
+            {
+                cell = unit.cell,
+                worldPosition = unit.view.transform.position,
+                hp = unit.hp,
+                inner = unit.inner,
+                specialCooldownLeft = unit.specialCooldownLeft,
+                breakGauge = unit.breakGauge,
+                moved = unit.moved,
+                acted = unit.acted,
+                turnEnded = unit.turnEnded,
+                defeated = unit.defeated,
+                guarded = unit.guarded,
+                counterSpent = unit.counterSpent,
+                broken = unit.broken,
+                disarmed = unit.disarmed,
+                prone = unit.prone,
+                poisoned = unit.poisoned,
+                chilled = unit.chilled,
+                marked = unit.marked,
+                supported = unit.supported
+            };
+        }
+
+        public void Restore(BattleTestUnit unit)
+        {
+            unit.cell = cell;
+            unit.hp = hp;
+            unit.inner = inner;
+            unit.specialCooldownLeft = specialCooldownLeft;
+            unit.breakGauge = breakGauge;
+            unit.moved = moved;
+            unit.acted = acted;
+            unit.turnEnded = turnEnded;
+            unit.defeated = defeated;
+            unit.guarded = guarded;
+            unit.counterSpent = counterSpent;
+            unit.broken = broken;
+            unit.disarmed = disarmed;
+            unit.prone = prone;
+            unit.poisoned = poisoned;
+            unit.chilled = chilled;
+            unit.marked = marked;
+            unit.supported = supported;
+            unit.view.transform.position = worldPosition;
+            unit.view.SetDefeated(defeated);
+        }
+    }
+
+    public struct TileSnapshot
+    {
+        public HazardType hazard;
+
+        public static TileSnapshot Capture(BattleTestTile tile)
+        {
+            return new TileSnapshot
+            {
+                hazard = tile.hazard
+            };
+        }
+
+        public void Restore(BattleTestTile tile, System.Func<TerrainType, HazardType, Color> hazardColor)
+        {
+            tile.hazard = hazard;
+            tile.SetBaseColor(hazardColor(tile.terrain, hazard));
+        }
+    }
+
+    public struct TerrainObjectSnapshot
+    {
+        public int hp;
+        public bool used;
+        public bool destroyed;
+
+        public static TerrainObjectSnapshot Capture(BattleTerrainObject terrainObject)
+        {
+            return new TerrainObjectSnapshot
+            {
+                hp = terrainObject.hp,
+                used = terrainObject.used,
+                destroyed = terrainObject.destroyed
+            };
+        }
+
+        public void Restore(BattleTerrainObject terrainObject)
+        {
+            terrainObject.hp = hp;
+            terrainObject.used = used;
+            terrainObject.destroyed = destroyed;
+            terrainObject.Refresh();
         }
     }
 }

@@ -50,22 +50,24 @@ namespace JoseonMurimTactics.Editor
         {
             GameObject controllerObject = new GameObject("Battle Test Controller");
             BattleTestController controller = controllerObject.AddComponent<BattleTestController>();
-            controller.width = 12;
-            controller.height = 8;
+            controller.width = 18;
+            controller.height = 12;
             controller.tileWidth = 1.16f;
             controller.tileHeight = 0.62f;
             controller.unitDefinitions = new[]
             {
-                Unit("park_sungjun", "Park Sungjun", Faction.Ally, "park_sungjun_visual.asset", new Vector2Int(1, 1), SkillStyle.Sword, 38, 4, 4, 1, "Sagunjageom", 6, 15, 6, 10, true, 1, 0, "Baekdu Flash", 1, 1, 2, 6, 2, BattleSpecialEffect.Strike),
-                Unit("yun_seohwa", "Yun Seohwa", Faction.Ally, "yun_seohwa_visual.asset", new Vector2Int(2, 2), SkillStyle.Sword, 30, 4, 5, 1, "Moon Reflection", 7, 14, 5, 9, true, 1, 0, "Read Sword Path", 1, 1, 2, 5, 3, BattleSpecialEffect.BreakGuard),
-                Unit("baek_ryeon", "Baek Ryeon", Faction.Ally, "baek_ryeon_visual.asset", new Vector2Int(1, 4), SkillStyle.Ice, 28, 5, 4, 2, "Ice Palm", 6, 13, 4, 8, true, 2, 1, "Frost Seal", 3, 1, 2, 4, 2, BattleSpecialEffect.Freeze),
-                Unit("han_biyeon", "Han Biyeon", Faction.Ally, "han_biyeon_visual.asset", new Vector2Int(2, 5), SkillStyle.Poison, 27, 4, 5, 3, "Hidden Needle", 6, 14, 4, 8, false, 1, 0, "Poison Needle", 3, 1, 2, 3, 2, BattleSpecialEffect.Poison),
-                Unit("do_arin", "Do Arin", Faction.Ally, "do_arin_visual.asset", new Vector2Int(2, 6), SkillStyle.Blade, 36, 3, 4, 1, "Mountain Palm", 6, 16, 6, 11, true, 1, 0, "Iron Shoulder", 1, 1, 2, 6, 2, BattleSpecialEffect.BreakGuard),
-                Unit("central_swordsman_a", "Central Swordsman", Faction.Enemy, "strategist_visual.asset", new Vector2Int(8, 1), SkillStyle.Sword, 28, 3, 4, 1, "Orthodox Sword", 5, 14, 4, 8, true, 1, 0, "Guard Cut", 1, 1, 2, 3, 1, BattleSpecialEffect.Strike),
-                Unit("central_swordsman_b", "Central Swordsman", Faction.Enemy, "park_sungjun_visual.asset", new Vector2Int(9, 2), SkillStyle.Sword, 28, 3, 4, 1, "Orthodox Sword", 5, 14, 4, 8, true, 1, 0, "Guard Cut", 1, 1, 2, 3, 1, BattleSpecialEffect.Strike),
-                Unit("qingcheng_spearman", "Qingcheng Spearman", Faction.Enemy, "yun_seohwa_visual.asset", new Vector2Int(8, 5), SkillStyle.Spear, 32, 3, 4, 2, "Long Spear", 6, 14, 5, 9, true, 2, 0, "Spear Lock", 2, 1, 2, 4, 2, BattleSpecialEffect.BreakGuard),
-                Unit("sichuan_poisoner", "Sichuan Poisoner", Faction.Enemy, "han_biyeon_visual.asset", new Vector2Int(9, 6), SkillStyle.Poison, 24, 4, 4, 3, "Poison Dart", 5, 13, 3, 7, false, 1, 0, "Miasma Needle", 3, 1, 2, 3, 2, BattleSpecialEffect.Poison),
-                Unit("central_inspector", "Central Inspector", Faction.Enemy, "strategist_visual.asset", new Vector2Int(10, 5), SkillStyle.Mind, 34, 4, 4, 3, "Judgment Seal", 6, 15, 5, 9, true, 2, 1, "Mandate Seal", 4, 1, 2, 0, 0, BattleSpecialEffect.Mark)
+                Unit("park_sungjun", "Park Sungjun", Faction.Ally, "park_sungjun_visual.asset", new Vector2Int(2, 2), SkillStyle.Sword, 42, 5, 4, 1, "Sagunjageom", 7, 15, 7, 11, true, 1, 0, "Baekdu Flash", 1, 1, 2, 7, 2, BattleSpecialEffect.Strike),
+                Unit("yun_seohwa", "Yun Seohwa", Faction.Ally, "yun_seohwa_visual.asset", new Vector2Int(3, 3), SkillStyle.Sword, 32, 4, 5, 1, "Moon Reflection", 8, 14, 5, 9, true, 1, 0, "Read Sword Path", 1, 1, 2, 5, 3, BattleSpecialEffect.BreakGuard),
+                Unit("baek_ryeon", "Baek Ryeon", Faction.Ally, "baek_ryeon_visual.asset", new Vector2Int(2, 6), SkillStyle.Ice, 30, 5, 4, 2, "Ice Palm", 6, 13, 4, 8, true, 2, 1, "Frost Seal", 3, 1, 2, 4, 2, BattleSpecialEffect.Freeze),
+                Unit("han_biyeon", "Han Biyeon", Faction.Ally, "han_biyeon_visual.asset", new Vector2Int(3, 8), SkillStyle.Poison, 29, 4, 5, 3, "Hidden Needle", 6, 14, 4, 8, false, 1, 0, "Poison Needle", 3, 1, 2, 3, 2, BattleSpecialEffect.Poison),
+                Unit("do_arin", "Do Arin", Faction.Ally, "do_arin_visual.asset", new Vector2Int(4, 7), SkillStyle.Blade, 38, 3, 4, 1, "Mountain Palm", 6, 16, 6, 11, true, 1, 0, "Iron Shoulder", 1, 1, 2, 6, 2, BattleSpecialEffect.BreakGuard),
+                Unit("central_swordsman_a", "Central Swordsman", Faction.Enemy, "strategist_visual.asset", new Vector2Int(12, 3), SkillStyle.Sword, 30, 3, 4, 1, "Orthodox Sword", 5, 14, 4, 8, true, 1, 0, "Guard Cut", 1, 1, 2, 3, 1, BattleSpecialEffect.Strike),
+                Unit("central_swordsman_b", "Central Swordsman", Faction.Enemy, "park_sungjun_visual.asset", new Vector2Int(13, 5), SkillStyle.Sword, 30, 3, 4, 1, "Orthodox Sword", 5, 14, 4, 8, true, 1, 0, "Guard Cut", 1, 1, 2, 3, 1, BattleSpecialEffect.Strike),
+                Unit("qingcheng_spearman", "Qingcheng Spearman", Faction.Enemy, "yun_seohwa_visual.asset", new Vector2Int(12, 8), SkillStyle.Spear, 34, 3, 4, 2, "Long Spear", 6, 14, 5, 9, true, 2, 0, "Spear Lock", 2, 1, 2, 4, 2, BattleSpecialEffect.BreakGuard),
+                Unit("sichuan_poisoner", "Sichuan Poisoner", Faction.Enemy, "han_biyeon_visual.asset", new Vector2Int(14, 9), SkillStyle.Poison, 26, 4, 4, 3, "Poison Dart", 5, 13, 3, 7, false, 1, 0, "Miasma Needle", 3, 1, 2, 3, 2, BattleSpecialEffect.Poison),
+                Unit("law_record_keeper", "Law Record Keeper", Faction.Enemy, "baek_ryeon_visual.asset", new Vector2Int(15, 4), SkillStyle.Mind, 24, 4, 4, 3, "Edict Brush", 5, 13, 3, 6, false, 1, 0, "Confucian Seal", 4, 1, 2, 0, 0, BattleSpecialEffect.Mark),
+                Unit("bodyguard_expert", "Bodyguard Expert", Faction.Enemy, "do_arin_visual.asset", new Vector2Int(15, 8), SkillStyle.Blade, 36, 3, 4, 1, "Heavy Blade", 6, 16, 6, 10, true, 1, 0, "Shield Bash", 1, 1, 2, 5, 2, BattleSpecialEffect.BreakGuard),
+                Unit("central_inspector", "Central Inspector", Faction.Enemy, "strategist_visual.asset", new Vector2Int(16, 6), SkillStyle.Mind, 38, 4, 4, 3, "Judgment Seal", 6, 15, 5, 9, true, 2, 1, "Mandate Seal", 4, 1, 2, 0, 0, BattleSpecialEffect.Mark)
             };
         }
 
@@ -106,7 +108,9 @@ namespace JoseonMurimTactics.Editor
                 style = style,
                 maxHp = maxHp,
                 maxInner = maxInner,
+                agility = 8 + moveRange + attackBonus - (attackRange > 1 ? 1 : 0),
                 moveRange = moveRange,
+                attackMinRange = 1,
                 attackRange = attackRange,
                 basicAttackName = basicAttackName,
                 attackBonus = attackBonus,
@@ -117,6 +121,7 @@ namespace JoseonMurimTactics.Editor
                 counterRange = counterRange,
                 counterInnerCost = counterInnerCost,
                 specialName = specialName,
+                specialMinRange = 1,
                 specialRange = specialRange,
                 specialCost = specialCost,
                 specialCooldown = specialCooldown,

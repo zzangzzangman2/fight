@@ -54,6 +54,13 @@ namespace JoseonMurimTactics
         public readonly bool counterPossible;
         public readonly int counterDamageMin;
         public readonly int counterDamageMax;
+        public readonly bool followUpPossible;
+        public readonly int followUpDamageMin;
+        public readonly int followUpDamageMax;
+        public readonly int projectedTargetHp;
+        public readonly int moraleChange;
+        public readonly string counterReason;
+        public readonly string modifierSummary;
         public readonly string reason;
 
         public BattleForecast(
@@ -72,6 +79,13 @@ namespace JoseonMurimTactics
             bool counterPossible,
             int counterDamageMin,
             int counterDamageMax,
+            bool followUpPossible,
+            int followUpDamageMin,
+            int followUpDamageMax,
+            int projectedTargetHp,
+            int moraleChange,
+            string counterReason,
+            string modifierSummary,
             string reason)
         {
             this.valid = valid;
@@ -89,6 +103,13 @@ namespace JoseonMurimTactics
             this.counterPossible = counterPossible;
             this.counterDamageMin = counterDamageMin;
             this.counterDamageMax = counterDamageMax;
+            this.followUpPossible = followUpPossible;
+            this.followUpDamageMin = followUpDamageMin;
+            this.followUpDamageMax = followUpDamageMax;
+            this.projectedTargetHp = projectedTargetHp;
+            this.moraleChange = moraleChange;
+            this.counterReason = counterReason;
+            this.modifierSummary = modifierSummary;
             this.reason = reason;
         }
     }
@@ -213,37 +234,52 @@ namespace JoseonMurimTactics
     {
         public StyleAdvantage Resolve(SkillStyle attacker, SkillStyle defender)
         {
-            if (attacker == SkillStyle.Sword && defender == SkillStyle.Blade)
+            if (IsAdvantage(attacker, defender))
             {
                 return StyleAdvantage.Advantage;
             }
 
-            if (attacker == SkillStyle.Blade && defender == SkillStyle.Spear)
-            {
-                return StyleAdvantage.Advantage;
-            }
-
-            if (attacker == SkillStyle.Spear && defender == SkillStyle.Sword)
-            {
-                return StyleAdvantage.Advantage;
-            }
-
-            if (defender == SkillStyle.Sword && attacker == SkillStyle.Blade)
-            {
-                return StyleAdvantage.Disadvantage;
-            }
-
-            if (defender == SkillStyle.Blade && attacker == SkillStyle.Spear)
-            {
-                return StyleAdvantage.Disadvantage;
-            }
-
-            if (defender == SkillStyle.Spear && attacker == SkillStyle.Sword)
+            if (IsAdvantage(defender, attacker))
             {
                 return StyleAdvantage.Disadvantage;
             }
 
             return StyleAdvantage.Neutral;
+        }
+
+        private bool IsAdvantage(SkillStyle attacker, SkillStyle defender)
+        {
+            if (attacker == SkillStyle.Sword && defender == SkillStyle.Blade)
+            {
+                return true;
+            }
+
+            if (attacker == SkillStyle.Blade && defender == SkillStyle.Spear)
+            {
+                return true;
+            }
+
+            if (attacker == SkillStyle.Spear && defender == SkillStyle.Sword)
+            {
+                return true;
+            }
+
+            if (attacker == SkillStyle.Palm && (defender == SkillStyle.HiddenWeapon || defender == SkillStyle.Poison))
+            {
+                return true;
+            }
+
+            if (attacker == SkillStyle.HiddenWeapon && (defender == SkillStyle.Ice || defender == SkillStyle.Mind))
+            {
+                return true;
+            }
+
+            if (attacker == SkillStyle.Poison && defender == SkillStyle.Palm)
+            {
+                return true;
+            }
+
+            return attacker == SkillStyle.Mind && defender == SkillStyle.Poison;
         }
 
         public int AttackModifier(SkillStyle attacker, SkillStyle defender)
@@ -309,31 +345,113 @@ namespace JoseonMurimTactics
 
             return defender.inner >= defender.definition.counterInnerCost;
         }
+
+        public string BlockReason(BattleTestUnit defender, BattleTestUnit attacker, int distance)
+        {
+            if (defender == null || attacker == null)
+            {
+                return "No defender";
+            }
+
+            if (defender.defeated)
+            {
+                return "Target down";
+            }
+
+            if (!defender.definition.canCounter)
+            {
+                return "No counter skill";
+            }
+
+            if (defender.broken)
+            {
+                return "Broken";
+            }
+
+            if (defender.disarmed)
+            {
+                return "Disarmed";
+            }
+
+            if (defender.prone)
+            {
+                return "Prone";
+            }
+
+            if (defender.counterSpent)
+            {
+                return "Counter spent";
+            }
+
+            if (distance > defender.definition.counterRange)
+            {
+                return "Out of range";
+            }
+
+            if (defender.inner < defender.definition.counterInnerCost)
+            {
+                return "Inner force low";
+            }
+
+            return "Blocked";
+        }
+    }
+
+    public sealed class FollowUpResolver
+    {
+        public bool CanFollowUp(BattleTestUnit attacker, BattleTestUnit target, bool special)
+        {
+            if (attacker == null || target == null || attacker.defeated || target.defeated || special)
+            {
+                return false;
+            }
+
+            if (!attacker.definition.followUpAllowed || attacker.chilled || attacker.prone || attacker.broken)
+            {
+                return false;
+            }
+
+            int agilityGap = attacker.definition.agility - target.definition.agility;
+            if (attacker.supported)
+            {
+                agilityGap += 1;
+            }
+
+            if (target.chilled || target.broken)
+            {
+                agilityGap += 2;
+            }
+
+            return agilityGap >= 5 && attacker.inner > 0;
+        }
     }
 
     public sealed class BattleForecastService
     {
         private readonly BreakResolver breakResolver;
         private readonly CounterattackService counterattackService;
+        private readonly FollowUpResolver followUpResolver;
 
-        public BattleForecastService(BreakResolver breakResolver, CounterattackService counterattackService)
+        public BattleForecastService(BreakResolver breakResolver, CounterattackService counterattackService, FollowUpResolver followUpResolver)
         {
             this.breakResolver = breakResolver;
             this.counterattackService = counterattackService;
+            this.followUpResolver = followUpResolver;
         }
 
         public BattleForecast Create(BattleTestUnit actor, BattleTestUnit target, BattleTestTile from, BattleTestTile to, bool special)
         {
             if (actor == null || target == null || actor.defeated || target.defeated)
             {
-                return new BattleForecast(false, string.Empty, string.Empty, string.Empty, 0, 0, 0, 0, 0, 0, StyleAdvantage.Neutral, 0, false, 0, 0, "No valid target");
+                return InvalidForecast("No valid target");
             }
 
             int distance = Mathf.Abs(actor.cell.x - target.cell.x) + Mathf.Abs(actor.cell.y - target.cell.y);
             int range = special ? actor.definition.specialRange : actor.definition.attackRange;
-            if (distance > range)
+            int minRange = special ? actor.definition.specialMinRange : actor.definition.attackMinRange;
+            if (distance > range || distance < minRange)
             {
-                return new BattleForecast(false, actor.definition.displayName, target.definition.displayName, ActionName(actor, special), 0, 0, 0, 0, 0, 0, StyleAdvantage.Neutral, 0, false, 0, 0, "Out of range");
+                return new BattleForecast(false, actor.definition.displayName, target.definition.displayName, ActionName(actor, special), 0, 0, 0, 0, 0, 0, StyleAdvantage.Neutral, 0, false, 0, 0, false, 0, 0, target.hp, 0, string.Empty, string.Empty, "Out of range");
             }
 
             int terrainBonus = from != null && to != null && from.elevation > to.elevation ? 2 : 0;
@@ -341,8 +459,10 @@ namespace JoseonMurimTactics
             {
                 terrainBonus += 2;
             }
+
+            int supportBonus = SupportBonus(actor);
             int styleModifier = breakResolver.AttackModifier(actor.definition.style, target.definition.style);
-            int attackBonus = actor.definition.attackBonus + terrainBonus + styleModifier + (special ? actor.definition.specialAttackBonus : 0);
+            int attackBonus = actor.definition.attackBonus + terrainBonus + styleModifier + supportBonus + (special ? actor.definition.specialAttackBonus : 0);
             int defense = DefenseValue(target, to);
             int required = Mathf.Clamp(defense - attackBonus, 2, 20);
             int hitPercent = Mathf.Clamp((21 - required) * 5, 5, 95);
@@ -350,6 +470,12 @@ namespace JoseonMurimTactics
             int damageMax = actor.definition.damageMax + terrainBonus + (special ? actor.definition.specialPower : 0);
             int breakGain = breakResolver.BreakGain(actor.definition.style, target.definition.style, true);
             bool canCounter = counterattackService.CanCounter(target, actor, distance);
+            bool followUp = followUpResolver != null && followUpResolver.CanFollowUp(actor, target, special);
+            int projectedDamage = damageMax + (followUp ? damageMax : 0);
+            int projectedTargetHp = Mathf.Max(0, target.hp - projectedDamage);
+            int moraleChange = breakResolver.Resolve(actor.definition.style, target.definition.style) == StyleAdvantage.Advantage ? 4 : 2;
+            string counterReason = canCounter ? "Ready" : counterattackService.BlockReason(target, actor, distance);
+            string modifierSummary = BuildModifierSummary(styleModifier, terrainBonus, supportBonus, to);
 
             return new BattleForecast(
                 true,
@@ -367,13 +493,67 @@ namespace JoseonMurimTactics
                 canCounter,
                 target.definition.damageMin,
                 target.definition.damageMax,
+                followUp,
+                followUp ? Mathf.Max(1, damageMin) : 0,
+                followUp ? Mathf.Max(1, damageMax) : 0,
+                projectedTargetHp,
+                moraleChange,
+                counterReason,
+                modifierSummary,
                 string.Empty);
+        }
+
+        private BattleForecast InvalidForecast(string reason)
+        {
+            return new BattleForecast(false, string.Empty, string.Empty, string.Empty, 0, 0, 0, 0, 0, 0, StyleAdvantage.Neutral, 0, false, 0, 0, false, 0, 0, 0, 0, string.Empty, string.Empty, reason);
         }
 
         private string ActionName(BattleTestUnit actor, bool special)
         {
             return special ? actor.definition.specialName : actor.definition.basicAttackName;
         }
+
+        private int SupportBonus(BattleTestUnit actor)
+        {
+            return actor != null && actor.supported ? 1 : 0;
+        }
+
+        private string BuildModifierSummary(int styleModifier, int terrainBonus, int supportBonus, BattleTestTile targetTile)
+        {
+            List<string> parts = new List<string>();
+            if (styleModifier != 0)
+            {
+                parts.Add("style " + Signed(styleModifier));
+            }
+
+            if (terrainBonus != 0)
+            {
+                parts.Add("terrain " + Signed(terrainBonus));
+            }
+
+            if (supportBonus != 0)
+            {
+                parts.Add("support " + Signed(supportBonus));
+            }
+
+            if (targetTile != null && targetTile.coverBonus != 0)
+            {
+                parts.Add("cover +" + targetTile.coverBonus);
+            }
+
+            if (targetTile != null && targetTile.hazard != HazardType.None)
+            {
+                parts.Add(targetTile.hazard.ToString());
+            }
+
+            return parts.Count == 0 ? "no extra modifiers" : string.Join(", ", parts);
+        }
+
+        private string Signed(int value)
+        {
+            return value >= 0 ? "+" + value : value.ToString();
+        }
+
 
         private int DefenseValue(BattleTestUnit unit, BattleTestTile tile)
         {
@@ -543,26 +723,28 @@ namespace JoseonMurimTactics
                 return;
             }
 
-            Rect actor = new Rect(rect.x + 18f, rect.y + 42f, 250f, 96f);
-            Rect center = new Rect(rect.x + 284f, rect.y + 42f, 212f, 96f);
-            Rect target = new Rect(rect.x + rect.width - 268f, rect.y + 42f, 250f, 96f);
+            Rect actor = new Rect(rect.x + 18f, rect.y + 42f, 250f, 104f);
+            Rect center = new Rect(rect.x + 284f, rect.y + 42f, 212f, 104f);
+            Rect target = new Rect(rect.x + rect.width - 268f, rect.y + 42f, 250f, 104f);
 
-            Fill(actor, new Color(0.07f, 0.18f, 0.30f, 0.92f));
-            Fill(target, new Color(0.30f, 0.08f, 0.08f, 0.92f));
-            Fill(center, new Color(0.10f, 0.085f, 0.07f, 0.92f));
+            Fill(actor, new Color(0.78f, 0.88f, 0.86f, 0.94f));
+            Fill(target, new Color(0.88f, 0.78f, 0.72f, 0.94f));
+            Fill(center, new Color(0.92f, 0.88f, 0.76f, 0.96f));
 
             GUI.Label(new Rect(actor.x + 12f, actor.y + 10f, actor.width - 24f, 22f), forecast.actorName, smallStyle);
             GUI.Label(new Rect(actor.x + 12f, actor.y + 36f, actor.width - 24f, 20f), forecast.actionName, smallStyle);
             GUI.Label(new Rect(actor.x + 12f, actor.y + 60f, actor.width - 24f, 20f), $"Damage {forecast.damageMin}-{forecast.damageMax}", smallStyle);
+            GUI.Label(new Rect(actor.x + 12f, actor.y + 82f, actor.width - 24f, 18f), $"Morale on hit +{forecast.moraleChange}", smallStyle);
 
             GUI.Label(new Rect(center.x + 12f, center.y + 8f, center.width - 24f, 20f), $"Hit d20 {forecast.requiredD20}+  ({forecast.hitPercent}%)", smallStyle);
             GUI.Label(new Rect(center.x + 12f, center.y + 32f, center.width - 24f, 20f), $"Crit {forecast.critPercent}%   Break +{forecast.breakGain}", smallStyle);
             GUI.Label(new Rect(center.x + 12f, center.y + 56f, center.width - 24f, 20f), $"Matchup {forecast.styleAdvantage}", smallStyle);
-            GUI.Label(new Rect(center.x + 12f, center.y + 78f, center.width - 24f, 18f), $"Terrain +{forecast.terrainBonus}", smallStyle);
+            GUI.Label(new Rect(center.x + 12f, center.y + 78f, center.width - 24f, 18f), $"Mods: {forecast.modifierSummary}", smallStyle);
 
             GUI.Label(new Rect(target.x + 12f, target.y + 10f, target.width - 24f, 22f), forecast.targetName, smallStyle);
-            GUI.Label(new Rect(target.x + 12f, target.y + 36f, target.width - 24f, 20f), forecast.counterPossible ? "Counter possible" : "No counter", smallStyle);
-            GUI.Label(new Rect(target.x + 12f, target.y + 60f, target.width - 24f, 20f), forecast.counterPossible ? $"Counter damage {forecast.counterDamageMin}-{forecast.counterDamageMax}" : "Broken/range/resource blocks it", smallStyle);
+            GUI.Label(new Rect(target.x + 12f, target.y + 34f, target.width - 24f, 18f), forecast.counterPossible ? $"Counter {forecast.counterDamageMin}-{forecast.counterDamageMax}" : $"No counter: {forecast.counterReason}", smallStyle);
+            GUI.Label(new Rect(target.x + 12f, target.y + 56f, target.width - 24f, 18f), forecast.followUpPossible ? $"Follow-up {forecast.followUpDamageMin}-{forecast.followUpDamageMax}" : "Follow-up: no", smallStyle);
+            GUI.Label(new Rect(target.x + 12f, target.y + 78f, target.width - 24f, 18f), $"Expected HP -> {forecast.projectedTargetHp}", smallStyle);
         }
 
         private static void Fill(Rect rect, Color color)
