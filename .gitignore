@@ -17,6 +17,9 @@ UnityScaffold/*.svd
 UnityScaffold/*.pdb
 UnityScaffold/*.mdb
 UnityScaffold/unity-compile.log
+UnityScaffold/Assets/Resources.meta
+UnityScaffold/Assets/Resources/PerformanceTestRunInfo.json*
+UnityScaffold/Assets/Resources/PerformanceTestRunSettings.json*
 
 # OS/editor
 .DS_Store

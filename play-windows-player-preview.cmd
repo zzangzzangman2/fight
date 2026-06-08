@@ -1,0 +1,78 @@
+@echo off
+setlocal
+
+set "PROJECT_DIR=%~dp0UnityScaffold"
+set "UNITY_EXE=C:\Program Files\Unity\Hub\Editor\6000.3.0f1\Editor\Unity.exe"
+set "PLAYER_EXE=%PROJECT_DIR%\Builds\CharacterAssetPreview\JoseonMurimTacticsPreview.exe"
+set "PREP_LOG=%TEMP%\joseon-murim-player-prep.log"
+set "BUILD_LOG=%TEMP%\joseon-murim-player-build.log"
+set "BUILD_ONLY="
+
+if /I "%~1"=="--build-only" (
+  set "BUILD_ONLY=1"
+)
+
+if not exist "%UNITY_EXE%" (
+  for /f "delims=" %%D in ('dir /b /ad "%ProgramFiles%\Unity\Hub\Editor" 2^>nul ^| sort /r') do (
+    if exist "%ProgramFiles%\Unity\Hub\Editor\%%D\Editor\Unity.exe" (
+      set "UNITY_EXE=%ProgramFiles%\Unity\Hub\Editor\%%D\Editor\Unity.exe"
+      goto :found_unity
+    )
+  )
+)
+
+:found_unity
+if not exist "%UNITY_EXE%" (
+  echo Unity.exe was not found.
+  echo Install Unity Editor with Windows Build Support, or edit UNITY_EXE in this cmd.
+  pause
+  exit /b 1
+)
+
+if not exist "%PROJECT_DIR%\Assets" (
+  echo Unity project was not found: %PROJECT_DIR%
+  pause
+  exit /b 1
+)
+
+echo.
+echo [1/3] Preparing Unity project in batchmode...
+"%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_DIR%" -logFile "%PREP_LOG%"
+if errorlevel 1 (
+  echo Unity project preparation failed.
+  echo Log: %PREP_LOG%
+  pause
+  exit /b 1
+)
+
+echo.
+echo [2/3] Building standalone Windows player...
+"%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_DIR%" -executeMethod JoseonMurimTactics.Editor.CharacterPlayerBuild.BuildWindowsPreview -logFile "%BUILD_LOG%"
+if errorlevel 1 (
+  echo Windows player build failed.
+  echo Log: %BUILD_LOG%
+  pause
+  exit /b 1
+)
+
+if not exist "%PLAYER_EXE%" (
+  echo Player executable was not created:
+  echo %PLAYER_EXE%
+  echo Log: %BUILD_LOG%
+  pause
+  exit /b 1
+)
+
+if defined BUILD_ONLY (
+  echo.
+  echo Build complete:
+  echo %PLAYER_EXE%
+  endlocal
+  exit /b 0
+)
+
+echo.
+echo [3/3] Launching standalone player...
+start "" "%PLAYER_EXE%"
+
+endlocal
