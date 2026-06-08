@@ -304,6 +304,7 @@ function createUnit(template) {
   unit.statuses = [];
   unit.cooldowns = {};
   unit.uses = {};
+  unit.moved = false;
   unit.acted = false;
   unit.defeated = false;
   unit.surrendered = false;
@@ -325,6 +326,7 @@ function startPlayerPhase() {
   state.preMove = null;
   state.units.filter((unit) => unit.faction === "ally" && !unit.defeated && !unit.surrendered).forEach((unit) => {
     unit.acted = false;
+    unit.moved = false;
     tickUnitStart(unit);
   });
   logEvent("Phase", `${state.round}라운드 아군 페이즈 시작. 원하는 아군을 클릭해 이동/공격하세요.`, "phase");
@@ -518,9 +520,9 @@ function selectUnit(unitId) {
   state.selectedUnitId = unit.id;
   state.selectedSkillId = null;
   state.selectedTile = getTile(unit.position.x, unit.position.y);
-  state.mode = "move";
+  state.mode = unit.moved ? "command" : "move";
   state.preMove = null;
-  state.reachable = computeReachable(unit, effectiveMovement(unit));
+  state.reachable = unit.moved ? new Map() : computeReachable(unit, effectiveMovement(unit));
   state.attackable = computeAttackableFrom(unit.position, unit);
   state.interactable = computeInteractable(unit);
   logEvent("Select", `${unit.name} 선택. 이동 가능한 칸이 파랗게 표시됩니다.`, "system");
@@ -535,6 +537,13 @@ function inspectTile(tile) {
 function moveSelectedUnit(tile) {
   const unit = selectedUnit();
   if (!unit || unit.acted) return;
+  if (unit.moved) {
+    logEvent("Move", "이미 이동한 유닛입니다. 공격/지형/대기만 선택할 수 있습니다.", "miss");
+    state.mode = "command";
+    state.reachable = new Map();
+    render();
+    return;
+  }
   const key = tileKey(tile);
   if (!state.reachable.has(key)) {
     logEvent("Move", "이동 범위 밖입니다.", "miss");
@@ -548,6 +557,7 @@ function moveSelectedUnit(tile) {
   }
   state.preMove = { x: unit.position.x, y: unit.position.y };
   unit.position = { x: tile.x, y: tile.y };
+  unit.moved = true;
   state.mode = "command";
   state.reachable = new Map();
   state.attackable = computeAttackableFrom(unit.position, unit);
@@ -656,11 +666,12 @@ function cancelCommand() {
   const unit = selectedUnit();
   if (unit && state.preMove) {
     unit.position = { ...state.preMove };
+    unit.moved = false;
   }
   if (unit) {
-    state.mode = "move";
+    state.mode = unit.moved ? "command" : "move";
     state.preMove = null;
-    state.reachable = computeReachable(unit, effectiveMovement(unit));
+    state.reachable = unit.moved ? new Map() : computeReachable(unit, effectiveMovement(unit));
     state.attackable = computeAttackableFrom(unit.position, unit);
     state.interactable = computeInteractable(unit);
   } else {
@@ -1422,7 +1433,7 @@ function renderActionBar() {
   }
 
   addActionGroup("기본");
-  addActionButton("이동 범위", "步", state.mode === "move" ? "표시 중" : "다시 표시", `이동 ${effectiveMovement(unit)}`, false, () => {
+  addActionButton(unit.moved ? "이동 완료" : "이동 범위", "步", unit.moved ? "이번 페이즈 이동 소모" : state.mode === "move" ? "표시 중" : "다시 표시", `이동 ${effectiveMovement(unit)}`, unit.moved, () => {
     state.mode = "move";
     state.selectedSkillId = null;
     state.reachable = computeReachable(unit, effectiveMovement(unit));
