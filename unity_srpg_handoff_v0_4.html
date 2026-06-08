@@ -45,13 +45,14 @@
 
   <section>
     <h2>2. Unity 필수 구조</h2>
+    <p><strong>Random Chat 기준 확인:</strong> Steam App 2244200의 공개 SteamDB 데이터에서 엔진은 Unity Engine으로 확인됩니다. depot에는 <code>RandomChat_Data</code>, <code>UnityPlayer.dll</code>, <code>Unity.RenderPipelines.Universal</code>, <code>Unity.2D.Animation</code>, <code>Unity.2D.IK</code>, <code>Unity.2D.SpriteShape</code>, <code>UnityEngine.TilemapModule</code>, <code>Unity.Timeline</code> 계열 파일이 있으므로, 본 프로젝트도 Unity 2D URP + Tilemap/Grid + 2D Animation 계열을 기준으로 이전합니다.</p>
     <table>
       <tr><th>영역</th><th>권장 구현</th><th>이유</th></tr>
       <tr><td>맵</td><td>Unity 2D Tilemap + Grid</td><td>Fire Emblem식 SRPG의 칸 이동, 사거리, 지형 보정에 적합</td></tr>
       <tr><td>데이터</td><td>ScriptableObject</td><td>캐릭터/무공/지형을 에디터에서 수정 가능</td></tr>
-      <tr><td>유닛</td><td>SpriteRenderer 기반 사람형 placeholder</td><td>실제 에셋 전에도 캐릭터가 사람처럼 보여야 함</td></tr>
+      <tr><td>유닛</td><td>SpriteRenderer + 2D Animation/IK 또는 Spine식 본 애니메이션</td><td>Random Chat처럼 1칸 높이에 가까운 사람형 2D 캐릭터 비율을 유지</td></tr>
       <tr><td>카메라</td><td>Cinemachine 2D</td><td>선택 유닛 추적, 절기 연출, 카메라 흔들림</td></tr>
-      <tr><td>연출</td><td>Timeline</td><td>무공 컷인/반격/추격/지형 사용 연출</td></tr>
+      <tr><td>연출</td><td>Timeline + DOTween식 트윈</td><td>무공 컷인/반격/추격/지형 사용 연출과 부드러운 이동/카메라/UI 처리</td></tr>
       <tr><td>대화</td><td>Yarn Spinner</td><td>전투 전후 대화, 동료 승인도, 문파 퀘스트</td></tr>
       <tr><td>AI</td><td>Firebase AI Logic + Gemini API</td><td>전투 묘사/대사/소문 생성용. 판정에는 사용 금지</td></tr>
     </table>

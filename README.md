@@ -20,15 +20,18 @@
 
 브라우저에서 `index.html`을 열면 됩니다.
 
-## 2d_map.mp4 참고 비율
+## Random Chat 엔진/비율 참고
 
-`C:\Users\sjpark\Downloads\2d_map.mp4`를 기준으로 캐릭터와 맵 비율을 다시 맞췄습니다.
+`C:\Users\sjpark\Downloads\2d_map.mp4`와 Steam App `2244200 Random Chat` 정보를 기준으로 캐릭터와 맵 비율을 다시 맞췄습니다.
 
 - 영상 해상도는 640x360, 16:9입니다.
 - 맵은 학교/거리 배경의 쿼터뷰 2D 타일맵처럼 보입니다.
 - 캐릭터는 타일 1칸 높이와 거의 같은 2.2~2.6등신 사람형 스프라이트 비율입니다.
 - 현재 프로토타입도 타일 1칸 대비 캐릭터 높이를 약 1.0배로 맞췄습니다.
-- MP4 메타데이터는 Google/FFmpeg 재인코딩 정보만 보여주므로 원 제작 프로그램을 파일만으로 확정할 수는 없습니다. 화면 구성상 Unity 2D/등각 Tilemap 계열 가능성이 가장 높고, RPG Maker 기본 타일 화면과는 비율/카메라/캐릭터 합성이 다릅니다.
+- 엔진은 Unity Engine으로 확인했습니다. SteamDB의 Random Chat 앱 정보와 depot 파일 목록에 Unity/URP/2D Animation/Tilemap 계열 런타임이 잡힙니다.
+- 근거: Steam `https://store.steampowered.com/app/2244200/Random_Chat/`, SteamDB `https://steamdb.info/app/2244200/info/`, depot `https://steamdb.info/depot/2244201/`
+- 구현 기준은 Unity 2D URP, 2D Tilemap/Grid, 2D Animation 또는 Spine 계열 캐릭터, SpriteShape/Tilemap 배경, Timeline/DOTween식 연출입니다.
+- 원본 Random Chat의 저작권 에셋을 복제하지 않고, 엔진 구조와 화면 비율만 참고합니다.
 
 ## Unity 이전 방향
 
