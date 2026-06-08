@@ -13,6 +13,8 @@ namespace JoseonMurimTactics
         public float tileWidth = 1.16f;
         public float tileHeight = 0.62f;
         public BattleTestUnitDefinition[] unitDefinitions = new BattleTestUnitDefinition[0];
+        public bool useCanvasHud = true;
+        public bool showDebugOnGui;
 
         private readonly List<BattleTestUnit> units = new List<BattleTestUnit>();
         private readonly List<string> battleLog = new List<string>();
@@ -53,8 +55,11 @@ namespace JoseonMurimTactics
         private BattleForecast currentForecast;
         private readonly Stack<BattleSnapshot> rewindStack = new Stack<BattleSnapshot>();
         private readonly List<BattleTerrainObject> terrainObjects = new List<BattleTerrainObject>();
+        private BattleHUDController hud;
         private int rewindUsesRemaining = 3;
         private bool showLog;
+        private string hudNotice;
+        private float hudNoticeUntil;
 
         private void Start()
         {
@@ -148,8 +153,27 @@ namespace JoseonMurimTactics
             }
         }
 
+        private void LateUpdate()
+        {
+            if (!useCanvasHud)
+            {
+                return;
+            }
+
+            EnsureBattleHud();
+            if (hud != null)
+            {
+                hud.Refresh(CreateHudSnapshot());
+            }
+        }
+
         private void OnGUI()
         {
+            if (useCanvasHud && !showDebugOnGui)
+            {
+                return;
+            }
+
             EnsureGuiStyles();
 
             DrawPhaseBanner();
@@ -168,7 +192,7 @@ namespace JoseonMurimTactics
             }
 
             GUI.Box(new Rect((Screen.width * 0.5f) - 180f, 24f, 360f, 76f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect((Screen.width * 0.5f) - 146f, 42f, 310f, 28f), "Battle Finished", titleStyle);
+            GUI.Label(new Rect((Screen.width * 0.5f) - 146f, 42f, 310f, 28f), "전투 종료", titleStyle);
         }
 
         private void DrawActivePanel()
@@ -437,40 +461,40 @@ namespace JoseonMurimTactics
         {
             if (battleOver)
             {
-                return "Press R to restart the battle test.";
+                return "R 키로 전투를 다시 시작합니다.";
             }
 
             if (phaseTurnController != null && phaseTurnController.Phase == BattlePhase.EnemyPhase)
             {
-                return "Enemy AI is acting. Watch red threat cells and counter results.";
+                return "적군이 행동 중입니다. 위험 범위와 반격 결과를 확인하세요.";
             }
 
             if (activeUnit == null)
             {
-                return "Select a ready ally from the map or bottom cards.";
+                return "행동 가능한 아군을 지도나 하단 로스터에서 선택하세요.";
             }
 
             if (commandMode == BattleCommandMode.Move && !activeUnit.moved)
             {
-                return "Blue cells are movement. Move first, then choose attack, skill, guard, or wait.";
+                return "파란 칸은 이동 가능 범위입니다. 이동 후 공격, 무공, 방어, 대기를 선택하세요.";
             }
 
             if (commandMode == BattleCommandMode.Attack)
             {
-                return "Red cells are attack targets. Hover an enemy for forecast, click to strike.";
+                return "붉은 칸은 공격 범위입니다. 적에게 마우스를 올리면 전투 예측이 표시됩니다.";
             }
 
             if (commandMode == BattleCommandMode.Skill)
             {
-                return "Purple cells are skill targets. Check forecast before confirming.";
+                return "보라색 칸은 무공 범위입니다. 예측을 확인한 뒤 대상을 클릭하세요.";
             }
 
             if (commandMode == BattleCommandMode.Terrain)
             {
-                return "Gold cells are terrain objects. Use brazier, lantern, bell, or rope for tactical effects.";
+                return "금색 칸은 지형 활용 대상입니다. 향로, 등불, 종, 다리 밧줄을 전술에 이용하세요.";
             }
 
-            return "Finish the unit with attack, skill, guard, or wait.";
+            return "공격, 무공, 지형 활용, 방어, 대기 중 하나로 행동을 마무리하세요.";
         }
 
         private List<BattleTestUnit> FactionUnits(Faction faction)
@@ -524,11 +548,122 @@ namespace JoseonMurimTactics
             CreateTerrainObjects();
             SpawnUnits();
             CenterCamera();
+            EnsureBattleHud();
 
-            AddLog("Amnok Shrine Reclamation v0.6");
-            AddLog("Player Phase: choose allies in any order.");
+            AddLog("압록강 폐사당 탈환전 v0.7");
+            AddLog("아군 페이즈: 원하는 순서로 유닛을 행동시키세요.");
             phaseTurnController.StartBattle(units);
             BeginPlayerPhase();
+        }
+
+        private void EnsureBattleHud()
+        {
+            if (!useCanvasHud)
+            {
+                return;
+            }
+
+            if (hud != null)
+            {
+                return;
+            }
+
+            GameObject hudObject = new GameObject("Battle HUD");
+            hudObject.transform.SetParent(transform, false);
+            hud = hudObject.AddComponent<BattleHUDController>();
+            hud.Initialize(this);
+        }
+
+        private BattleHudSnapshot CreateHudSnapshot()
+        {
+            BattleHudSnapshot snapshot = new BattleHudSnapshot
+            {
+                phase = phaseTurnController != null ? phaseTurnController.Phase : BattlePhase.PlayerPhase,
+                round = phaseTurnController != null ? phaseTurnController.Round : round,
+                instruction = InstructionText(),
+                activeUnit = activeUnit,
+                hoveredUnit = hoveredUnit,
+                hoveredTile = hoveredTile,
+                hoverDefense = hoveredUnit != null ? DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell)) : 0,
+                hoverStatus = hoveredUnit != null ? UnitStatusText(hoveredUnit) : string.Empty,
+                forecast = currentForecast,
+                hasForecast = activeUnit != null && (currentForecast.valid || !string.IsNullOrEmpty(currentForecast.actorName) || !string.IsNullOrEmpty(currentForecast.reason)),
+                showLog = showLog,
+                showThreatRange = showThreatRange,
+                commandMode = commandMode,
+                rewindUsesRemaining = rewindUsesRemaining,
+                noticeText = Time.time < hudNoticeUntil ? hudNotice : string.Empty
+            };
+
+            bool playerTurn = CanPlayerControlActive();
+            snapshot.canMove = playerTurn && activeUnit != null && !activeUnit.moved;
+            snapshot.canAttack = playerTurn && activeUnit != null && !activeUnit.acted;
+            snapshot.canSkill = playerTurn && CanUseSpecial(activeUnit);
+            snapshot.canGuard = playerTurn && activeUnit != null && !activeUnit.acted;
+            snapshot.canTerrain = playerTurn && activeUnit != null && !activeUnit.acted;
+            snapshot.canWait = playerTurn;
+            snapshot.canRewind = rewindUsesRemaining > 0 && rewindStack.Count > 0 && !busy;
+
+            List<BattleTestUnit> allies = FactionUnits(Faction.Ally);
+            for (int i = 0; i < allies.Count; i++)
+            {
+                BattleTestUnit unit = allies[i];
+                snapshot.allies.Add(unit);
+                snapshot.unitStatuses[unit] = UnitStatusText(unit);
+                if (phaseTurnController != null
+                    && phaseTurnController.Phase == BattlePhase.PlayerPhase
+                    && !unit.defeated
+                    && !unit.turnEnded
+                    && !busy
+                    && !battleOver)
+                {
+                    snapshot.selectableUnits.Add(unit);
+                }
+            }
+
+            snapshot.logs.AddRange(battleLog);
+            return snapshot;
+        }
+
+        public void HudSetCommand(BattleCommandMode mode)
+        {
+            SetCommandMode(mode);
+        }
+
+        public void HudGuard()
+        {
+            GuardActiveUnit();
+        }
+
+        public void HudWait()
+        {
+            EndTurn();
+        }
+
+        public void HudToggleThreat()
+        {
+            showThreatRange = !showThreatRange;
+            RefreshHighlights();
+        }
+
+        public void HudToggleLog()
+        {
+            showLog = !showLog;
+        }
+
+        public void HudRewind()
+        {
+            RewindLastAction();
+        }
+
+        public void HudResetBattle()
+        {
+            BuildBattle();
+        }
+
+        public void HudSelectUnit(BattleTestUnit unit)
+        {
+            SelectAlly(unit);
         }
 
         private void ClearGeneratedObjects()
@@ -604,10 +739,10 @@ namespace JoseonMurimTactics
             Transform objectRoot = new GameObject("Terrain Objects").transform;
             objectRoot.SetParent(transform, false);
 
-            AddTerrainObject(objectRoot, "Incense Brazier", TerrainObjectKind.IncenseBrazier, new Vector2Int(6, 4), 12);
-            AddTerrainObject(objectRoot, "Oil Lantern", TerrainObjectKind.OilLantern, new Vector2Int(9, 3), 10);
-            AddTerrainObject(objectRoot, "Shrine Bell", TerrainObjectKind.ShrineBell, new Vector2Int(7, 6), 14);
-            AddTerrainObject(objectRoot, "Bridge Rope", TerrainObjectKind.BridgeRope, new Vector2Int(5, 5), 8);
+            AddTerrainObject(objectRoot, "제단 향로", TerrainObjectKind.IncenseBrazier, new Vector2Int(6, 4), 12);
+            AddTerrainObject(objectRoot, "기름 등불", TerrainObjectKind.OilLantern, new Vector2Int(9, 3), 10);
+            AddTerrainObject(objectRoot, "사당 종", TerrainObjectKind.ShrineBell, new Vector2Int(7, 6), 14);
+            AddTerrainObject(objectRoot, "다리 밧줄", TerrainObjectKind.BridgeRope, new Vector2Int(5, 5), 8);
         }
 
         private void AddTerrainObject(Transform root, string displayName, TerrainObjectKind kind, Vector2Int cell, int hp)
@@ -770,7 +905,7 @@ namespace JoseonMurimTactics
             activeUnit = unitSelectionController.SelectFirstReadyAlly(units);
             commandMode = BattleCommandMode.Move;
             currentForecast = default;
-            AddLog($"Player Phase {phaseTurnController.Round}: choose unit order.");
+            AddLog($"아군 페이즈 {phaseTurnController.Round}: 행동 순서를 선택하세요.");
             RefreshHighlights();
             RefreshUnits();
         }
@@ -800,7 +935,7 @@ namespace JoseonMurimTactics
             {
                 activeUnit = null;
                 phaseTurnController.BeginEnemyPhase(units);
-                AddLog("Enemy Phase.");
+                AddLog("적군 페이즈.");
                 RefreshHighlights();
                 RefreshUnits();
                 return;
@@ -1038,6 +1173,7 @@ namespace JoseonMurimTactics
             int defense = DefenseValue(target, to);
             bool critical = d20 == 20;
             bool hit = critical || (d20 != 1 && attackTotal >= defense);
+            ShowHudNotice(FormatDiceNotice(d20, attackBonus + heightBonus, attackTotal, defense, hit, critical));
 
             if (!hit)
             {
@@ -2156,7 +2292,7 @@ namespace JoseonMurimTactics
             battleOver = true;
             phaseTurnController.SetOutcome(outcome);
             ClearHighlights();
-            AddLog(outcome == BattleOutcome.Victory ? "Victory: inspector subdued." : "Defeat: objective failed.");
+            AddLog(outcome == BattleOutcome.Victory ? "승리: 중원 감찰사를 제압했습니다." : "패배: 전투 목표를 달성하지 못했습니다.");
             return true;
         }
 
@@ -2277,6 +2413,11 @@ namespace JoseonMurimTactics
 
         private bool PointerOverHud(Vector3 screenPosition)
         {
+            if (useCanvasHud)
+            {
+                return hud != null && hud.PointerOverHud(screenPosition);
+            }
+
             float guiY = Screen.height - screenPosition.y;
             Vector2 point = new Vector2(screenPosition.x, guiY);
             Rect objectivePanel = new Rect(18f, 18f, 380f, 190f);
@@ -2416,6 +2557,7 @@ namespace JoseonMurimTactics
 
         private void AddLog(string message)
         {
+            message = KoreanizeLog(message);
             battleLog.Add(message);
             if (battleLog.Count > 24)
             {
@@ -2423,6 +2565,77 @@ namespace JoseonMurimTactics
             }
 
             Debug.Log("[BattleTest] " + message);
+        }
+
+        private void ShowHudNotice(string message)
+        {
+            hudNotice = message;
+            hudNoticeUntil = Time.time + 1.2f;
+        }
+
+        private string FormatDiceNotice(int d20, int modifier, int total, int defense, bool hit, bool critical)
+        {
+            if (d20 == 20)
+            {
+                return $"회심!  d20 {d20} + {modifier} = {total}\n목표 {defense} 이상 / 명중";
+            }
+
+            if (d20 == 1)
+            {
+                return $"허초!  d20 {d20}\n자연 1 / 빗나감";
+            }
+
+            return $"d20 {d20} + {modifier} = {total}\n목표 {defense} 이상 / {(hit ? "명중" : "빗나감")}";
+        }
+
+        private string KoreanizeLog(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                return message;
+            }
+
+            return message
+                .Replace("Player Phase", "아군 페이즈")
+                .Replace("Enemy Phase", "적군 페이즈")
+                .Replace("choose unit order", "행동 순서를 선택하세요")
+                .Replace("choose allies in any order", "원하는 순서로 아군을 행동시키세요")
+                .Replace("Selected", "선택")
+                .Replace("acts.", "행동합니다.")
+                .Replace("moved", "이동")
+                .Replace("attacked", "공격")
+                .Replace("used skill", "무공 사용")
+                .Replace("used terrain", "지형 활용")
+                .Replace("guards", "방어 태세")
+                .Replace("waits", "대기")
+                .Replace("Target preview. Click the enemy again to attack.", "대상 예측 표시. 같은 적을 다시 클릭하면 공격합니다.")
+                .Replace("No enemy target.", "공격할 적이 없습니다.")
+                .Replace("No skill target.", "무공 대상이 없습니다.")
+                .Replace("No usable terrain object in range.", "사거리 안에 활용할 지형 오브젝트가 없습니다.")
+                .Replace("Move already spent.", "이미 이동했습니다.")
+                .Replace("Action already spent.", "이미 행동했습니다.")
+                .Replace("Blocked tile.", "막힌 칸입니다.")
+                .Replace("Out of movement range.", "이동 범위 밖입니다.")
+                .Replace("Target out of range.", "공격 사거리 밖입니다.")
+                .Replace("Skill target out of range.", "무공 사거리 밖입니다.")
+                .Replace("Skill unavailable.", "무공을 사용할 수 없습니다.")
+                .Replace("Invalid skill target.", "무공 대상이 올바르지 않습니다.")
+                .Replace("missed", "빗나감")
+                .Replace("hit", "명중")
+                .Replace("for", "피해")
+                .Replace("defeated", "전투불능")
+                .Replace("Broken: counter sealed.", "파훼: 반격 봉쇄")
+                .Replace("break", "파훼")
+                .Replace("counters", "반격")
+                .Replace("follows up", "추격")
+                .Replace("poisoned", "중독")
+                .Replace("slowed", "둔화")
+                .Replace("marked", "표식 부여")
+                .Replace("Rewind used", "천기역전 사용")
+                .Replace("Remaining", "남은 횟수")
+                .Replace("Reset", "초기화")
+                .Replace("No rewind point.", "되돌릴 지점이 없습니다.")
+                .Replace("Rewind unavailable.", "천기역전을 사용할 수 없습니다.");
         }
 
         private readonly struct TerrainProfile
@@ -2464,7 +2677,7 @@ namespace JoseonMurimTactics
         public int moveRange = 4;
         public int attackMinRange = 1;
         public int attackRange = 1;
-        public string basicAttackName = "Basic Strike";
+        public string basicAttackName = "기본 공격";
         public int attackBonus = 5;
         public int defense = 14;
         public int damageMin = 5;
@@ -2473,7 +2686,7 @@ namespace JoseonMurimTactics
         public bool followUpAllowed = true;
         public int counterRange = 1;
         public int counterInnerCost;
-        public string specialName = "Special";
+        public string specialName = "무공";
         public int specialMinRange = 1;
         public int specialRange = 1;
         public int specialCost = 1;
@@ -2535,7 +2748,7 @@ namespace JoseonMurimTactics
 
             if (label != null)
             {
-                label.text = destroyed ? displayName + " (broken)" : used ? displayName + " (used)" : displayName;
+                label.text = destroyed ? displayName + " (파괴)" : used ? displayName + " (사용)" : displayName;
                 label.color = destroyed
                     ? new Color(0.65f, 0.60f, 0.52f, 0.55f)
                     : new Color(0.96f, 0.88f, 0.58f, used ? 0.62f : 1f);
@@ -2596,7 +2809,7 @@ namespace JoseonMurimTactics
 
             if (label != null && Unit != null)
             {
-                label.text = $"{Unit.definition.displayName}\nHP {Unit.hp}/{Unit.definition.maxHp}";
+                label.text = $"{Unit.definition.displayName}\n체력 {Unit.hp}/{Unit.definition.maxHp}";
                 label.color = Unit.definition.faction == Faction.Ally
                     ? new Color(0.80f, 0.90f, 1f, Unit.defeated ? 0.45f : 1f)
                     : new Color(1f, 0.72f, 0.68f, Unit.defeated ? 0.45f : 1f);

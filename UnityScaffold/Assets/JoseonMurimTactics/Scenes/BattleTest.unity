@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &546111999
+--- !u!1 &410503214
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,420 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 546112002}
-  - component: {fileID: 546112001}
-  - component: {fileID: 546112000}
+  - component: {fileID: 410503216}
+  - component: {fileID: 410503215}
+  m_Layer: 0
+  m_Name: Battle Test Controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &410503215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410503214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62f2a742e6ce4fe3af7c040e2c21817f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestController
+  width: 18
+  height: 12
+  tileWidth: 1.16
+  tileHeight: 0.62
+  unitDefinitions:
+  - id: park_sungjun
+    displayName: "\uBC15\uC131\uC900"
+    faction: 0
+    visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
+    startCell: {x: 2, y: 2}
+    style: 0
+    maxHp: 42
+    maxInner: 5
+    initiative: 10
+    agility: 19
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 1
+    basicAttackName: "\uC0AC\uAD70\uC790\uAC80"
+    attackBonus: 7
+    defense: 15
+    damageMin: 7
+    damageMax: 11
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uBC31\uB450\uC77C\uC12C"
+    specialMinRange: 1
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 7
+    specialAttackBonus: 2
+    specialEffect: 1
+  - id: yun_seohwa
+    displayName: "\uC724\uC11C\uD654"
+    faction: 0
+    visual: {fileID: 11400000, guid: 7b1ede8616ecb6b4797e42d572084460, type: 2}
+    startCell: {x: 3, y: 3}
+    style: 0
+    maxHp: 32
+    maxInner: 4
+    initiative: 10
+    agility: 21
+    moveRange: 5
+    attackMinRange: 1
+    attackRange: 1
+    basicAttackName: "\uC6D4\uD558\uBC18\uC870\uAC80"
+    attackBonus: 8
+    defense: 14
+    damageMin: 5
+    damageMax: 9
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uAC80\uB85C\uC7AC\uAE30"
+    specialMinRange: 1
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 5
+    specialAttackBonus: 3
+    specialEffect: 6
+  - id: baek_ryeon
+    displayName: "\uBC31\uB828"
+    faction: 0
+    visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
+    startCell: {x: 2, y: 6}
+    style: 6
+    maxHp: 30
+    maxInner: 5
+    initiative: 10
+    agility: 17
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 2
+    basicAttackName: "\uBE59\uBC31\uC7A5"
+    attackBonus: 6
+    defense: 13
+    damageMin: 4
+    damageMax: 8
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 2
+    counterInnerCost: 1
+    specialName: "\uD55C\uC124\uBE59\uB85C"
+    specialMinRange: 1
+    specialRange: 3
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 2
+    specialEffect: 4
+  - id: han_biyeon
+    displayName: "\uD55C\uBE44\uC5F0"
+    faction: 0
+    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
+    startCell: {x: 3, y: 8}
+    style: 5
+    maxHp: 29
+    maxInner: 4
+    initiative: 10
+    agility: 18
+    moveRange: 5
+    attackMinRange: 1
+    attackRange: 3
+    basicAttackName: "\uBE44\uD654\uB3C5\uCE68"
+    attackBonus: 6
+    defense: 14
+    damageMin: 4
+    damageMax: 8
+    canCounter: 0
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uB3C5\uBB34\uC0B4\uD3EC"
+    specialMinRange: 1
+    specialRange: 3
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 3
+    specialAttackBonus: 2
+    specialEffect: 3
+  - id: do_arin
+    displayName: "\uB3C4\uC544\uB9B0"
+    faction: 0
+    visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
+    startCell: {x: 4, y: 7}
+    style: 1
+    maxHp: 38
+    maxInner: 3
+    initiative: 10
+    agility: 18
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 1
+    basicAttackName: "\uD30C\uC0B0\uAD8C"
+    attackBonus: 6
+    defense: 16
+    damageMin: 6
+    damageMax: 11
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uCCA0\uC0B0\uACE0"
+    specialMinRange: 1
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 6
+    specialAttackBonus: 2
+    specialEffect: 6
+  - id: central_swordsman_a
+    displayName: "\uC815\uD30C \uAC80\uC218"
+    faction: 1
+    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
+    startCell: {x: 12, y: 3}
+    style: 0
+    maxHp: 30
+    maxInner: 3
+    initiative: 10
+    agility: 17
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 1
+    basicAttackName: "\uC815\uD30C\uAC80"
+    attackBonus: 5
+    defense: 14
+    damageMin: 4
+    damageMax: 8
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uC218\uBE44 \uBCA0\uAE30"
+    specialMinRange: 1
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 3
+    specialAttackBonus: 1
+    specialEffect: 1
+  - id: central_swordsman_b
+    displayName: "\uC815\uD30C \uAC80\uC218"
+    faction: 1
+    visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
+    startCell: {x: 13, y: 5}
+    style: 0
+    maxHp: 30
+    maxInner: 3
+    initiative: 10
+    agility: 17
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 1
+    basicAttackName: "\uC815\uD30C\uAC80"
+    attackBonus: 5
+    defense: 14
+    damageMin: 4
+    damageMax: 8
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uC218\uBE44 \uBCA0\uAE30"
+    specialMinRange: 1
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 3
+    specialAttackBonus: 1
+    specialEffect: 1
+  - id: qingcheng_spearman
+    displayName: "\uCCAD\uC131 \uC7A5\uCC3D\uC218"
+    faction: 1
+    visual: {fileID: 11400000, guid: 7b1ede8616ecb6b4797e42d572084460, type: 2}
+    startCell: {x: 12, y: 8}
+    style: 2
+    maxHp: 34
+    maxInner: 3
+    initiative: 10
+    agility: 17
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 2
+    basicAttackName: "\uC7A5\uCC3D \uCC0C\uB974\uAE30"
+    attackBonus: 6
+    defense: 14
+    damageMin: 5
+    damageMax: 9
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 2
+    counterInnerCost: 0
+    specialName: "\uCC3D\uB85C \uBD09\uC1C4"
+    specialMinRange: 1
+    specialRange: 2
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 2
+    specialEffect: 6
+  - id: sichuan_poisoner
+    displayName: "\uC0AC\uCC9C \uB3C5\uACF5\uC220\uC0AC"
+    faction: 1
+    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
+    startCell: {x: 14, y: 9}
+    style: 5
+    maxHp: 26
+    maxInner: 4
+    initiative: 10
+    agility: 16
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 3
+    basicAttackName: "\uB3C5\uCE68"
+    attackBonus: 5
+    defense: 13
+    damageMin: 3
+    damageMax: 7
+    canCounter: 0
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uB3C5\uBB34\uCE68"
+    specialMinRange: 1
+    specialRange: 3
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 3
+    specialAttackBonus: 2
+    specialEffect: 3
+  - id: law_record_keeper
+    displayName: "\uAC10\uCC30 \uAE30\uB85D\uAD00"
+    faction: 1
+    visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
+    startCell: {x: 15, y: 4}
+    style: 7
+    maxHp: 24
+    maxInner: 4
+    initiative: 10
+    agility: 16
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 3
+    basicAttackName: "\uCE59\uB839\uD544"
+    attackBonus: 5
+    defense: 13
+    damageMin: 3
+    damageMax: 6
+    canCounter: 0
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uAC10\uCC30 \uC778\uC7A5"
+    specialMinRange: 1
+    specialRange: 4
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 0
+    specialAttackBonus: 0
+    specialEffect: 5
+  - id: bodyguard_expert
+    displayName: "\uAC10\uCC30 \uD638\uC704\uBCD1"
+    faction: 1
+    visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
+    startCell: {x: 15, y: 8}
+    style: 1
+    maxHp: 36
+    maxInner: 3
+    initiative: 10
+    agility: 18
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 1
+    basicAttackName: "\uC911\uB3C4 \uBCA0\uAE30"
+    attackBonus: 6
+    defense: 16
+    damageMin: 6
+    damageMax: 10
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 1
+    counterInnerCost: 0
+    specialName: "\uBC29\uD328 \uBC00\uAE30"
+    specialMinRange: 1
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 5
+    specialAttackBonus: 2
+    specialEffect: 6
+  - id: central_inspector
+    displayName: "\uC911\uC6D0 \uAC10\uCC30\uC0AC"
+    faction: 1
+    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
+    startCell: {x: 16, y: 6}
+    style: 7
+    maxHp: 38
+    maxInner: 4
+    initiative: 10
+    agility: 17
+    moveRange: 4
+    attackMinRange: 1
+    attackRange: 3
+    basicAttackName: "\uD310\uACB0 \uC778\uC7A5"
+    attackBonus: 6
+    defense: 15
+    damageMin: 5
+    damageMax: 9
+    canCounter: 1
+    followUpAllowed: 1
+    counterRange: 2
+    counterInnerCost: 1
+    specialName: "\uAC10\uCC30\uB839"
+    specialMinRange: 1
+    specialRange: 4
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 0
+    specialAttackBonus: 0
+    specialEffect: 5
+  useCanvasHud: 1
+  showDebugOnGui: 0
+--- !u!4 &410503216
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410503214}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2107897979
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2107897982}
+  - component: {fileID: 2107897981}
+  - component: {fileID: 2107897980}
   m_Layer: 0
   m_Name: Battle Camera
   m_TagString: MainCamera
@@ -137,21 +548,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &546112000
+--- !u!81 &2107897980
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 546111999}
+  m_GameObject: {fileID: 2107897979}
   m_Enabled: 1
---- !u!20 &546112001
+--- !u!20 &2107897981
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 546111999}
+  m_GameObject: {fileID: 2107897979}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -196,425 +607,16 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &546112002
+--- !u!4 &2107897982
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 546111999}
+  m_GameObject: {fileID: 2107897979}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 2.6, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1549825016
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1549825018}
-  - component: {fileID: 1549825017}
-  m_Layer: 0
-  m_Name: Battle Test Controller
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1549825017
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1549825016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62f2a742e6ce4fe3af7c040e2c21817f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestController
-  width: 18
-  height: 12
-  tileWidth: 1.16
-  tileHeight: 0.62
-  unitDefinitions:
-  - id: park_sungjun
-    displayName: Park Sungjun
-    faction: 0
-    visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
-    startCell: {x: 2, y: 2}
-    style: 0
-    maxHp: 42
-    maxInner: 5
-    initiative: 10
-    agility: 19
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 1
-    basicAttackName: Sagunjageom
-    attackBonus: 7
-    defense: 15
-    damageMin: 7
-    damageMax: 11
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Baekdu Flash
-    specialMinRange: 1
-    specialRange: 1
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 7
-    specialAttackBonus: 2
-    specialEffect: 1
-  - id: yun_seohwa
-    displayName: Yun Seohwa
-    faction: 0
-    visual: {fileID: 11400000, guid: 7b1ede8616ecb6b4797e42d572084460, type: 2}
-    startCell: {x: 3, y: 3}
-    style: 0
-    maxHp: 32
-    maxInner: 4
-    initiative: 10
-    agility: 21
-    moveRange: 5
-    attackMinRange: 1
-    attackRange: 1
-    basicAttackName: Moon Reflection
-    attackBonus: 8
-    defense: 14
-    damageMin: 5
-    damageMax: 9
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Read Sword Path
-    specialMinRange: 1
-    specialRange: 1
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 5
-    specialAttackBonus: 3
-    specialEffect: 6
-  - id: baek_ryeon
-    displayName: Baek Ryeon
-    faction: 0
-    visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
-    startCell: {x: 2, y: 6}
-    style: 6
-    maxHp: 30
-    maxInner: 5
-    initiative: 10
-    agility: 17
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 2
-    basicAttackName: Ice Palm
-    attackBonus: 6
-    defense: 13
-    damageMin: 4
-    damageMax: 8
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 2
-    counterInnerCost: 1
-    specialName: Frost Seal
-    specialMinRange: 1
-    specialRange: 3
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 4
-    specialAttackBonus: 2
-    specialEffect: 4
-  - id: han_biyeon
-    displayName: Han Biyeon
-    faction: 0
-    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
-    startCell: {x: 3, y: 8}
-    style: 5
-    maxHp: 29
-    maxInner: 4
-    initiative: 10
-    agility: 18
-    moveRange: 5
-    attackMinRange: 1
-    attackRange: 3
-    basicAttackName: Hidden Needle
-    attackBonus: 6
-    defense: 14
-    damageMin: 4
-    damageMax: 8
-    canCounter: 0
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Poison Needle
-    specialMinRange: 1
-    specialRange: 3
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 3
-    specialAttackBonus: 2
-    specialEffect: 3
-  - id: do_arin
-    displayName: Do Arin
-    faction: 0
-    visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
-    startCell: {x: 4, y: 7}
-    style: 1
-    maxHp: 38
-    maxInner: 3
-    initiative: 10
-    agility: 18
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 1
-    basicAttackName: Mountain Palm
-    attackBonus: 6
-    defense: 16
-    damageMin: 6
-    damageMax: 11
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Iron Shoulder
-    specialMinRange: 1
-    specialRange: 1
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 6
-    specialAttackBonus: 2
-    specialEffect: 6
-  - id: central_swordsman_a
-    displayName: Central Swordsman
-    faction: 1
-    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
-    startCell: {x: 12, y: 3}
-    style: 0
-    maxHp: 30
-    maxInner: 3
-    initiative: 10
-    agility: 17
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 1
-    basicAttackName: Orthodox Sword
-    attackBonus: 5
-    defense: 14
-    damageMin: 4
-    damageMax: 8
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Guard Cut
-    specialMinRange: 1
-    specialRange: 1
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 3
-    specialAttackBonus: 1
-    specialEffect: 1
-  - id: central_swordsman_b
-    displayName: Central Swordsman
-    faction: 1
-    visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
-    startCell: {x: 13, y: 5}
-    style: 0
-    maxHp: 30
-    maxInner: 3
-    initiative: 10
-    agility: 17
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 1
-    basicAttackName: Orthodox Sword
-    attackBonus: 5
-    defense: 14
-    damageMin: 4
-    damageMax: 8
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Guard Cut
-    specialMinRange: 1
-    specialRange: 1
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 3
-    specialAttackBonus: 1
-    specialEffect: 1
-  - id: qingcheng_spearman
-    displayName: Qingcheng Spearman
-    faction: 1
-    visual: {fileID: 11400000, guid: 7b1ede8616ecb6b4797e42d572084460, type: 2}
-    startCell: {x: 12, y: 8}
-    style: 2
-    maxHp: 34
-    maxInner: 3
-    initiative: 10
-    agility: 17
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 2
-    basicAttackName: Long Spear
-    attackBonus: 6
-    defense: 14
-    damageMin: 5
-    damageMax: 9
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 2
-    counterInnerCost: 0
-    specialName: Spear Lock
-    specialMinRange: 1
-    specialRange: 2
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 4
-    specialAttackBonus: 2
-    specialEffect: 6
-  - id: sichuan_poisoner
-    displayName: Sichuan Poisoner
-    faction: 1
-    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
-    startCell: {x: 14, y: 9}
-    style: 5
-    maxHp: 26
-    maxInner: 4
-    initiative: 10
-    agility: 16
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 3
-    basicAttackName: Poison Dart
-    attackBonus: 5
-    defense: 13
-    damageMin: 3
-    damageMax: 7
-    canCounter: 0
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Miasma Needle
-    specialMinRange: 1
-    specialRange: 3
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 3
-    specialAttackBonus: 2
-    specialEffect: 3
-  - id: law_record_keeper
-    displayName: Law Record Keeper
-    faction: 1
-    visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
-    startCell: {x: 15, y: 4}
-    style: 7
-    maxHp: 24
-    maxInner: 4
-    initiative: 10
-    agility: 16
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 3
-    basicAttackName: Edict Brush
-    attackBonus: 5
-    defense: 13
-    damageMin: 3
-    damageMax: 6
-    canCounter: 0
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Confucian Seal
-    specialMinRange: 1
-    specialRange: 4
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 0
-    specialAttackBonus: 0
-    specialEffect: 5
-  - id: bodyguard_expert
-    displayName: Bodyguard Expert
-    faction: 1
-    visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
-    startCell: {x: 15, y: 8}
-    style: 1
-    maxHp: 36
-    maxInner: 3
-    initiative: 10
-    agility: 18
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 1
-    basicAttackName: Heavy Blade
-    attackBonus: 6
-    defense: 16
-    damageMin: 6
-    damageMax: 10
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 1
-    counterInnerCost: 0
-    specialName: Shield Bash
-    specialMinRange: 1
-    specialRange: 1
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 5
-    specialAttackBonus: 2
-    specialEffect: 6
-  - id: central_inspector
-    displayName: Central Inspector
-    faction: 1
-    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
-    startCell: {x: 16, y: 6}
-    style: 7
-    maxHp: 38
-    maxInner: 4
-    initiative: 10
-    agility: 17
-    moveRange: 4
-    attackMinRange: 1
-    attackRange: 3
-    basicAttackName: Judgment Seal
-    attackBonus: 6
-    defense: 15
-    damageMin: 5
-    damageMax: 9
-    canCounter: 1
-    followUpAllowed: 1
-    counterRange: 2
-    counterInnerCost: 1
-    specialName: Mandate Seal
-    specialMinRange: 1
-    specialRange: 4
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 0
-    specialAttackBonus: 0
-    specialEffect: 5
---- !u!4 &1549825018
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1549825016}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -624,5 +626,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 546112002}
-  - {fileID: 1549825018}
+  - {fileID: 2107897982}
+  - {fileID: 410503216}
