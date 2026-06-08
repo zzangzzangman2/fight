@@ -24,6 +24,13 @@ namespace JoseonMurimTactics
         private GUIStyle titleStyle;
         private GUIStyle smallStyle;
         private GUIStyle logStyle;
+        private GUIStyle phaseStyle;
+        private GUIStyle commandStyle;
+        private GUIStyle commandActiveStyle;
+        private GUIStyle cardStyle;
+        private GUIStyle cardActiveStyle;
+        private GUIStyle warningStyle;
+        private GUIStyle tinyStyle;
         private BattleTestUnit activeUnit;
         private BattleTestUnit hoveredUnit;
         private BattleTestTile hoveredTile;
@@ -128,12 +135,15 @@ namespace JoseonMurimTactics
         {
             EnsureGuiStyles();
 
+            DrawPhaseBanner();
             DrawActivePanel();
             DrawTurnQueuePanel();
-            DrawLogPanel();
+            DrawCommandMenu();
             DrawInspectPanel();
             DrawForecastPanel();
+            DrawLogPanel();
             DrawRosterPanel();
+            DrawLegendPanel();
 
             if (!battleOver)
             {
@@ -146,160 +156,286 @@ namespace JoseonMurimTactics
 
         private void DrawActivePanel()
         {
-            GUI.Box(new Rect(18f, 18f, 340f, 336f), GUIContent.none, panelStyle);
+            GUI.Box(new Rect(18f, 18f, 380f, 190f), GUIContent.none, panelStyle);
             string activeName = activeUnit == null ? "None" : activeUnit.definition.displayName;
             string hp = activeUnit == null ? string.Empty : $"{activeUnit.hp}/{activeUnit.definition.maxHp}";
-            string side = activeUnit == null ? string.Empty : activeUnit.definition.faction.ToString();
-            string phase = phaseTurnController == null ? "PlayerPhase" : phaseTurnController.Phase.ToString();
 
-            GUI.Label(new Rect(34f, 30f, 300f, 28f), $"Round {phaseTurnController?.Round ?? round}  {phase}", titleStyle);
-            GUI.Label(new Rect(34f, 58f, 300f, 22f), objectiveManager != null ? objectiveManager.ScenarioTitle : "Battle Test", smallStyle);
-            GUI.Label(new Rect(34f, 82f, 300f, 24f), $"Now: {activeName}", labelStyle);
-            GUI.Label(new Rect(34f, 108f, 300f, 22f), $"Side: {side}   HP: {hp}", smallStyle);
+            GUI.Label(new Rect(34f, 30f, 344f, 26f), "Scenario Objective", titleStyle);
+            GUI.Label(new Rect(34f, 58f, 344f, 20f), objectiveManager != null ? objectiveManager.ScenarioTitle : "Battle Test", labelStyle);
+            GUI.Label(new Rect(34f, 84f, 344f, 20f), "Main: Defeat the Central Inspector", smallStyle);
+            GUI.Label(new Rect(34f, 106f, 344f, 20f), "Bonus: win by round 8, preserve altar", smallStyle);
+            GUI.Label(new Rect(34f, 128f, 344f, 20f), "Defeat: Park or Baek down, round 12 over", warningStyle);
 
             if (activeUnit != null)
             {
-                GUI.Label(new Rect(34f, 132f, 300f, 22f), $"Move: {ActionText(activeUnit.moved)}   Action: {ActionText(activeUnit.acted)}   Done: {YesNo(activeUnit.turnEnded)}", smallStyle);
-                GUI.Label(new Rect(34f, 156f, 300f, 22f), $"Inner: {activeUnit.inner}/{activeUnit.definition.maxInner}   Break: {activeUnit.breakGauge}/100", smallStyle);
-                GUI.Label(new Rect(34f, 180f, 300f, 22f), $"Mode: {commandMode}   Threat: {YesNo(showThreatRange)}", labelStyle);
+                GUI.Label(new Rect(34f, 154f, 344f, 20f), $"Selected: {activeName}   HP {hp}   Inner {activeUnit.inner}/{activeUnit.definition.maxInner}", labelStyle);
+                GUI.Label(new Rect(34f, 174f, 344f, 18f), $"{activeUnit.definition.style}  |  {UnitStatusText(activeUnit)}", tinyStyle);
+            }
+        }
+
+        private void DrawPhaseBanner()
+        {
+            BattlePhase phase = phaseTurnController == null ? BattlePhase.PlayerPhase : phaseTurnController.Phase;
+            string phaseText = phase == BattlePhase.EnemyPhase ? "ENEMY PHASE" : "PLAYER PHASE";
+            if (phase == BattlePhase.Victory || phase == BattlePhase.Defeat)
+            {
+                phaseText = phase.ToString().ToUpperInvariant();
             }
 
-            bool playerTurn = activeUnit != null && activeUnit.definition.faction == Faction.Ally && !busy && !battleOver && phaseTurnController.Phase == BattlePhase.PlayerPhase;
-            GUI.enabled = playerTurn;
+            Rect banner = new Rect((Screen.width * 0.5f) - 300f, 18f, 600f, 68f);
+            GUI.Box(banner, GUIContent.none, phaseStyle);
+            GUI.Label(new Rect(banner.x + 20f, banner.y + 10f, banner.width - 40f, 28f), $"{phaseText}  -  Round {phaseTurnController?.Round ?? round}", titleStyle);
+            GUI.Label(new Rect(banner.x + 20f, banner.y + 40f, banner.width - 40f, 20f), InstructionText(), smallStyle);
+        }
 
-            if (GUI.Button(new Rect(34f, 212f, 70f, 28f), "Move"))
+        private void DrawCommandMenu()
+        {
+            Rect panel = new Rect(Screen.width - 232f, 206f, 214f, 342f);
+            GUI.Box(panel, GUIContent.none, panelStyle);
+            GUI.Label(new Rect(panel.x + 16f, panel.y + 14f, panel.width - 32f, 24f), "Commands", titleStyle);
+
+            bool playerTurn = CanPlayerControlActive();
+            float y = panel.y + 48f;
+            if (DrawCommandButton(new Rect(panel.x + 16f, y, 182f, 36f), "1  Move", playerTurn && !activeUnit.moved, commandMode == BattleCommandMode.Move))
             {
                 SetCommandMode(BattleCommandMode.Move);
             }
 
-            GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
-            if (GUI.Button(new Rect(112f, 212f, 70f, 28f), "Attack"))
+            y += 42f;
+            if (DrawCommandButton(new Rect(panel.x + 16f, y, 182f, 36f), "2  Attack", playerTurn && !activeUnit.acted, commandMode == BattleCommandMode.Attack))
             {
                 SetCommandMode(BattleCommandMode.Attack);
             }
 
-            GUI.enabled = playerTurn && activeUnit != null && CanUseSpecial(activeUnit);
-            if (GUI.Button(new Rect(190f, 212f, 70f, 28f), "Skill"))
+            y += 42f;
+            if (DrawCommandButton(new Rect(panel.x + 16f, y, 182f, 36f), "3  Skill", playerTurn && CanUseSpecial(activeUnit), commandMode == BattleCommandMode.Skill))
             {
                 SetCommandMode(BattleCommandMode.Skill);
             }
 
-            GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
-            if (GUI.Button(new Rect(268f, 212f, 70f, 28f), "Guard"))
+            y += 42f;
+            if (DrawCommandButton(new Rect(panel.x + 16f, y, 182f, 36f), "4  Guard", playerTurn && !activeUnit.acted, false))
             {
                 GuardActiveUnit();
             }
 
-            GUI.enabled = playerTurn;
-            if (GUI.Button(new Rect(34f, 250f, 96f, 30f), "Wait"))
+            y += 42f;
+            if (DrawCommandButton(new Rect(panel.x + 16f, y, 182f, 36f), "Space  Wait", playerTurn, false))
             {
                 EndTurn();
             }
 
-            GUI.enabled = true;
-            if (GUI.Button(new Rect(138f, 250f, 96f, 30f), "Threat"))
+            y += 48f;
+            if (DrawCommandButton(new Rect(panel.x + 16f, y, 86f, 32f), showThreatRange ? "Threat On" : "Threat", true, showThreatRange))
             {
                 showThreatRange = !showThreatRange;
                 RefreshHighlights();
             }
 
-            if (GUI.Button(new Rect(242f, 250f, 96f, 30f), "Reset"))
+            if (DrawCommandButton(new Rect(panel.x + 112f, y, 86f, 32f), "Reset", true, false))
             {
                 BuildBattle();
             }
 
-            GUI.enabled = true;
-
             if (activeUnit != null)
             {
-                string skillLine = activeUnit.definition.specialName;
                 string cooldown = activeUnit.specialCooldownLeft > 0 ? $"CD {activeUnit.specialCooldownLeft}" : "Ready";
-                GUI.Label(new Rect(34f, 290f, 304f, 22f), $"Skill: {skillLine} ({cooldown})", smallStyle);
-                GUI.Label(new Rect(34f, 312f, 304f, 22f), $"Style: {activeUnit.definition.style}   Counter: R{activeUnit.definition.counterRange}", smallStyle);
+                GUI.Label(new Rect(panel.x + 16f, panel.y + 286f, 182f, 18f), $"Skill: {activeUnit.definition.specialName}", tinyStyle);
+                GUI.Label(new Rect(panel.x + 16f, panel.y + 306f, 182f, 18f), $"Range {activeUnit.definition.specialRange}  {cooldown}", tinyStyle);
             }
         }
 
         private void DrawTurnQueuePanel()
         {
-            float x = Screen.width - 386f;
-            GUI.Box(new Rect(x, 18f, 368f, 194f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(x + 16f, 30f, 336f, 26f), "Turn Order", titleStyle);
+            float x = Screen.width - 292f;
+            GUI.Box(new Rect(x, 18f, 274f, 176f), GUIContent.none, panelStyle);
+            string header = phaseTurnController != null && phaseTurnController.Phase == BattlePhase.EnemyPhase ? "Enemy Acting" : "Ready Allies";
+            GUI.Label(new Rect(x + 16f, 30f, 238f, 26f), header, titleStyle);
 
-            List<BattleTestUnit> queue = GetTurnQueuePreview(7);
+            List<BattleTestUnit> queue = GetTurnQueuePreview(6);
             for (int i = 0; i < queue.Count; i++)
             {
                 BattleTestUnit unit = queue[i];
-                string marker = i == 0 ? "NOW" : $"#{i + 1}";
+                string marker = unit == activeUnit ? "NOW" : "READY";
                 string state = unit.defeated ? "Down" : UnitStatusText(unit);
-                string line = $"{marker}  {unit.definition.displayName}  {unit.definition.faction}  {state}";
-                GUI.Label(new Rect(x + 16f, 60f + (i * 18f), 336f, 18f), line, i == 0 ? labelStyle : smallStyle);
+                string line = $"{marker}  {unit.definition.displayName}  {state}";
+                GUI.Label(new Rect(x + 16f, 60f + (i * 20f), 238f, 18f), line, unit == activeUnit ? labelStyle : tinyStyle);
             }
         }
 
         private void DrawLogPanel()
         {
-            float x = Screen.width - 386f;
-            GUI.Box(new Rect(x, 224f, 368f, 244f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(x + 16f, 236f, 336f, 26f), "Combat Log", titleStyle);
+            float x = Screen.width - 348f;
+            float y = Screen.height - 380f;
+            GUI.Box(new Rect(x, y, 330f, 222f), GUIContent.none, panelStyle);
+            GUI.Label(new Rect(x + 16f, y + 12f, 296f, 24f), "Combat Log", titleStyle);
 
-            int start = Mathf.Max(0, battleLog.Count - 9);
+            int start = Mathf.Max(0, battleLog.Count - 8);
             for (int i = start; i < battleLog.Count; i++)
             {
-                GUI.Label(new Rect(x + 16f, 268f + ((i - start) * 22f), 336f, 22f), battleLog[i], logStyle);
+                GUI.Label(new Rect(x + 16f, y + 42f + ((i - start) * 22f), 296f, 22f), battleLog[i], logStyle);
             }
         }
 
         private void DrawInspectPanel()
         {
-            GUI.Box(new Rect(18f, 332f, 340f, 142f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(34f, 344f, 300f, 26f), "Inspect", titleStyle);
+            GUI.Box(new Rect(18f, 218f, 380f, 140f), GUIContent.none, panelStyle);
+            GUI.Label(new Rect(34f, 230f, 344f, 24f), "Hover Info", titleStyle);
 
             if (hoveredUnit != null)
             {
-                GUI.Label(new Rect(34f, 374f, 300f, 22f), $"{hoveredUnit.definition.displayName} ({hoveredUnit.definition.faction})", labelStyle);
-                GUI.Label(new Rect(34f, 398f, 300f, 22f), $"HP {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   DEF {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}", smallStyle);
-                GUI.Label(new Rect(34f, 422f, 300f, 22f), $"Status: {UnitStatusText(hoveredUnit)}", smallStyle);
-                GUI.Label(new Rect(34f, 446f, 300f, 22f), $"Skill: {hoveredUnit.definition.specialName}", smallStyle);
+                GUI.Label(new Rect(34f, 258f, 344f, 20f), $"{hoveredUnit.definition.displayName} ({hoveredUnit.definition.faction})", labelStyle);
+                GUI.Label(new Rect(34f, 282f, 344f, 20f), $"HP {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   DEF {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}   Style {hoveredUnit.definition.style}", smallStyle);
+                GUI.Label(new Rect(34f, 306f, 344f, 20f), $"Status: {UnitStatusText(hoveredUnit)}", smallStyle);
+                GUI.Label(new Rect(34f, 330f, 344f, 20f), $"Skill: {hoveredUnit.definition.specialName}", tinyStyle);
                 return;
             }
 
             if (hoveredTile != null)
             {
-                GUI.Label(new Rect(34f, 374f, 300f, 22f), $"{hoveredTile.terrain}  ({hoveredTile.cell.x},{hoveredTile.cell.y})", labelStyle);
-                GUI.Label(new Rect(34f, 398f, 300f, 22f), $"Move Cost {hoveredTile.moveCost}   Cover +{hoveredTile.coverBonus}", smallStyle);
-                GUI.Label(new Rect(34f, 422f, 300f, 22f), $"Elevation {hoveredTile.elevation}   Hazard {hoveredTile.hazard}", smallStyle);
+                GUI.Label(new Rect(34f, 258f, 344f, 20f), $"{hoveredTile.terrain}  ({hoveredTile.cell.x},{hoveredTile.cell.y})", labelStyle);
+                GUI.Label(new Rect(34f, 282f, 344f, 20f), $"Move Cost {hoveredTile.moveCost}   Cover +{hoveredTile.coverBonus}", smallStyle);
+                GUI.Label(new Rect(34f, 306f, 344f, 20f), $"Elevation {hoveredTile.elevation}   Hazard {hoveredTile.hazard}", smallStyle);
                 return;
             }
 
-            GUI.Label(new Rect(34f, 374f, 300f, 22f), "No target", smallStyle);
+            GUI.Label(new Rect(34f, 258f, 344f, 22f), "Hover a unit or tile to see tactical details.", smallStyle);
         }
 
         private void DrawForecastPanel()
         {
-            if (battleForecastPanel == null || activeUnit == null)
+            if (battleForecastPanel == null || activeUnit == null || !currentForecast.valid)
             {
                 return;
             }
 
-            Rect rect = new Rect(18f, 486f, 340f, 190f);
+            Rect rect = new Rect((Screen.width * 0.5f) - 390f, Screen.height - 322f, 780f, 160f);
             battleForecastPanel.Draw(rect, currentForecast, panelStyle, titleStyle, smallStyle);
         }
 
         private void DrawRosterPanel()
         {
-            float y = Screen.height - 118f;
-            GUI.Box(new Rect(18f, y, Screen.width - 36f, 100f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(34f, y + 12f, 280f, 26f), "Unit Status", titleStyle);
+            float y = Screen.height - 142f;
+            GUI.Box(new Rect(18f, y, Screen.width - 36f, 124f), GUIContent.none, panelStyle);
+            GUI.Label(new Rect(34f, y + 12f, 420f, 24f), "Ally Units - click a ready card to choose action order", titleStyle);
 
-            float cardWidth = Mathf.Min(220f, (Screen.width - 80f) / Mathf.Max(1, units.Count));
+            List<BattleTestUnit> allies = FactionUnits(Faction.Ally);
+            float cardWidth = Mathf.Min(244f, (Screen.width - 84f) / Mathf.Max(1, allies.Count));
+            for (int i = 0; i < allies.Count; i++)
+            {
+                BattleTestUnit unit = allies[i];
+                float x = 34f + (i * cardWidth);
+                DrawRosterCard(new Rect(x, y + 40f, cardWidth - 10f, 74f), unit);
+            }
+        }
+
+        private void DrawLegendPanel()
+        {
+            Rect rect = new Rect((Screen.width * 0.5f) - 300f, 92f, 600f, 34f);
+            GUI.Box(rect, GUIContent.none, panelStyle);
+            DrawLegendItem(rect.x + 18f, rect.y + 10f, new Color(0.25f, 0.58f, 1f, 0.9f), "Move");
+            DrawLegendItem(rect.x + 120f, rect.y + 10f, new Color(1f, 0.18f, 0.16f, 0.9f), "Attack");
+            DrawLegendItem(rect.x + 224f, rect.y + 10f, new Color(0.72f, 0.28f, 1f, 0.9f), "Skill");
+            DrawLegendItem(rect.x + 326f, rect.y + 10f, new Color(1f, 0.76f, 0.18f, 0.9f), "Active");
+            DrawLegendItem(rect.x + 430f, rect.y + 10f, new Color(1f, 0.12f, 0.08f, 0.55f), "Enemy threat");
+        }
+
+        private void DrawLegendItem(float x, float y, Color color, string text)
+        {
+            FillRect(new Rect(x, y + 2f, 14f, 14f), color);
+            GUI.Label(new Rect(x + 20f, y - 1f, 96f, 18f), text, tinyStyle);
+        }
+
+        private bool DrawCommandButton(Rect rect, string label, bool enabled, bool active)
+        {
+            bool oldEnabled = GUI.enabled;
+            GUI.enabled = enabled;
+            bool clicked = GUI.Button(rect, label, active ? commandActiveStyle : commandStyle);
+            GUI.enabled = oldEnabled;
+            return enabled && clicked;
+        }
+
+        private void DrawRosterCard(Rect rect, BattleTestUnit unit)
+        {
+            bool selected = unit == activeUnit;
+            GUI.Box(rect, GUIContent.none, selected ? cardActiveStyle : cardStyle);
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 8f, rect.width - 20f, 18f), unit.definition.displayName, selected ? labelStyle : smallStyle);
+
+            float hpRatio = unit.definition.maxHp <= 0 ? 0f : Mathf.Clamp01((float)unit.hp / unit.definition.maxHp);
+            FillRect(new Rect(rect.x + 10f, rect.y + 32f, rect.width - 20f, 8f), new Color(0.18f, 0.12f, 0.10f, 1f));
+            FillRect(new Rect(rect.x + 10f, rect.y + 32f, (rect.width - 20f) * hpRatio, 8f), unit.defeated ? new Color(0.4f, 0.4f, 0.4f, 1f) : new Color(0.78f, 0.18f, 0.13f, 1f));
+
+            string status = unit.defeated ? "Down" : unit.turnEnded ? "Done" : UnitStatusText(unit);
+            GUI.Label(new Rect(rect.x + 10f, rect.y + 44f, rect.width - 86f, 18f), $"HP {unit.hp}/{unit.definition.maxHp}  {status}", tinyStyle);
+
+            bool canSelect = phaseTurnController != null && phaseTurnController.Phase == BattlePhase.PlayerPhase && !unit.defeated && !unit.turnEnded && !busy && !battleOver;
+            bool oldEnabled = GUI.enabled;
+            GUI.enabled = canSelect;
+            if (GUI.Button(new Rect(rect.x + rect.width - 72f, rect.y + 46f, 62f, 22f), selected ? "Active" : "Select"))
+            {
+                SelectAlly(unit);
+            }
+
+            GUI.enabled = oldEnabled;
+        }
+
+        private bool CanPlayerControlActive()
+        {
+            return activeUnit != null
+                && activeUnit.definition.faction == Faction.Ally
+                && !busy
+                && !battleOver
+                && phaseTurnController != null
+                && phaseTurnController.Phase == BattlePhase.PlayerPhase;
+        }
+
+        private string InstructionText()
+        {
+            if (battleOver)
+            {
+                return "Press R to restart the battle test.";
+            }
+
+            if (phaseTurnController != null && phaseTurnController.Phase == BattlePhase.EnemyPhase)
+            {
+                return "Enemy AI is acting. Watch red threat cells and counter results.";
+            }
+
+            if (activeUnit == null)
+            {
+                return "Select a ready ally from the map or bottom cards.";
+            }
+
+            if (commandMode == BattleCommandMode.Move && !activeUnit.moved)
+            {
+                return "Blue cells are movement. Move first, then choose attack, skill, guard, or wait.";
+            }
+
+            if (commandMode == BattleCommandMode.Attack)
+            {
+                return "Red cells are attack targets. Hover an enemy for forecast, click to strike.";
+            }
+
+            if (commandMode == BattleCommandMode.Skill)
+            {
+                return "Purple cells are skill targets. Check forecast before confirming.";
+            }
+
+            return "Finish the unit with attack, skill, guard, or wait.";
+        }
+
+        private List<BattleTestUnit> FactionUnits(Faction faction)
+        {
+            List<BattleTestUnit> result = new List<BattleTestUnit>();
             for (int i = 0; i < units.Count; i++)
             {
-                BattleTestUnit unit = units[i];
-                float x = 34f + (i * cardWidth);
-                string prefix = unit == activeUnit ? "> " : string.Empty;
-                GUI.Label(new Rect(x, y + 42f, cardWidth - 8f, 22f), $"{prefix}{unit.definition.displayName}", unit == activeUnit ? labelStyle : smallStyle);
-                GUI.Label(new Rect(x, y + 64f, cardWidth - 8f, 22f), $"HP {unit.hp}/{unit.definition.maxHp}  {UnitStatusText(unit)}", smallStyle);
+                if (units[i].definition.faction == faction)
+                {
+                    result.Add(units[i]);
+                }
             }
+
+            return result;
         }
 
         private void BuildBattle()
@@ -535,20 +671,15 @@ namespace JoseonMurimTactics
 
             if (clickedUnit != null && clickedUnit.definition.faction == Faction.Ally)
             {
-                if (unitSelectionController.TrySelect(clickedUnit))
-                {
-                    activeUnit = clickedUnit;
-                    commandMode = BattleCommandMode.Move;
-                    currentForecast = default;
-                    AddLog($"Selected {activeUnit.definition.displayName}.");
-                    RefreshHighlights();
-                    RefreshUnits();
-                }
-                else
-                {
-                    AddLog("That ally already acted.");
-                }
+                SelectAlly(clickedUnit);
+                return;
+            }
 
+            if (clickedUnit != null && clickedUnit.definition.faction != activeUnit.definition.faction && commandMode == BattleCommandMode.Move)
+            {
+                SetCommandMode(BattleCommandMode.Attack);
+                UpdateForecast(clickedUnit, false);
+                AddLog("Target preview. Click the enemy again to attack.");
                 return;
             }
 
@@ -596,6 +727,28 @@ namespace JoseonMurimTactics
             }
         }
 
+        private void SelectAlly(BattleTestUnit unit)
+        {
+            if (unit == null || unit.definition.faction != Faction.Ally)
+            {
+                return;
+            }
+
+            if (unitSelectionController.TrySelect(unit))
+            {
+                activeUnit = unit;
+                commandMode = activeUnit.moved && !activeUnit.acted ? BattleCommandMode.Attack : BattleCommandMode.Move;
+                currentForecast = default;
+                AddLog($"Selected {activeUnit.definition.displayName}.");
+                RefreshHighlights();
+                RefreshUnits();
+            }
+            else
+            {
+                AddLog("That ally already acted.");
+            }
+        }
+
         private void TryMove(BattleTestUnit unit, BattleTestTile destination)
         {
             if (unit.moved)
@@ -621,7 +774,14 @@ namespace JoseonMurimTactics
             unit.moved = true;
             ApplyTileEntryEffect(unit, destination);
             StartCoroutine(AnimateMove(unit, UnitWorldPosition(destination.cell)));
-            AddLog($"{unit.definition.displayName} moved.");
+            currentForecast = default;
+            if (!unit.acted)
+            {
+                commandMode = BattleCommandMode.Attack;
+            }
+
+            AddLog($"{unit.definition.displayName} moved. Choose a target, skill, guard, or wait.");
+            RefreshHighlights();
         }
 
         private bool TryAttack(BattleTestUnit attacker, BattleTestUnit target, bool endAfterAttack)
@@ -1178,6 +1338,24 @@ namespace JoseonMurimTactics
                 return;
             }
 
+            if (mode == BattleCommandMode.Move && activeUnit.moved)
+            {
+                AddLog("Move already spent. Choose attack, skill, guard, or wait.");
+                return;
+            }
+
+            if (mode == BattleCommandMode.Attack && activeUnit.acted)
+            {
+                AddLog("Action already spent. Wait to finish this unit.");
+                return;
+            }
+
+            if (mode == BattleCommandMode.Skill && !CanUseSpecial(activeUnit))
+            {
+                AddLog("Skill is unavailable.");
+                return;
+            }
+
             commandMode = mode;
             if (hoveredUnit != null && hoveredUnit.definition.faction != activeUnit.definition.faction)
             {
@@ -1243,7 +1421,10 @@ namespace JoseonMurimTactics
             if (hoveredUnit != null && activeUnit != null && hoveredUnit.definition.faction != activeUnit.definition.faction)
             {
                 UpdateForecast(hoveredUnit, commandMode == BattleCommandMode.Skill);
+                return;
             }
+
+            currentForecast = default;
         }
 
         private void UpdateForecast(BattleTestUnit target, bool special)
@@ -1393,6 +1574,15 @@ namespace JoseonMurimTactics
                             tile.SetHighlight(color);
                         }
                     }
+                }
+            }
+
+            if (hoveredUnit != null && hoveredUnit.definition.faction != activeUnit.definition.faction)
+            {
+                BattleTestTile targetTile = TileAt(hoveredUnit.cell);
+                if (targetTile != null)
+                {
+                    targetTile.SetHighlight(new Color(1f, 0.92f, 0.70f, 0.78f));
                 }
             }
         }
@@ -1555,10 +1745,22 @@ namespace JoseonMurimTactics
         {
             float guiY = Screen.height - screenPosition.y;
             Vector2 point = new Vector2(screenPosition.x, guiY);
-            Rect leftPanel = new Rect(18f, 18f, 340f, 658f);
-            Rect rightPanel = new Rect(Screen.width - 386f, 18f, 368f, 450f);
-            Rect bottomPanel = new Rect(18f, Screen.height - 118f, Screen.width - 36f, 100f);
-            return leftPanel.Contains(point) || rightPanel.Contains(point) || bottomPanel.Contains(point);
+            Rect objectivePanel = new Rect(18f, 18f, 380f, 190f);
+            Rect inspectPanel = new Rect(18f, 218f, 380f, 140f);
+            Rect phaseBanner = new Rect((Screen.width * 0.5f) - 300f, 18f, 600f, 108f);
+            Rect readyPanel = new Rect(Screen.width - 292f, 18f, 274f, 176f);
+            Rect commandPanel = new Rect(Screen.width - 232f, 206f, 214f, 342f);
+            Rect logPanel = new Rect(Screen.width - 348f, Screen.height - 380f, 330f, 222f);
+            Rect forecastPanel = new Rect((Screen.width * 0.5f) - 390f, Screen.height - 322f, 780f, 160f);
+            Rect bottomPanel = new Rect(18f, Screen.height - 142f, Screen.width - 36f, 124f);
+            return objectivePanel.Contains(point)
+                || inspectPanel.Contains(point)
+                || phaseBanner.Contains(point)
+                || readyPanel.Contains(point)
+                || commandPanel.Contains(point)
+                || logPanel.Contains(point)
+                || forecastPanel.Contains(point)
+                || bottomPanel.Contains(point);
         }
 
         private Sprite CreateDiamondSprite()
@@ -1623,6 +1825,38 @@ namespace JoseonMurimTactics
             logStyle.normal.textColor = new Color(0.86f, 0.82f, 0.74f, 1f);
             logStyle.fontSize = 13;
             logStyle.wordWrap = true;
+
+            phaseStyle = new GUIStyle(GUI.skin.box);
+            phaseStyle.normal.background = MakeTexture(new Color(0.06f, 0.08f, 0.09f, 0.88f));
+            phaseStyle.border = new RectOffset(8, 8, 8, 8);
+
+            commandStyle = new GUIStyle(GUI.skin.button);
+            commandStyle.normal.textColor = new Color(0.92f, 0.88f, 0.78f, 1f);
+            commandStyle.fontSize = 16;
+            commandStyle.fontStyle = FontStyle.Bold;
+            commandStyle.alignment = TextAnchor.MiddleLeft;
+            commandStyle.padding = new RectOffset(16, 8, 0, 0);
+
+            commandActiveStyle = new GUIStyle(commandStyle);
+            commandActiveStyle.normal.textColor = new Color(1f, 0.88f, 0.42f, 1f);
+            commandActiveStyle.normal.background = MakeTexture(new Color(0.26f, 0.19f, 0.08f, 0.95f));
+
+            cardStyle = new GUIStyle(GUI.skin.box);
+            cardStyle.normal.background = MakeTexture(new Color(0.10f, 0.095f, 0.08f, 0.92f));
+            cardStyle.border = new RectOffset(6, 6, 6, 6);
+
+            cardActiveStyle = new GUIStyle(cardStyle);
+            cardActiveStyle.normal.background = MakeTexture(new Color(0.22f, 0.18f, 0.08f, 0.96f));
+
+            warningStyle = new GUIStyle(GUI.skin.label);
+            warningStyle.normal.textColor = new Color(1f, 0.55f, 0.42f, 1f);
+            warningStyle.fontSize = 13;
+            warningStyle.fontStyle = FontStyle.Bold;
+
+            tinyStyle = new GUIStyle(GUI.skin.label);
+            tinyStyle.normal.textColor = new Color(0.76f, 0.73f, 0.66f, 1f);
+            tinyStyle.fontSize = 12;
+            tinyStyle.wordWrap = true;
         }
 
         private Texture2D MakeTexture(Color color)
@@ -1631,6 +1865,14 @@ namespace JoseonMurimTactics
             texture.SetPixel(0, 0, color);
             texture.Apply();
             return texture;
+        }
+
+        private void FillRect(Rect rect, Color color)
+        {
+            Color previous = GUI.color;
+            GUI.color = color;
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = previous;
         }
 
         private string YesNo(bool value)

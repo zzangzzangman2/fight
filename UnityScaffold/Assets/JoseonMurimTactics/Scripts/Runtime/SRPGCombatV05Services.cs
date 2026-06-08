@@ -535,20 +535,42 @@ namespace JoseonMurimTactics
         public void Draw(Rect rect, BattleForecast forecast, GUIStyle panelStyle, GUIStyle titleStyle, GUIStyle smallStyle)
         {
             GUI.Box(rect, GUIContent.none, panelStyle);
-            GUI.Label(new Rect(rect.x + 16f, rect.y + 12f, rect.width - 32f, 24f), "Battle Forecast", titleStyle);
+            GUI.Label(new Rect(rect.x + 18f, rect.y + 10f, rect.width - 36f, 24f), "Combat Forecast", titleStyle);
 
             if (!forecast.valid)
             {
-                GUI.Label(new Rect(rect.x + 16f, rect.y + 44f, rect.width - 32f, 24f), forecast.reason, smallStyle);
+                GUI.Label(new Rect(rect.x + 18f, rect.y + 42f, rect.width - 36f, 24f), forecast.reason, smallStyle);
                 return;
             }
 
-            GUI.Label(new Rect(rect.x + 16f, rect.y + 42f, rect.width - 32f, 22f), $"{forecast.actorName} -> {forecast.targetName}", smallStyle);
-            GUI.Label(new Rect(rect.x + 16f, rect.y + 64f, rect.width - 32f, 22f), $"Action: {forecast.actionName}", smallStyle);
-            GUI.Label(new Rect(rect.x + 16f, rect.y + 86f, rect.width - 32f, 22f), $"Hit: d20 {forecast.requiredD20}+  ({forecast.hitPercent}%)", smallStyle);
-            GUI.Label(new Rect(rect.x + 16f, rect.y + 108f, rect.width - 32f, 22f), $"Damage: {forecast.damageMin}-{forecast.damageMax}   Crit: {forecast.critPercent}%", smallStyle);
-            GUI.Label(new Rect(rect.x + 16f, rect.y + 130f, rect.width - 32f, 22f), $"Break: +{forecast.breakGain}   Matchup: {forecast.styleAdvantage}", smallStyle);
-            GUI.Label(new Rect(rect.x + 16f, rect.y + 152f, rect.width - 32f, 22f), $"Terrain: +{forecast.terrainBonus}   Counter: {(forecast.counterPossible ? forecast.counterDamageMin + "-" + forecast.counterDamageMax : "No")}", smallStyle);
+            Rect actor = new Rect(rect.x + 18f, rect.y + 42f, 250f, 96f);
+            Rect center = new Rect(rect.x + 284f, rect.y + 42f, 212f, 96f);
+            Rect target = new Rect(rect.x + rect.width - 268f, rect.y + 42f, 250f, 96f);
+
+            Fill(actor, new Color(0.07f, 0.18f, 0.30f, 0.92f));
+            Fill(target, new Color(0.30f, 0.08f, 0.08f, 0.92f));
+            Fill(center, new Color(0.10f, 0.085f, 0.07f, 0.92f));
+
+            GUI.Label(new Rect(actor.x + 12f, actor.y + 10f, actor.width - 24f, 22f), forecast.actorName, smallStyle);
+            GUI.Label(new Rect(actor.x + 12f, actor.y + 36f, actor.width - 24f, 20f), forecast.actionName, smallStyle);
+            GUI.Label(new Rect(actor.x + 12f, actor.y + 60f, actor.width - 24f, 20f), $"Damage {forecast.damageMin}-{forecast.damageMax}", smallStyle);
+
+            GUI.Label(new Rect(center.x + 12f, center.y + 8f, center.width - 24f, 20f), $"Hit d20 {forecast.requiredD20}+  ({forecast.hitPercent}%)", smallStyle);
+            GUI.Label(new Rect(center.x + 12f, center.y + 32f, center.width - 24f, 20f), $"Crit {forecast.critPercent}%   Break +{forecast.breakGain}", smallStyle);
+            GUI.Label(new Rect(center.x + 12f, center.y + 56f, center.width - 24f, 20f), $"Matchup {forecast.styleAdvantage}", smallStyle);
+            GUI.Label(new Rect(center.x + 12f, center.y + 78f, center.width - 24f, 18f), $"Terrain +{forecast.terrainBonus}", smallStyle);
+
+            GUI.Label(new Rect(target.x + 12f, target.y + 10f, target.width - 24f, 22f), forecast.targetName, smallStyle);
+            GUI.Label(new Rect(target.x + 12f, target.y + 36f, target.width - 24f, 20f), forecast.counterPossible ? "Counter possible" : "No counter", smallStyle);
+            GUI.Label(new Rect(target.x + 12f, target.y + 60f, target.width - 24f, 20f), forecast.counterPossible ? $"Counter damage {forecast.counterDamageMin}-{forecast.counterDamageMax}" : "Broken/range/resource blocks it", smallStyle);
+        }
+
+        private static void Fill(Rect rect, Color color)
+        {
+            Color previous = GUI.color;
+            GUI.color = color;
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = previous;
         }
     }
 }
