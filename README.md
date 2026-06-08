@@ -1,4 +1,4 @@
-﻿# 조선 무협 SRPG v0.4
+# 조선 무협 SRPG v0.4
 
 이 버전은 기존 v0.3의 “전술 노드/2D 전장” 방향을 버리고, 고전 Fire Emblem식 SRPG 흐름으로 다시 잡은 HTML 프로토타입입니다.
 
@@ -19,6 +19,8 @@
 ## 실행
 
 브라우저에서 `index.html`을 열면 됩니다.
+
+Unity 캐릭터 에셋 프리뷰는 루트의 `play-unity-asset-preview.cmd`를 더블클릭하면 됩니다. Unity 6000.3.0f1로 `UnityScaffold` 프로젝트를 열고 `CharacterAssetPreview` 씬을 Play Mode로 실행합니다.
 
 ## Random Chat 엔진/비율 참고
 
@@ -63,6 +65,7 @@ HTML 토큰은 프로토타입 조작감 확인용이고, 실제 비주얼은 `U
 
 - `UnityScaffold/Assets/JoseonMurimTactics/Art/Characters/Sprites/Individuals`에 성인 무협 캐릭터 full-body PNG 6종을 추가했습니다.
 - `CharacterVisualData`와 `CharacterVisualController`를 추가해 SpriteRenderer, 그림자, 선택 링, 숨쉬는 idle 모션, y축 깊이 정렬을 처리합니다.
+- `Assets/JoseonMurimTactics/Scenes/CharacterAssetPreview.unity`에서 에셋을 바로 확인할 수 있습니다.
 - Unity 패키지는 2D Animation, PSD Importer, SpriteShape, Tilemap Extras를 포함하도록 manifest를 업데이트했습니다.
 
 ## 주인공/동료 방향

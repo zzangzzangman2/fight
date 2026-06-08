@@ -1,4 +1,4 @@
-﻿# Character Art Pipeline
+# Character Art Pipeline
 
 The current HTML tokens are only placeholders. Unity should use polished adult 2D character sprites with SpriteRenderer, 2D Animation, and subtle presentation motion.
 

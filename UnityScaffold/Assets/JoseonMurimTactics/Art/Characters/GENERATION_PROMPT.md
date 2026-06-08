@@ -1,4 +1,4 @@
-﻿# Character Generation Prompt
+# Character Generation Prompt
 
 This is the prompt used for the current first-pass Unity character art.
 

@@ -1,4 +1,4 @@
-﻿# UnityScaffold
+# UnityScaffold
 
 `codex_unity_request_v0_4.md`의 요구사항을 Unity C#로 옮기기 위한 프로젝트 골격입니다.
 
@@ -34,6 +34,10 @@ Assets/JoseonMurimTactics/Art/Characters
 ```
 
 각 유닛은 `CombatantData.visual`에 `CharacterVisualData`를 연결하고, 프리팹에는 `CharacterVisualController`를 붙입니다. 컨트롤러가 스프라이트 스케일, 그림자, 선택 링, 숨쉬는 idle 모션, y축 깊이 정렬을 처리합니다.
+
+## 바로 보기
+
+저장소 루트의 `play-unity-asset-preview.cmd`를 실행하면 Unity가 이 프로젝트를 열고 `Assets/JoseonMurimTactics/Scenes/CharacterAssetPreview.unity`를 Play Mode로 띄웁니다.
 
 ## 다음 작업
 
