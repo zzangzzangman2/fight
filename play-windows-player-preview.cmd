@@ -3,9 +3,9 @@ setlocal
 
 set "PROJECT_DIR=%~dp0UnityScaffold"
 set "UNITY_EXE=C:\Program Files\Unity\Hub\Editor\6000.3.0f1\Editor\Unity.exe"
-set "PLAYER_EXE=%PROJECT_DIR%\Builds\CharacterAssetPreview\JoseonMurimTacticsPreview.exe"
-set "PREP_LOG=%TEMP%\joseon-murim-player-prep.log"
-set "BUILD_LOG=%TEMP%\joseon-murim-player-build.log"
+set "PLAYER_EXE=%PROJECT_DIR%\Builds\BattleTest\JoseonMurimTacticsBattleTest.exe"
+set "PREP_LOG=%TEMP%\joseon-murim-battle-prep.log"
+set "BUILD_LOG=%TEMP%\joseon-murim-battle-build.log"
 set "BUILD_ONLY="
 
 if /I "%~1"=="--build-only" (
@@ -46,8 +46,8 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/3] Building standalone Windows player...
-"%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_DIR%" -executeMethod JoseonMurimTactics.Editor.CharacterPlayerBuild.BuildWindowsPreview -logFile "%BUILD_LOG%"
+echo [2/3] Building standalone battle test player...
+"%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_DIR%" -executeMethod JoseonMurimTactics.Editor.CharacterPlayerBuild.BuildWindowsBattleTest -logFile "%BUILD_LOG%"
 if errorlevel 1 (
   echo Windows player build failed.
   echo Log: %BUILD_LOG%
