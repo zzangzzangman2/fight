@@ -27,12 +27,22 @@ namespace JoseonMurimTactics
         private BattleTestUnit activeUnit;
         private BattleTestUnit hoveredUnit;
         private BattleTestTile hoveredTile;
-        private int activeIndex;
         private int round = 1;
         private bool busy;
         private bool aiQueued;
         private bool battleOver;
+        private bool showThreatRange;
         private BattleCommandMode commandMode = BattleCommandMode.Move;
+        private PhaseTurnController phaseTurnController;
+        private UnitSelectionController unitSelectionController;
+        private BreakResolver breakResolver;
+        private CounterattackService counterattackService;
+        private BattleForecastService battleForecastService;
+        private ThreatRangeService threatRangeService;
+        private ObjectiveManager objectiveManager;
+        private EnemyTacticsAI enemyTacticsAI;
+        private BattleForecastPanel battleForecastPanel;
+        private BattleForecast currentForecast;
 
         private void Start()
         {
@@ -59,19 +69,19 @@ namespace JoseonMurimTactics
 
             UpdateHover();
 
-            if (busy || activeUnit == null)
+            if (phaseTurnController != null && phaseTurnController.Phase == BattlePhase.EnemyPhase)
             {
+                if (!busy && !aiQueued)
+                {
+                    aiQueued = true;
+                    StartCoroutine(RunEnemyPhase());
+                }
+
                 return;
             }
 
-            if (activeUnit.definition.faction == Faction.Enemy)
+            if (busy || activeUnit == null)
             {
-                if (!aiQueued)
-                {
-                    aiQueued = true;
-                    StartCoroutine(RunEnemyTurn());
-                }
-
                 return;
             }
 
@@ -97,6 +107,11 @@ namespace JoseonMurimTactics
             {
                 GuardActiveUnit();
             }
+            else if (Input.GetKeyDown(KeyCode.T))
+            {
+                showThreatRange = !showThreatRange;
+                RefreshHighlights();
+            }
 
             if (Input.GetMouseButtonDown(0))
             {
@@ -117,6 +132,7 @@ namespace JoseonMurimTactics
             DrawTurnQueuePanel();
             DrawLogPanel();
             DrawInspectPanel();
+            DrawForecastPanel();
             DrawRosterPanel();
 
             if (!battleOver)
@@ -130,55 +146,64 @@ namespace JoseonMurimTactics
 
         private void DrawActivePanel()
         {
-            GUI.Box(new Rect(18f, 18f, 340f, 300f), GUIContent.none, panelStyle);
+            GUI.Box(new Rect(18f, 18f, 340f, 336f), GUIContent.none, panelStyle);
             string activeName = activeUnit == null ? "None" : activeUnit.definition.displayName;
             string hp = activeUnit == null ? string.Empty : $"{activeUnit.hp}/{activeUnit.definition.maxHp}";
             string side = activeUnit == null ? string.Empty : activeUnit.definition.faction.ToString();
+            string phase = phaseTurnController == null ? "PlayerPhase" : phaseTurnController.Phase.ToString();
 
-            GUI.Label(new Rect(34f, 30f, 300f, 28f), $"Round {round}", titleStyle);
-            GUI.Label(new Rect(34f, 62f, 300f, 24f), $"Now: {activeName}", labelStyle);
-            GUI.Label(new Rect(34f, 88f, 300f, 22f), $"Side: {side}   HP: {hp}", smallStyle);
+            GUI.Label(new Rect(34f, 30f, 300f, 28f), $"Round {phaseTurnController?.Round ?? round}  {phase}", titleStyle);
+            GUI.Label(new Rect(34f, 58f, 300f, 22f), objectiveManager != null ? objectiveManager.ScenarioTitle : "Battle Test", smallStyle);
+            GUI.Label(new Rect(34f, 82f, 300f, 24f), $"Now: {activeName}", labelStyle);
+            GUI.Label(new Rect(34f, 108f, 300f, 22f), $"Side: {side}   HP: {hp}", smallStyle);
 
             if (activeUnit != null)
             {
-                GUI.Label(new Rect(34f, 112f, 300f, 22f), $"Move: {ActionText(activeUnit.moved)}   Action: {ActionText(activeUnit.acted)}", smallStyle);
-                GUI.Label(new Rect(34f, 136f, 300f, 22f), $"Inner: {activeUnit.inner}/{activeUnit.definition.maxInner}   Guard: {YesNo(activeUnit.guarded)}", smallStyle);
-                GUI.Label(new Rect(34f, 160f, 300f, 22f), $"Mode: {commandMode}", labelStyle);
+                GUI.Label(new Rect(34f, 132f, 300f, 22f), $"Move: {ActionText(activeUnit.moved)}   Action: {ActionText(activeUnit.acted)}   Done: {YesNo(activeUnit.turnEnded)}", smallStyle);
+                GUI.Label(new Rect(34f, 156f, 300f, 22f), $"Inner: {activeUnit.inner}/{activeUnit.definition.maxInner}   Break: {activeUnit.breakGauge}/100", smallStyle);
+                GUI.Label(new Rect(34f, 180f, 300f, 22f), $"Mode: {commandMode}   Threat: {YesNo(showThreatRange)}", labelStyle);
             }
 
-            bool playerTurn = activeUnit != null && activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
+            bool playerTurn = activeUnit != null && activeUnit.definition.faction == Faction.Ally && !busy && !battleOver && phaseTurnController.Phase == BattlePhase.PlayerPhase;
             GUI.enabled = playerTurn;
 
-            if (GUI.Button(new Rect(34f, 192f, 70f, 28f), "Move"))
+            if (GUI.Button(new Rect(34f, 212f, 70f, 28f), "Move"))
             {
                 SetCommandMode(BattleCommandMode.Move);
             }
 
             GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
-            if (GUI.Button(new Rect(112f, 192f, 70f, 28f), "Attack"))
+            if (GUI.Button(new Rect(112f, 212f, 70f, 28f), "Attack"))
             {
                 SetCommandMode(BattleCommandMode.Attack);
             }
 
             GUI.enabled = playerTurn && activeUnit != null && CanUseSpecial(activeUnit);
-            if (GUI.Button(new Rect(190f, 192f, 70f, 28f), "Skill"))
+            if (GUI.Button(new Rect(190f, 212f, 70f, 28f), "Skill"))
             {
                 SetCommandMode(BattleCommandMode.Skill);
             }
 
             GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
-            if (GUI.Button(new Rect(268f, 192f, 70f, 28f), "Guard"))
+            if (GUI.Button(new Rect(268f, 212f, 70f, 28f), "Guard"))
             {
                 GuardActiveUnit();
             }
 
             GUI.enabled = playerTurn;
-            if (GUI.Button(new Rect(34f, 230f, 148f, 30f), "행동 끝"))
+            if (GUI.Button(new Rect(34f, 250f, 96f, 30f), "Wait"))
             {
                 EndTurn();
             }
 
-            if (GUI.Button(new Rect(190f, 230f, 148f, 30f), "Reset"))
+            GUI.enabled = true;
+            if (GUI.Button(new Rect(138f, 250f, 96f, 30f), "Threat"))
+            {
+                showThreatRange = !showThreatRange;
+                RefreshHighlights();
+            }
+
+            if (GUI.Button(new Rect(242f, 250f, 96f, 30f), "Reset"))
             {
                 BuildBattle();
             }
@@ -189,7 +214,8 @@ namespace JoseonMurimTactics
             {
                 string skillLine = activeUnit.definition.specialName;
                 string cooldown = activeUnit.specialCooldownLeft > 0 ? $"CD {activeUnit.specialCooldownLeft}" : "Ready";
-                GUI.Label(new Rect(34f, 266f, 304f, 22f), $"Skill: {skillLine} ({cooldown})", smallStyle);
+                GUI.Label(new Rect(34f, 290f, 304f, 22f), $"Skill: {skillLine} ({cooldown})", smallStyle);
+                GUI.Label(new Rect(34f, 312f, 304f, 22f), $"Style: {activeUnit.definition.style}   Counter: R{activeUnit.definition.counterRange}", smallStyle);
             }
         }
 
@@ -241,11 +267,22 @@ namespace JoseonMurimTactics
             {
                 GUI.Label(new Rect(34f, 374f, 300f, 22f), $"{hoveredTile.terrain}  ({hoveredTile.cell.x},{hoveredTile.cell.y})", labelStyle);
                 GUI.Label(new Rect(34f, 398f, 300f, 22f), $"Move Cost {hoveredTile.moveCost}   Cover +{hoveredTile.coverBonus}", smallStyle);
-                GUI.Label(new Rect(34f, 422f, 300f, 22f), $"Elevation {hoveredTile.elevation}   Walkable {YesNo(hoveredTile.walkable)}", smallStyle);
+                GUI.Label(new Rect(34f, 422f, 300f, 22f), $"Elevation {hoveredTile.elevation}   Hazard {hoveredTile.hazard}", smallStyle);
                 return;
             }
 
             GUI.Label(new Rect(34f, 374f, 300f, 22f), "No target", smallStyle);
+        }
+
+        private void DrawForecastPanel()
+        {
+            if (battleForecastPanel == null || activeUnit == null)
+            {
+                return;
+            }
+
+            Rect rect = new Rect(18f, 486f, 340f, 190f);
+            battleForecastPanel.Draw(rect, currentForecast, panelStyle, titleStyle, smallStyle);
         }
 
         private void DrawRosterPanel()
@@ -273,23 +310,34 @@ namespace JoseonMurimTactics
             units.Clear();
             battleLog.Clear();
             activeUnit = null;
-            activeIndex = 0;
             round = 1;
             busy = false;
             aiQueued = false;
             battleOver = false;
             commandMode = BattleCommandMode.Move;
+            showThreatRange = false;
             hoveredTile = null;
             hoveredUnit = null;
+            currentForecast = default;
+            phaseTurnController = new PhaseTurnController();
+            unitSelectionController = new UnitSelectionController();
+            breakResolver = new BreakResolver();
+            counterattackService = new CounterattackService();
+            battleForecastService = new BattleForecastService(breakResolver, counterattackService);
+            threatRangeService = new ThreatRangeService();
+            objectiveManager = new ObjectiveManager();
+            enemyTacticsAI = new EnemyTacticsAI(breakResolver, battleForecastService);
+            battleForecastPanel = new BattleForecastPanel();
 
             diamondSprite = diamondSprite == null ? CreateDiamondSprite() : diamondSprite;
             CreateTerrain();
             SpawnUnits();
-            units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
             CenterCamera();
 
-            AddLog("Battle test ready.");
-            BeginTurn();
+            AddLog(objectiveManager.ScenarioTitle);
+            AddLog("Player Phase: choose allies in any order.");
+            phaseTurnController.StartBattle(units);
+            BeginPlayerPhase();
         }
 
         private void ClearGeneratedObjects()
@@ -348,6 +396,7 @@ namespace JoseonMurimTactics
                     BattleTestTile tile = tileObject.AddComponent<BattleTestTile>();
                     tile.cell = cell;
                     tile.terrain = profile.terrain;
+                    tile.hazard = profile.hazard;
                     tile.elevation = profile.elevation;
                     tile.walkable = profile.walkable;
                     tile.moveCost = profile.moveCost;
@@ -386,62 +435,73 @@ namespace JoseonMurimTactics
 
                 BattleTestUnitView view = unitObject.AddComponent<BattleTestUnitView>();
                 BattleTestUnit unit = new BattleTestUnit(definition, view);
-                unit.initiative = definition.initiative + random.Next(0, 5);
+                unit.initiative = definition.initiative;
                 view.Bind(unit, visual);
                 units.Add(unit);
             }
         }
 
-        private void BeginTurn()
+        private void BeginPlayerPhase()
         {
             if (CheckBattleEnd())
             {
                 return;
             }
 
-            for (int guard = 0; guard < units.Count; guard++)
+            round = phaseTurnController.Round;
+            aiQueued = false;
+            for (int i = 0; i < units.Count; i++)
             {
-                if (activeIndex >= units.Count)
+                BattleTestUnit unit = units[i];
+                if (!unit.defeated && unit.definition.faction == Faction.Ally)
                 {
-                    activeIndex = 0;
-                    round++;
+                    ApplyStartOfTurn(unit);
                 }
-
-                BattleTestUnit candidate = units[activeIndex];
-                if (!candidate.defeated)
-                {
-                    activeUnit = candidate;
-                    ApplyStartOfTurn(activeUnit);
-                    if (activeUnit.defeated)
-                    {
-                        activeIndex++;
-                        continue;
-                    }
-
-                    activeUnit.moved = false;
-                    activeUnit.acted = false;
-                    aiQueued = false;
-                    commandMode = BattleCommandMode.Move;
-                    AddLog($"Turn: {activeUnit.definition.displayName}");
-                    RefreshHighlights();
-                    RefreshUnits();
-                    return;
-                }
-
-                activeIndex++;
             }
+
+            activeUnit = unitSelectionController.SelectFirstReadyAlly(units);
+            commandMode = BattleCommandMode.Move;
+            currentForecast = default;
+            AddLog($"Player Phase {phaseTurnController.Round}: choose unit order.");
+            RefreshHighlights();
+            RefreshUnits();
         }
 
         private void EndTurn()
         {
-            if (battleOver)
+            if (battleOver || activeUnit == null || phaseTurnController.Phase != BattlePhase.PlayerPhase)
             {
                 return;
             }
 
-            ClearHighlights();
-            activeIndex++;
-            BeginTurn();
+            CompleteActiveUnit("waits.");
+        }
+
+        private void CompleteActiveUnit(string reason)
+        {
+            if (activeUnit == null)
+            {
+                return;
+            }
+
+            AddLog($"{activeUnit.definition.displayName} {reason}");
+            phaseTurnController.MarkUnitFinished(activeUnit);
+            currentForecast = default;
+
+            if (phaseTurnController.AllFactionUnitsFinished(units, Faction.Ally))
+            {
+                activeUnit = null;
+                phaseTurnController.BeginEnemyPhase(units);
+                AddLog("Enemy Phase.");
+                RefreshHighlights();
+                RefreshUnits();
+                return;
+            }
+
+            activeUnit = unitSelectionController.SelectFirstReadyAlly(units);
+            commandMode = BattleCommandMode.Move;
+            RefreshHighlights();
+            RefreshUnits();
         }
 
         private void HandlePointer(Vector3 screenPosition)
@@ -473,11 +533,30 @@ namespace JoseonMurimTactics
                 }
             }
 
+            if (clickedUnit != null && clickedUnit.definition.faction == Faction.Ally)
+            {
+                if (unitSelectionController.TrySelect(clickedUnit))
+                {
+                    activeUnit = clickedUnit;
+                    commandMode = BattleCommandMode.Move;
+                    currentForecast = default;
+                    AddLog($"Selected {activeUnit.definition.displayName}.");
+                    RefreshHighlights();
+                    RefreshUnits();
+                }
+                else
+                {
+                    AddLog("That ally already acted.");
+                }
+
+                return;
+            }
+
             if (commandMode == BattleCommandMode.Attack)
             {
                 if (clickedUnit != null && clickedUnit.definition.faction != activeUnit.definition.faction)
                 {
-                    TryAttack(activeUnit, clickedUnit, false);
+                    TryAttack(activeUnit, clickedUnit, true);
                 }
                 else
                 {
@@ -491,7 +570,10 @@ namespace JoseonMurimTactics
             {
                 if (clickedUnit != null)
                 {
-                    TrySpecial(activeUnit, clickedUnit);
+                    if (TrySpecial(activeUnit, clickedUnit))
+                    {
+                        CompleteActiveUnit("used skill.");
+                    }
                 }
                 else
                 {
@@ -510,6 +592,7 @@ namespace JoseonMurimTactics
             if (clickedUnit != null && clickedUnit.definition.faction != activeUnit.definition.faction)
             {
                 SetCommandMode(BattleCommandMode.Attack);
+                UpdateForecast(clickedUnit, false);
             }
         }
 
@@ -536,6 +619,7 @@ namespace JoseonMurimTactics
 
             unit.cell = destination.cell;
             unit.moved = true;
+            ApplyTileEntryEffect(unit, destination);
             StartCoroutine(AnimateMove(unit, UnitWorldPosition(destination.cell)));
             AddLog($"{unit.definition.displayName} moved.");
         }
@@ -560,8 +644,13 @@ namespace JoseonMurimTactics
                 return false;
             }
 
-            ResolveAttack(attacker, target, false);
+            bool hit = ResolveAttack(attacker, target, false);
             attacker.acted = true;
+            if (hit)
+            {
+                ResolveCounterIfPossible(target, attacker);
+            }
+
             RefreshUnits();
 
             if (CheckBattleEnd())
@@ -571,7 +660,7 @@ namespace JoseonMurimTactics
 
             if (endAfterAttack)
             {
-                EndTurn();
+                CompleteActiveUnit("attacked.");
             }
             else
             {
@@ -581,13 +670,19 @@ namespace JoseonMurimTactics
             return true;
         }
 
-        private void ResolveAttack(BattleTestUnit attacker, BattleTestUnit target, bool special)
+        private bool ResolveAttack(BattleTestUnit attacker, BattleTestUnit target, bool special)
         {
             BattleTestTile from = TileAt(attacker.cell);
             BattleTestTile to = TileAt(target.cell);
             int d20 = random.Next(1, 21);
             int heightBonus = from != null && to != null && from.elevation > to.elevation ? 2 : 0;
-            int attackBonus = attacker.definition.attackBonus + (special ? attacker.definition.specialAttackBonus : 0);
+            if (to != null && (to.hazard == HazardType.Ice || to.hazard == HazardType.Slippery) && attacker.definition.style == SkillStyle.Ice)
+            {
+                heightBonus += 2;
+            }
+
+            int styleBonus = breakResolver.AttackModifier(attacker.definition.style, target.definition.style);
+            int attackBonus = attacker.definition.attackBonus + styleBonus + (special ? attacker.definition.specialAttackBonus : 0);
             int attackTotal = d20 + attackBonus + heightBonus;
             int defense = DefenseValue(target, to);
             bool critical = d20 == 20;
@@ -596,7 +691,7 @@ namespace JoseonMurimTactics
             if (!hit)
             {
                 AddLog($"{attacker.definition.displayName} missed {target.definition.displayName}. d20 {d20}+{attackBonus}+{heightBonus} vs {defense}");
-                return;
+                return false;
             }
 
             int damage = random.Next(attacker.definition.damageMin, attacker.definition.damageMax + 1);
@@ -619,12 +714,39 @@ namespace JoseonMurimTactics
             target.hp = Mathf.Max(0, target.hp - damage);
             AddLog($"{attacker.definition.displayName} hit {target.definition.displayName} for {damage}. d20 {d20}+{attackBonus}+{heightBonus} vs {defense}");
 
+            int breakGain = breakResolver.BreakGain(attacker.definition.style, target.definition.style, true);
+            breakResolver.ApplyBreak(target, breakGain);
+            if (target.broken)
+            {
+                AddLog($"{target.definition.displayName} Broken: counter sealed.");
+            }
+            else if (breakGain > 0)
+            {
+                AddLog($"{target.definition.displayName} break +{breakGain} ({target.breakGauge}/100).");
+            }
+
             if (target.hp == 0)
             {
                 target.defeated = true;
                 target.view.SetDefeated(true);
                 AddLog($"{target.definition.displayName} defeated.");
             }
+
+            return true;
+        }
+
+        private void ResolveCounterIfPossible(BattleTestUnit defender, BattleTestUnit attacker)
+        {
+            int distance = GridDistance(defender.cell, attacker.cell);
+            if (!counterattackService.CanCounter(defender, attacker, distance))
+            {
+                return;
+            }
+
+            defender.counterSpent = true;
+            defender.inner = Mathf.Max(0, defender.inner - defender.definition.counterInnerCost);
+            AddLog($"{defender.definition.displayName} counters.");
+            ResolveAttack(defender, attacker, false);
         }
 
         private bool TrySpecial(BattleTestUnit actor, BattleTestUnit target)
@@ -662,7 +784,11 @@ namespace JoseonMurimTactics
                     AddLog($"{actor.definition.displayName} used {actor.definition.specialName}. {target.definition.displayName} healed {healed}.");
                     break;
                 case BattleSpecialEffect.Poison:
-                    ResolveAttack(actor, target, true);
+                    if (ResolveAttack(actor, target, true))
+                    {
+                        ResolveCounterIfPossible(target, actor);
+                    }
+
                     if (!target.defeated)
                     {
                         target.poisoned = true;
@@ -670,7 +796,11 @@ namespace JoseonMurimTactics
                     }
                     break;
                 case BattleSpecialEffect.Freeze:
-                    ResolveAttack(actor, target, true);
+                    if (ResolveAttack(actor, target, true))
+                    {
+                        ResolveCounterIfPossible(target, actor);
+                    }
+
                     if (!target.defeated)
                     {
                         target.chilled = true;
@@ -684,10 +814,16 @@ namespace JoseonMurimTactics
                 case BattleSpecialEffect.BreakGuard:
                     target.guarded = false;
                     target.marked = true;
-                    ResolveAttack(actor, target, true);
+                    if (ResolveAttack(actor, target, true))
+                    {
+                        ResolveCounterIfPossible(target, actor);
+                    }
                     break;
                 default:
-                    ResolveAttack(actor, target, true);
+                    if (ResolveAttack(actor, target, true))
+                    {
+                        ResolveCounterIfPossible(target, actor);
+                    }
                     break;
             }
 
@@ -706,9 +842,7 @@ namespace JoseonMurimTactics
 
             activeUnit.guarded = true;
             activeUnit.acted = true;
-            AddLog($"{activeUnit.definition.displayName} guards.");
-            RefreshHighlights();
-            RefreshUnits();
+            CompleteActiveUnit("guards.");
         }
 
         private IEnumerator AnimateMove(BattleTestUnit unit, Vector3 target)
@@ -732,50 +866,74 @@ namespace JoseonMurimTactics
             RefreshUnits();
         }
 
-        private IEnumerator RunEnemyTurn()
+        private IEnumerator RunEnemyPhase()
         {
             busy = true;
             yield return new WaitForSeconds(0.3f);
 
-            BattleTestUnit target = FindNearestEnemy(activeUnit);
-            if (target == null)
+            for (int i = 0; i < units.Count; i++)
             {
-                busy = false;
-                EndTurn();
-                yield break;
-            }
-
-            int desiredRange = CanUseSpecial(activeUnit) ? activeUnit.definition.specialRange : activeUnit.definition.attackRange;
-            if (GridDistance(activeUnit.cell, target.cell) > desiredRange && !activeUnit.moved)
-            {
-                BattleTestTile best = FindBestMoveToward(activeUnit, target.cell);
-                if (best != null)
+                BattleTestUnit enemy = units[i];
+                if (enemy.defeated || enemy.definition.faction != Faction.Enemy)
                 {
-                    activeUnit.cell = best.cell;
-                    activeUnit.moved = true;
-                    yield return AnimateMove(activeUnit, UnitWorldPosition(best.cell));
-                    yield return new WaitForSeconds(0.15f);
+                    continue;
                 }
+
+                activeUnit = enemy;
+                ApplyStartOfTurn(enemy);
+                if (enemy.defeated)
+                {
+                    continue;
+                }
+
+                AddLog($"{enemy.definition.displayName} acts.");
+                RefreshHighlights();
+                RefreshUnits();
+                yield return new WaitForSeconds(0.2f);
+
+                BattleTestUnit target = enemyTacticsAI.ChooseTarget(enemy, units, TileAt);
+                if (target == null)
+                {
+                    phaseTurnController.MarkUnitFinished(enemy);
+                    continue;
+                }
+
+                int desiredRange = CanUseSpecial(enemy) ? enemy.definition.specialRange : enemy.definition.attackRange;
+                if (GridDistance(enemy.cell, target.cell) > desiredRange && !enemy.moved)
+                {
+                    BattleTestTile best = FindBestMoveToward(enemy, target.cell);
+                    if (best != null)
+                    {
+                        enemy.cell = best.cell;
+                        enemy.moved = true;
+                        yield return AnimateMove(enemy, UnitWorldPosition(best.cell));
+                        yield return new WaitForSeconds(0.15f);
+                    }
+                }
+
+                if (CanUseSpecial(enemy) && IsValidSpecialTarget(enemy, target) && GridDistance(enemy.cell, target.cell) <= enemy.definition.specialRange)
+                {
+                    TrySpecial(enemy, target);
+                }
+                else
+                {
+                    TryAttack(enemy, target, false);
+                }
+
+                phaseTurnController.MarkUnitFinished(enemy);
+                if (CheckBattleEnd())
+                {
+                    busy = false;
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(0.25f);
             }
 
-            if (CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) && GridDistance(activeUnit.cell, target.cell) <= activeUnit.definition.specialRange)
-            {
-                TrySpecial(activeUnit, target);
-            }
-            else
-            {
-                TryAttack(activeUnit, target, false);
-            }
-
-            if (battleOver)
-            {
-                busy = false;
-                yield break;
-            }
-
-            yield return new WaitForSeconds(0.3f);
+            phaseTurnController.FinishEnemyPhase(units);
             busy = false;
-            EndTurn();
+            activeUnit = null;
+            BeginPlayerPhase();
         }
 
         private BattleTestTile FindBestMoveToward(BattleTestUnit unit, Vector2Int targetCell)
@@ -831,8 +989,15 @@ namespace JoseonMurimTactics
         {
             unit.guarded = false;
             unit.marked = false;
+            unit.counterSpent = false;
             unit.inner = Mathf.Min(unit.definition.maxInner, unit.inner + 1);
             unit.specialCooldownLeft = Mathf.Max(0, unit.specialCooldownLeft - 1);
+            if (unit.broken)
+            {
+                unit.broken = false;
+                unit.breakGauge = Mathf.Max(0, unit.breakGauge - 55);
+                AddLog($"{unit.definition.displayName} recovers from Broken.");
+            }
 
             if (unit.poisoned)
             {
@@ -843,6 +1008,42 @@ namespace JoseonMurimTactics
                     unit.defeated = true;
                     unit.view.SetDefeated(true);
                 }
+            }
+
+            BattleTestTile tile = TileAt(unit.cell);
+            if (tile != null && tile.hazard == HazardType.Fire)
+            {
+                unit.hp = Mathf.Max(0, unit.hp - 4);
+                AddLog($"{unit.definition.displayName} takes 4 fire damage.");
+                if (unit.hp == 0)
+                {
+                    unit.defeated = true;
+                    unit.view.SetDefeated(true);
+                }
+            }
+        }
+
+        private void ApplyTileEntryEffect(BattleTestUnit unit, BattleTestTile tile)
+        {
+            if (tile == null)
+            {
+                return;
+            }
+
+            if (tile.hazard == HazardType.Ice || tile.hazard == HazardType.Slippery)
+            {
+                unit.chilled = true;
+                AddLog($"{unit.definition.displayName} loses footing.");
+            }
+            else if (tile.hazard == HazardType.Fire)
+            {
+                unit.hp = Mathf.Max(0, unit.hp - 3);
+                AddLog($"{unit.definition.displayName} enters fire for 3 damage.");
+            }
+            else if (tile.hazard == HazardType.Smoke)
+            {
+                unit.marked = false;
+                AddLog($"{unit.definition.displayName} enters smoke.");
             }
         }
 
@@ -887,6 +1088,10 @@ namespace JoseonMurimTactics
             if (tile != null)
             {
                 defense += tile.coverBonus;
+                if (tile.hazard == HazardType.Smoke)
+                {
+                    defense += 2;
+                }
             }
 
             if (unit.guarded)
@@ -913,6 +1118,21 @@ namespace JoseonMurimTactics
             if (unit.guarded)
             {
                 states.Add("Guard");
+            }
+
+            if (unit.broken)
+            {
+                states.Add("Broken");
+            }
+
+            if (unit.prone)
+            {
+                states.Add("Prone");
+            }
+
+            if (unit.disarmed)
+            {
+                states.Add("Disarmed");
             }
 
             if (unit.poisoned)
@@ -959,34 +1179,29 @@ namespace JoseonMurimTactics
             }
 
             commandMode = mode;
+            if (hoveredUnit != null && hoveredUnit.definition.faction != activeUnit.definition.faction)
+            {
+                UpdateForecast(hoveredUnit, mode == BattleCommandMode.Skill);
+            }
+            else
+            {
+                currentForecast = default;
+            }
+
             RefreshHighlights();
         }
 
         private List<BattleTestUnit> GetTurnQueuePreview(int count)
         {
             List<BattleTestUnit> queue = new List<BattleTestUnit>();
-            if (units.Count == 0)
+            Faction faction = phaseTurnController != null && phaseTurnController.Phase == BattlePhase.EnemyPhase ? Faction.Enemy : Faction.Ally;
+            for (int i = 0; i < units.Count && queue.Count < count; i++)
             {
-                return queue;
-            }
-
-            int index = activeIndex;
-            int guard = 0;
-            while (queue.Count < count && guard < units.Count * 2)
-            {
-                if (index >= units.Count)
-                {
-                    index = 0;
-                }
-
-                BattleTestUnit unit = units[index];
-                if (!unit.defeated)
+                BattleTestUnit unit = units[i];
+                if (!unit.defeated && unit.definition.faction == faction && !unit.turnEnded)
                 {
                     queue.Add(unit);
                 }
-
-                index++;
-                guard++;
             }
 
             return queue;
@@ -1024,6 +1239,22 @@ namespace JoseonMurimTactics
                     break;
                 }
             }
+
+            if (hoveredUnit != null && activeUnit != null && hoveredUnit.definition.faction != activeUnit.definition.faction)
+            {
+                UpdateForecast(hoveredUnit, commandMode == BattleCommandMode.Skill);
+            }
+        }
+
+        private void UpdateForecast(BattleTestUnit target, bool special)
+        {
+            if (battleForecastService == null || activeUnit == null || target == null)
+            {
+                currentForecast = default;
+                return;
+            }
+
+            currentForecast = battleForecastService.Create(activeUnit, target, TileAt(activeUnit.cell), TileAt(target.cell), special);
         }
 
         private Dictionary<Vector2Int, int> GetReachableCells(BattleTestUnit unit)
@@ -1080,6 +1311,19 @@ namespace JoseonMurimTactics
         private void RefreshHighlights()
         {
             ClearHighlights();
+
+            if (showThreatRange && threatRangeService != null)
+            {
+                HashSet<Vector2Int> threatened = threatRangeService.BuildThreatCells(units, Faction.Enemy, width, height);
+                foreach (Vector2Int cell in threatened)
+                {
+                    BattleTestTile tile = TileAt(cell);
+                    if (tile != null)
+                    {
+                        tile.SetHighlight(new Color(1f, 0.12f, 0.08f, 0.26f));
+                    }
+                }
+            }
 
             if (activeUnit == null || activeUnit.defeated)
             {
@@ -1179,34 +1423,21 @@ namespace JoseonMurimTactics
 
         private bool CheckBattleEnd()
         {
-            bool alliesAlive = false;
-            bool enemiesAlive = false;
-
-            foreach (BattleTestUnit unit in units)
+            if (objectiveManager == null)
             {
-                if (unit.defeated)
-                {
-                    continue;
-                }
-
-                if (unit.definition.faction == Faction.Ally)
-                {
-                    alliesAlive = true;
-                }
-                else if (unit.definition.faction == Faction.Enemy)
-                {
-                    enemiesAlive = true;
-                }
+                return false;
             }
 
-            if (alliesAlive && enemiesAlive)
+            BattleOutcome outcome = objectiveManager.Evaluate(units, phaseTurnController != null ? phaseTurnController.Round : round);
+            if (outcome == BattleOutcome.Ongoing)
             {
                 return false;
             }
 
             battleOver = true;
+            phaseTurnController.SetOutcome(outcome);
             ClearHighlights();
-            AddLog(alliesAlive ? "Victory." : "Defeat.");
+            AddLog(outcome == BattleOutcome.Victory ? "Victory: inspector subdued." : "Defeat: objective failed.");
             return true;
         }
 
@@ -1259,12 +1490,27 @@ namespace JoseonMurimTactics
                 return new TerrainProfile(TerrainType.Wall, new Color(0.22f, 0.21f, 0.22f, 1f), 1, 0, 99, false);
             }
 
+            if ((x == 5 && y == 2) || (x == 6 && y == 2))
+            {
+                return new TerrainProfile(TerrainType.Stone, new Color(0.42f, 0.42f, 0.43f, 1f), 0, 2, 1, true, HazardType.Smoke);
+            }
+
+            if (x == 7 && y == 2)
+            {
+                return new TerrainProfile(TerrainType.Stone, new Color(0.70f, 0.20f, 0.12f, 1f), 0, 0, 2, true, HazardType.Fire);
+            }
+
+            if (x == 6 && y == 4)
+            {
+                return new TerrainProfile(TerrainType.Water, new Color(0.62f, 0.78f, 0.86f, 1f), 0, 0, 2, true, HazardType.Ice);
+            }
+
             if (y == 3 && x >= 2 && x <= 7)
             {
                 bool bridge = x == 4 || x == 5;
                 return bridge
                     ? new TerrainProfile(TerrainType.Bridge, new Color(0.49f, 0.31f, 0.16f, 1f), 0, 0, 1, true)
-                    : new TerrainProfile(TerrainType.Water, new Color(0.16f, 0.37f, 0.50f, 1f), 0, 0, 3, true);
+                    : new TerrainProfile(TerrainType.Water, new Color(0.16f, 0.37f, 0.50f, 1f), 0, 0, 3, true, HazardType.Slippery);
             }
 
             if (x <= 2 && y >= 4)
@@ -1309,7 +1555,7 @@ namespace JoseonMurimTactics
         {
             float guiY = Screen.height - screenPosition.y;
             Vector2 point = new Vector2(screenPosition.x, guiY);
-            Rect leftPanel = new Rect(18f, 18f, 340f, 456f);
+            Rect leftPanel = new Rect(18f, 18f, 340f, 658f);
             Rect rightPanel = new Rect(Screen.width - 386f, 18f, 368f, 450f);
             Rect bottomPanel = new Rect(18f, Screen.height - 118f, Screen.width - 36f, 100f);
             return leftPanel.Contains(point) || rightPanel.Contains(point) || bottomPanel.Contains(point);
@@ -1411,8 +1657,9 @@ namespace JoseonMurimTactics
             public readonly int coverBonus;
             public readonly int moveCost;
             public readonly bool walkable;
+            public readonly HazardType hazard;
 
-            public TerrainProfile(TerrainType terrain, Color color, int elevation, int coverBonus, int moveCost, bool walkable)
+            public TerrainProfile(TerrainType terrain, Color color, int elevation, int coverBonus, int moveCost, bool walkable, HazardType hazard = HazardType.None)
             {
                 this.terrain = terrain;
                 this.color = color;
@@ -1420,6 +1667,7 @@ namespace JoseonMurimTactics
                 this.coverBonus = coverBonus;
                 this.moveCost = moveCost;
                 this.walkable = walkable;
+                this.hazard = hazard;
             }
         }
     }
@@ -1432,15 +1680,20 @@ namespace JoseonMurimTactics
         public Faction faction;
         public CharacterVisualData visual;
         public Vector2Int startCell;
+        public SkillStyle style = SkillStyle.Sword;
         public int maxHp = 30;
         public int maxInner = 3;
         public int initiative = 10;
         public int moveRange = 4;
         public int attackRange = 1;
+        public string basicAttackName = "Basic Strike";
         public int attackBonus = 5;
         public int defense = 14;
         public int damageMin = 5;
         public int damageMax = 9;
+        public bool canCounter = true;
+        public int counterRange = 1;
+        public int counterInnerCost;
         public string specialName = "Special";
         public int specialRange = 1;
         public int specialCost = 1;
@@ -1476,6 +1729,7 @@ namespace JoseonMurimTactics
         public bool walkable = true;
         public int moveCost = 1;
         public int coverBonus;
+        public HazardType hazard;
         public SpriteRenderer highlightRenderer;
 
         public void SetHighlight(Color color)
@@ -1557,10 +1811,16 @@ namespace JoseonMurimTactics
         public int inner;
         public int initiative;
         public int specialCooldownLeft;
+        public int breakGauge;
         public bool moved;
         public bool acted;
+        public bool turnEnded;
         public bool defeated;
         public bool guarded;
+        public bool counterSpent;
+        public bool broken;
+        public bool disarmed;
+        public bool prone;
         public bool poisoned;
         public bool chilled;
         public bool marked;
