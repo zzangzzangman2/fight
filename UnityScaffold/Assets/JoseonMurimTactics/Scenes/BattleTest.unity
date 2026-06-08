@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1819400902
+--- !u!1 &1799756060
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,184 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1819400905}
-  - component: {fileID: 1819400904}
-  - component: {fileID: 1819400903}
+  - component: {fileID: 1799756062}
+  - component: {fileID: 1799756061}
+  m_Layer: 0
+  m_Name: Battle Test Controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1799756061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1799756060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62f2a742e6ce4fe3af7c040e2c21817f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestController
+  width: 12
+  height: 8
+  tileWidth: 1.16
+  tileHeight: 0.62
+  unitDefinitions:
+  - id: yeon_sowol
+    displayName: Yeon Sowol
+    faction: 0
+    visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
+    startCell: {x: 1, y: 1}
+    maxHp: 34
+    maxInner: 4
+    initiative: 14
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 6
+    defense: 15
+    damageMin: 6
+    damageMax: 10
+    specialName: Moonlit Sword
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 5
+    specialAttackBonus: 2
+    specialEffect: 1
+  - id: seo_arin
+    displayName: Seo Arin
+    faction: 0
+    visual: {fileID: 11400000, guid: 7b1ede8616ecb6b4797e42d572084460, type: 2}
+    startCell: {x: 1, y: 3}
+    maxHp: 28
+    maxInner: 4
+    initiative: 11
+    moveRange: 5
+    attackRange: 1
+    attackBonus: 5
+    defense: 13
+    damageMin: 4
+    damageMax: 7
+    specialName: Pure Remedy
+    specialRange: 3
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 10
+    specialAttackBonus: 0
+    specialEffect: 2
+  - id: nam_soyu
+    displayName: Nam Soyu
+    faction: 0
+    visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
+    startCell: {x: 2, y: 5}
+    maxHp: 26
+    maxInner: 3
+    initiative: 17
+    moveRange: 5
+    attackRange: 1
+    attackBonus: 7
+    defense: 13
+    damageMin: 5
+    damageMax: 9
+    specialName: Bright Rush
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 3
+    specialEffect: 6
+  - id: mok_hyang
+    displayName: Mok Hyang
+    faction: 1
+    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
+    startCell: {x: 9, y: 1}
+    maxHp: 28
+    maxInner: 4
+    initiative: 16
+    moveRange: 5
+    attackRange: 3
+    attackBonus: 6
+    defense: 14
+    damageMin: 4
+    damageMax: 8
+    specialName: Silent Needle
+    specialRange: 3
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 3
+    specialAttackBonus: 2
+    specialEffect: 3
+  - id: han_jiyu
+    displayName: Han Jiyu
+    faction: 1
+    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
+    startCell: {x: 9, y: 6}
+    maxHp: 24
+    maxInner: 4
+    initiative: 13
+    moveRange: 4
+    attackRange: 4
+    attackBonus: 5
+    defense: 13
+    damageMin: 4
+    damageMax: 7
+    specialName: Cold Reading
+    specialRange: 4
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 0
+    specialAttackBonus: 0
+    specialEffect: 5
+  - id: kang_hana
+    displayName: Kang Hana
+    faction: 1
+    visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
+    startCell: {x: 10, y: 4}
+    maxHp: 36
+    maxInner: 3
+    initiative: 12
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 6
+    defense: 16
+    damageMin: 6
+    damageMax: 11
+    specialName: Iron Fist
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 6
+    specialAttackBonus: 2
+    specialEffect: 6
+--- !u!4 &1799756062
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1799756060}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1921515604
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1921515607}
+  - component: {fileID: 1921515606}
+  - component: {fileID: 1921515605}
   m_Layer: 0
   m_Name: Battle Camera
   m_TagString: MainCamera
@@ -137,21 +312,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1819400903
+--- !u!81 &1921515605
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1819400902}
+  m_GameObject: {fileID: 1921515604}
   m_Enabled: 1
---- !u!20 &1819400904
+--- !u!20 &1921515606
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1819400902}
+  m_GameObject: {fileID: 1921515604}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -196,137 +371,16 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &1819400905
+--- !u!4 &1921515607
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1819400902}
+  m_GameObject: {fileID: 1921515604}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 2.6, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1939985230
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1939985232}
-  - component: {fileID: 1939985231}
-  m_Layer: 0
-  m_Name: Battle Test Controller
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1939985231
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1939985230}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62f2a742e6ce4fe3af7c040e2c21817f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestController
-  width: 12
-  height: 8
-  tileWidth: 1.16
-  tileHeight: 0.62
-  unitDefinitions:
-  - id: park_sungjun
-    displayName: Park Sungjun
-    faction: 0
-    visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
-    startCell: {x: 1, y: 1}
-    maxHp: 36
-    moveRange: 4
-    attackRange: 1
-    attackBonus: 6
-    defense: 15
-    damageMin: 6
-    damageMax: 10
-  - id: yun_seohwa
-    displayName: Yun Seohwa
-    faction: 0
-    visual: {fileID: 11400000, guid: 7b1ede8616ecb6b4797e42d572084460, type: 2}
-    startCell: {x: 1, y: 3}
-    maxHp: 28
-    moveRange: 5
-    attackRange: 1
-    attackBonus: 7
-    defense: 14
-    damageMin: 5
-    damageMax: 9
-  - id: baek_ryeon
-    displayName: Baek Ryeon
-    faction: 0
-    visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
-    startCell: {x: 2, y: 5}
-    maxHp: 26
-    moveRange: 4
-    attackRange: 2
-    attackBonus: 6
-    defense: 13
-    damageMin: 4
-    damageMax: 8
-  - id: han_biyeon
-    displayName: Han Biyeon
-    faction: 1
-    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
-    startCell: {x: 9, y: 1}
-    maxHp: 28
-    moveRange: 5
-    attackRange: 2
-    attackBonus: 6
-    defense: 14
-    damageMin: 4
-    damageMax: 9
-  - id: do_arin
-    displayName: Do Arin
-    faction: 1
-    visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
-    startCell: {x: 10, y: 4}
-    maxHp: 34
-    moveRange: 4
-    attackRange: 1
-    attackBonus: 6
-    defense: 15
-    damageMin: 6
-    damageMax: 10
-  - id: strategist
-    displayName: Strategist
-    faction: 1
-    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
-    startCell: {x: 9, y: 6}
-    maxHp: 24
-    moveRange: 4
-    attackRange: 3
-    attackBonus: 5
-    defense: 13
-    damageMin: 4
-    damageMax: 7
---- !u!4 &1939985232
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1939985230}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -336,5 +390,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1819400905}
-  - {fileID: 1939985232}
+  - {fileID: 1921515607}
+  - {fileID: 1799756062}

@@ -56,12 +56,12 @@ namespace JoseonMurimTactics.Editor
             controller.tileHeight = 0.62f;
             controller.unitDefinitions = new[]
             {
-                Unit("park_sungjun", "Park Sungjun", Faction.Ally, "park_sungjun_visual.asset", new Vector2Int(1, 1), 36, 4, 1, 6, 15, 6, 10),
-                Unit("yun_seohwa", "Yun Seohwa", Faction.Ally, "yun_seohwa_visual.asset", new Vector2Int(1, 3), 28, 5, 1, 7, 14, 5, 9),
-                Unit("baek_ryeon", "Baek Ryeon", Faction.Ally, "baek_ryeon_visual.asset", new Vector2Int(2, 5), 26, 4, 2, 6, 13, 4, 8),
-                Unit("han_biyeon", "Han Biyeon", Faction.Enemy, "han_biyeon_visual.asset", new Vector2Int(9, 1), 28, 5, 2, 6, 14, 4, 9),
-                Unit("do_arin", "Do Arin", Faction.Enemy, "do_arin_visual.asset", new Vector2Int(10, 4), 34, 4, 1, 6, 15, 6, 10),
-                Unit("strategist", "Strategist", Faction.Enemy, "strategist_visual.asset", new Vector2Int(9, 6), 24, 4, 3, 5, 13, 4, 7)
+                Unit("yeon_sowol", "Yeon Sowol", Faction.Ally, "park_sungjun_visual.asset", new Vector2Int(1, 1), 34, 4, 14, 4, 1, 6, 15, 6, 10, "Moonlit Sword", 1, 1, 2, 5, 2, BattleSpecialEffect.Strike),
+                Unit("seo_arin", "Seo Arin", Faction.Ally, "yun_seohwa_visual.asset", new Vector2Int(1, 3), 28, 4, 11, 5, 1, 5, 13, 4, 7, "Pure Remedy", 3, 1, 2, 10, 0, BattleSpecialEffect.Heal),
+                Unit("nam_soyu", "Nam Soyu", Faction.Ally, "baek_ryeon_visual.asset", new Vector2Int(2, 5), 26, 3, 17, 5, 1, 7, 13, 5, 9, "Bright Rush", 1, 1, 2, 4, 3, BattleSpecialEffect.BreakGuard),
+                Unit("mok_hyang", "Mok Hyang", Faction.Enemy, "han_biyeon_visual.asset", new Vector2Int(9, 1), 28, 4, 16, 5, 3, 6, 14, 4, 8, "Silent Needle", 3, 1, 2, 3, 2, BattleSpecialEffect.Poison),
+                Unit("han_jiyu", "Han Jiyu", Faction.Enemy, "strategist_visual.asset", new Vector2Int(9, 6), 24, 4, 13, 4, 4, 5, 13, 4, 7, "Cold Reading", 4, 1, 2, 0, 0, BattleSpecialEffect.Mark),
+                Unit("kang_hana", "Kang Hana", Faction.Enemy, "do_arin_visual.asset", new Vector2Int(10, 4), 36, 3, 12, 4, 1, 6, 16, 6, 11, "Iron Fist", 1, 1, 2, 6, 2, BattleSpecialEffect.BreakGuard)
             };
         }
 
@@ -72,12 +72,21 @@ namespace JoseonMurimTactics.Editor
             string visualFile,
             Vector2Int startCell,
             int maxHp,
+            int maxInner,
+            int initiative,
             int moveRange,
             int attackRange,
             int attackBonus,
             int defense,
             int damageMin,
-            int damageMax)
+            int damageMax,
+            string specialName,
+            int specialRange,
+            int specialCost,
+            int specialCooldown,
+            int specialPower,
+            int specialAttackBonus,
+            BattleSpecialEffect specialEffect)
         {
             return new BattleTestUnitDefinition
             {
@@ -87,12 +96,21 @@ namespace JoseonMurimTactics.Editor
                 visual = LoadVisual(visualFile),
                 startCell = startCell,
                 maxHp = maxHp,
+                maxInner = maxInner,
+                initiative = initiative,
                 moveRange = moveRange,
                 attackRange = attackRange,
                 attackBonus = attackBonus,
                 defense = defense,
                 damageMin = damageMin,
-                damageMax = damageMax
+                damageMax = damageMax,
+                specialName = specialName,
+                specialRange = specialRange,
+                specialCost = specialCost,
+                specialCooldown = specialCooldown,
+                specialPower = specialPower,
+                specialAttackBonus = specialAttackBonus,
+                specialEffect = specialEffect
             };
         }
 
