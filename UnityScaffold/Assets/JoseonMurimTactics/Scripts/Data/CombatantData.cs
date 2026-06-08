@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace JoseonMurimTactics
@@ -16,6 +16,7 @@ namespace JoseonMurimTactics
         public int movement = 4;
         public SixStats stats;
         public List<SkillData> skills = new List<SkillData>();
+        public CharacterVisualData visual;
         public string portraitPlaceholderName;
     }
 }

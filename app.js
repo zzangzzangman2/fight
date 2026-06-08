@@ -159,46 +159,84 @@ const skills = {
   }
 };
 
+const appearances = {
+  park: {
+    hairStyle: "short", weapon: "sword", build: "standard",
+    skin: "#f0c097", hair: "#2b2428", hairShade: "#171419",
+    outfit: "#27334a", outfitLight: "#f5f0e6", accent: "#b34a39", lower: "#202638", shoe: "#17151a"
+  },
+  yun: {
+    hairStyle: "long", weapon: "sword", build: "slim",
+    skin: "#f2c7a4", hair: "#1f2029", hairShade: "#12141b",
+    outfit: "#23283b", outfitLight: "#fff2ea", accent: "#9b3149", lower: "#1c2131", shoe: "#17151b"
+  },
+  baek: {
+    hairStyle: "bob", weapon: "palm", build: "small",
+    skin: "#f1c8aa", hair: "#d6c3ad", hairShade: "#b59d87",
+    outfit: "#dce9ed", outfitLight: "#fff8f0", accent: "#5f93bd", lower: "#303a4b", shoe: "#1b2028"
+  },
+  han: {
+    hairStyle: "pony", weapon: "needle", build: "slim",
+    skin: "#e8b98d", hair: "#17191f", hairShade: "#0e1014",
+    outfit: "#2b3330", outfitLight: "#e9dfcf", accent: "#80614b", lower: "#171b1d", shoe: "#101214"
+  },
+  arin: {
+    hairStyle: "long", weapon: "fist", build: "sturdy",
+    skin: "#e9b47f", hair: "#b87343", hairShade: "#805036",
+    outfit: "#49383a", outfitLight: "#f0dfce", accent: "#d5943f", lower: "#2b2224", shoe: "#181316"
+  },
+  enemyOfficer: {
+    hairStyle: "topknot", weapon: "sword", build: "standard",
+    skin: "#d6a77d", hair: "#2d2523", hairShade: "#181211",
+    outfit: "#6b2d2a", outfitLight: "#eee5d8", accent: "#c88a3d", lower: "#3a2421", shoe: "#17110f"
+  },
+  enemyScout: {
+    hairStyle: "cap", weapon: "bow", build: "slim",
+    skin: "#d2a07a", hair: "#2c2320", hairShade: "#17110f",
+    outfit: "#5a3830", outfitLight: "#efe2d1", accent: "#8b5a36", lower: "#2f231f", shoe: "#16100e"
+  }
+};
+
 const unitTemplates = [
   {
     id: "park", name: "박성준", short: "성준", faction: "ally", role: "해동문 문주 / 풍류검",
     hp: 48, inner: 7, guard: 16, movement: 5, level: 3, morale: 68,
     stats: { strength: 13, agility: 15, innerPower: 13, spirit: 12, insight: 12, charm: 18 },
-    skills: ["parkGentlemanSword", "parkMoonCharm", "parkCommand", "parkStep"], x: 1, y: 8
+    skills: ["parkGentlemanSword", "parkMoonCharm", "parkCommand", "parkStep"], appearance: appearances.park, x: 1, y: 8
   },
   {
     id: "yun", name: "윤서화", short: "서화", faction: "ally", role: "예검 반격수",
     hp: 38, inner: 8, guard: 17, movement: 6, level: 3, morale: 70,
     stats: { strength: 11, agility: 18, innerPower: 14, spirit: 14, insight: 17, charm: 11 },
-    skills: ["yunMoonReturn", "yunMeasureLine", "yunCounter"], x: 2, y: 8
+    skills: ["yunMoonReturn", "yunMeasureLine", "yunCounter"], appearance: appearances.yun, x: 2, y: 8
   },
   {
     id: "baek", name: "백련", short: "백련", faction: "ally", role: "빙백심법 / 치유",
     hp: 34, inner: 10, guard: 14, movement: 5, level: 3, morale: 64,
     stats: { strength: 9, agility: 12, innerPower: 18, spirit: 16, insight: 14, charm: 13 },
-    skills: ["baekIcePalm", "baekHeal", "baekFreezeFord"], x: 0, y: 9
+    skills: ["baekIcePalm", "baekHeal", "baekFreezeFord"], appearance: appearances.baek, x: 0, y: 9
   },
   {
     id: "han", name: "한비연", short: "비연", faction: "ally", role: "흑립방 암기 / 독공",
     hp: 32, inner: 7, guard: 15, movement: 6, level: 3, morale: 62,
     stats: { strength: 10, agility: 19, innerPower: 13, spirit: 12, insight: 16, charm: 10 },
-    skills: ["hanPoisonNeedle", "hanStealth", "hanNeedleRain"], x: 3, y: 9
+    skills: ["hanPoisonNeedle", "hanStealth", "hanNeedleRain"], appearance: appearances.han, x: 3, y: 9
   },
   {
     id: "arin", name: "도아린", short: "아린", faction: "ally", role: "파산권 / 비살상 제압",
     hp: 44, inner: 6, guard: 15, movement: 5, level: 3, morale: 66,
     stats: { strength: 18, agility: 12, innerPower: 14, spirit: 15, insight: 11, charm: 12 },
-    skills: ["arinMountainPalm", "arinIronShoulder", "arinQinna"], x: 1, y: 7
+    skills: ["arinMountainPalm", "arinIronShoulder", "arinQinna"], appearance: appearances.arin, x: 1, y: 7
   },
 
-  { id: "envoy", name: "사절 주홍문", short: "사절", faction: "enemy", role: "정도맹 문화강요 사절", hp: 44, inner: 6, guard: 17, movement: 5, level: 3, morale: 78, stats: { strength: 12, agility: 16, innerPower: 14, spirit: 15, insight: 14, charm: 17 }, skills: ["enemyOrthodoxSword", "enemyEdict"], x: 10, y: 1 },
-  { id: "swordA", name: "청성검수 갑", short: "검갑", faction: "enemy", role: "검진 전열", hp: 32, inner: 3, guard: 15, movement: 5, level: 2, morale: 58, stats: { strength: 13, agility: 15, innerPower: 11, spirit: 12, insight: 12, charm: 9 }, skills: ["enemyOrthodoxSword"], x: 9, y: 2 },
-  { id: "swordB", name: "청성검수 을", short: "검을", faction: "enemy", role: "검진 후열", hp: 32, inner: 3, guard: 15, movement: 5, level: 2, morale: 58, stats: { strength: 13, agility: 15, innerPower: 11, spirit: 12, insight: 12, charm: 9 }, skills: ["enemyOrthodoxSword"], x: 12, y: 3 },
-  { id: "palm", name: "복호장 고수", short: "장법", faction: "enemy", role: "밀치기 장법가", hp: 40, inner: 4, guard: 15, movement: 5, level: 2, morale: 64, stats: { strength: 17, agility: 12, innerPower: 13, spirit: 13, insight: 11, charm: 9 }, skills: ["enemyPalm"], x: 9, y: 6 },
-  { id: "scribe", name: "예법기록관", short: "기록", faction: "enemy", role: "기세 교란", hp: 27, inner: 4, guard: 14, movement: 4, level: 2, morale: 55, stats: { strength: 9, agility: 12, innerPower: 12, spirit: 14, insight: 16, charm: 15 }, skills: ["enemyTaunt"], x: 13, y: 2 },
-  { id: "archer", name: "사천궁수", short: "궁수", faction: "enemy", role: "고지 궁수", hp: 28, inner: 3, guard: 14, movement: 5, level: 2, morale: 55, stats: { strength: 10, agility: 16, innerPower: 10, spirit: 12, insight: 13, charm: 9 }, skills: ["enemyArrow"], x: 8, y: 0 },
-  { id: "guardA", name: "정도맹 호위", short: "호위", faction: "enemy", role: "다리 봉쇄", hp: 30, inner: 3, guard: 15, movement: 4, level: 2, morale: 56, stats: { strength: 14, agility: 13, innerPower: 11, spirit: 12, insight: 11, charm: 8 }, skills: ["enemyOrthodoxSword"], x: 8, y: 4 },
-  { id: "guardB", name: "정도맹 추격대", short: "추격", faction: "enemy", role: "후방 압박", hp: 30, inner: 3, guard: 15, movement: 5, level: 2, morale: 56, stats: { strength: 14, agility: 14, innerPower: 11, spirit: 12, insight: 11, charm: 8 }, skills: ["enemyOrthodoxSword"], x: 12, y: 8 }
+  { id: "envoy", name: "사절 주홍문", short: "사절", faction: "enemy", role: "정도맹 문화강요 사절", hp: 44, inner: 6, guard: 17, movement: 5, level: 3, morale: 78, stats: { strength: 12, agility: 16, innerPower: 14, spirit: 15, insight: 14, charm: 17 }, skills: ["enemyOrthodoxSword", "enemyEdict"], appearance: appearances.enemyOfficer, x: 10, y: 1 },
+  { id: "swordA", name: "청성검수 갑", short: "검갑", faction: "enemy", role: "검진 전열", hp: 32, inner: 3, guard: 15, movement: 5, level: 2, morale: 58, stats: { strength: 13, agility: 15, innerPower: 11, spirit: 12, insight: 12, charm: 9 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 9, y: 2 },
+  { id: "swordB", name: "청성검수 을", short: "검을", faction: "enemy", role: "검진 후열", hp: 32, inner: 3, guard: 15, movement: 5, level: 2, morale: 58, stats: { strength: 13, agility: 15, innerPower: 11, spirit: 12, insight: 12, charm: 9 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 12, y: 3 },
+  { id: "palm", name: "복호장 고수", short: "장법", faction: "enemy", role: "밀치기 장법가", hp: 40, inner: 4, guard: 15, movement: 5, level: 2, morale: 64, stats: { strength: 17, agility: 12, innerPower: 13, spirit: 13, insight: 11, charm: 9 }, skills: ["enemyPalm"], appearance: { ...appearances.enemyOfficer, weapon: "fist", build: "sturdy" }, x: 9, y: 6 },
+  { id: "scribe", name: "예법기록관", short: "기록", faction: "enemy", role: "기세 교란", hp: 27, inner: 4, guard: 14, movement: 4, level: 2, morale: 55, stats: { strength: 9, agility: 12, innerPower: 12, spirit: 14, insight: 16, charm: 15 }, skills: ["enemyTaunt"], appearance: { ...appearances.enemyOfficer, weapon: "scroll", hairStyle: "cap" }, x: 13, y: 2 },
+  { id: "archer", name: "사천궁수", short: "궁수", faction: "enemy", role: "고지 궁수", hp: 28, inner: 3, guard: 14, movement: 5, level: 2, morale: 55, stats: { strength: 10, agility: 16, innerPower: 10, spirit: 12, insight: 13, charm: 9 }, skills: ["enemyArrow"], appearance: appearances.enemyScout, x: 8, y: 0 },
+  { id: "guardA", name: "정도맹 호위", short: "호위", faction: "enemy", role: "다리 봉쇄", hp: 30, inner: 3, guard: 15, movement: 4, level: 2, morale: 56, stats: { strength: 14, agility: 13, innerPower: 11, spirit: 12, insight: 11, charm: 8 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 8, y: 4 },
+  { id: "guardB", name: "정도맹 추격대", short: "추격", faction: "enemy", role: "후방 압박", hp: 30, inner: 3, guard: 15, movement: 5, level: 2, morale: 56, stats: { strength: 14, agility: 14, innerPower: 11, spirit: 12, insight: 11, charm: 8 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 12, y: 8 }
 ];
 
 const state = {
@@ -1369,12 +1407,26 @@ function renderBattlefield() {
 function renderUnitToken(unit) {
   const wrapper = document.createElement("span");
   wrapper.className = ["unit-token", unit.faction, unit.acted ? "acted" : "", unit.defeated ? "defeated" : "", hasStatus(unit, "파훼") ? "broken" : ""].filter(Boolean).join(" ");
+  applyAppearanceVars(wrapper, unitAppearance(unit));
   const hp = document.createElement("span");
   hp.className = "hp-pip";
   hp.innerHTML = `<span style="width:${Math.round((unit.hp / unit.maxHp) * 100)}%"></span>`;
   const person = document.createElement("span");
-  person.className = "person";
-  person.innerHTML = `<span class="head"></span><span class="body"></span><span class="arm left"></span><span class="arm right"></span><span class="leg left"></span><span class="leg right"></span><span class="weapon"></span>`;
+  const appearance = unitAppearance(unit);
+  person.className = ["person", `hair-${appearance.hairStyle}`, `weapon-${appearance.weapon}`, `build-${appearance.build}`].join(" ");
+  person.innerHTML = `
+    <span class="ground-shadow"></span>
+    <span class="leg left"><span></span></span>
+    <span class="leg right"><span></span></span>
+    <span class="body"><span class="collar"></span><span class="sash"></span></span>
+    <span class="arm left"></span>
+    <span class="arm right"></span>
+    <span class="neck"></span>
+    <span class="hair-back"></span>
+    <span class="head"><span class="bangs"></span><span class="eye left"></span><span class="eye right"></span><span class="mouth"></span></span>
+    <span class="hair-tail"></span>
+    <span class="weapon"></span>
+  `;
   const name = document.createElement("span");
   name.className = "unit-nameplate";
   name.textContent = unit.short;
@@ -1382,6 +1434,25 @@ function renderUnitToken(unit) {
   wrapper.appendChild(person);
   wrapper.appendChild(name);
   return wrapper;
+}
+
+function unitAppearance(unit) {
+  return unit.appearance || (unit.faction === "enemy" ? appearances.enemyOfficer : appearances.park);
+}
+
+function applyAppearanceVars(el, appearance) {
+  [
+    ["--skin", appearance.skin],
+    ["--hair", appearance.hair],
+    ["--hair-shade", appearance.hairShade],
+    ["--outfit", appearance.outfit],
+    ["--outfit-light", appearance.outfitLight],
+    ["--accent", appearance.accent],
+    ["--lower", appearance.lower],
+    ["--shoe", appearance.shoe]
+  ].forEach(([key, value]) => {
+    if (value) el.style.setProperty(key, value);
+  });
 }
 
 function renderSelectedPanel() {

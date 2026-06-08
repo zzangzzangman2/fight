@@ -272,138 +272,370 @@ h2 { font-size: 15px; }
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 1px;
-  height: calc(var(--tile) * 1.28);
+  bottom: -1px;
+  height: calc(var(--tile) * 1.43);
   z-index: 18;
   display: grid;
   grid-template-rows: 1fr auto;
   justify-items: center;
   align-items: end;
   pointer-events: none;
+  --skin: #f0c097;
+  --hair: #2b2428;
+  --hair-shade: #171419;
+  --outfit: #27334a;
+  --outfit-light: #f5f0e6;
+  --accent: #b34a39;
+  --lower: #202638;
+  --shoe: #17151a;
 }
-.unit-token.acted { opacity: .46; filter: grayscale(.8); }
+.unit-token.acted { opacity: .52; filter: grayscale(.72); }
 .unit-token.defeated { opacity: .26; transform: rotate(-9deg); }
 .unit-token.broken .person { filter: drop-shadow(0 0 7px rgba(255, 233, 109, .86)); }
 
 .person {
   position: relative;
-  width: calc(var(--tile) * .52);
-  height: calc(var(--tile) * 1.02);
-  min-width: 24px;
-  min-height: 43px;
-  filter: drop-shadow(0 7px 5px rgba(0,0,0,.34));
+  width: calc(var(--tile) * .70);
+  height: calc(var(--tile) * 1.13);
+  min-width: 31px;
+  min-height: 50px;
+  transform-origin: 50% 100%;
+  animation: spriteIdle 2.8s ease-in-out infinite;
+  filter: drop-shadow(0 8px 5px rgba(0,0,0,.36));
 }
+.enemy .person { animation-delay: -.65s; }
+.tile:hover .person { transform: translateY(-2px); }
+.person .ground-shadow,
+.person .hair-back,
+.person .hair-tail,
 .person .head,
+.person .neck,
 .person .body,
+.person .body .collar,
+.person .body .sash,
 .person .arm,
 .person .leg,
-.person .weapon {
+.person .leg span,
+.person .weapon,
+.person .bangs,
+.person .eye,
+.person .mouth {
   position: absolute;
   display: block;
 }
+.person .ground-shadow {
+  left: 18%;
+  right: 18%;
+  bottom: 1%;
+  height: 11%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0,0,0,.34), rgba(0,0,0,.08) 58%, transparent 72%);
+  z-index: 0;
+}
+.person .hair-back {
+  left: 17%;
+  top: 4%;
+  width: 66%;
+  height: 50%;
+  border-radius: 44% 44% 40% 40%;
+  background: linear-gradient(160deg, var(--hair) 0 55%, var(--hair-shade) 100%);
+  z-index: 1;
+}
+.person .hair-tail {
+  opacity: 0;
+  z-index: 1;
+}
 .person .head {
   left: 50%;
-  top: 0;
-  width: 44%;
-  height: 28%;
+  top: 7%;
+  width: 58%;
+  height: 39%;
   transform: translateX(-50%);
-  border-radius: 50%;
-  background: #f1c58f;
-  border: 2px solid rgba(54,30,20,.64);
+  border-radius: 48% 48% 44% 44%;
+  background:
+    radial-gradient(circle at 33% 32%, rgba(255,255,255,.25), transparent 21%),
+    linear-gradient(180deg, #ffd9ba 0%, var(--skin) 56%, #dda77f 100%);
+  border: 1px solid rgba(57,31,23,.6);
   overflow: hidden;
+  z-index: 5;
 }
-.person .head::before {
+.person .bangs {
+  left: -10%;
+  right: -10%;
+  top: -11%;
+  height: 57%;
+  border-radius: 48% 48% 36% 36%;
+  background:
+    linear-gradient(140deg, transparent 0 16%, rgba(255,255,255,.12) 17% 25%, transparent 26% 100%),
+    linear-gradient(180deg, var(--hair), var(--hair-shade));
+  clip-path: polygon(0 0, 100% 0, 100% 68%, 83% 54%, 71% 82%, 56% 50%, 43% 84%, 29% 55%, 16% 76%, 0 58%);
+}
+.person .bangs::before,
+.person .bangs::after {
   content: "";
   position: absolute;
-  left: -12%;
-  right: -12%;
-  top: -20%;
-  height: 58%;
-  border-radius: 50% 50% 38% 38%;
-  background: #2e2a32;
+  top: 58%;
+  width: 18%;
+  height: 60%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--hair), var(--hair-shade));
 }
-.person .head::after {
+.person .bangs::before { left: 4%; transform: rotate(13deg); }
+.person .bangs::after { right: 5%; transform: rotate(-10deg); }
+.person .eye {
+  top: 55%;
+  width: 8%;
+  height: 13%;
+  border-radius: 50%;
+  background: #2a2225;
+  box-shadow: 0 0 0 1px rgba(26,15,15,.16);
+  z-index: 2;
+}
+.person .eye.left { left: 34%; }
+.person .eye.right { right: 34%; }
+.person .eye::after {
   content: "";
   position: absolute;
-  left: 26%;
-  right: 26%;
-  top: 53%;
+  left: 16%;
+  top: 11%;
+  width: 35%;
+  height: 31%;
+  border-radius: 50%;
+  background: rgba(255,255,255,.88);
+}
+.person .mouth {
+  left: 45%;
+  top: 76%;
+  width: 10%;
+  height: 4%;
+  border-radius: 999px;
+  background: rgba(109,56,54,.65);
+}
+.person .neck {
+  left: 42%;
+  top: 42%;
+  width: 16%;
   height: 9%;
   border-radius: 999px;
-  background: rgba(42, 30, 27, .72);
+  background: var(--skin);
+  z-index: 3;
 }
 .person .body {
   left: 50%;
-  top: 26%;
-  width: 54%;
-  height: 39%;
+  top: 46%;
+  width: 52%;
+  height: 31%;
   transform: translateX(-50%);
-  border-radius: 12px 12px 8px 8px;
+  border-radius: 30% 30% 16% 16%;
   background:
-    linear-gradient(90deg, var(--ally-dark) 0 22%, transparent 22% 78%, var(--ally-dark) 78% 100%),
-    linear-gradient(#fffaf0 0 58%, #252532 58% 100%);
-  border: 2px solid rgba(23,16,13,.54);
+    linear-gradient(90deg, var(--outfit) 0 23%, transparent 23% 77%, var(--outfit) 77% 100%),
+    linear-gradient(180deg, var(--outfit-light) 0 54%, var(--lower) 54% 100%);
+  border: 1px solid rgba(23,16,13,.56);
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.18), inset 0 -4px 0 rgba(0,0,0,.12);
+  z-index: 4;
 }
-.person .body::before {
-  content: "";
-  position: absolute;
-  left: 43%;
-  top: 7%;
-  width: 14%;
-  height: 58%;
+.person .body .collar {
+  left: 28%;
+  top: 4%;
+  width: 44%;
+  height: 25%;
+  background: var(--outfit-light);
+  clip-path: polygon(0 0, 50% 100%, 100% 0, 78% 0, 50% 62%, 22% 0);
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.18));
+}
+.person .body .sash {
+  left: 45%;
+  top: 12%;
+  width: 10%;
+  height: 72%;
   border-radius: 999px;
-  background: var(--ally);
-}
-.person .body::after {
-  content: "";
-  position: absolute;
-  left: 32%;
-  right: 32%;
-  bottom: -14%;
-  height: 18%;
-  border-radius: 0 0 7px 7px;
-  background: #262632;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 66%, #20130f));
+  box-shadow: 0 0 0 1px rgba(0,0,0,.16);
 }
 .person .arm {
-  top: 34%;
-  width: 17%;
-  height: 34%;
-  border-radius: 9px;
-  background: #f2c390;
-  border: 1px solid rgba(23,16,13,.46);
+  top: 49%;
+  width: 14%;
+  height: 30%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--outfit) 0 58%, var(--skin) 59% 100%);
+  border: 1px solid rgba(23,16,13,.36);
+  z-index: 3;
 }
-.person .arm.left { left: 9%; transform: rotate(15deg); }
-.person .arm.right { right: 9%; transform: rotate(-15deg); }
+.person .arm.left { left: 13%; transform: rotate(18deg); transform-origin: 50% 9%; }
+.person .arm.right { right: 13%; transform: rotate(-18deg); transform-origin: 50% 9%; }
 .person .leg {
-  top: 64%;
-  width: 17%;
-  height: 34%;
-  border-radius: 8px;
-  background: #272019;
+  top: 72%;
+  width: 15%;
+  height: 24%;
+  border-radius: 999px;
+  background: var(--lower);
+  z-index: 2;
 }
-.person .leg.left { left: 29%; transform: rotate(6deg); }
-.person .leg.right { right: 29%; transform: rotate(-6deg); }
+.person .leg span {
+  left: -18%;
+  right: -18%;
+  bottom: -5%;
+  height: 28%;
+  border-radius: 999px;
+  background: var(--shoe);
+}
+.person .leg.left { left: 34%; transform: rotate(5deg); }
+.person .leg.right { right: 34%; transform: rotate(-5deg); }
 .person .weapon {
+  z-index: 8;
+}
+.hair-short .hair-back { height: 37%; border-radius: 48% 48% 30% 30%; }
+.hair-short .hair-back::after {
+  content: "";
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  bottom: -9%;
+  height: 28%;
+  border-radius: 0 0 999px 999px;
+  background: var(--hair-shade);
+}
+.hair-long .hair-back { top: 4%; height: 76%; border-radius: 42% 42% 36% 36%; }
+.hair-long .hair-back::before,
+.hair-long .hair-back::after {
+  content: "";
+  position: absolute;
+  top: 28%;
+  width: 21%;
+  height: 70%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--hair), var(--hair-shade));
+}
+.hair-long .hair-back::before { left: -3%; transform: rotate(5deg); }
+.hair-long .hair-back::after { right: -3%; transform: rotate(-5deg); }
+.hair-bob .hair-back { top: 5%; height: 58%; border-radius: 45% 45% 38% 38%; }
+.hair-bob .hair-back::after {
+  content: "";
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: -6%;
+  height: 24%;
+  border-radius: 0 0 999px 999px;
+  background: var(--hair-shade);
+}
+.hair-pony .hair-back { height: 48%; }
+.hair-pony .hair-tail {
+  opacity: 1;
+  right: 2%;
+  top: 22%;
+  width: 28%;
+  height: 54%;
+  border-radius: 999px 999px 70% 70%;
+  background: linear-gradient(180deg, var(--hair), var(--hair-shade));
+  transform: rotate(-19deg);
+}
+.hair-topknot .hair-back { top: 8%; height: 39%; }
+.hair-topknot .hair-tail {
+  opacity: 1;
+  left: 43%;
+  top: 0;
+  width: 14%;
+  height: 18%;
+  border-radius: 50%;
+  background: var(--hair-shade);
+}
+.hair-cap .hair-back {
+  top: 9%;
+  height: 36%;
+  border-radius: 42% 42% 24% 24%;
+  background: linear-gradient(180deg, var(--outfit), color-mix(in srgb, var(--outfit) 76%, #090706));
+}
+.hair-cap .bangs {
+  height: 41%;
+  clip-path: polygon(0 0, 100% 0, 100% 72%, 78% 66%, 61% 83%, 43% 62%, 23% 76%, 0 64%);
+}
+.build-slim { width: calc(var(--tile) * .66); }
+.build-small { width: calc(var(--tile) * .64); height: calc(var(--tile) * 1.04); }
+.build-sturdy { width: calc(var(--tile) * .76); }
+.build-sturdy .body { width: 56%; }
+.build-sturdy .arm { width: 16%; height: 32%; }
+.weapon-sword .weapon {
+  right: 2%;
+  top: 18%;
+  width: 6%;
+  height: 58%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f7f0df 0 72%, #7a5a36 72% 100%);
+  transform: rotate(36deg);
+  transform-origin: 50% 100%;
+  box-shadow: 0 0 0 1px rgba(41,24,14,.48);
+}
+.weapon-sword .weapon::after {
+  content: "";
+  position: absolute;
+  left: -90%;
+  bottom: 16%;
+  width: 280%;
+  height: 8%;
+  border-radius: 999px;
+  background: #7a4b2b;
+}
+.weapon-needle .weapon {
+  right: 6%;
+  top: 42%;
+  width: 27%;
+  height: 3%;
+  border-radius: 999px;
+  background: #d8d5c9;
+  transform: rotate(-18deg);
+  box-shadow: 0 5px 0 #c6c1b3, 0 -5px 0 #eee8dc;
+}
+.weapon-palm .weapon {
+  right: 2%;
+  top: 43%;
+  width: 28%;
+  height: 23%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(178,227,255,.62), rgba(100,170,218,.2) 58%, transparent 70%);
+  filter: blur(.2px);
+}
+.weapon-fist .weapon {
+  right: 7%;
+  top: 65%;
+  width: 16%;
+  height: 16%;
+  border-radius: 50%;
+  background: var(--skin);
+  box-shadow: 0 0 0 2px rgba(83,43,30,.35), 0 0 10px rgba(214,148,63,.5);
+}
+.weapon-bow .weapon {
   right: -1%;
-  top: 10%;
-  width: 5px;
-  height: 56%;
-  border-radius: 5px;
-  background: linear-gradient(#f9f4e5, #948063);
-  transform: rotate(35deg);
-  transform-origin: bottom;
-  box-shadow: 0 0 0 1px rgba(41,24,14,.55);
+  top: 27%;
+  width: 24%;
+  height: 45%;
+  border-right: 3px solid #6b4527;
+  border-radius: 50%;
+  transform: rotate(11deg);
 }
-.enemy .person .body { background: var(--enemy); }
-.enemy .person .body {
-  background:
-    linear-gradient(90deg, var(--enemy-dark) 0 22%, transparent 22% 78%, var(--enemy-dark) 78% 100%),
-    linear-gradient(#f4eee4 0 55%, #3b2420 55% 100%);
+.weapon-bow .weapon::before {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 5%;
+  bottom: 5%;
+  width: 1px;
+  background: rgba(235,225,199,.8);
 }
-.enemy .person .body::before { background: var(--enemy); }
-.enemy .person .body::after { background: #3b2420; }
-.enemy .person .arm { background: #d1a77c; }
-.enemy .person .head { background: #d1a77c; }
+.weapon-scroll .weapon {
+  right: 5%;
+  top: 47%;
+  width: 24%;
+  height: 17%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e6d0a2 0 20%, #fff3d2 20% 80%, #d9bd83 80% 100%);
+  transform: rotate(-10deg);
+  box-shadow: 0 0 0 1px rgba(55,31,19,.42);
+}
+@keyframes spriteIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
 .unit-nameplate {
   display: block;
   max-width: calc(var(--tile) - 10px);
@@ -420,9 +652,10 @@ h2 { font-size: 15px; }
 }
 .hp-pip {
   position: absolute;
-  left: 5px;
-  right: 5px;
-  top: 4px;
+  left: 50%;
+  bottom: 14px;
+  width: calc(var(--tile) * .46);
+  transform: translateX(-50%);
   z-index: 15;
   height: 4px;
   border-radius: 999px;
@@ -647,6 +880,27 @@ h2 { font-size: 15px; }
   .battle-stage { min-height: 680px; }
   .command-panel, .combat-log-wrap { max-height: none; }
   .combat-log-wrap { grid-column: auto; grid-row: auto; }
+}
+
+@media (max-width: 620px) {
+  .app-shell { padding: 8px; gap: 10px; }
+  .battle-topbar {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 10px;
+    padding: 14px;
+  }
+  .phase-card { width: max-content; min-width: 132px; }
+  .topbar-tools { justify-content: flex-start; flex-wrap: wrap; }
+  h1 { font-size: 24px; }
+  .subline { max-width: 34ch; }
+  .map-wrap { place-items: start; padding: 14px 10px 52px; }
+  .map-caption {
+    left: 10px;
+    right: 10px;
+    align-items: flex-start;
+    font-size: 12px;
+  }
 }
 .unit-token.enemy .hp-pip span { background: #e47868; }
 .terrain-ice { background: #88b5bd; }

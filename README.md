@@ -1,4 +1,4 @@
-# 조선 무협 SRPG v0.4
+﻿# 조선 무협 SRPG v0.4
 
 이 버전은 기존 v0.3의 “전술 노드/2D 전장” 방향을 버리고, 고전 Fire Emblem식 SRPG 흐름으로 다시 잡은 HTML 프로토타입입니다.
 
@@ -13,7 +13,7 @@
 - 캐릭터마다 완전히 다른 무공 구성
 - 무공별 내공 비용, 사용 횟수, 쿨다운
 - 실제 2D 타일맵처럼 보이는 지형
-- 사람형 임시 스프라이트 토큰
+- Unity용 고급 2D 캐릭터 스프라이트 소스 추가
 - 대나무숲, 지붕, 벼랑, 물가, 다리, 제단, 등불, 향로, 술수레, 대나무 덫 등 지형 활용
 
 ## 실행
@@ -56,6 +56,14 @@ Core Scripts
  ├─ BattleForecastPresenter.cs
  └─ EnemyPhaseAI.cs
 ```
+
+## Unity 캐릭터 에셋 진행
+
+HTML 토큰은 프로토타입 조작감 확인용이고, 실제 비주얼은 `UnityScaffold` 기준으로 옮깁니다.
+
+- `UnityScaffold/Assets/JoseonMurimTactics/Art/Characters/Sprites/Individuals`에 성인 무협 캐릭터 full-body PNG 6종을 추가했습니다.
+- `CharacterVisualData`와 `CharacterVisualController`를 추가해 SpriteRenderer, 그림자, 선택 링, 숨쉬는 idle 모션, y축 깊이 정렬을 처리합니다.
+- Unity 패키지는 2D Animation, PSD Importer, SpriteShape, Tilemap Extras를 포함하도록 manifest를 업데이트했습니다.
 
 ## 주인공/동료 방향
 
