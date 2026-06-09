@@ -40,14 +40,12 @@ function setSaveState(text, strong) {
 }
 
 async function requestJson(url, options) {
-  if (window.location.protocol === "file:") {
-    throw new Error("기존 대사 자동 불러오기는 server.js로 실행해야 합니다. node server.js 후 http://127.0.0.1:5178 로 열어주세요.");
-  }
-
   const response = await fetch(url, options);
   const data = await response.json();
   if (!response.ok || data.ok === false) {
-    throw new Error(data.error || response.statusText);
+    const error = new Error(data.error || response.statusText);
+    error.fromServer = true;
+    throw error;
   }
 
   return data;
@@ -61,6 +59,36 @@ function markDirty(message = "수정됨") {
 function clearDirty(message, strong) {
   dirty = false;
   setSaveState(message, strong);
+}
+
+function cloneEmbeddedDefaults() {
+  if (!window.JOSEON_AUTHORING_DEFAULTS) {
+    return null;
+  }
+
+  return JSON.parse(JSON.stringify(window.JOSEON_AUTHORING_DEFAULTS));
+}
+
+function applyEmbeddedDefaults({ message, dirtyState = false } = {}) {
+  const fallback = cloneEmbeddedDefaults();
+  if (!fallback) {
+    throw new Error("내장 기본 대사를 찾지 못했습니다. defaults.js를 확인해주세요.");
+  }
+
+  content = normalize(fallback);
+  activeSceneId = content.dialogueScenes[0]?.id || "";
+  serverStatus = null;
+  bindProject();
+  render();
+
+  const statusText = message || `오프라인 기본 대사 로드 · ${content.dialogueScenes.length}개 씬`;
+  const targetText = "서버 없이 불러옴 · 직접 게임 적용 저장은 node server.js 실행 필요";
+  if (dirtyState) {
+    markDirty(statusText);
+    $("#targetPath").textContent = targetText;
+  } else {
+    clearDirty(statusText, targetText);
+  }
 }
 
 function normalize(data) {
@@ -153,12 +181,19 @@ function newCharacter() {
 
 async function loadContent() {
   setSaveState("불러오는 중");
-  content = normalize(await requestJson("/api/content"));
-  activeSceneId = content.dialogueScenes[0]?.id || "";
-  serverStatus = await requestJson("/api/status").catch(() => null);
-  bindProject();
-  render();
-  clearDirty(`자동 불러오기 완료 · ${content.dialogueScenes.length}개 씬`, serverStatus?.manifestPath || "저장하면 Unity Resources에 반영");
+  try {
+    content = normalize(await requestJson("/api/content"));
+    activeSceneId = content.dialogueScenes[0]?.id || "";
+    serverStatus = await requestJson("/api/status").catch(() => null);
+    bindProject();
+    render();
+    clearDirty(`자동 불러오기 완료 · ${content.dialogueScenes.length}개 씬`, serverStatus?.manifestPath || "저장하면 Unity Resources에 반영");
+  } catch (error) {
+    if (error.fromServer) {
+      throw error;
+    }
+    applyEmbeddedDefaults();
+  }
 }
 
 function bindProject() {
@@ -667,15 +702,39 @@ function prepareForSave() {
 async function saveContent() {
   setSaveState("저장 중");
   const output = prepareForSave();
-  const result = await requestJson("/api/content", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(output)
-  });
-  content = normalize(output);
-  serverStatus = await requestJson("/api/status").catch(() => serverStatus);
-  render();
-  clearDirty(`게임 적용 완료 ${new Date(result.updatedAt).toLocaleTimeString()}`, result.manifestPath);
+  try {
+    const result = await requestJson("/api/content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(output)
+    });
+    content = normalize(output);
+    serverStatus = await requestJson("/api/status").catch(() => serverStatus);
+    render();
+    clearDirty(`게임 적용 완료 ${new Date(result.updatedAt).toLocaleTimeString()}`, result.manifestPath);
+  } catch (error) {
+    if (error.fromServer) {
+      throw error;
+    }
+    downloadManifest(output);
+    content = normalize(output);
+    serverStatus = null;
+    render();
+    dirty = true;
+    setSaveState("서버 없음 · content_manifest.json 내려받음", "직접 게임 적용은 node server.js 실행 후 저장 필요");
+  }
+}
+
+function downloadManifest(output) {
+  const blob = new Blob([`${JSON.stringify(output, null, 2)}\n`], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "content_manifest.json";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function escapeHtml(value) {
@@ -768,17 +827,24 @@ async function importDefaults() {
   }
 
   setSaveState("게임 기본 대사 가져오는 중");
-  const result = await requestJson("/api/import-defaults", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ replace: true })
-  });
-  content = normalize(result.manifest);
-  activeSceneId = content.dialogueScenes[0]?.id || "";
-  serverStatus = await requestJson("/api/status").catch(() => serverStatus);
-  bindProject();
-  render();
-  clearDirty(`기본 대사 적용 완료 ${new Date(result.updatedAt).toLocaleTimeString()}`, result.manifestPath);
+  try {
+    const result = await requestJson("/api/import-defaults", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ replace: true })
+    });
+    content = normalize(result.manifest);
+    activeSceneId = content.dialogueScenes[0]?.id || "";
+    serverStatus = await requestJson("/api/status").catch(() => serverStatus);
+    bindProject();
+    render();
+    clearDirty(`기본 대사 적용 완료 ${new Date(result.updatedAt).toLocaleTimeString()}`, result.manifestPath);
+  } catch (error) {
+    if (error.fromServer) {
+      throw error;
+    }
+    applyEmbeddedDefaults({ message: "게임 기본 대사 가져옴 · 저장 필요", dirtyState: true });
+  }
 }
 
 bindEvents();
