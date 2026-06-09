@@ -4,6 +4,8 @@ public sealed class BattleResultApplyOutcome
 {
     public bool applied;
     public bool duplicate;
+    public bool replayRewardsReduced;
+    public bool autosaveSucceeded;
     public string resultId;
 }
 
@@ -36,36 +38,68 @@ public sealed class BattleResultApplyService
 
         root.Session.appliedBattleResultIds.Add(id);
 
-        foreach (BattleResultData.StatDelta faction in result.factionChanges)
+        bool alreadyCompletedMission = result.Won && definition != null && !string.IsNullOrEmpty(definition.questId) &&
+                                       root.Session.completedMissionIds.Contains(definition.questId);
+        outcome.replayRewardsReduced = alreadyCompletedMission;
+
+        if (!alreadyCompletedMission)
         {
-            root.Reputation.Add(faction.id, faction.delta);
+            foreach (BattleResultData.StatDelta faction in result.factionChanges)
+            {
+                root.Reputation.Add(faction.id, faction.delta);
+            }
+
+            foreach (BattleResultData.StatDelta approval in result.approvalChanges)
+            {
+                root.Approval.Add(approval.id, approval.delta);
+            }
+
+            if (result.silver != 0)
+            {
+                root.Flags.AddInt("silver", result.silver);
+            }
+
+            foreach (string item in result.rewardItems)
+            {
+                root.Inventory.AddItemFromDisplayName(item);
+            }
+        }
+        else if (result.silver > 0)
+        {
+            root.Flags.AddInt("silver", System.Math.Max(1, result.silver / 4));
         }
 
-        foreach (BattleResultData.StatDelta approval in result.approvalChanges)
+        foreach (string companionId in result.woundedCompanions)
         {
-            root.Approval.Add(approval.id, approval.delta);
-        }
-
-        if (result.silver != 0)
-        {
-            root.Flags.AddInt("silver", result.silver);
-        }
-
-        foreach (string item in result.rewardItems)
-        {
-            root.Inventory.AddItemFromDisplayName(item);
+            root.CompanionStates.MarkWounded(companionId);
         }
 
         root.Quests.ResolveBattle(result, definition);
+        if (definition != null && !string.IsNullOrEmpty(definition.questId))
+        {
+            root.Session.missionAttempts[definition.questId] =
+                root.Session.missionAttempts.TryGetValue(definition.questId, out int attempts) ? attempts + 1 : 1;
+            if (result.Won)
+            {
+                root.Session.completedMissionIds.Add(definition.questId);
+            }
+        }
+
         root.Session.lastBattleResult = result;
         if (result.Won)
         {
             root.Flags.SetFlag(StoryFlags.FirstBattleWon);
             root.Flags.SetFlag(StoryFlags.EnvoyDefeated);
             root.Flags.SetFlag(StoryFlags.HubUnlocked);
+            root.Session.unlockedCodexEntryIds.Add("lore_black_mark");
         }
 
-        root.Save.Save(root.Session);
+        outcome.autosaveSucceeded = root.Save.Save(root.Session);
+        if (root.Notifications != null)
+        {
+            root.Notifications.PushAutosave(outcome.autosaveSucceeded);
+        }
+
         outcome.applied = true;
         return outcome;
     }

@@ -28,7 +28,7 @@ public sealed class BattleResultController : MonoBehaviour
             result.completedObjectives.Add("OBJ_DEFEAT_SCOUTS");
         }
 
-        def = BattleCatalog.Get(result.battleId);
+        def = root.BattleRepository != null ? root.BattleRepository.Get(result.battleId) : BattleCatalog.Get(result.battleId);
         grade = ComputeGrade();
         rumor = root.Narration != null ? root.Narration.GenerateRumor(result) : string.Empty;
         applyOutcome = root.BattleResults.Apply(result, def);
@@ -96,12 +96,24 @@ public sealed class BattleResultController : MonoBehaviour
                 GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), "이미 정산된 전투 결과입니다.", UiTheme.SmallMuted);
                 y += 32f * s;
             }
-            GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), $"은전 {result.silver}", UiTheme.Body);
-            y += 32f * s;
-            foreach (string item in result.rewardItems)
+            else if (applyOutcome != null && applyOutcome.replayRewardsReduced)
             {
-                GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), "· " + item, UiTheme.Small);
-                y += 28f * s;
+                GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), "재전투 보상: 첫 클리어 보상과 평판 변화는 제외",
+                          UiTheme.SmallMuted);
+                y += 32f * s;
+            }
+
+            int silver = applyOutcome != null && applyOutcome.replayRewardsReduced ? Mathf.Max(1, result.silver / 4)
+                                                                                   : result.silver;
+            GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), $"은전 {silver}", UiTheme.Body);
+            y += 32f * s;
+            if (applyOutcome == null || !applyOutcome.replayRewardsReduced)
+            {
+                foreach (string item in result.rewardItems)
+                {
+                    GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), "· " + item, UiTheme.Small);
+                    y += 28f * s;
+                }
             }
             y += 12f * s;
         }
@@ -186,16 +198,25 @@ public sealed class BattleResultController : MonoBehaviour
         // 하단
         float bw = 280f * s;
         float by = h - 78f * s;
-        if (GUI.Button(new Rect(w * 0.5f - bw - 10f * s, by, bw, 56f * s), "거점으로 돌아가기", UiTheme.ButtonPrimary))
+        string leftLabel = won ? "거점으로 돌아가기" : "재도전 준비";
+        if (GUI.Button(new Rect(w * 0.5f - bw - 10f * s, by, bw, 56f * s), leftLabel, UiTheme.ButtonPrimary))
         {
-            root.Flow.GoToHub(SceneNames.HubPyesadang);
+            if (won)
+            {
+                root.Flow.GoToHub(SceneNames.HubPyesadang);
+            }
+            else
+            {
+                root.Flow.GoToBattlePrep(def.id);
+            }
         }
 
-        GUI.enabled = won;
-        if (GUI.Button(new Rect(w * 0.5f + 10f * s, by, bw, 56f * s), won ? "다음 장 (준비 중)" : "다음 장",
-                       UiTheme.Button))
+        bool nextChapterReady = false;
+        GUI.enabled = won ? nextChapterReady : true;
+        string rightLabel = won ? "다음 장 (준비 중)" : "거점에서 재정비";
+        if (GUI.Button(new Rect(w * 0.5f + 10f * s, by, bw, 56f * s), rightLabel, UiTheme.Button))
         {
-            root.Flow.GoToWorldMap();
+            root.Flow.GoToHub(SceneNames.HubPyesadang);
         }
         GUI.enabled = true;
     }

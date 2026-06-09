@@ -17,6 +17,7 @@
         <button class="tab active" data-tab="dialogue" type="button">대사</button>
         <button class="tab" data-tab="characters" type="button">인물</button>
         <button class="tab" data-tab="media" type="button">배경/에셋</button>
+        <button class="tab" data-tab="mapAssets" type="button">MAP 에셋</button>
         <button class="tab" data-tab="guide" type="button">적용 상태</button>
       </nav>
       <section class="project-card">
@@ -120,6 +121,28 @@
             <h2>소품/사운드</h2>
             <div id="propGrid" class="media-grid"></div>
           </section>
+        </div>
+      </section>
+
+      <section id="mapAssetsTab" class="view">
+        <div class="map-assets-layout">
+          <section class="map-asset-hero">
+            <div>
+              <span class="kicker">Battle Map</span>
+              <h2>MAP 에셋</h2>
+            </div>
+            <div id="mapAssetStats" class="map-asset-stats"></div>
+          </section>
+          <div class="map-asset-columns">
+            <section>
+              <h2>지형 타일</h2>
+              <div id="mapTileGrid" class="map-asset-grid"></div>
+            </section>
+            <section>
+              <h2>전술 오브젝트</h2>
+              <div id="mapObjectGrid" class="map-asset-grid"></div>
+            </section>
+          </div>
         </div>
       </section>
 
@@ -248,6 +271,7 @@
     </li>
   </template>
 
+  <script src="./map-assets.js"></script>
   <script src="./defaults.js"></script>
   <script src="./app.js"></script>
 </body>

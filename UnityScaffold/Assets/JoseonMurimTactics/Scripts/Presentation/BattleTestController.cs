@@ -12,15 +12,21 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleTestController : MonoBehaviour
 {
-    public int width = 12;
-    public int height = 8;
+    public int width = 16;
+    public int height = 12;
     public float tileWidth = 1.16f;
     public float tileHeight = 0.62f;
+    public bool useTilemapBattlefield = true;
+    public bool useLegacyDiamondTerrain;
     public BattleTestUnitDefinition[] unitDefinitions = new BattleTestUnitDefinition[0];
 
     private const int SmokeCoverBonus = 2;
     private const int CoverInteractBonus = 2;
     private const int FireInteractDamage = 4;
+    private const int FallDamage = 10;
+    private const int HighGroundRangeBonusElevation = 2;
+    private const string MapDisplayName = "폐사당 고개 방어전";
+    private const string MapConcept = "좁은 돌계단과 대나무숲 샛길, 낡은 나무다리, 누각 고지를 이용해 철랑문의 돌파를 막는 수비전";
     private static readonly bool UseLegacyOnGui = false;
 
     private readonly List<BattleTestUnit> units = new List<BattleTestUnit>();
@@ -30,6 +36,14 @@ public sealed class BattleTestController : MonoBehaviour
     private readonly System.Random random = new System.Random(20260608);
     private BattleTestTile[,] tiles;
     private Sprite diamondSprite;
+    private Sprite softDiamondSprite;
+    private Sprite detailSprite;
+    private Sprite dotSprite;
+    private BattleTilemapBattlefield tilemapBattlefield;
+    private Coroutine mapIntroCoroutine;
+    private bool mapAssetSpritesLoaded;
+    private readonly Dictionary<TerrainType, Sprite> terrainAssetSprites = new Dictionary<TerrainType, Sprite>();
+    private readonly Dictionary<string, Sprite> interactableAssetSprites = new Dictionary<string, Sprite>();
     private GUIStyle panelStyle;
     private GUIStyle labelStyle;
     private GUIStyle titleStyle;
@@ -60,6 +74,12 @@ public sealed class BattleTestController : MonoBehaviour
     private bool busy;
     private bool aiQueued;
     private bool battleOver;
+    private bool showThreatOverlay;
+    private bool showElevationOverlay;
+    private bool showCoverOverlay;
+    private bool showSightOverlay;
+    private bool showObjectiveOverlay = true;
+    private bool showTerrainNames;
     private BattleCommandMode commandMode = BattleCommandMode.Move;
 
     private void Start()
@@ -109,6 +129,43 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            showThreatOverlay = !showThreatOverlay;
+            AddLog(showThreatOverlay ? "[지도] 적 위협 범위 표시" : "[지도] 적 위협 범위 숨김");
+            RefreshHighlights();
+        }
+
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            showElevationOverlay = !showElevationOverlay;
+            AddLog(showElevationOverlay ? "[지도] 고저 오버레이 표시" : "[지도] 고저 오버레이 숨김");
+            RefreshHighlights();
+        }
+
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            showCoverOverlay = !showCoverOverlay;
+            AddLog(showCoverOverlay ? "[지도] 엄폐 오버레이 표시" : "[지도] 엄폐 오버레이 숨김");
+            RefreshHighlights();
+        }
+
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            showSightOverlay = !showSightOverlay;
+            AddLog(showSightOverlay ? "[지도] 시야 차단 표시" : "[지도] 시야 차단 숨김");
+            RefreshHighlights();
+        }
+
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            showObjectiveOverlay = !showObjectiveOverlay;
+            AddLog(showObjectiveOverlay ? "[지도] 목표 표시" : "[지도] 목표 숨김");
+            RefreshHighlights();
+        }
+
+        showTerrainNames = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+
         if (activeUnit != null && Input.GetKeyDown(KeyCode.Escape))
         {
             SetCommandMode(BattleCommandMode.Move);
@@ -147,6 +204,7 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void LateUpdate()
     {
+        RefreshTileNameVisibility();
         RefreshCanvasHud();
     }
 
@@ -622,7 +680,8 @@ public sealed class BattleTestController : MonoBehaviour
                 $"이동: {ActionText(activeUnit.moved)} ({activeUnit.actions.movementLeft})   행동: {ActionText(activeUnit.acted)}\n내공: {activeUnit.inner}/{activeUnit.definition.maxInner}   반응: {ActionText(!activeUnit.CanReact)}   명령: {CommandLabel(commandMode)}");
         }
 
-        SetText(hudObjectiveText, "전술: 고지/대나무숲/지형지물을 먼저 확인");
+        SetText(hudObjectiveText,
+                $"{MapDisplayName}\n{MapConcept}\nTab 위협 · H 고저 · C 엄폐 · V 시야 · O 목표 · Alt 지형명");
         SetText(hudPhaseListText, BuildPhaseListText());
         SetText(hudLogText, BuildLogText());
         SetText(hudInspectText, BuildInspectText());
@@ -702,6 +761,21 @@ public sealed class BattleTestController : MonoBehaviour
                 .Append(hoveredTile.elevation)
                 .Append("   진입 ")
                 .AppendLine(YesNo(hoveredTile.walkable));
+            builder.Append("시야 ")
+                .Append(hoveredTile.blocksLineOfSight ? "차단" : "개방")
+                .Append("   병목 ")
+                .AppendLine(YesNo(hoveredTile.isChokePoint));
+            if (hoveredTile.elevation > 0)
+            {
+                builder.Append("고지 효과: 위에서 공격 시 명중 +2");
+                if (hoveredTile.elevation >= 2)
+                {
+                    builder.Append(" / 원거리 유리");
+                }
+
+                builder.AppendLine();
+            }
+
             if (prop != null)
             {
                 int distance = activeUnit == null ? -1 : GridDistance(activeUnit.cell, prop.cell);
@@ -715,6 +789,11 @@ public sealed class BattleTestController : MonoBehaviour
             else
             {
                 builder.Append("위험: ").Append(TileHazardText(hoveredTile));
+            }
+
+            if (!string.IsNullOrEmpty(hoveredTile.tacticalNote))
+            {
+                builder.AppendLine().Append("전술: ").Append(hoveredTile.tacticalNote);
             }
 
             return builder.ToString();
@@ -801,6 +880,8 @@ public sealed class BattleTestController : MonoBehaviour
     {
         StopAllCoroutines();
         ClearGeneratedObjects();
+        width = Mathf.Max(width, 16);
+        height = Mathf.Max(height, 12);
 
         units.Clear();
         battleLog.Clear();
@@ -815,7 +896,7 @@ public sealed class BattleTestController : MonoBehaviour
         hoveredTile = null;
         hoveredUnit = null;
 
-        diamondSprite = diamondSprite == null ? CreateDiamondSprite() : diamondSprite;
+        EnsureMapVisualSprites();
         CreateTerrain();
         SpawnUnits();
         units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
@@ -824,6 +905,10 @@ public sealed class BattleTestController : MonoBehaviour
 
         AddLog("[체계] 전투 준비 완료.");
         BeginPlayerPhase();
+        if (tilemapBattlefield != null)
+        {
+            mapIntroCoroutine = StartCoroutine(PlayMapIntro());
+        }
     }
 
     private void ClearGeneratedObjects()
@@ -839,6 +924,8 @@ public sealed class BattleTestController : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        tilemapBattlefield = null;
+        mapIntroCoroutine = null;
         ClearCanvasHudReferences();
     }
 
@@ -866,9 +953,88 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void CreateTerrain()
     {
+        if (useTilemapBattlefield && !useLegacyDiamondTerrain)
+        {
+            CreateTilemapTerrain();
+            return;
+        }
+
+        CreateLegacyDebugTerrain();
+    }
+
+    private void CreateTilemapTerrain()
+    {
+        tiles = new BattleTestTile[width, height];
+        Transform terrainRoot = new GameObject("Battlefield_Tilemap").transform;
+        terrainRoot.SetParent(transform, false);
+        tilemapBattlefield = terrainRoot.gameObject.AddComponent<BattleTilemapBattlefield>();
+        tilemapBattlefield.Initialize(width, height, tileWidth, tileHeight, diamondSprite, softDiamondSprite,
+                                      detailSprite, dotSprite);
+
+        CreateMapBackdrop(terrainRoot);
+        CreateMapAtmosphere(terrainRoot);
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                TerrainProfile profile = ResolveTerrain(x, y);
+                Vector2Int cell = new Vector2Int(x, y);
+                Vector3 worldPosition = GridToWorld(cell);
+                tilemapBattlefield.SetTerrainCell(cell, profile.terrain, GetTerrainSprite(profile.terrain),
+                                                  VaryTerrainColor(profile.color, cell), profile.moveCost,
+                                                  profile.walkable, profile.blocksLineOfSight, profile.isChokePoint,
+                                                  profile.elevation, profile.coverBonus, profile.objective,
+                                                  profile.danger, profile.laneId, profile.tacticalNote,
+                                                  worldPosition);
+                CreateTacticalCellCollider(cell, profile, worldPosition);
+            }
+        }
+
+        CreateInteractables(terrainRoot);
+    }
+
+    private void CreateTacticalCellCollider(Vector2Int cell, TerrainProfile profile, Vector3 worldPosition)
+    {
+        Transform parent = tilemapBattlefield == null || tilemapBattlefield.CellColliderRoot == null
+                               ? transform
+                               : tilemapBattlefield.CellColliderRoot;
+        GameObject tileObject = new GameObject($"TacticalCell_{cell.x}_{cell.y}_{profile.terrain}");
+        tileObject.transform.SetParent(parent, false);
+        tileObject.transform.position = worldPosition;
+        tileObject.transform.localScale = new Vector3(tileWidth, tileWidth, 1f);
+
+        PolygonCollider2D collider = tileObject.AddComponent<PolygonCollider2D>();
+        collider.points = new[] { new Vector2(0f, 0.25f), new Vector2(0.5f, 0f), new Vector2(0f, -0.25f),
+                                  new Vector2(-0.5f, 0f) };
+
+        BattleTestTile tile = tileObject.AddComponent<BattleTestTile>();
+        tile.cell = cell;
+        tile.terrain = profile.terrain;
+        tile.elevation = profile.elevation;
+        tile.walkable = profile.walkable;
+        tile.moveCost = profile.moveCost;
+        tile.coverBonus = profile.coverBonus;
+        tile.baseCoverBonus = profile.coverBonus;
+        tile.baseColor = VaryTerrainColor(profile.color, cell);
+        tile.blocksLineOfSight = profile.blocksLineOfSight;
+        tile.isChokePoint = profile.isChokePoint;
+        tile.objective = profile.objective;
+        tile.danger = profile.danger;
+        tile.laneId = profile.laneId;
+        tile.tacticalNote = profile.tacticalNote;
+        tile.tilemapBattlefield = tilemapBattlefield;
+        tile.nameLabel = CreateTileNameLabel(tileObject.transform, profile);
+        tiles[cell.x, cell.y] = tile;
+    }
+
+    private void CreateLegacyDebugTerrain()
+    {
         tiles = new BattleTestTile[width, height];
         Transform terrainRoot = new GameObject("Terrain").transform;
         terrainRoot.SetParent(transform, false);
+        CreateMapBackdrop(terrainRoot);
+        CreateMapAtmosphere(terrainRoot);
 
         for (int y = 0; y < height; y++)
         {
@@ -882,13 +1048,19 @@ public sealed class BattleTestController : MonoBehaviour
                 tileObject.transform.localScale = new Vector3(tileWidth, tileWidth, 1f);
 
                 SpriteRenderer renderer = tileObject.AddComponent<SpriteRenderer>();
-                renderer.sprite = diamondSprite;
-                renderer.color = profile.color;
-                renderer.sortingOrder = (x + y) * 2;
+                Sprite terrainSprite = GetTerrainSprite(profile.terrain);
+                renderer.sprite = terrainSprite;
+                renderer.color = terrainSprite == diamondSprite ? VaryTerrainColor(profile.color, cell)
+                                                                : VaryTerrainColor(Color.white, cell);
+                renderer.sortingOrder = (x + y) * 8;
 
                 PolygonCollider2D collider = tileObject.AddComponent<PolygonCollider2D>();
                 collider.points = new[] { new Vector2(0f, 0.25f), new Vector2(0.5f, 0f), new Vector2(0f, -0.25f),
                                           new Vector2(-0.5f, 0f) };
+
+                CreateTileShadow(tileObject.transform, profile, cell, renderer.sortingOrder);
+                CreateHeightSkirt(tileObject.transform, profile, renderer.sortingOrder);
+                CreateTerrainDetails(tileObject.transform, profile, cell, renderer.sortingOrder);
 
                 GameObject highlight = new GameObject("Highlight");
                 highlight.transform.SetParent(tileObject.transform, false);
@@ -896,7 +1068,7 @@ public sealed class BattleTestController : MonoBehaviour
                 SpriteRenderer highlightRenderer = highlight.AddComponent<SpriteRenderer>();
                 highlightRenderer.sprite = diamondSprite;
                 highlightRenderer.color = Color.clear;
-                highlightRenderer.sortingOrder = renderer.sortingOrder + 1;
+                highlightRenderer.sortingOrder = renderer.sortingOrder + 7;
 
                 BattleTestTile tile = tileObject.AddComponent<BattleTestTile>();
                 tile.cell = cell;
@@ -906,9 +1078,16 @@ public sealed class BattleTestController : MonoBehaviour
                 tile.moveCost = profile.moveCost;
                 tile.coverBonus = profile.coverBonus;
                 tile.baseCoverBonus = profile.coverBonus;
-                tile.baseColor = profile.color;
+                tile.baseColor = renderer.color;
+                tile.blocksLineOfSight = profile.blocksLineOfSight;
+                tile.isChokePoint = profile.isChokePoint;
+                tile.objective = profile.objective;
+                tile.danger = profile.danger;
+                tile.laneId = profile.laneId;
+                tile.tacticalNote = profile.tacticalNote;
                 tile.terrainRenderer = renderer;
                 tile.highlightRenderer = highlightRenderer;
+                tile.nameLabel = CreateTileNameLabel(tileObject.transform, profile);
                 tiles[x, y] = tile;
             }
         }
@@ -921,12 +1100,24 @@ public sealed class BattleTestController : MonoBehaviour
         Transform propRoot = new GameObject("Interactables").transform;
         propRoot.SetParent(terrainRoot, false);
 
-        AddInteractable(propRoot, "incense", "제단 향로", BattleTestInteractableKind.Smoke, new Vector2Int(5, 2),
+        AddInteractable(propRoot, "signboard", "백두천광 현판", BattleTestInteractableKind.Objective,
+                        new Vector2Int(7, 10), new Color(0.92f, 0.76f, 0.34f, 1f));
+        AddInteractable(propRoot, "incense", "제단 향로", BattleTestInteractableKind.Smoke, new Vector2Int(7, 9),
                         new Color(0.74f, 0.68f, 0.58f, 1f));
-        AddInteractable(propRoot, "lantern", "붉은 등불", BattleTestInteractableKind.Fire, new Vector2Int(7, 2),
+        AddInteractable(propRoot, "lantern", "붉은 등불", BattleTestInteractableKind.Fire, new Vector2Int(6, 2),
                         new Color(1f, 0.32f, 0.18f, 1f));
-        AddInteractable(propRoot, "wine_cart", "술수레", BattleTestInteractableKind.Cover, new Vector2Int(3, 5),
+        AddInteractable(propRoot, "oil_jar", "기름항아리", BattleTestInteractableKind.Fire, new Vector2Int(5, 2),
+                        new Color(0.78f, 0.43f, 0.18f, 1f));
+        AddInteractable(propRoot, "wine_cart", "술수레", BattleTestInteractableKind.Cover, new Vector2Int(4, 3),
                         new Color(0.64f, 0.38f, 0.18f, 1f));
+        AddInteractable(propRoot, "fallen_wall", "무너진 담장", BattleTestInteractableKind.Cover, new Vector2Int(9, 7),
+                        new Color(0.54f, 0.49f, 0.42f, 1f));
+        AddInteractable(propRoot, "bridge_rope", "낡은 다리 밧줄", BattleTestInteractableKind.CollapseBridge,
+                        new Vector2Int(12, 5), new Color(0.45f, 0.28f, 0.12f, 1f));
+        AddInteractable(propRoot, "bamboo_bundle", "대나무 묶음", BattleTestInteractableKind.BambooFall,
+                        new Vector2Int(2, 7), new Color(0.18f, 0.58f, 0.28f, 1f));
+        AddInteractable(propRoot, "stone_lantern", "석등", BattleTestInteractableKind.Rockfall,
+                        new Vector2Int(10, 9), new Color(0.62f, 0.57f, 0.49f, 1f));
     }
 
     private void AddInteractable(Transform parent, string id, string displayName, BattleTestInteractableKind kind,
@@ -943,13 +1134,440 @@ public sealed class BattleTestController : MonoBehaviour
         GameObject propObject = new GameObject(displayName);
         propObject.transform.SetParent(parent, false);
         propObject.transform.position = GridToWorld(cell) + new Vector3(0f, 0.13f, -0.04f);
-        propObject.transform.localScale = new Vector3(tileWidth * 0.34f, tileWidth * 0.34f, 1f);
 
         SpriteRenderer renderer = propObject.AddComponent<SpriteRenderer>();
-        renderer.sprite = diamondSprite;
-        renderer.color = color;
+        Sprite propSprite = GetInteractableSprite(id, kind);
+        bool hasPropAsset = propSprite != null;
+        float propScale = hasPropAsset ? tileWidth * 0.52f : tileWidth * 0.34f;
+        propObject.transform.localScale = new Vector3(propScale, propScale, 1f);
+        renderer.sprite = hasPropAsset
+                              ? propSprite
+                              : kind == BattleTestInteractableKind.Cover ||
+                                kind == BattleTestInteractableKind.CollapseBridge
+                                  ? diamondSprite
+                                  : dotSprite;
+        renderer.color = hasPropAsset ? Color.white : color;
         renderer.sortingOrder = 2200 + ((cell.x + cell.y) * 2);
         interactable.renderer = renderer;
+        if (tilemapBattlefield != null)
+        {
+            tilemapBattlefield.RegisterPropRenderer(renderer, cell, kind);
+        }
+
+        CreateInteractableAccent(propObject.transform, kind, renderer.sortingOrder + 1);
+
+        TextMesh label = CreateWorldLabel(propObject.transform, InteractableGlyph(kind), 46, new Vector3(0f, 0.38f, -0.05f),
+                                          new Color(1f, 0.92f, 0.66f, 1f), 2300 + ((cell.x + cell.y) * 2));
+        interactable.label = label;
+    }
+
+    private void CreateInteractableAccent(Transform parent, BattleTestInteractableKind kind, int sortingOrder)
+    {
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Objective:
+            CreateDetailSprite(parent, "Signboard Beam", detailSprite, new Vector3(0f, 0.10f, -0.05f),
+                               new Vector3(0.78f, 0.10f, 1f), 0f, new Color(0.24f, 0.13f, 0.05f, 0.78f),
+                               sortingOrder);
+            CreateDetailSprite(parent, "Signboard Post", detailSprite, new Vector3(0f, -0.05f, -0.05f),
+                               new Vector3(0.12f, 0.48f, 1f), 0f, new Color(0.18f, 0.10f, 0.04f, 0.70f),
+                               sortingOrder);
+            break;
+        case BattleTestInteractableKind.Smoke:
+            CreateDetailSprite(parent, "Smoke Wisp A", dotSprite, new Vector3(-0.10f, 0.16f, -0.05f),
+                               Vector3.one * 0.34f, 0f, new Color(0.86f, 0.82f, 0.72f, 0.38f), sortingOrder);
+            CreateDetailSprite(parent, "Smoke Wisp B", dotSprite, new Vector3(0.12f, 0.24f, -0.05f),
+                               Vector3.one * 0.26f, 0f, new Color(0.72f, 0.70f, 0.64f, 0.34f), sortingOrder);
+            break;
+        case BattleTestInteractableKind.Fire:
+            CreateDetailSprite(parent, "Flame Core", detailSprite, new Vector3(0f, 0.14f, -0.05f),
+                               new Vector3(0.18f, 0.48f, 1f), -8f, new Color(1f, 0.82f, 0.24f, 0.78f),
+                               sortingOrder);
+            CreateDetailSprite(parent, "Flame Edge", detailSprite, new Vector3(0.06f, 0.10f, -0.05f),
+                               new Vector3(0.14f, 0.36f, 1f), 14f, new Color(1f, 0.20f, 0.08f, 0.58f),
+                               sortingOrder + 1);
+            break;
+        case BattleTestInteractableKind.Cover:
+            CreateRockDetails(parent, Vector2Int.zero, sortingOrder);
+            break;
+        case BattleTestInteractableKind.CollapseBridge:
+            CreateDetailSprite(parent, "Bridge Rope", detailSprite, new Vector3(0f, 0.04f, -0.05f),
+                               new Vector3(0.86f, 0.035f, 1f), -12f, new Color(0.92f, 0.70f, 0.42f, 0.64f),
+                               sortingOrder);
+            break;
+        case BattleTestInteractableKind.BambooFall:
+            CreateDetailSprite(parent, "Bundled Bamboo A", detailSprite, new Vector3(-0.06f, 0.08f, -0.05f),
+                               new Vector3(0.04f, 0.62f, 1f), -28f, new Color(0.60f, 0.88f, 0.35f, 0.70f),
+                               sortingOrder);
+            CreateDetailSprite(parent, "Bundled Bamboo B", detailSprite, new Vector3(0.08f, 0.06f, -0.05f),
+                               new Vector3(0.04f, 0.58f, 1f), 24f, new Color(0.18f, 0.42f, 0.18f, 0.74f),
+                               sortingOrder);
+            break;
+        case BattleTestInteractableKind.Rockfall:
+            CreateRockDetails(parent, Vector2Int.one, sortingOrder);
+            break;
+        }
+    }
+
+    private void CreateMapBackdrop(Transform terrainRoot)
+    {
+        GameObject backdrop = new GameObject("Painted Map Backdrop");
+        backdrop.transform.SetParent(terrainRoot, false);
+
+        Vector3 min = GridToWorld(Vector2Int.zero);
+        Vector3 max = GridToWorld(new Vector2Int(width - 1, height - 1));
+        Vector3 left = GridToWorld(new Vector2Int(0, height - 1));
+        Vector3 right = GridToWorld(new Vector2Int(width - 1, 0));
+        backdrop.transform.position = (min + max + left + right) * 0.25f + new Vector3(0f, -0.18f, 0.08f);
+        backdrop.transform.localScale = new Vector3(width * tileWidth * 2.40f, height * tileHeight * 2.80f, 1f);
+        backdrop.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+
+        SpriteRenderer renderer = backdrop.AddComponent<SpriteRenderer>();
+        renderer.sprite = detailSprite;
+        renderer.color = new Color(0.055f, 0.050f, 0.040f, 0.78f);
+        renderer.sortingOrder = -80;
+    }
+
+    private void CreateMapAtmosphere(Transform terrainRoot)
+    {
+        Transform atmosphereRoot = new GameObject("Painted Atmosphere").transform;
+        atmosphereRoot.SetParent(terrainRoot, false);
+
+        CreateZoneWash(atmosphereRoot, "Bamboo Canopy Wash", new Vector2Int(2, 7), new Vector2(3.80f, 2.65f),
+                       -18f, new Color(0.06f, 0.22f, 0.10f, 0.16f), 1120, true);
+        CreateZoneWash(atmosphereRoot, "Stream Cold Wash", new Vector2Int(12, 5), new Vector2(2.20f, 4.10f),
+                       -29f, new Color(0.18f, 0.48f, 0.56f, 0.17f), 1121, true);
+        CreateZoneWash(atmosphereRoot, "Shrine Gold Wash", new Vector2Int(7, 9), new Vector2(4.15f, 2.55f),
+                       11f, new Color(0.84f, 0.56f, 0.20f, 0.13f), 1122, false);
+        CreateZoneWash(atmosphereRoot, "Roof Crimson Wash", new Vector2Int(11, 9), new Vector2(2.90f, 1.75f),
+                       18f, new Color(0.66f, 0.10f, 0.08f, 0.12f), 1123, false);
+
+        CreateMistBand(atmosphereRoot, "Low Valley Mist", new Vector2Int(4, 2), new Vector3(-0.18f, 0.06f, -0.03f),
+                       new Vector3(4.80f, 0.38f, 1f), -14f, new Color(0.72f, 0.78f, 0.72f, 0.13f), 1240);
+        CreateMistBand(atmosphereRoot, "Stream Spray Mist", new Vector2Int(13, 6), new Vector3(0.08f, 0.03f, -0.03f),
+                       new Vector3(2.65f, 0.28f, 1f), -34f, new Color(0.56f, 0.78f, 0.82f, 0.16f), 1241);
+        CreateMistBand(atmosphereRoot, "Shrine Dust Beam", new Vector2Int(7, 8), new Vector3(0.18f, 0.22f, -0.03f),
+                       new Vector3(3.10f, 0.22f, 1f), 12f, new Color(1f, 0.78f, 0.42f, 0.11f), 1242);
+
+        CreateGlow(atmosphereRoot, "Lantern Glow", new Vector2Int(6, 2), new Color(1f, 0.45f, 0.16f, 0.24f),
+                   0.95f, 1360);
+        CreateGlow(atmosphereRoot, "Oil Jar Heat Glow", new Vector2Int(5, 2), new Color(1f, 0.32f, 0.10f, 0.17f),
+                   0.72f, 1359);
+        CreateGlow(atmosphereRoot, "Signboard Halo", new Vector2Int(7, 10), new Color(1f, 0.80f, 0.36f, 0.18f),
+                   1.18f, 1361);
+    }
+
+    private void CreateZoneWash(Transform parent, string name, Vector2Int cell, Vector2 scale, float zRotation,
+                                Color color, int sortingOrder, bool animated)
+    {
+        SpriteRenderer renderer = CreateAtmosphereSprite(parent, name, softDiamondSprite,
+                                                         GridToWorld(cell) + new Vector3(0f, 0.04f, -0.03f),
+                                                         new Vector3(scale.x, scale.y, 1f), zRotation, color,
+                                                         sortingOrder);
+        if (animated)
+        {
+            BattleMapAmbientMotion motion = renderer.gameObject.AddComponent<BattleMapAmbientMotion>();
+            motion.drift = new Vector3(0.035f, 0.018f, 0f);
+            motion.speed = 0.36f;
+            motion.alphaPulse = 0.12f;
+            motion.scalePulse = 0.025f;
+        }
+    }
+
+    private void CreateMistBand(Transform parent, string name, Vector2Int cell, Vector3 offset, Vector3 scale,
+                                float zRotation, Color color, int sortingOrder)
+    {
+        SpriteRenderer renderer = CreateAtmosphereSprite(parent, name, detailSprite, GridToWorld(cell) + offset, scale,
+                                                         zRotation, color, sortingOrder);
+        BattleMapAmbientMotion motion = renderer.gameObject.AddComponent<BattleMapAmbientMotion>();
+        motion.drift = new Vector3(0.10f, 0.025f, 0f);
+        motion.speed = 0.24f;
+        motion.alphaPulse = 0.22f;
+        motion.scalePulse = 0.035f;
+    }
+
+    private void CreateGlow(Transform parent, string name, Vector2Int cell, Color color, float scale, int sortingOrder)
+    {
+        SpriteRenderer renderer = CreateAtmosphereSprite(parent, name, dotSprite,
+                                                         GridToWorld(cell) + new Vector3(0f, 0.14f, -0.04f),
+                                                         Vector3.one * scale, 0f, color, sortingOrder);
+        BattleMapAmbientMotion motion = renderer.gameObject.AddComponent<BattleMapAmbientMotion>();
+        motion.drift = new Vector3(0f, 0.018f, 0f);
+        motion.speed = 0.62f;
+        motion.alphaPulse = 0.30f;
+        motion.scalePulse = 0.055f;
+    }
+
+    private SpriteRenderer CreateAtmosphereSprite(Transform parent, string name, Sprite sprite, Vector3 worldPosition,
+                                                  Vector3 scale, float zRotation, Color color, int sortingOrder)
+    {
+        GameObject atmosphere = new GameObject(name);
+        atmosphere.transform.SetParent(parent, false);
+        atmosphere.transform.position = worldPosition;
+        atmosphere.transform.localScale = scale;
+        atmosphere.transform.localRotation = Quaternion.Euler(0f, 0f, zRotation);
+
+        SpriteRenderer renderer = atmosphere.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.color = color;
+        renderer.sortingOrder = sortingOrder;
+        return renderer;
+    }
+
+    private void CreateTileShadow(Transform parent, TerrainProfile profile, Vector2Int cell, int sortingOrder)
+    {
+        GameObject shadow = new GameObject("Ground Shadow");
+        shadow.transform.SetParent(parent, false);
+        shadow.transform.localPosition = new Vector3(0.035f, -0.055f - profile.elevation * 0.018f, 0.05f);
+        shadow.transform.localScale = new Vector3(1.08f, 1.05f, 1f);
+
+        SpriteRenderer renderer = shadow.AddComponent<SpriteRenderer>();
+        renderer.sprite = softDiamondSprite;
+        float alpha = profile.walkable ? 0.18f + profile.elevation * 0.055f : 0.34f;
+        renderer.color = new Color(0f, 0f, 0f, Mathf.Clamp(alpha, 0.12f, 0.42f));
+        renderer.sortingOrder = sortingOrder - 5;
+    }
+
+    private void CreateHeightSkirt(Transform parent, TerrainProfile profile, int sortingOrder)
+    {
+        int layers = Mathf.Clamp(profile.walkable ? profile.elevation : profile.elevation + 1, 0, 3);
+        for (int i = 0; i < layers; i++)
+        {
+            GameObject skirt = new GameObject("Height Side");
+            skirt.transform.SetParent(parent, false);
+            skirt.transform.localPosition = new Vector3(0f, -0.050f * (i + 1), 0.035f);
+            skirt.transform.localScale = new Vector3(0.96f - i * 0.035f, 0.92f, 1f);
+
+            SpriteRenderer renderer = skirt.AddComponent<SpriteRenderer>();
+            renderer.sprite = softDiamondSprite;
+            renderer.color = Color.Lerp(profile.color, Color.black, profile.walkable ? 0.38f : 0.55f);
+            renderer.sortingOrder = sortingOrder - 4 + i;
+        }
+    }
+
+    private void CreateTerrainDetails(Transform parent, TerrainProfile profile, Vector2Int cell, int sortingOrder)
+    {
+        switch (profile.terrain)
+        {
+        case TerrainType.Road:
+        case TerrainType.Stone:
+        case TerrainType.ShrineFloor:
+            CreateStoneDetails(parent, cell, sortingOrder + 2, profile.terrain == TerrainType.ShrineFloor);
+            break;
+        case TerrainType.Bamboo:
+        case TerrainType.Forest:
+            CreateBambooDetails(parent, cell, sortingOrder + 2);
+            break;
+        case TerrainType.ShallowWater:
+        case TerrainType.DeepWater:
+            CreateWaterDetails(parent, cell, sortingOrder + 2);
+            break;
+        case TerrainType.Bridge:
+        case TerrainType.Wood:
+            CreateBridgeDetails(parent, cell, sortingOrder + 2);
+            break;
+        case TerrainType.Roof:
+            CreateRoofDetails(parent, cell, sortingOrder + 2);
+            break;
+        case TerrainType.Rubble:
+        case TerrainType.Wall:
+        case TerrainType.Cliff:
+            CreateRockDetails(parent, cell, sortingOrder + 2);
+            break;
+        case TerrainType.Plain:
+        case TerrainType.Hill:
+            CreateGrassDetails(parent, cell, sortingOrder + 2, profile.elevation);
+            break;
+        }
+
+        if (profile.isChokePoint)
+        {
+            CreateDetailSprite(parent, "Choke Edge", detailSprite, new Vector3(0f, -0.03f, -0.045f),
+                               new Vector3(0.40f, 0.025f, 1f), -18f, new Color(0.86f, 0.68f, 0.30f, 0.36f),
+                               sortingOrder + 3);
+        }
+    }
+
+    private void CreateStoneDetails(Transform parent, Vector2Int cell, int sortingOrder, bool shrine)
+    {
+        int count = shrine ? 3 : 2;
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 position = DetailPosition(cell, i, 0.28f, 0.12f);
+            float rotation = -24f + Stable01(cell, i + 17) * 48f;
+            Color color = shrine ? new Color(0.82f, 0.74f, 0.56f, 0.38f)
+                                 : new Color(0.25f, 0.23f, 0.19f, 0.26f);
+            CreateDetailSprite(parent, "Stone Grain", detailSprite, position,
+                               new Vector3(0.16f + Stable01(cell, i + 2) * 0.12f, 0.018f, 1f), rotation, color,
+                               sortingOrder);
+        }
+    }
+
+    private void CreateBambooDetails(Transform parent, Vector2Int cell, int sortingOrder)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            Vector3 position = DetailPosition(cell, i, 0.30f, 0.14f);
+            float rotation = -10f + Stable01(cell, i + 31) * 20f;
+            Color color = i % 2 == 0 ? new Color(0.43f, 0.78f, 0.35f, 0.48f)
+                                     : new Color(0.10f, 0.27f, 0.14f, 0.54f);
+            CreateDetailSprite(parent, "Bamboo Stroke", detailSprite, position,
+                               new Vector3(0.028f, 0.34f + Stable01(cell, i + 4) * 0.18f, 1f), rotation, color,
+                               sortingOrder);
+        }
+    }
+
+    private void CreateWaterDetails(Transform parent, Vector2Int cell, int sortingOrder)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            Vector3 position = DetailPosition(cell, i, 0.24f, 0.10f);
+            CreateDetailSprite(parent, "Water Sheen", detailSprite, position,
+                               new Vector3(0.24f + Stable01(cell, i + 5) * 0.15f, 0.018f, 1f), -12f,
+                               new Color(0.55f, 0.88f, 0.92f, 0.38f), sortingOrder);
+        }
+    }
+
+    private void CreateBridgeDetails(Transform parent, Vector2Int cell, int sortingOrder)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            CreateDetailSprite(parent, "Bridge Plank", detailSprite, new Vector3(-0.16f + i * 0.16f, 0.01f, -0.04f),
+                               new Vector3(0.12f, 0.028f, 1f), -25f, new Color(0.22f, 0.13f, 0.07f, 0.52f),
+                               sortingOrder);
+        }
+    }
+
+    private void CreateRoofDetails(Transform parent, Vector2Int cell, int sortingOrder)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            CreateDetailSprite(parent, "Roof Rib", detailSprite, new Vector3(-0.18f + i * 0.18f, 0.02f, -0.04f),
+                               new Vector3(0.035f, 0.30f, 1f), 25f, new Color(0.28f, 0.06f, 0.04f, 0.46f),
+                               sortingOrder);
+        }
+    }
+
+    private void CreateRockDetails(Transform parent, Vector2Int cell, int sortingOrder)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            Vector3 position = DetailPosition(cell, i, 0.25f, 0.11f);
+            CreateDetailSprite(parent, "Rock Chip", dotSprite, position,
+                               Vector3.one * (0.055f + Stable01(cell, i + 8) * 0.055f), 0f,
+                               new Color(0.18f, 0.16f, 0.13f, 0.42f), sortingOrder);
+        }
+    }
+
+    private void CreateGrassDetails(Transform parent, Vector2Int cell, int sortingOrder, int elevation)
+    {
+        int count = elevation > 0 ? 3 : 2;
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 position = DetailPosition(cell, i, 0.30f, 0.12f);
+            Color color = elevation > 0 ? new Color(0.62f, 0.63f, 0.36f, 0.42f)
+                                        : new Color(0.25f, 0.50f, 0.24f, 0.36f);
+            CreateDetailSprite(parent, "Grass Brush", detailSprite, position,
+                               new Vector3(0.025f, 0.18f + Stable01(cell, i + 9) * 0.10f, 1f),
+                               -22f + Stable01(cell, i + 10) * 44f, color, sortingOrder);
+        }
+    }
+
+    private void CreateDetailSprite(Transform parent, string name, Sprite sprite, Vector3 localPosition,
+                                    Vector3 localScale, float zRotation, Color color, int sortingOrder)
+    {
+        GameObject detail = new GameObject(name);
+        detail.transform.SetParent(parent, false);
+        detail.transform.localPosition = localPosition;
+        detail.transform.localScale = localScale;
+        detail.transform.localRotation = Quaternion.Euler(0f, 0f, zRotation);
+
+        SpriteRenderer renderer = detail.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.color = color;
+        renderer.sortingOrder = sortingOrder;
+    }
+
+    private Vector3 DetailPosition(Vector2Int cell, int index, float xRadius, float yRadius)
+    {
+        float x = (Stable01(cell, index * 11 + 1) - 0.5f) * xRadius;
+        float y = (Stable01(cell, index * 11 + 2) - 0.5f) * yRadius;
+        return new Vector3(x, y, -0.04f);
+    }
+
+    private Color VaryTerrainColor(Color color, Vector2Int cell)
+    {
+        float amount = -0.055f + Stable01(cell, 99) * 0.11f;
+        Color target = amount >= 0f ? Color.white : Color.black;
+        return Color.Lerp(color, target, Mathf.Abs(amount));
+    }
+
+    private static float Stable01(Vector2Int cell, int salt)
+    {
+        unchecked
+        {
+            int hash = cell.x * 73856093 ^ cell.y * 19349663 ^ salt * 83492791;
+            hash ^= hash << 13;
+            hash ^= hash >> 17;
+            hash ^= hash << 5;
+            return (hash & 0x7fffffff) / (float)int.MaxValue;
+        }
+    }
+
+    private TextMesh CreateTileNameLabel(Transform parent, TerrainProfile profile)
+    {
+        string text = string.Empty;
+        if (profile.objective)
+        {
+            text = "目";
+        }
+        else if (profile.isChokePoint)
+        {
+            text = "狹";
+        }
+        else if (profile.elevation >= 2)
+        {
+            text = "高" + profile.elevation;
+        }
+        else if (profile.blocksLineOfSight)
+        {
+            text = "遮";
+        }
+        else if (profile.danger)
+        {
+            text = "危";
+        }
+
+        if (string.IsNullOrEmpty(text))
+        {
+            return null;
+        }
+
+        TextMesh label = CreateWorldLabel(parent, text, 40, new Vector3(0f, 0.03f, -0.06f),
+                                          new Color(0.98f, 0.92f, 0.70f, 0.92f), 1800);
+        label.gameObject.SetActive(false);
+        return label;
+    }
+
+    private TextMesh CreateWorldLabel(Transform parent, string text, int fontSize, Vector3 localPosition, Color color,
+                                      int sortingOrder)
+    {
+        GameObject labelObject = new GameObject("Map Label");
+        labelObject.transform.SetParent(parent, false);
+        labelObject.transform.localPosition = localPosition;
+
+        TextMesh mesh = labelObject.AddComponent<TextMesh>();
+        mesh.text = text;
+        mesh.anchor = TextAnchor.MiddleCenter;
+        mesh.alignment = TextAlignment.Center;
+        mesh.fontSize = fontSize;
+        mesh.characterSize = 0.018f;
+        mesh.color = color;
+
+        MeshRenderer renderer = labelObject.GetComponent<MeshRenderer>();
+        renderer.sortingLayerName = "Default";
+        renderer.sortingOrder = sortingOrder;
+        return mesh;
     }
 
     private void SpawnUnits()
@@ -1239,10 +1857,17 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
+        int range = EffectiveAttackRange(attacker);
         int distance = GridDistance(attacker.cell, target.cell);
-        if (distance > attacker.definition.attackRange)
+        if (distance > range)
         {
             AddLog("[공격] 대상이 사거리 밖입니다.");
+            return false;
+        }
+
+        if (range > 1 && !HasLineOfSight(attacker.cell, target.cell))
+        {
+            AddLog("[공격] 대나무숲/연막/담장에 시야가 막혔습니다.");
             return false;
         }
 
@@ -1336,10 +1961,18 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
+        int range = EffectiveSpecialRange(actor);
         int distance = GridDistance(actor.cell, target.cell);
-        if (distance > actor.definition.specialRange)
+        if (distance > range)
         {
             AddLog("[무공] 대상이 사거리 밖입니다.");
+            return false;
+        }
+
+        if (range > 1 && IsHostileAttackSpecial(actor.definition.specialEffect) &&
+            !HasLineOfSight(actor.cell, target.cell))
+        {
+            AddLog("[무공] 시야가 막혀 펼칠 수 없습니다.");
             return false;
         }
 
@@ -1461,13 +2094,25 @@ public sealed class BattleTestController : MonoBehaviour
             return BattleTestCounterMove.None;
         }
 
-        if (distance <= defender.definition.attackRange)
+        int attackRange = EffectiveAttackRange(defender);
+        if (distance <= attackRange)
         {
+            if (attackRange > 1 && !HasLineOfSight(defender.cell, attacker.cell))
+            {
+                return BattleTestCounterMove.None;
+            }
+
             return new BattleTestCounterMove(false, "기본 공격");
         }
 
-        if (CanUseCounterSpecial(defender) && distance <= defender.definition.specialRange)
+        int specialRange = EffectiveSpecialRange(defender);
+        if (CanUseCounterSpecial(defender) && distance <= specialRange)
         {
+            if (specialRange > 1 && !HasLineOfSight(defender.cell, attacker.cell))
+            {
+                return BattleTestCounterMove.None;
+            }
+
             return new BattleTestCounterMove(true, defender.definition.specialName);
         }
 
@@ -1492,7 +2137,7 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
-        int range = special ? attacker.definition.specialRange : attacker.definition.attackRange;
+        int range = special ? EffectiveSpecialRange(attacker) : EffectiveAttackRange(attacker);
         if (range >= 4 || (special && (attacker.definition.specialEffect == BattleSpecialEffect.Heal ||
                                        attacker.definition.specialEffect == BattleSpecialEffect.Mark)))
         {
@@ -1512,6 +2157,46 @@ public sealed class BattleTestController : MonoBehaviour
         return unit.definition.agility >= 0 ? unit.definition.agility : unit.definition.initiative;
     }
 
+    private int EffectiveAttackRange(BattleTestUnit unit)
+    {
+        return EffectiveAttackRange(unit, unit == null ? null : TileAt(unit.cell));
+    }
+
+    private int EffectiveAttackRange(BattleTestUnit unit, BattleTestTile fromTile)
+    {
+        if (unit == null)
+        {
+            return 0;
+        }
+
+        return ApplyHighGroundRangeBonus(unit.definition.attackRange, fromTile);
+    }
+
+    private int EffectiveSpecialRange(BattleTestUnit unit)
+    {
+        return EffectiveSpecialRange(unit, unit == null ? null : TileAt(unit.cell));
+    }
+
+    private int EffectiveSpecialRange(BattleTestUnit unit, BattleTestTile fromTile)
+    {
+        if (unit == null)
+        {
+            return 0;
+        }
+
+        return ApplyHighGroundRangeBonus(unit.definition.specialRange, fromTile);
+    }
+
+    private int ApplyHighGroundRangeBonus(int baseRange, BattleTestTile fromTile)
+    {
+        if (baseRange > 1 && fromTile != null && fromTile.elevation >= HighGroundRangeBonusElevation)
+        {
+            return baseRange + 1;
+        }
+
+        return baseRange;
+    }
+
     private bool TryInteract(BattleTestUnit actor, BattleTestTile clickedTile)
     {
         if (actor == null || !actor.CanUseMainAction)
@@ -1527,11 +2212,14 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
-        interactable.used = true;
-        if (interactable.renderer != null)
+        if (interactable.kind == BattleTestInteractableKind.Objective)
         {
-            interactable.renderer.color = new Color(0.35f, 0.35f, 0.35f, 0.72f);
+            AddLog("[목표] 현판은 지켜야 합니다. 적이 닿기 전에 병목을 막으세요.");
+            return false;
         }
+
+        interactable.used = true;
+        FadeInteractable(interactable);
 
         BattleTestTile tile = TileAt(interactable.cell);
         switch (interactable.kind)
@@ -1569,6 +2257,20 @@ public sealed class BattleTestController : MonoBehaviour
             }
             AddLog(
                 $"[지형] {actor.definition.displayName}가 {interactable.displayName}를 밀었다. 엄폐 +{CoverInteractBonus}.");
+            break;
+        case BattleTestInteractableKind.CollapseBridge:
+            int collapsed = CollapseBridgeAt(interactable.cell);
+            DamageUnitsAround(actor, interactable.cell, 1, FallDamage, "다리 붕괴");
+            AddLog($"[지형] {actor.definition.displayName}가 밧줄을 끊었다. 우측 다리 {collapsed}칸 붕괴.");
+            break;
+        case BattleTestInteractableKind.BambooFall:
+            int blocked = DropBambooAt(interactable.cell);
+            AddLog($"[지형] {actor.definition.displayName}가 대나무 묶음을 베었다. {blocked}칸 시야 차단.");
+            break;
+        case BattleTestInteractableKind.Rockfall:
+            int rubble = DropRockAt(interactable.cell);
+            DamageUnitsAround(actor, interactable.cell, 1, FallDamage, "낙석");
+            AddLog($"[지형] {actor.definition.displayName}가 석등을 무너뜨렸다. 낙석 피해 {FallDamage}, 잔해 {rubble}칸.");
             break;
         }
 
@@ -1666,9 +2368,10 @@ public sealed class BattleTestController : MonoBehaviour
                 continue;
             }
 
-            int desiredRange =
-                CanUseSpecial(activeUnit) ? activeUnit.definition.specialRange : activeUnit.definition.attackRange;
-            if (GridDistance(activeUnit.cell, target.cell) > desiredRange && !activeUnit.moved)
+            int desiredRange = CanUseSpecial(activeUnit) ? EffectiveSpecialRange(activeUnit) : EffectiveAttackRange(activeUnit);
+            if ((GridDistance(activeUnit.cell, target.cell) > desiredRange ||
+                 (desiredRange > 1 && !HasLineOfSight(activeUnit.cell, target.cell))) &&
+                !activeUnit.moved)
             {
                 BattleTestTile best = FindBestMoveToward(activeUnit, target.cell);
                 if (best != null)
@@ -1685,7 +2388,10 @@ public sealed class BattleTestController : MonoBehaviour
             }
 
             if (CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) &&
-                GridDistance(activeUnit.cell, target.cell) <= activeUnit.definition.specialRange)
+                GridDistance(activeUnit.cell, target.cell) <= EffectiveSpecialRange(activeUnit) &&
+                (!IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
+                 EffectiveSpecialRange(activeUnit) <= 1 ||
+                 HasLineOfSight(activeUnit.cell, target.cell)))
             {
                 TrySpecial(activeUnit, target);
             }
@@ -1713,8 +2419,7 @@ public sealed class BattleTestController : MonoBehaviour
     {
         Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
         BattleTestTile best = null;
-        int bestDistance = GridDistance(unit.cell, targetCell);
-        int bestCost = int.MaxValue;
+        int bestScore = int.MinValue;
 
         foreach (KeyValuePair<Vector2Int, int> pair in reachable)
         {
@@ -1723,12 +2428,34 @@ public sealed class BattleTestController : MonoBehaviour
                 continue;
             }
 
-            int distance = GridDistance(pair.Key, targetCell);
-            if (distance < bestDistance || (distance == bestDistance && pair.Value < bestCost))
+            BattleTestTile tile = TileAt(pair.Key);
+            if (tile == null)
             {
-                bestDistance = distance;
-                bestCost = pair.Value;
-                best = TileAt(pair.Key);
+                continue;
+            }
+
+            int distance = GridDistance(pair.Key, targetCell);
+            int score = -distance * 12 - pair.Value * 2 + tile.elevation * 5 + tile.coverBonus * 3;
+            if (tile.isChokePoint)
+            {
+                score += 8;
+            }
+
+            if (tile.danger || tile.fireTurns > 0)
+            {
+                score -= 12;
+            }
+
+            int range = CanUseSpecial(unit) ? EffectiveSpecialRange(unit, tile) : EffectiveAttackRange(unit, tile);
+            if (distance <= range && (range <= 1 || HasLineOfSight(pair.Key, targetCell)))
+            {
+                score += 18;
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = tile;
             }
         }
 
@@ -1872,7 +2599,7 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         string commandName = special ? actor.definition.specialName : "공격";
-        int range = special ? actor.definition.specialRange : actor.definition.attackRange;
+        int range = special ? EffectiveSpecialRange(actor) : EffectiveAttackRange(actor);
         int distance = GridDistance(actor.cell, target.cell);
         string costText =
             special ? $"소모: 내공 {actor.definition.specialCost} / 재사용 {actor.definition.specialCooldown}턴"
@@ -1909,6 +2636,13 @@ public sealed class BattleTestController : MonoBehaviour
         {
             return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName,
                                           "사거리 밖입니다.", distance, range, costText);
+        }
+
+        if (range > 1 && (!special || IsHostileAttackSpecial(actor.definition.specialEffect)) &&
+            !HasLineOfSight(actor.cell, target.cell))
+        {
+            return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName,
+                                          "시야가 막혔습니다.", distance, range, costText);
         }
 
         BattleTestTile from = TileAt(actor.cell);
@@ -1995,7 +2729,7 @@ public sealed class BattleTestController : MonoBehaviour
         int distance = GridDistance(defender.cell, attacker.cell);
         if (!counter.valid)
         {
-            if (distance > defender.definition.attackRange && distance > defender.definition.specialRange)
+            if (distance > EffectiveAttackRange(defender) && distance > EffectiveSpecialRange(defender))
             {
                 return "상대 반격: 불가 - 사거리 밖";
             }
@@ -2163,11 +2897,111 @@ public sealed class BattleTestController : MonoBehaviour
         }
     }
 
+    private void FadeInteractable(BattleTestInteractable interactable)
+    {
+        if (interactable.renderer != null)
+        {
+            interactable.renderer.color = new Color(0.35f, 0.35f, 0.35f, 0.72f);
+        }
+
+        if (interactable.label != null)
+        {
+            interactable.label.color = new Color(0.55f, 0.52f, 0.46f, 0.72f);
+        }
+    }
+
+    private int CollapseBridgeAt(Vector2Int center)
+    {
+        int changed = 0;
+        for (int x = 11; x <= 14; x++)
+        {
+            BattleTestTile tile = TileAt(new Vector2Int(x, center.y));
+            if (tile == null || tile.terrain != TerrainType.Bridge)
+            {
+                continue;
+            }
+
+            tile.terrain = TerrainType.ShallowWater;
+            tile.walkable = false;
+            tile.moveCost = 99;
+            tile.coverBonus = 0;
+            tile.baseCoverBonus = 0;
+            tile.blocksLineOfSight = false;
+            tile.isChokePoint = false;
+            tile.danger = true;
+            tile.baseColor = new Color(0.12f, 0.22f, 0.26f, 1f);
+            tile.tacticalNote = "붕괴한 다리: 우측 우회로 차단, 여울로 우회해야 한다";
+            RefreshTerrainTint(tile);
+            changed++;
+        }
+
+        return changed;
+    }
+
+    private int DropBambooAt(Vector2Int center)
+    {
+        int changed = 0;
+        Vector2Int[] cells =
+        {
+            center,
+            new Vector2Int(center.x + 1, center.y),
+            new Vector2Int(center.x, center.y + 1),
+            new Vector2Int(center.x + 1, center.y + 1)
+        };
+
+        foreach (Vector2Int cell in cells)
+        {
+            BattleTestTile tile = TileAt(cell);
+            if (tile == null || !tile.walkable)
+            {
+                continue;
+            }
+
+            tile.terrain = TerrainType.Bamboo;
+            tile.moveCost = Mathf.Max(tile.moveCost, 2);
+            tile.blocksLineOfSight = true;
+            tile.coverBonus = Mathf.Max(tile.coverBonus, tile.baseCoverBonus + CoverInteractBonus);
+            tile.extraCover = true;
+            tile.tacticalNote = "쓰러진 대나무: 시야 차단과 엄폐를 만든 임시 장벽";
+            RefreshTerrainTint(tile);
+            changed++;
+        }
+
+        return changed;
+    }
+
+    private int DropRockAt(Vector2Int center)
+    {
+        int changed = 0;
+        foreach (Vector2Int cell in Neighbors(center))
+        {
+            BattleTestTile tile = TileAt(cell);
+            if (tile == null || !tile.walkable)
+            {
+                continue;
+            }
+
+            tile.terrain = TerrainType.Rubble;
+            tile.moveCost = Mathf.Max(tile.moveCost, 2);
+            tile.coverBonus = Mathf.Max(tile.coverBonus, tile.baseCoverBonus + CoverInteractBonus);
+            tile.extraCover = true;
+            tile.blocksLineOfSight = tile.blocksLineOfSight || tile.coverBonus >= 3;
+            tile.danger = true;
+            tile.baseColor = new Color(0.45f, 0.40f, 0.35f, 1f);
+            tile.tacticalNote = "낙석 잔해: 강엄폐, 통행 지연, 하단 진입 억제";
+            RefreshTerrainTint(tile);
+            changed++;
+        }
+
+        return changed;
+    }
+
     private BattleTestInteractable FindUsableInteractable(BattleTestUnit actor, Vector2Int clickedCell)
     {
         foreach (BattleTestInteractable interactable in interactables)
         {
-            if (interactable.used || interactable.cell != clickedCell)
+            if (interactable.used || interactable.kind == BattleTestInteractableKind.Objective ||
+                interactable.cell != clickedCell)
             {
                 continue;
             }
@@ -2190,7 +3024,8 @@ public sealed class BattleTestController : MonoBehaviour
 
         foreach (BattleTestInteractable interactable in interactables)
         {
-            if (!interactable.used && GridDistance(actor.cell, interactable.cell) <= 1)
+            if (!interactable.used && interactable.kind != BattleTestInteractableKind.Objective &&
+                GridDistance(actor.cell, interactable.cell) <= 1)
             {
                 return true;
             }
@@ -2235,6 +3070,26 @@ public sealed class BattleTestController : MonoBehaviour
             states.Add("중엄폐");
         }
 
+        if (!tile.walkable)
+        {
+            states.Add("진입불가");
+        }
+
+        if (tile.danger)
+        {
+            states.Add("위험");
+        }
+
+        if (tile.isChokePoint)
+        {
+            states.Add("병목");
+        }
+
+        if (tile.blocksLineOfSight)
+        {
+            states.Add("시야차단");
+        }
+
         return states.Count == 0 ? "없음" : string.Join(", ", states);
     }
 
@@ -2248,14 +3103,50 @@ public sealed class BattleTestController : MonoBehaviour
             return $"화염 피해 {FireInteractDamage}";
         case BattleTestInteractableKind.Cover:
             return $"엄폐 +{CoverInteractBonus}";
+        case BattleTestInteractableKind.Objective:
+            return "보호 목표";
+        case BattleTestInteractableKind.CollapseBridge:
+            return "다리 붕괴 / 낙하 피해";
+        case BattleTestInteractableKind.BambooFall:
+            return "대나무 장벽 생성";
+        case BattleTestInteractableKind.Rockfall:
+            return $"낙석 피해 {FallDamage} / 잔해";
         default:
             return "-";
         }
     }
 
+    private string InteractableGlyph(BattleTestInteractableKind kind)
+    {
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Smoke:
+            return "煙";
+        case BattleTestInteractableKind.Fire:
+            return "火";
+        case BattleTestInteractableKind.Cover:
+            return "盾";
+        case BattleTestInteractableKind.Objective:
+            return "守";
+        case BattleTestInteractableKind.CollapseBridge:
+            return "斷";
+        case BattleTestInteractableKind.BambooFall:
+            return "竹";
+        case BattleTestInteractableKind.Rockfall:
+            return "石";
+        default:
+            return "物";
+        }
+    }
+
     private void RefreshTerrainTint(BattleTestTile tile)
     {
-        if (tile != null && tile.terrainRenderer != null)
+        if (tile == null)
+        {
+            return;
+        }
+
+        if (tile.terrainRenderer != null)
         {
             if (tile.fireTurns > 0)
             {
@@ -2264,6 +3155,10 @@ public sealed class BattleTestController : MonoBehaviour
             else if (tile.smokeTurns > 0)
             {
                 tile.terrainRenderer.color = new Color(0.54f, 0.54f, 0.50f, 1f);
+            }
+            else if (!tile.walkable && tile.danger)
+            {
+                tile.terrainRenderer.color = new Color(0.12f, 0.22f, 0.26f, 1f);
             }
             else if (tile.extraCover)
             {
@@ -2274,6 +3169,35 @@ public sealed class BattleTestController : MonoBehaviour
                 tile.terrainRenderer.color = tile.baseColor;
             }
         }
+        else if (tilemapBattlefield != null)
+        {
+            tilemapBattlefield.SetTerrainTint(tile.cell, tile.terrain, TerrainTint(tile));
+        }
+    }
+
+    private Color TerrainTint(BattleTestTile tile)
+    {
+        if (tile.fireTurns > 0)
+        {
+            return new Color(0.72f, 0.20f, 0.12f, 1f);
+        }
+
+        if (tile.smokeTurns > 0)
+        {
+            return new Color(0.54f, 0.54f, 0.50f, 1f);
+        }
+
+        if (!tile.walkable && tile.danger)
+        {
+            return new Color(0.12f, 0.22f, 0.26f, 1f);
+        }
+
+        if (tile.extraCover)
+        {
+            return new Color(0.44f, 0.29f, 0.17f, 1f);
+        }
+
+        return Color.white;
     }
 
     private string UnitStatusText(BattleTestUnit unit)
@@ -2392,6 +3316,38 @@ public sealed class BattleTestController : MonoBehaviour
             return "절벽";
         case TerrainType.Wall:
             return "담장";
+        case TerrainType.Plain:
+            return "평지";
+        case TerrainType.Road:
+            return "돌계단";
+        case TerrainType.ShrineFloor:
+            return "사당 마당";
+        case TerrainType.Forest:
+            return "숲";
+        case TerrainType.ShallowWater:
+            return "얕은 여울";
+        case TerrainType.DeepWater:
+            return "깊은 물";
+        case TerrainType.Mud:
+            return "진흙";
+        case TerrainType.Snow:
+            return "눈길";
+        case TerrainType.Ice:
+            return "빙판";
+        case TerrainType.Hill:
+            return "능선";
+        case TerrainType.Gate:
+            return "문";
+        case TerrainType.Interior:
+            return "실내";
+        case TerrainType.Fire:
+            return "화염";
+        case TerrainType.Smoke:
+            return "연막";
+        case TerrainType.Trap:
+            return "함정";
+        case TerrainType.Rubble:
+            return "잔해";
         default:
             return terrain.ToString();
         }
@@ -2482,13 +3438,13 @@ public sealed class BattleTestController : MonoBehaviour
     private Dictionary<Vector2Int, int> GetReachableCells(BattleTestUnit unit)
     {
         Dictionary<Vector2Int, int> cost = new Dictionary<Vector2Int, int>();
-        Queue<Vector2Int> frontier = new Queue<Vector2Int>();
+        List<Vector2Int> frontier = new List<Vector2Int>();
         cost[unit.cell] = 0;
-        frontier.Enqueue(unit.cell);
+        frontier.Add(unit.cell);
 
         while (frontier.Count > 0)
         {
-            Vector2Int current = frontier.Dequeue();
+            Vector2Int current = PopLowestCost(frontier, cost);
             foreach (Vector2Int next in Neighbors(current))
             {
                 BattleTestTile tile = TileAt(next);
@@ -2503,7 +3459,13 @@ public sealed class BattleTestController : MonoBehaviour
                     continue;
                 }
 
-                int nextCost = cost[current] + Mathf.Max(1, tile.moveCost);
+                int stepCost = StepMoveCost(TileAt(current), tile);
+                if (stepCost == int.MaxValue)
+                {
+                    continue;
+                }
+
+                int nextCost = cost[current] + stepCost;
                 if (nextCost > EffectiveMoveRange(unit))
                 {
                     continue;
@@ -2515,8 +3477,58 @@ public sealed class BattleTestController : MonoBehaviour
                 }
 
                 cost[next] = nextCost;
-                frontier.Enqueue(next);
+                if (!frontier.Contains(next))
+                {
+                    frontier.Add(next);
+                }
             }
+        }
+
+        return cost;
+    }
+
+    private static Vector2Int PopLowestCost(List<Vector2Int> frontier, Dictionary<Vector2Int, int> cost)
+    {
+        int bestIndex = 0;
+        int bestCost = int.MaxValue;
+        for (int i = 0; i < frontier.Count; i++)
+        {
+            Vector2Int cell = frontier[i];
+            int value = cost.TryGetValue(cell, out int c) ? c : int.MaxValue;
+            if (value < bestCost)
+            {
+                bestIndex = i;
+                bestCost = value;
+            }
+        }
+
+        Vector2Int result = frontier[bestIndex];
+        frontier.RemoveAt(bestIndex);
+        return result;
+    }
+
+    private int StepMoveCost(BattleTestTile from, BattleTestTile to)
+    {
+        if (to == null || !to.walkable)
+        {
+            return int.MaxValue;
+        }
+
+        int elevationDiff = from == null ? 0 : to.elevation - from.elevation;
+        if (elevationDiff >= 3)
+        {
+            return int.MaxValue;
+        }
+
+        int cost = Mathf.Max(1, to.moveCost);
+        if (elevationDiff > 0)
+        {
+            cost += elevationDiff;
+        }
+
+        if (to.fireTurns > 0)
+        {
+            cost += 1;
         }
 
         return cost;
@@ -2545,6 +3557,8 @@ public sealed class BattleTestController : MonoBehaviour
             activeTile.SetHighlight(new Color(1f, 0.76f, 0.18f, 0.62f));
         }
 
+        DrawMapOverlays();
+
         if (commandMode == BattleCommandMode.Move && !activeUnit.moved)
         {
             foreach (Vector2Int cell in GetReachableCells(activeUnit).Keys)
@@ -2564,6 +3578,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (commandMode == BattleCommandMode.Attack && !activeUnit.acted)
         {
+            int range = EffectiveAttackRange(activeUnit);
             foreach (BattleTestUnit target in units)
             {
                 if (target.defeated || target.definition.faction == activeUnit.definition.faction)
@@ -2571,7 +3586,8 @@ public sealed class BattleTestController : MonoBehaviour
                     continue;
                 }
 
-                if (GridDistance(activeUnit.cell, target.cell) <= activeUnit.definition.attackRange)
+                if (GridDistance(activeUnit.cell, target.cell) <= range &&
+                    (range <= 1 || HasLineOfSight(activeUnit.cell, target.cell)))
                 {
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
@@ -2584,6 +3600,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (commandMode == BattleCommandMode.Skill && CanUseSpecial(activeUnit))
         {
+            int range = EffectiveSpecialRange(activeUnit);
             foreach (BattleTestUnit target in units)
             {
                 if (!IsValidSpecialTarget(activeUnit, target))
@@ -2591,7 +3608,9 @@ public sealed class BattleTestController : MonoBehaviour
                     continue;
                 }
 
-                if (GridDistance(activeUnit.cell, target.cell) <= activeUnit.definition.specialRange)
+                if (GridDistance(activeUnit.cell, target.cell) <= range &&
+                    (range <= 1 || !IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
+                     HasLineOfSight(activeUnit.cell, target.cell)))
                 {
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
@@ -2623,6 +3642,73 @@ public sealed class BattleTestController : MonoBehaviour
         }
     }
 
+    private void DrawMapOverlays()
+    {
+        if (tiles == null)
+        {
+            return;
+        }
+
+        foreach (BattleTestTile tile in tiles)
+        {
+            if (tile == null)
+            {
+                continue;
+            }
+
+            if (showThreatOverlay && IsInEnemyThreat(tile.cell))
+            {
+                tile.SetHighlight(new Color(0.70f, 0.08f, 0.08f, 0.26f));
+            }
+
+            if (showElevationOverlay && tile.elevation > 0)
+            {
+                float alpha = Mathf.Clamp01(0.18f + tile.elevation * 0.12f);
+                tile.SetHighlight(new Color(1f, 0.80f, 0.20f, alpha));
+            }
+
+            if (showCoverOverlay && tile.coverBonus > 0)
+            {
+                tile.SetHighlight(new Color(0.24f, 0.62f, 0.46f, 0.34f));
+            }
+
+            if (showSightOverlay && tile.blocksLineOfSight)
+            {
+                tile.SetHighlight(new Color(0.42f, 0.36f, 0.28f, 0.42f));
+            }
+
+            if (showObjectiveOverlay && tile.objective)
+            {
+                tile.SetHighlight(new Color(1f, 0.82f, 0.10f, 0.56f));
+            }
+
+            if (tile.danger && !showObjectiveOverlay)
+            {
+                tile.SetHighlight(new Color(0.86f, 0.16f, 0.08f, 0.30f));
+            }
+        }
+    }
+
+    private bool IsInEnemyThreat(Vector2Int cell)
+    {
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit.defeated || unit.definition.faction != Faction.Enemy)
+            {
+                continue;
+            }
+
+            int range = Mathf.Max(EffectiveAttackRange(unit),
+                                  CanUseCounterSpecial(unit) ? EffectiveSpecialRange(unit) : EffectiveAttackRange(unit));
+            if (GridDistance(unit.cell, cell) <= range && (range <= 1 || HasLineOfSight(unit.cell, cell)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void ClearHighlights()
     {
         if (tiles == null)
@@ -2639,6 +3725,34 @@ public sealed class BattleTestController : MonoBehaviour
         }
     }
 
+    private void RefreshTileNameVisibility()
+    {
+        if (tiles != null)
+        {
+            foreach (BattleTestTile tile in tiles)
+            {
+                if (tile == null || tile.nameLabel == null)
+                {
+                    continue;
+                }
+
+                bool visible = showTerrainNames || (showObjectiveOverlay && tile.objective) ||
+                               (showElevationOverlay && tile.elevation >= 2) ||
+                               (showSightOverlay && tile.blocksLineOfSight) ||
+                               (showCoverOverlay && tile.coverBonus > 0);
+                tile.nameLabel.gameObject.SetActive(visible);
+            }
+        }
+
+        foreach (BattleTestInteractable interactable in interactables)
+        {
+            if (interactable.label != null)
+            {
+                interactable.label.gameObject.SetActive(showTerrainNames || showObjectiveOverlay);
+            }
+        }
+    }
+
     private void RefreshUnits()
     {
         foreach (BattleTestUnit unit in units)
@@ -2651,6 +3765,7 @@ public sealed class BattleTestController : MonoBehaviour
     {
         bool alliesAlive = false;
         bool enemiesAlive = false;
+        bool objectiveBreached = false;
 
         foreach (BattleTestUnit unit in units)
         {
@@ -2666,7 +3781,20 @@ public sealed class BattleTestController : MonoBehaviour
             else if (unit.definition.faction == Faction.Enemy)
             {
                 enemiesAlive = true;
+                BattleTestTile tile = TileAt(unit.cell);
+                if (tile != null && tile.objective)
+                {
+                    objectiveBreached = true;
+                }
             }
+        }
+
+        if (objectiveBreached)
+        {
+            battleOver = true;
+            ClearHighlights();
+            AddLog("[전투 종료] 패배. 철랑문이 백두천광 현판까지 돌파했다.");
+            return true;
         }
 
         if (alliesAlive && enemiesAlive)
@@ -2708,6 +3836,90 @@ public sealed class BattleTestController : MonoBehaviour
         return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
     }
 
+    private bool HasLineOfSight(Vector2Int fromCell, Vector2Int toCell)
+    {
+        if (!IsInside(fromCell) || !IsInside(toCell))
+        {
+            return false;
+        }
+
+        if (GridDistance(fromCell, toCell) <= 1)
+        {
+            return true;
+        }
+
+        BattleTestTile source = TileAt(fromCell);
+        int sourceElevation = source == null ? 0 : source.elevation;
+        foreach (Vector2Int cell in CellsOnLine(fromCell, toCell))
+        {
+            if (cell == fromCell || cell == toCell)
+            {
+                continue;
+            }
+
+            BattleTestTile tile = TileAt(cell);
+            if (tile == null)
+            {
+                return false;
+            }
+
+            if (tile.smokeTurns > 0)
+            {
+                return false;
+            }
+
+            if (!tile.blocksLineOfSight)
+            {
+                continue;
+            }
+
+            if (sourceElevation >= tile.elevation + 2)
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private IEnumerable<Vector2Int> CellsOnLine(Vector2Int fromCell, Vector2Int toCell)
+    {
+        int x0 = fromCell.x;
+        int y0 = fromCell.y;
+        int x1 = toCell.x;
+        int y1 = toCell.y;
+        int dx = Mathf.Abs(x1 - x0);
+        int dy = Mathf.Abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+
+        while (true)
+        {
+            yield return new Vector2Int(x0, y0);
+
+            if (x0 == x1 && y0 == y1)
+            {
+                yield break;
+            }
+
+            int e2 = 2 * err;
+            if (e2 > -dy)
+            {
+                err -= dy;
+                x0 += sx;
+            }
+
+            if (e2 < dx)
+            {
+                err += dx;
+                y0 += sy;
+            }
+        }
+    }
+
     private Vector3 GridToWorld(Vector2Int cell)
     {
         float x = (cell.x - cell.y) * tileWidth * 0.5f;
@@ -2722,36 +3934,260 @@ public sealed class BattleTestController : MonoBehaviour
         return position;
     }
 
+    private IEnumerator PlayMapIntro()
+    {
+        Camera camera = Camera.main;
+        if (camera == null)
+        {
+            yield break;
+        }
+
+        busy = true;
+        Vector3 startPosition = camera.transform.position;
+        float startSize = camera.orthographicSize;
+
+        yield return PanCamera(camera, GridToWorld(new Vector2Int(7, 5)), Mathf.Max(3.6f, startSize * 0.72f), 0.55f);
+        yield return PanCamera(camera, GridToWorld(new Vector2Int(12, 8)), Mathf.Max(3.2f, startSize * 0.64f), 0.48f);
+        yield return PanCamera(camera, GridToWorld(new Vector2Int(7, 10)), Mathf.Max(3.3f, startSize * 0.66f), 0.48f);
+        yield return PanCamera(camera, startPosition, startSize, 0.62f);
+
+        busy = false;
+        mapIntroCoroutine = null;
+        RefreshHighlights();
+    }
+
+    private IEnumerator PanCamera(Camera camera, Vector3 targetWorld, float targetSize, float duration)
+    {
+        Vector3 fromPosition = camera.transform.position;
+        Vector3 toPosition = new Vector3(targetWorld.x, targetWorld.y, fromPosition.z);
+        float fromSize = camera.orthographicSize;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            t = t * t * (3f - 2f * t);
+            camera.transform.position = Vector3.Lerp(fromPosition, toPosition, t);
+            camera.orthographicSize = Mathf.Lerp(fromSize, targetSize, t);
+            yield return null;
+        }
+
+        camera.transform.position = toPosition;
+        camera.orthographicSize = targetSize;
+        yield return new WaitForSeconds(0.12f);
+    }
+
     private TerrainProfile ResolveTerrain(int x, int y)
     {
-        if ((x == 6 && y == 5) || (x == 7 && y == 5) || (x == 8 && y == 5))
+        return ResolveYaluCanyonGateTerrain(x, y);
+    }
+
+    private TerrainProfile ResolveYaluCanyonGateTerrain(int x, int y)
+    {
+        if (x <= 3 && y >= 4 && y <= 10)
         {
-            return new TerrainProfile(TerrainType.Wall, new Color(0.22f, 0.21f, 0.22f, 1f), 1, 0, 99, false);
+            bool choke = (x == 2 && (y == 6 || y == 7)) || (x == 1 && y == 5);
+            int elevation = y >= 8 ? 1 : 0;
+            return new TerrainProfile(TerrainType.Bamboo, new Color(0.15f, 0.38f, 0.22f, 1f), elevation, 2, 2,
+                                      true, true, choke, false, false, "left_bamboo_flank",
+                                      "Left bamboo forest flank: slow, cover-rich, blocks line of sight.");
         }
 
-        if (y == 3 && x >= 2 && x <= 7)
+        if (y == 5 && x >= 0 && x <= 15)
         {
-            bool bridge = x == 4 || x == 5;
-            return bridge ? new TerrainProfile(TerrainType.Bridge, new Color(0.49f, 0.31f, 0.16f, 1f), 0, 0, 1, true)
-                          : new TerrainProfile(TerrainType.Water, new Color(0.16f, 0.37f, 0.50f, 1f), 0, 0, 3, true);
+            if (x >= 6 && x <= 8)
+            {
+                return new TerrainProfile(TerrainType.Bridge, new Color(0.46f, 0.29f, 0.14f, 1f), 1, 0, 1, true,
+                                          false, true, false, false, "central_bridge",
+                                          "Central bridge bottleneck over the Yalu gorge.");
+            }
+
+            if ((x >= 1 && x <= 3) || (x >= 12 && x <= 14))
+            {
+                return new TerrainProfile(TerrainType.ShallowWater, new Color(0.20f, 0.48f, 0.56f, 1f), 0, 0, 3,
+                                          true, false, false, false, true, "shallow_ford",
+                                          "Shallow ford: slow river crossing with exposure risk.");
+            }
+
+            return new TerrainProfile(TerrainType.DeepWater, new Color(0.08f, 0.22f, 0.31f, 1f), 0, 0, 99, false,
+                                      false, false, false, true, "yalu_river",
+                                      "Deep Yalu channel: impassable water and fall hazard.");
         }
 
-        if (x <= 2 && y >= 4)
+        if ((x == 5 || x == 9) && y >= 4 && y <= 7)
         {
-            return new TerrainProfile(TerrainType.Bamboo, new Color(0.22f, 0.42f, 0.24f, 1f), 0, 1, 2, true);
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.24f, 0.23f, 0.20f, 1f), 2, 0, 99, false,
+                                      true, false, false, true, "bridge_cliff",
+                                      "Bridge-side cliff drop: blocks path and sight.");
         }
 
-        if (x >= 8 && y <= 2)
+        if (x >= 11 && x <= 15 && y >= 6 && y <= 10)
         {
-            return new TerrainProfile(TerrainType.Roof, new Color(0.54f, 0.23f, 0.16f, 1f), 1, 0, 1, true);
+            bool fallEdge = (x == 11 && y >= 6 && y <= 8) || (x == 14 && y == 7);
+            bool beacon = x == 12 && y == 8;
+            return new TerrainProfile(beacon ? TerrainType.Gate : TerrainType.Hill,
+                                      beacon ? new Color(0.58f, 0.47f, 0.28f, 1f)
+                                             : new Color(0.42f, 0.42f, 0.30f, 1f),
+                                      3, 1, 2, true, false, fallEdge, beacon, fallEdge, "right_cliff_highground",
+                                      beacon
+                                          ? "Beacon high ground objective: long sightline and warm light pool."
+                                          : "Right cliff high ground: strong ranged angle with fall edges.");
         }
 
-        if (x >= 9 && y >= 5)
+        if (x >= 6 && x <= 9 && y >= 8 && y <= 10)
         {
-            return new TerrainProfile(TerrainType.Cliff, new Color(0.33f, 0.30f, 0.26f, 1f), 1, 2, 2, true);
+            bool objective = (x == 7 || x == 8) && y == 10;
+            return new TerrainProfile(TerrainType.ShrineFloor, new Color(0.64f, 0.58f, 0.46f, 1f), 2, 1, 1, true,
+                                      false, false, objective, false, "ruined_shrine_altar",
+                                      objective
+                                          ? "Ruined shrine altar objective behind the gate."
+                                          : "Ruined shrine flagstones: defensible raised ground.");
         }
 
-        return new TerrainProfile(TerrainType.Stone, new Color(0.47f, 0.43f, 0.34f, 1f), 0, 0, 1, true);
+        if (x >= 4 && x <= 10 && y == 4)
+        {
+            return new TerrainProfile(TerrainType.Road, new Color(0.54f, 0.48f, 0.36f, 1f), 0, 0, 1, true,
+                                      false, x >= 6 && x <= 8, false, false, "south_gate_road",
+                                      "Southern approach road feeding into the bridge choke.");
+        }
+
+        if (x >= 4 && x <= 10 && y >= 6 && y <= 8)
+        {
+            bool rubble = (x == 9 && y == 7) || (x == 10 && y == 7);
+            return new TerrainProfile(rubble ? TerrainType.Rubble : TerrainType.Stone,
+                                      rubble ? new Color(0.44f, 0.39f, 0.33f, 1f)
+                                             : new Color(0.50f, 0.46f, 0.36f, 1f),
+                                      rubble ? 1 : 2, rubble ? 4 : 0, rubble ? 2 : 1, true, rubble, rubble, false,
+                                      rubble, "gate_courtyard",
+                                      rubble
+                                          ? "Collapsed wall cover near the gate, blocks some sight."
+                                          : "Gate courtyard: raised stone lanes into the shrine.");
+        }
+
+        if (x >= 4 && x <= 10 && y <= 3)
+        {
+            bool cartLane = (x == 4 || x == 5) && y == 3;
+            return new TerrainProfile(cartLane ? TerrainType.Mud : TerrainType.Plain,
+                                      cartLane ? new Color(0.34f, 0.27f, 0.18f, 1f)
+                                               : new Color(0.39f, 0.43f, 0.30f, 1f),
+                                      0, cartLane ? 1 : 0, cartLane ? 2 : 1, true, false, x == 7 && y == 3,
+                                      false, false, "enemy_approach",
+                                      "Enemy approach: open ground leading to carts, lanterns, and the bridge.");
+        }
+
+        if (x >= 12 && y <= 4)
+        {
+            return new TerrainProfile(TerrainType.ShallowWater, new Color(0.18f, 0.42f, 0.50f, 1f), 0, 0, 3, true,
+                                      false, false, false, true, "right_shoal",
+                                      "Right shoal: slow alternate crossing beneath the cliff.");
+        }
+
+        if (x <= 1 && y <= 3)
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.18f, 0.34f, 0.20f, 1f), 0, 1, 2, true, true,
+                                      false, false, false, "riverbank_forest",
+                                      "Riverbank trees: light cover and sight disruption.");
+        }
+
+        if (y >= 10)
+        {
+            return new TerrainProfile(TerrainType.Wall, new Color(0.22f, 0.20f, 0.18f, 1f), 2, 0, 99, false, true,
+                                      false, false, true, "north_gate_wall",
+                                      "Northern gate wall and ruined palisade.");
+        }
+
+        return new TerrainProfile(TerrainType.Stone, new Color(0.47f, 0.43f, 0.34f, 1f), 1, 0, 1, true, false,
+                                  false, false, false, "canyon_floor",
+                                  "Canyon floor: standard tactical ground around the Yalu gate.");
+    }
+
+    private TerrainProfile ResolveLegacyShrineTerrain(int x, int y)
+    {
+        if (x == 7 && y >= 2 && y <= 8)
+        {
+            int elevation = y >= 7 ? 2 : y >= 4 ? 1 : 0;
+            return new TerrainProfile(TerrainType.Road, new Color(0.58f, 0.54f, 0.43f, 1f), elevation, 0, 1, true,
+                                      false, y >= 4 && y <= 7, false, false, "center_stair",
+                                      "중앙 돌계단: 가장 빠르지만 한 명씩 막히는 병목");
+        }
+
+        if ((x == 6 || x == 8) && y >= 4 && y <= 7)
+        {
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.26f, 0.24f, 0.21f, 1f), 1, 0, 99, false,
+                                      true, false, false, true, "center_cliff", "계단을 감싸는 절벽 - 통행 불가");
+        }
+
+        if (x >= 5 && x <= 9 && y >= 8 && y <= 10)
+        {
+            bool objective = y == 10 && x >= 6 && x <= 8;
+            return new TerrainProfile(TerrainType.ShrineFloor, new Color(0.66f, 0.61f, 0.50f, 1f), 2, 1, 1, true,
+                                      false, false, objective, false, "shrine_high",
+                                      objective ? "현판 보호 목표. 적이 닿으면 패배 위험" : "폐사당 고지: 원거리와 방어에 유리");
+        }
+
+        if (x >= 10 && x <= 13 && y >= 8 && y <= 10)
+        {
+            return new TerrainProfile(TerrainType.Roof, new Color(0.60f, 0.24f, 0.18f, 1f), 3, 1, 1, true,
+                                      false, x == 10 && y == 8, false, x >= 12, "roof_route",
+                                      "누각 지붕: 고저 3, 원거리 사거리와 시야에 유리");
+        }
+
+        if (x <= 4 && y >= 3 && y <= 10)
+        {
+            bool choke = (x == 3 && (y == 6 || y == 7)) || (x == 1 && y == 5);
+            return new TerrainProfile(TerrainType.Bamboo, new Color(0.18f, 0.42f, 0.25f, 1f), y >= 8 ? 1 : 0, 2, 2,
+                                      true, true, choke, false, false, "bamboo_flank",
+                                      "대나무숲 샛길: 이동 비용 2, 시야 차단, 은신/암기 유리");
+        }
+
+        if (x >= 11 && x <= 14 && y >= 3 && y <= 6)
+        {
+            if (y == 5)
+            {
+                return new TerrainProfile(TerrainType.Bridge, new Color(0.46f, 0.28f, 0.13f, 1f), 1, 0, 1, true,
+                                          false, true, false, true, "right_bridge",
+                                          "낡은 나무다리: 1칸 폭 우회로, 붕괴 가능");
+            }
+
+            return new TerrainProfile(TerrainType.ShallowWater, new Color(0.20f, 0.43f, 0.52f, 1f), 0, 0, 3, true,
+                                      false, false, false, true, "stream", "얕은 여울: 이동 비용 3, 빙공 연계 가능");
+        }
+
+        if ((x == 10 && y >= 4 && y <= 7) || (x == 9 && y == 7))
+        {
+            return new TerrainProfile(TerrainType.Rubble, new Color(0.45f, 0.40f, 0.35f, 1f), 1, 4, 2, true, true,
+                                      x == 9 && y == 7, false, false, "broken_wall",
+                                      "무너진 담장: 강엄폐와 부분 시야 차단");
+        }
+
+        if (x >= 11 && x <= 13 && y >= 6 && y <= 8)
+        {
+            return new TerrainProfile(TerrainType.Hill, new Color(0.45f, 0.45f, 0.31f, 1f), 2, 1, 2, true, false,
+                                      false, false, false, "right_ridge", "우측 능선: 다리 우회 뒤 고지 진입로");
+        }
+
+        if (x >= 5 && x <= 9 && y <= 3)
+        {
+            bool choke = x == 7 && y == 3;
+            return new TerrainProfile(TerrainType.Road, new Color(0.53f, 0.48f, 0.37f, 1f), 0, 0, 1, true, false,
+                                      choke, false, false, "approach", "철랑문 진입로: 중앙 병목으로 이어진다");
+        }
+
+        if ((x == 5 && y >= 5 && y <= 7) || (x == 9 && y >= 4 && y <= 6) || (x >= 5 && x <= 9 && y == 11))
+        {
+            return new TerrainProfile(TerrainType.Wall, new Color(0.24f, 0.22f, 0.19f, 1f), 2, 0, 99, false, true,
+                                      false, false, true, "shrine_wall", "폐사당 담장/절벽 - 이동과 시야 차단");
+        }
+
+        if (y <= 2)
+        {
+            return new TerrainProfile(TerrainType.Plain, new Color(0.42f, 0.45f, 0.32f, 1f), 0, 0, 1, true, false,
+                                      false, false, false, "enemy_entry", "하단 진입로: 적 증원이 들어오는 열린 지대");
+        }
+
+        return new TerrainProfile(TerrainType.Stone, new Color(0.48f, 0.45f, 0.36f, 1f), 1, 0, 1, true, false,
+                                  false, false, false, "courtyard", "폐사당 고개 마당");
     }
 
     private void CenterCamera()
@@ -2789,6 +4225,92 @@ public sealed class BattleTestController : MonoBehaviour
         return leftPanel.Contains(point) || rightPanel.Contains(point) || bottomPanel.Contains(point);
     }
 
+    private void EnsureMapVisualSprites()
+    {
+        diamondSprite = diamondSprite == null ? CreateDiamondSprite() : diamondSprite;
+        softDiamondSprite = softDiamondSprite == null ? CreateSoftDiamondSprite() : softDiamondSprite;
+        detailSprite = detailSprite == null ? CreateDetailSprite() : detailSprite;
+        dotSprite = dotSprite == null ? CreateDotSprite() : dotSprite;
+        LoadMapAssetSprites();
+    }
+
+    private void LoadMapAssetSprites()
+    {
+        if (mapAssetSpritesLoaded)
+        {
+            return;
+        }
+
+        mapAssetSpritesLoaded = true;
+        terrainAssetSprites[TerrainType.Plain] = LoadMapSprite("Tiles/plain_moss");
+        terrainAssetSprites[TerrainType.Hill] = LoadMapSprite("Tiles/hill_moss");
+        terrainAssetSprites[TerrainType.Stone] = LoadMapSprite("Tiles/stone_courtyard");
+        terrainAssetSprites[TerrainType.Road] = LoadMapSprite("Tiles/road_stair");
+        terrainAssetSprites[TerrainType.ShrineFloor] = LoadMapSprite("Tiles/shrine_floor");
+        terrainAssetSprites[TerrainType.Bamboo] = LoadMapSprite("Tiles/bamboo_floor");
+        terrainAssetSprites[TerrainType.Forest] = LoadMapSprite("Tiles/forest_floor");
+        terrainAssetSprites[TerrainType.ShallowWater] = LoadMapSprite("Tiles/shallow_water");
+        terrainAssetSprites[TerrainType.DeepWater] = LoadMapSprite("Tiles/deep_water");
+        terrainAssetSprites[TerrainType.Water] = terrainAssetSprites[TerrainType.ShallowWater];
+        terrainAssetSprites[TerrainType.Wood] = LoadMapSprite("Tiles/wood_plank");
+        terrainAssetSprites[TerrainType.Bridge] = LoadMapSprite("Tiles/wood_bridge");
+        terrainAssetSprites[TerrainType.Roof] = LoadMapSprite("Tiles/roof_tile");
+        terrainAssetSprites[TerrainType.Cliff] = LoadMapSprite("Tiles/cliff_face");
+        terrainAssetSprites[TerrainType.Wall] = LoadMapSprite("Tiles/wall_broken");
+        terrainAssetSprites[TerrainType.Rubble] = LoadMapSprite("Tiles/rubble");
+        terrainAssetSprites[TerrainType.Mud] = LoadMapSprite("Tiles/mud_path");
+        terrainAssetSprites[TerrainType.Snow] = LoadMapSprite("Tiles/snow_edge");
+        terrainAssetSprites[TerrainType.Ice] = LoadMapSprite("Tiles/ice_slick");
+        terrainAssetSprites[TerrainType.Gate] = LoadMapSprite("Tiles/gate_threshold");
+        terrainAssetSprites[TerrainType.Interior] = terrainAssetSprites[TerrainType.ShrineFloor];
+        terrainAssetSprites[TerrainType.Fire] = LoadMapSprite("Tiles/fire_scorch");
+        terrainAssetSprites[TerrainType.Smoke] = LoadMapSprite("Tiles/smoke_veil");
+        terrainAssetSprites[TerrainType.Trap] = LoadMapSprite("Tiles/trap_mark");
+
+        interactableAssetSprites["signboard"] = LoadMapSprite("Objects/sect_signboard");
+        interactableAssetSprites["incense"] = LoadMapSprite("Objects/incense_burner");
+        interactableAssetSprites["lantern"] = LoadMapSprite("Objects/red_lantern");
+        interactableAssetSprites["oil_jar"] = LoadMapSprite("Objects/oil_jar");
+        interactableAssetSprites["wine_cart"] = LoadMapSprite("Objects/wine_cart");
+        interactableAssetSprites["fallen_wall"] = LoadMapSprite("Objects/fallen_wall");
+        interactableAssetSprites["bridge_rope"] = LoadMapSprite("Objects/bridge_rope");
+        interactableAssetSprites["bamboo_bundle"] = LoadMapSprite("Objects/bamboo_bundle");
+        interactableAssetSprites["stone_lantern"] = LoadMapSprite("Objects/stone_lantern");
+        interactableAssetSprites["fire"] = LoadMapSprite("Objects/flame_pillar");
+        interactableAssetSprites["smoke"] = LoadMapSprite("Objects/smoke_wisp");
+        interactableAssetSprites["rockfall"] = LoadMapSprite("Objects/falling_boulder");
+    }
+
+    private Sprite LoadMapSprite(string relativePath)
+    {
+        return Resources.Load<Sprite>("MapAssets/" + relativePath);
+    }
+
+    private Sprite GetTerrainSprite(TerrainType terrain)
+    {
+        return terrainAssetSprites.TryGetValue(terrain, out Sprite sprite) && sprite != null ? sprite : diamondSprite;
+    }
+
+    private Sprite GetInteractableSprite(string id, BattleTestInteractableKind kind)
+    {
+        if (!string.IsNullOrEmpty(id) && interactableAssetSprites.TryGetValue(id, out Sprite sprite) && sprite != null)
+        {
+            return sprite;
+        }
+
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Fire:
+            return interactableAssetSprites.TryGetValue("fire", out sprite) ? sprite : null;
+        case BattleTestInteractableKind.Smoke:
+            return interactableAssetSprites.TryGetValue("smoke", out sprite) ? sprite : null;
+        case BattleTestInteractableKind.Rockfall:
+            return interactableAssetSprites.TryGetValue("rockfall", out sprite) ? sprite : null;
+        default:
+            return null;
+        }
+    }
+
     private Sprite CreateDiamondSprite()
     {
         const int textureWidth = 96;
@@ -2796,7 +4318,7 @@ public sealed class BattleTestController : MonoBehaviour
         Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
         texture.name = "BattleTestDiamond";
         texture.wrapMode = TextureWrapMode.Clamp;
-        texture.filterMode = FilterMode.Point;
+        texture.filterMode = FilterMode.Bilinear;
 
         for (int y = 0; y < textureHeight; y++)
         {
@@ -2807,8 +4329,8 @@ public sealed class BattleTestController : MonoBehaviour
                 float d = nx + ny;
                 if (d <= 1f)
                 {
-                    float edge = d > 0.88f ? 0.74f : 1f;
-                    texture.SetPixel(x, y, new Color(edge, edge, edge, 1f));
+                    float edge = d > 0.90f ? Mathf.Lerp(1f, 0.88f, Mathf.InverseLerp(0.90f, 1f, d)) : 1f;
+                    texture.SetPixel(x, y, new Color(edge, edge, edge, 0.98f));
                 }
                 else
                 {
@@ -2819,6 +4341,78 @@ public sealed class BattleTestController : MonoBehaviour
 
         texture.Apply();
         return Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight), new Vector2(0.5f, 0.5f), 96f);
+    }
+
+    private Sprite CreateSoftDiamondSprite()
+    {
+        const int textureWidth = 96;
+        const int textureHeight = 48;
+        Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestSoftDiamond";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < textureHeight; y++)
+        {
+            for (int x = 0; x < textureWidth; x++)
+            {
+                float nx = Mathf.Abs(((x + 0.5f) / textureWidth * 2f) - 1f);
+                float ny = Mathf.Abs(((y + 0.5f) / textureHeight * 2f) - 1f);
+                float d = nx + ny;
+                float alpha = d <= 1f ? Mathf.Clamp01(1f - Mathf.InverseLerp(0.76f, 1f, d) * 0.55f) : 0f;
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight), new Vector2(0.5f, 0.5f), 96f);
+    }
+
+    private Sprite CreateDetailSprite()
+    {
+        const int size = 32;
+        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestBrush";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float nx = Mathf.Abs(((x + 0.5f) / size * 2f) - 1f);
+                float ny = Mathf.Abs(((y + 0.5f) / size * 2f) - 1f);
+                float alpha = Mathf.Clamp01(1f - Mathf.Max(nx, ny));
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 96f);
+    }
+
+    private Sprite CreateDotSprite()
+    {
+        const int size = 32;
+        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestDot";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float nx = ((x + 0.5f) / size * 2f) - 1f;
+                float ny = ((y + 0.5f) / size * 2f) - 1f;
+                float distance = Mathf.Sqrt(nx * nx + ny * ny);
+                float alpha = Mathf.Clamp01(1f - Mathf.InverseLerp(0.50f, 1f, distance));
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 96f);
     }
 
     private void EnsureGuiStyles()
@@ -2967,9 +4561,17 @@ public sealed class BattleTestController : MonoBehaviour
         public readonly int coverBonus;
         public readonly int moveCost;
         public readonly bool walkable;
+        public readonly bool blocksLineOfSight;
+        public readonly bool isChokePoint;
+        public readonly bool objective;
+        public readonly bool danger;
+        public readonly string laneId;
+        public readonly string tacticalNote;
 
         public TerrainProfile(TerrainType terrain, Color color, int elevation, int coverBonus, int moveCost,
-                              bool walkable)
+                              bool walkable, bool blocksLineOfSight = false, bool isChokePoint = false,
+                              bool objective = false, bool danger = false, string laneId = "",
+                              string tacticalNote = "")
         {
             this.terrain = terrain;
             this.color = color;
@@ -2977,6 +4579,12 @@ public sealed class BattleTestController : MonoBehaviour
             this.coverBonus = coverBonus;
             this.moveCost = moveCost;
             this.walkable = walkable;
+            this.blocksLineOfSight = blocksLineOfSight;
+            this.isChokePoint = isChokePoint;
+            this.objective = objective;
+            this.danger = danger;
+            this.laneId = laneId;
+            this.tacticalNote = tacticalNote;
         }
     }
 }
@@ -3037,7 +4645,11 @@ public enum BattleTestInteractableKind
 {
     Smoke,
     Fire,
-    Cover
+    Cover,
+    Objective,
+    CollapseBridge,
+    BambooFall,
+    Rockfall
 }
 
 public sealed class BattleTestInteractable
@@ -3048,6 +4660,7 @@ public sealed class BattleTestInteractable
     public readonly Vector2Int cell;
     public bool used;
     public SpriteRenderer renderer;
+    public TextMesh label;
 
     public BattleTestInteractable(string id, string displayName, BattleTestInteractableKind kind, Vector2Int cell)
     {
@@ -3055,6 +4668,45 @@ public sealed class BattleTestInteractable
         this.displayName = displayName;
         this.kind = kind;
         this.cell = cell;
+    }
+}
+
+public sealed class BattleMapAmbientMotion : MonoBehaviour
+{
+    public Vector3 drift = Vector3.zero;
+    public float speed = 0.35f;
+    public float alphaPulse = 0.10f;
+    public float scalePulse = 0.02f;
+
+    private Vector3 origin;
+    private Vector3 baseScale;
+    private SpriteRenderer spriteRenderer;
+    private Color baseColor;
+    private float phase;
+
+    private void Awake()
+    {
+        origin = transform.localPosition;
+        baseScale = transform.localScale;
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        baseColor = spriteRenderer == null ? Color.white : spriteRenderer.color;
+        phase = (transform.position.x * 12.9898f) + (transform.position.y * 78.233f);
+    }
+
+    private void Update()
+    {
+        float wave = Mathf.Sin((Time.time * Mathf.Max(0.01f, speed)) + phase);
+        transform.localPosition = origin + (drift * wave);
+        transform.localScale = baseScale * Mathf.Max(0.01f, 1f + (wave * scalePulse));
+
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        Color color = baseColor;
+        color.a = Mathf.Clamp01(baseColor.a * (1f + (wave * alphaPulse)));
+        spriteRenderer.color = color;
     }
 }
 
@@ -3071,11 +4723,25 @@ public sealed class BattleTestTile : MonoBehaviour
     public int smokeTurns;
     public int fireTurns;
     public bool extraCover;
+    public bool blocksLineOfSight;
+    public bool isChokePoint;
+    public bool objective;
+    public bool danger;
+    public string laneId;
+    public string tacticalNote;
+    public TextMesh nameLabel;
     public SpriteRenderer terrainRenderer;
     public SpriteRenderer highlightRenderer;
+    public BattleTilemapBattlefield tilemapBattlefield;
 
     public void SetHighlight(Color color)
     {
+        if (tilemapBattlefield != null)
+        {
+            tilemapBattlefield.SetHighlight(cell, color);
+            return;
+        }
+
         if (highlightRenderer != null)
         {
             highlightRenderer.color = color;

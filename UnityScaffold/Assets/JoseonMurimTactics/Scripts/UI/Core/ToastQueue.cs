@@ -13,8 +13,14 @@ public sealed class ToastQueue : MonoBehaviour
     private float duration = 2f;
 
     private float timer;
+    private GameRoot root;
 
     public string Current { get; private set; }
+
+    private void Awake()
+    {
+        root = GameRoot.EnsureExists();
+    }
 
     private void Update()
     {
@@ -31,6 +37,11 @@ public sealed class ToastQueue : MonoBehaviour
         {
             Current = pending.Dequeue();
             timer = Mathf.Max(0.2f, duration);
+        }
+        else if (root != null && root.Notifications != null && root.Notifications.TryDequeue(out UiNotification note))
+        {
+            Current = note.message;
+            timer = Mathf.Max(0.2f, note.durationSeconds > 0f ? note.durationSeconds : duration);
         }
         else
         {

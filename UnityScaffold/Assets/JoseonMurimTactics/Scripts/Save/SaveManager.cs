@@ -21,6 +21,8 @@ public sealed class SaveSlotSummary
     public int companionCount;
     public string recentMissionId;
     public int saveVersion;
+    public bool versionMismatch;
+    public string versionWarning;
     public long savedAtUnixSeconds;
 }
 
@@ -30,7 +32,7 @@ public sealed class SaveSlotSummary
 /// </summary>
 public sealed class SaveManager
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
     public const string AutoSlot = "auto";
     public static readonly string[] ManualSlots = { "1", "2", "3" };
     public static readonly string[] AllSlots = { "auto", "1", "2", "3" };
@@ -154,7 +156,7 @@ public sealed class SaveManager
         return slot == null ? null : Load(slot);
     }
 
-    public void Delete(string slot)
+    public bool Delete(string slot)
     {
         try
         {
@@ -164,10 +166,12 @@ public sealed class SaveManager
             string tmp = path + ".tmp";
             if (File.Exists(tmp))
                 File.Delete(tmp);
+            return true;
         }
         catch (Exception e)
         {
             Debug.LogWarning($"[SaveManager] Delete slot '{slot}' failed: {e.Message}");
+            return false;
         }
     }
 
@@ -195,6 +199,8 @@ public sealed class SaveManager
             s.difficulty = StoryEnumLabels.Label((GameDifficulty)dto.difficulty);
             s.disposition = StoryEnumLabels.Label((HeroDisposition)dto.heroDisposition);
             s.saveVersion = dto.saveVersion;
+            s.versionMismatch = dto.saveVersion != CurrentVersion;
+            s.versionWarning = VersionWarning(dto.saveVersion);
             s.savedAtUnixSeconds = dto.savedAtUnixSeconds;
             s.playTimeText = FormatPlayTime(dto.playTimeSeconds);
             s.savedAtText = FormatSavedAt(dto.savedAtUnixSeconds);
@@ -255,6 +261,22 @@ public sealed class SaveManager
         }
 
         return string.Empty;
+    }
+
+    private static string VersionWarning(int version)
+    {
+        if (version == CurrentVersion)
+        {
+            return string.Empty;
+        }
+
+        if (version <= 0)
+        {
+            return "버전 정보 없는 저장 데이터";
+        }
+
+        return version < CurrentVersion ? $"이전 저장 데이터 v{version} → v{CurrentVersion}"
+                                        : $"미래 버전 저장 데이터 v{version}";
     }
 
     private static int GetPair(System.Collections.Generic.List<GameSession.StringIntPair> pairs, string key)

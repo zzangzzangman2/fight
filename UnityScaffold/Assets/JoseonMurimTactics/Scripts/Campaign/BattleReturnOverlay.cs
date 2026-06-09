@@ -5,6 +5,12 @@ using UnityEngine;
 
 namespace JoseonMurimTactics
 {
+public interface IBattleReturnStateProvider
+{
+    bool Ready { get; }
+    bool TryResolve(out bool victory, out int turnCount);
+}
+
 /// <summary>
 /// 스토리 전투에 GameRoot가 런타임 주입하는 결과 복귀 오버레이. 기존 BattleTest 씬/컨트롤러를
 /// 건드리지 않고, 리플렉션으로 BattleTestController의 종료 상태(battleOver/units/round)를 읽어
@@ -17,11 +23,7 @@ public sealed class BattleReturnOverlay : MonoBehaviour
     private const float AutoAdvanceDelay = 2.4f;
     private const float FallbackGrace = 1.5f;
 
-    private BattleTestController controller;
-    private FieldInfo overField;
-    private FieldInfo unitsField;
-    private FieldInfo roundField;
-    private bool reflectionReady;
+    private IBattleReturnStateProvider stateProvider;
 
     private bool resolved;
     private bool won;
@@ -29,6 +31,11 @@ public sealed class BattleReturnOverlay : MonoBehaviour
     private float revealTimer;
     private float searchTimer;
     private bool leaving;
+
+    private void Awake()
+    {
+        stateProvider = new BattleTestReflectionReturnStateProvider();
+    }
 
     private void Update()
     {
@@ -39,32 +46,22 @@ public sealed class BattleReturnOverlay : MonoBehaviour
 
         float dt = Time.unscaledDeltaTime;
 
-        if (controller == null)
+        if (stateProvider == null)
         {
-            controller = FindAnyObjectByType<BattleTestController>();
-            if (controller != null)
-            {
-                CacheFields();
-            }
-            else
-            {
-                searchTimer += dt;
-            }
+            stateProvider = new BattleTestReflectionReturnStateProvider();
         }
 
-        if (controller != null && reflectionReady && !resolved)
+        if (stateProvider != null && !stateProvider.Ready)
         {
-            bool over = false;
-            object v = overField.GetValue(controller);
-            if (v is bool b)
-                over = b;
-            if (over)
-            {
-                resolved = true;
-                won = DetermineWon();
-                turns = ReadRound();
-                revealTimer = 0f;
-            }
+            searchTimer += dt;
+        }
+
+        if (stateProvider != null && !resolved && stateProvider.TryResolve(out bool providerWon, out int providerTurns))
+        {
+            resolved = true;
+            won = providerWon;
+            turns = providerTurns;
+            revealTimer = 0f;
         }
 
         if (resolved)
@@ -100,14 +97,16 @@ public sealed class BattleReturnOverlay : MonoBehaviour
         // 진행 중: 상단 중앙에 목표 안내
         Rect bar = new Rect(x, 12f * s, pw, 64f * s);
         UiTheme.DrawPanel(bar, true);
-        BattleDefinition def = BattleCatalog.Get(BattleResultBridge.CurrentBattleId);
+        GameRoot root = GameRoot.EnsureExists();
+        BattleDefinition def = root.BattleRepository != null ? root.BattleRepository.Get(BattleResultBridge.CurrentBattleId)
+                                                             : BattleCatalog.Get(BattleResultBridge.CurrentBattleId);
         GUI.Label(new Rect(bar.x + 16f * s, bar.y + 8f * s, bar.width - 32f * s, 26f * s),
                   "승리 조건 — " + def.victoryCondition, UiTheme.Small);
         GUI.Label(new Rect(bar.x + 16f * s, bar.y + 34f * s, bar.width - 32f * s, 24f * s),
                   "패배 — 박성준/백련 전투불능 또는 10턴 초과", UiTheme.SmallMuted);
 
         // 폴백: 리플렉션이 안 되면 수동 버튼 (소프트락 방지)
-        if (!reflectionReady && searchTimer >= FallbackGrace)
+        if ((stateProvider == null || !stateProvider.Ready) && searchTimer >= FallbackGrace)
         {
             Rect fb = new Rect(x, bar.yMax + 8f * s, pw, 56f * s);
             UiTheme.DrawPanel(fb);
@@ -142,49 +141,6 @@ public sealed class BattleReturnOverlay : MonoBehaviour
         }
     }
 
-    private void CacheFields()
-    {
-        System.Type t = typeof(BattleTestController);
-        const BindingFlags bf = BindingFlags.NonPublic | BindingFlags.Instance;
-        overField = t.GetField("battleOver", bf);
-        unitsField = t.GetField("units", bf);
-        roundField = t.GetField("round", bf);
-        reflectionReady = overField != null && unitsField != null;
-    }
-
-    private bool DetermineWon()
-    {
-        bool alliesAlive = false;
-        bool enemiesAlive = false;
-        if (unitsField != null && unitsField.GetValue(controller) is IEnumerable list)
-        {
-            foreach (object o in list)
-            {
-                if (!(o is BattleTestUnit u) || u.defeated || u.definition == null)
-                {
-                    continue;
-                }
-
-                if (u.definition.faction == Faction.Ally)
-                    alliesAlive = true;
-                else if (u.definition.faction == Faction.Enemy)
-                    enemiesAlive = true;
-            }
-        }
-
-        return alliesAlive && !enemiesAlive;
-    }
-
-    private int ReadRound()
-    {
-        if (roundField != null && roundField.GetValue(controller) is int r)
-        {
-            return Mathf.Max(1, r);
-        }
-
-        return 6;
-    }
-
     private void Finish(bool victory)
     {
         if (leaving)
@@ -193,7 +149,9 @@ public sealed class BattleReturnOverlay : MonoBehaviour
         }
 
         leaving = true;
-        BattleDefinition def = BattleCatalog.Get(BattleResultBridge.CurrentBattleId);
+        GameRoot root = GameRoot.EnsureExists();
+        BattleDefinition def = root.BattleRepository != null ? root.BattleRepository.Get(BattleResultBridge.CurrentBattleId)
+                                                             : BattleCatalog.Get(BattleResultBridge.CurrentBattleId);
 
         BattleResultData result =
             new BattleResultData { battleId = def.id, outcome = victory ? BattleOutcome.Victory : BattleOutcome.Defeat,
@@ -216,7 +174,102 @@ public sealed class BattleReturnOverlay : MonoBehaviour
             result.failedObjectives.Add("OBJ_DEFEAT_SCOUTS");
         }
 
-        GameRoot.EnsureExists().Flow.GoToBattleResult(result);
+        root.Flow.GoToBattleResult(result);
+    }
+}
+
+public sealed class BattleTestReflectionReturnStateProvider : IBattleReturnStateProvider
+{
+    private BattleTestController controller;
+    private FieldInfo overField;
+    private FieldInfo unitsField;
+    private FieldInfo roundField;
+
+    public bool Ready => controller != null && overField != null && unitsField != null;
+
+    public bool TryResolve(out bool victory, out int turnCount)
+    {
+        EnsureBound();
+        victory = false;
+        turnCount = 6;
+
+        if (!Ready)
+        {
+            return false;
+        }
+
+        bool over = false;
+        object value = overField.GetValue(controller);
+        if (value is bool b)
+        {
+            over = b;
+        }
+
+        if (!over)
+        {
+            return false;
+        }
+
+        victory = DetermineWon();
+        turnCount = ReadRound();
+        return true;
+    }
+
+    private void EnsureBound()
+    {
+        if (controller != null)
+        {
+            return;
+        }
+
+        controller = UnityEngine.Object.FindAnyObjectByType<BattleTestController>();
+        if (controller == null)
+        {
+            return;
+        }
+
+        System.Type t = typeof(BattleTestController);
+        const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
+        overField = t.GetField("battleOver", flags);
+        unitsField = t.GetField("units", flags);
+        roundField = t.GetField("round", flags);
+    }
+
+    private bool DetermineWon()
+    {
+        bool alliesAlive = false;
+        bool enemiesAlive = false;
+        if (unitsField != null && unitsField.GetValue(controller) is IEnumerable list)
+        {
+            foreach (object o in list)
+            {
+                if (!(o is BattleTestUnit u) || u.defeated || u.definition == null)
+                {
+                    continue;
+                }
+
+                if (u.definition.faction == Faction.Ally)
+                {
+                    alliesAlive = true;
+                }
+                else if (u.definition.faction == Faction.Enemy)
+                {
+                    enemiesAlive = true;
+                }
+            }
+        }
+
+        return alliesAlive && !enemiesAlive;
+    }
+
+    private int ReadRound()
+    {
+        if (roundField != null && roundField.GetValue(controller) is int r)
+        {
+            return Mathf.Max(1, r);
+        }
+
+        return 6;
     }
 }
 }

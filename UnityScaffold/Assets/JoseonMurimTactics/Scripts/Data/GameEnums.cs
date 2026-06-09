@@ -43,14 +43,31 @@ public enum TerrainType
     Bridge,
     Roof,
     Cliff,
-    Wall
+    Wall,
+    Plain,
+    Road,
+    ShrineFloor,
+    Forest,
+    ShallowWater,
+    DeepWater,
+    Mud,
+    Snow,
+    Ice,
+    Hill,
+    Gate,
+    Interior,
+    Fire,
+    Smoke,
+    Trap,
+    Rubble
 }
 
 public enum CoverType
 {
     None,
     Light,
-    Heavy
+    Heavy,
+    Full
 }
 
 public enum HazardType
@@ -60,7 +77,67 @@ public enum HazardType
     Smoke,
     Fire,
     Ice,
-    Fall
+    Fall,
+    Trap,
+    Poison,
+    Collapse,
+    DeepWater
+}
+
+public enum EdgeType
+{
+    None,
+    SlopeUp,
+    SlopeDown,
+    LowWall,
+    HighWall,
+    CliffDrop,
+    Fence,
+    Gate,
+    WaterBank,
+    BridgeRail
+}
+
+public enum InteractableKind
+{
+    IncenseBurner,
+    Lantern,
+    OilJar,
+    WineCart,
+    FallenWall,
+    WoodenBridge,
+    BambooBundle,
+    RockLantern,
+    SectSignboard,
+    Beacon,
+    Ladder,
+    Gate
+}
+
+public enum BattleMapEffectType
+{
+    CreateSmoke,
+    CreateFire,
+    CollapseBridge,
+    PushAdjacent,
+    CreateCover,
+    RemoveCover,
+    OpenGate,
+    CloseGate,
+    TriggerAlarm,
+    BreakWall,
+    FreezeWater,
+    DropRock,
+    RaiseBridge
+}
+
+public enum BattleMapTargetPattern
+{
+    Self,
+    Adjacent4,
+    Radius,
+    Line,
+    DefinedCells
 }
 
 public enum SkillTag

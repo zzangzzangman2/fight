@@ -19,11 +19,17 @@ public sealed class LineOfSightResolver
             return false;
         }
 
+        int sourceElevation = movementResolver.GetElevation(fromCell);
         foreach (Vector2Int cell in CellsOnLine(fromCell, toCell))
         {
-            if (cell == fromCell)
+            if (cell == fromCell || cell == toCell)
             {
                 continue;
+            }
+
+            if (!movementResolver.IsInside(cell))
+            {
+                return false;
             }
 
             if (movementResolver.GetHazardType(cell) == HazardType.Smoke)
@@ -31,10 +37,18 @@ public sealed class LineOfSightResolver
                 return false;
             }
 
-            if (cell != toCell && movementResolver.GetTerrainType(cell) == TerrainType.Wall)
+            if (!movementResolver.BlocksLineOfSight(cell))
             {
-                return false;
+                continue;
             }
+
+            int blockerElevation = movementResolver.GetElevation(cell);
+            if (sourceElevation >= blockerElevation + 2)
+            {
+                continue;
+            }
+
+            return false;
         }
 
         return true;
@@ -58,23 +72,36 @@ public sealed class LineOfSightResolver
 
     private IEnumerable<Vector2Int> CellsOnLine(Vector2Int fromCell, Vector2Int toCell)
     {
-        int steps = Mathf.Max(Mathf.Abs(toCell.x - fromCell.x), Mathf.Abs(toCell.y - fromCell.y));
-        if (steps == 0)
-        {
-            yield return fromCell;
-            yield break;
-        }
+        int x0 = fromCell.x;
+        int y0 = fromCell.y;
+        int x1 = toCell.x;
+        int y1 = toCell.y;
+        int dx = Mathf.Abs(x1 - x0);
+        int dy = Mathf.Abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
 
-        HashSet<Vector2Int> yielded = new HashSet<Vector2Int>();
-        for (int i = 0; i <= steps; i++)
+        while (true)
         {
-            float t = (float)i / steps;
-            Vector2Int cell = new Vector2Int(Mathf.RoundToInt(Mathf.Lerp(fromCell.x, toCell.x, t)),
-                                             Mathf.RoundToInt(Mathf.Lerp(fromCell.y, toCell.y, t)));
+            yield return new Vector2Int(x0, y0);
 
-            if (yielded.Add(cell))
+            if (x0 == x1 && y0 == y1)
             {
-                yield return cell;
+                yield break;
+            }
+
+            int e2 = 2 * err;
+            if (e2 > -dy)
+            {
+                err -= dy;
+                x0 += sx;
+            }
+
+            if (e2 < dx)
+            {
+                err += dx;
+                y0 += sy;
             }
         }
     }

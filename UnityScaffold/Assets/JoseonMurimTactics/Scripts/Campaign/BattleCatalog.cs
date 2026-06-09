@@ -45,30 +45,34 @@ namespace JoseonMurimTactics
             BattleDefinition d = new BattleDefinition
             {
                 id = string.IsNullOrEmpty(battleId) ? HubController.FirstBattleId : battleId,
-                title = "백두산 길목의 검은 표식",
-                location = "백두산 소백촌 북쪽 길목",
+                title = "폐사당 고개 방어전",
+                location = "소백촌 북쪽 폐사당 고개",
                 bossName = "철랑문 정찰조장",
-                victoryCondition = "철랑문 정찰조 격퇴와 검은 표식 조사",
-                mapHint = "좁은 산길과 짐수레가 전장을 가른다. 나무와 바위를 엄폐로 삼고 주민 피해를 줄여라.",
+                victoryCondition = "철랑문 정찰조 격퇴와 백두천광 현판 보호",
+                mapHint = "중앙 돌계단은 1칸 병목이다. 좌측 대나무숲, 우측 낡은 다리, 상단 사당 고지를 나눠 막아라.",
                 silverReward = 80,
                 joseonRenownOnWin = 3,
                 questId = "MISSION_CH01_BLACK_MARK"
             };
 
             d.roster.Add("박성준");
-            d.roster.Add("연옥");
+            d.roster.Add("백련");
+            d.roster.Add("도아린");
+            d.roster.Add("진서율");
+            d.roster.Add("신서아");
+            d.roster.Add("한비연");
 
             d.defeatConditions.Add("박성준 전투불능");
-            d.defeatConditions.Add("마을 주민 3명 이상 피해");
+            d.defeatConditions.Add("백두천광 현판 파괴");
             d.defeatConditions.Add("12턴 초과");
 
             d.objectives.Add(new BattleObjective("OBJ_DEFEAT_SCOUTS", "철랑문 정찰조 격퇴", false));
-            d.objectives.Add(new BattleObjective("OBJ_SAVE_PORTERS", "마을 짐꾼 2명 이상 생존", true));
-            d.objectives.Add(new BattleObjective("OBJ_INSPECT_MARK", "검은 표식 조사", true));
+            d.objectives.Add(new BattleObjective("OBJ_PROTECT_SIGNBOARD", "백두천광 현판 보호", false));
+            d.objectives.Add(new BattleObjective("OBJ_USE_TERRAIN", "향로·등불·다리·석등 중 1개 이상 활용", true));
 
-            d.rewardItems.Add("목재 묶음");
+            d.rewardItems.Add("사당 현판 보존 명성");
             d.rewardItems.Add("약초 꾸러미");
-            d.rewardItems.Add("무공 단서: 새벽일섬");
+            d.rewardItems.Add("무공 단서: 돌계단 방진");
 
             d.factionOnWin.Add(new IdDelta(FactionIds.ZhongyuanAlliance, -3));
             d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +3));

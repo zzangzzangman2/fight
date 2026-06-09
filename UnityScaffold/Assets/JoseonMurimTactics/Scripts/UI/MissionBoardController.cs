@@ -10,14 +10,23 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class MissionBoardController : MonoBehaviour
 {
+    private enum MissionFilter
+    {
+        All,
+        Available,
+        Completed,
+        Locked
+    }
+
     private GameRoot root;
     private IReadOnlyList<MissionInfo> missions;
     private int selected;
+    private MissionFilter filter = MissionFilter.All;
 
     private void Awake()
     {
         root = GameRoot.EnsureExists();
-        missions = MissionCatalog.All;
+        missions = root.MissionRepository != null ? root.MissionRepository.All : MissionCatalog.All;
     }
 
     private void OnGUI()
@@ -31,7 +40,9 @@ public sealed class MissionBoardController : MonoBehaviour
         UiTheme.LabelShadow(new Rect(margin, 24f * s, w - margin * 2f, 50f * s), "출정 — 임무 선택", UiTheme.Title);
         UiTheme.DrawDivider(w * 0.5f, 86f * s, w - margin * 2f);
 
-        float top = 108f * s;
+        DrawFilters(new Rect(margin, 100f * s, w - margin * 2f, 38f * s), s);
+
+        float top = 150f * s;
         float bottom = h - 96f * s;
         float listW = (w - margin * 2f) * 0.42f;
         float detailX = margin + listW + 22f * s;
@@ -71,6 +82,11 @@ public sealed class MissionBoardController : MonoBehaviour
         for (int i = 0; i < missions.Count; i++)
         {
             MissionInfo m = missions[i];
+            if (!ShouldShow(m))
+            {
+                continue;
+            }
+
             bool unlocked = m.IsUnlocked(root.Flags);
             bool done = m.IsCompleted(root.Flags);
             Rect card = new Rect(x, y, cw, ch);
@@ -87,7 +103,7 @@ public sealed class MissionBoardController : MonoBehaviour
                 selected = i;
             }
 
-            string badge = !unlocked ? "🔒 잠김" : done ? "✔ 완료" : (m.isStory ? "주요" : "의뢰");
+            string badge = MissionStatus(m);
             GUI.Label(new Rect(card.x + 14f * s, card.y + 10f * s, card.width - 120f * s, 28f * s), m.title,
                       UiTheme.Body);
             GUI.Label(new Rect(card.xMax - 110f * s, card.y + 12f * s, 96f * s, 24f * s), badge,
@@ -120,6 +136,8 @@ public sealed class MissionBoardController : MonoBehaviour
         Line(x, ref y, wdt, s, "적 세력", m.enemyFaction);
         Line(x, ref y, wdt, s, "추천 레벨", "Lv." + m.recommendedLevel);
         Line(x, ref y, wdt, s, "난이도", m.difficulty);
+        Line(x, ref y, wdt, s, "상태", MissionStatus(m));
+        Line(x, ref y, wdt, s, "시도", MissionAttempts(m.id).ToString());
         Line(x, ref y, wdt, s, "승리 조건", m.victoryConditionShort);
         y += 8f * s;
 
@@ -154,18 +172,23 @@ public sealed class MissionBoardController : MonoBehaviour
             Rect warn = new Rect(x, y, wdt, 64f * s);
             UiTheme.DrawFill(warn, new Color(0.706f, 0.220f, 0.169f, 0.14f));
             GUI.Label(new Rect(warn.x + 10f * s, warn.y + 8f * s, warn.width - 20f * s, warn.height - 16f * s),
-                      "⚠ 위험 지형 — " + m.dangerNotes, UiTheme.Small);
+                      "전술 주의 — " + m.dangerNotes, UiTheme.Small);
             y += 72f * s;
         }
 
         if (!m.IsUnlocked(root.Flags))
         {
-            GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "이전 임무를 완료하면 개방됩니다.",
+            GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), LockedReason(m),
                       new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         }
         else if (!m.IsPlayable)
         {
             GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "이 임무의 전투는 다음 버전에서 구현됩니다.",
+                      new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        }
+        else if (m.IsCompleted(root.Flags) || root.Session.completedMissionIds.Contains(m.id))
+        {
+            GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "재전투 시 첫 클리어 보상과 평판 변화는 반복 지급되지 않습니다.",
                       new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         }
     }
@@ -175,7 +198,91 @@ public sealed class MissionBoardController : MonoBehaviour
         if (missions == null || missions.Count == 0)
             return null;
         selected = Mathf.Clamp(selected, 0, missions.Count - 1);
-        return missions[selected];
+        if (ShouldShow(missions[selected]))
+        {
+            return missions[selected];
+        }
+
+        for (int i = 0; i < missions.Count; i++)
+        {
+            if (ShouldShow(missions[i]))
+            {
+                selected = i;
+                return missions[i];
+            }
+        }
+
+        return null;
+    }
+
+    private void DrawFilters(Rect rect, float s)
+    {
+        GUI.Label(new Rect(rect.x, rect.y, 90f * s, rect.height), "필터", UiTheme.SmallMuted);
+        string[] labels = { "전체", "출격 가능", "완료", "잠김" };
+        filter = (MissionFilter)GUI.SelectionGrid(new Rect(rect.x + 92f * s, rect.y, 420f * s, rect.height),
+                                                  (int)filter, labels, labels.Length, UiTheme.Button);
+    }
+
+    private bool ShouldShow(MissionInfo mission)
+    {
+        if (mission == null)
+        {
+            return false;
+        }
+
+        bool unlocked = mission.IsUnlocked(root.Flags);
+        bool completed = mission.IsCompleted(root.Flags) || root.Session.completedMissionIds.Contains(mission.id);
+        switch (filter)
+        {
+        case MissionFilter.Available:
+            return unlocked && !completed;
+        case MissionFilter.Completed:
+            return completed;
+        case MissionFilter.Locked:
+            return !unlocked;
+        default:
+            return true;
+        }
+    }
+
+    private string MissionStatus(MissionInfo mission)
+    {
+        if (mission == null)
+        {
+            return "-";
+        }
+
+        if (!mission.IsUnlocked(root.Flags))
+        {
+            return "잠김";
+        }
+
+        if (mission.IsCompleted(root.Flags) || root.Session.completedMissionIds.Contains(mission.id))
+        {
+            return "완료";
+        }
+
+        return mission.IsPlayable ? (mission.isStory ? "주요" : "의뢰") : "준비 중";
+    }
+
+    private int MissionAttempts(string missionId)
+    {
+        return root != null && root.Session.missionAttempts.TryGetValue(missionId, out int attempts) ? attempts : 0;
+    }
+
+    private string LockedReason(MissionInfo mission)
+    {
+        if (mission == null)
+        {
+            return "선택한 임무가 없습니다.";
+        }
+
+        if (string.IsNullOrEmpty(mission.requiredFlag))
+        {
+            return "아직 열리지 않은 임무입니다.";
+        }
+
+        return "필요 조건 미달: " + mission.requiredFlag;
     }
 
     private static void Line(float x, ref float y, float w, float s, string label, string value)

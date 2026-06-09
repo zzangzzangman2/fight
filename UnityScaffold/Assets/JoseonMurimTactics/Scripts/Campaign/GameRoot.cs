@@ -22,9 +22,17 @@ public sealed class GameRoot : MonoBehaviour
     public SaveManager Save { get; private set; }
     public InventoryService Inventory { get; private set; }
     public SettingsService Settings { get; private set; }
+    public NotificationService Notifications { get; private set; }
+    public CompanionStateService CompanionStates { get; private set; }
     public BattleResultApplyService BattleResults { get; private set; }
     public IAINarrationService Narration { get; private set; }
     public QuestManager Quests { get; private set; }
+    public ICompanionRepository CompanionRepository { get; private set; }
+    public IMissionRepository MissionRepository { get; private set; }
+    public IBattleDefinitionRepository BattleRepository { get; private set; }
+    public ILoreRepository LoreRepository { get; private set; }
+    public IShopRepository ShopRepository { get; private set; }
+    public DebugOptions Debug { get; private set; }
 
     public bool IsFading { get; private set; }
 
@@ -127,11 +135,19 @@ public sealed class GameRoot : MonoBehaviour
         Reputation = new FactionReputationService(Session);
         Quests = new QuestManager(Flags);
         Inventory = new InventoryService(Session);
+        CompanionStates = new CompanionStateService(Session);
         Settings = Settings ?? new SettingsService();
+        Notifications = Notifications ?? new NotificationService();
         BattleResults = new BattleResultApplyService(this);
         Save = Save ?? new SaveManager();
         Narration = Narration ?? new MockAINarrationService();
         Flow = Flow ?? new SceneFlowController(this);
+        CompanionRepository = CompanionRepository ?? new CodeBackedCompanionRepository();
+        MissionRepository = MissionRepository ?? new CodeBackedMissionRepository();
+        BattleRepository = BattleRepository ?? new CodeBackedBattleDefinitionRepository();
+        LoreRepository = LoreRepository ?? new CodeBackedLoreRepository();
+        ShopRepository = ShopRepository ?? new CodeBackedShopRepository();
+        Debug = Debug ?? DebugOptions.CreateDefault();
     }
 
     // ----- 씬 전환 + 페이드 -----

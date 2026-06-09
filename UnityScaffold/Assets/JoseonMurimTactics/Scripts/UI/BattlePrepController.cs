@@ -162,14 +162,19 @@ public sealed class BattlePrepController : MonoBehaviour
                   UiTheme.Small);
         ry += 34f * s;
 
-        GUI.Label(new Rect(rx, ry, rw, 32f * s), "맵 미리보기", UiTheme.Heading);
+        GUI.Label(new Rect(rx, ry, rw, 32f * s), "지도 전술 분석", UiTheme.Heading);
         ry += 38f * s;
-        Rect mapRect = new Rect(rx, ry, rw, Mathf.Max(60f * s, right.yMax - 22f * s - ry));
+        Rect mapRect = new Rect(rx, ry, rw, Mathf.Max(152f * s, right.yMax - 22f * s - ry));
         UiTheme.DrawFill(mapRect, UiTheme.HanjiPanelAlt);
-        UiTheme.DrawHLine(new Rect(mapRect.x, mapRect.center.y, mapRect.width, 2f * s), UiTheme.Teal);
-        GUI.Label(mapRect, def.mapHint,
-                  new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleCenter,
-                                                padding = new RectOffset(12, 12, 12, 12) });
+        DrawTacticalMapPreview(new Rect(mapRect.x + 12f * s, mapRect.y + 12f * s, 146f * s,
+                                        mapRect.height - 24f * s), s);
+        Rect analysisText = new Rect(mapRect.x + 172f * s, mapRect.y + 12f * s, mapRect.width - 184f * s,
+                                     mapRect.height - 24f * s);
+        GUI.Label(analysisText, BuildMapAnalysisText(), new GUIStyle(UiTheme.Small) {
+                      alignment = TextAnchor.UpperLeft,
+                      padding = new RectOffset(6, 6, 4, 4),
+                      wordWrap = true
+                  });
 
         // 하단 버튼
         float bw = 240f * s;
@@ -206,6 +211,46 @@ public sealed class BattlePrepController : MonoBehaviour
         if (dcDown != 0)
             list.Add("대화 판정 유리 (예법 우위)");
         return list;
+    }
+
+    private string BuildMapAnalysisText()
+    {
+        if (def == null || def.id != HubController.FirstBattleId)
+        {
+            return def == null ? string.Empty : def.mapHint;
+        }
+
+        return "폐사당 고개 방어전\n" +
+               "• 중앙 돌계단: 1칸 병목, 전열 1명으로 적 진입 차단\n" +
+               "• 좌측 대나무숲: 이동 비용 2, 원거리 시야 차단, 독침·암기 유리\n" +
+               "• 우측 낡은 다리: 빠른 우회로지만 밧줄 절단으로 붕괴 가능\n" +
+               "• 상단 사당/누각: 고저 2~3, 원거리 사거리 +1과 명중 보너스\n" +
+               "• 향로·등불·석등: 연막, 화염, 낙석으로 전투 흐름 변환";
+    }
+
+    private static void DrawTacticalMapPreview(Rect rect, float s)
+    {
+        UiTheme.DrawFill(rect, new Color(0.12f, 0.12f, 0.10f, 0.42f));
+
+        Color road = new Color(0.62f, 0.56f, 0.42f, 0.92f);
+        Color bamboo = new Color(0.16f, 0.42f, 0.25f, 0.90f);
+        Color water = new Color(0.18f, 0.42f, 0.52f, 0.88f);
+        Color shrine = new Color(0.74f, 0.64f, 0.44f, 0.92f);
+        Color roof = new Color(0.58f, 0.20f, 0.16f, 0.92f);
+        Color mark = new Color(0.96f, 0.78f, 0.24f, 1f);
+
+        UiTheme.DrawFill(new Rect(rect.x + 12f * s, rect.y + 28f * s, 44f * s, rect.height - 42f * s), bamboo);
+        UiTheme.DrawFill(new Rect(rect.center.x - 9f * s, rect.y + 44f * s, 18f * s, rect.height - 58f * s), road);
+        UiTheme.DrawFill(new Rect(rect.center.x - 35f * s, rect.y + 16f * s, 70f * s, 36f * s), shrine);
+        UiTheme.DrawFill(new Rect(rect.center.x + 28f * s, rect.y + 12f * s, 42f * s, 34f * s), roof);
+        UiTheme.DrawFill(new Rect(rect.xMax - 46f * s, rect.y + 58f * s, 26f * s, rect.height - 80f * s), water);
+        UiTheme.DrawFill(new Rect(rect.xMax - 58f * s, rect.center.y - 8f * s, 42f * s, 16f * s), road);
+        UiTheme.DrawFill(new Rect(rect.center.x - 6f * s, rect.y + 72f * s, 12f * s, 22f * s), mark);
+
+        GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "H2 사당 / H3 누각",
+                  new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        GUI.Label(new Rect(rect.x, rect.yMax - 20f * s, rect.width, 18f * s), "적 진입",
+                  new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
     }
 }
 }

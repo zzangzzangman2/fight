@@ -20,10 +20,15 @@ public sealed class GameSession
 
     public readonly List<string> recruitedCompanionIds = new List<string>();
     public readonly Dictionary<string, int> companionApproval = new Dictionary<string, int>();
+    public readonly Dictionary<string, int> companionInjury = new Dictionary<string, int>();
+    public readonly Dictionary<string, int> companionFatigue = new Dictionary<string, int>();
     public readonly Dictionary<string, int> factionReputation = new Dictionary<string, int>();
     public readonly Dictionary<string, int> inventory = new Dictionary<string, int>();
     public readonly HashSet<string> storyFlags = new HashSet<string>();
+    public readonly HashSet<string> completedMissionIds = new HashSet<string>();
+    public readonly HashSet<string> unlockedCodexEntryIds = new HashSet<string>();
     public readonly Dictionary<string, int> intVars = new Dictionary<string, int>();
+    public readonly Dictionary<string, int> missionAttempts = new Dictionary<string, int>();
     public readonly List<string> appliedBattleResultIds = new List<string>();
 
     // 마지막 전투 결과(허브/결과 화면 표시용 임시값, 저장 대상 아님).
@@ -64,10 +69,15 @@ public sealed class GameSession
                                     currentChapterId = currentChapterId,
                                     recruitedCompanionIds = new List<string>(recruitedCompanionIds),
                                     companionApproval = Pairs(companionApproval),
+                                    companionInjury = Pairs(companionInjury),
+                                    companionFatigue = Pairs(companionFatigue),
                                     factionReputation = Pairs(factionReputation),
                                     inventory = Pairs(inventory),
                                     storyFlags = new List<string>(storyFlags),
+                                    completedMissionIds = new List<string>(completedMissionIds),
+                                    unlockedCodexEntryIds = new List<string>(unlockedCodexEntryIds),
                                     intVars = Pairs(intVars),
+                                    missionAttempts = Pairs(missionAttempts),
                                     appliedBattleResultIds = new List<string>(appliedBattleResultIds),
                                     actionsTaken = actionsTaken,
                                     savedAtUnixSeconds = savedAtUnixSeconds,
@@ -104,9 +114,12 @@ public sealed class GameSession
         }
 
         FillFromPairs(session.companionApproval, dto.companionApproval);
+        FillFromPairs(session.companionInjury, dto.companionInjury);
+        FillFromPairs(session.companionFatigue, dto.companionFatigue);
         FillFromPairs(session.factionReputation, dto.factionReputation);
         FillFromPairs(session.inventory, dto.inventory);
         FillFromPairs(session.intVars, dto.intVars);
+        FillFromPairs(session.missionAttempts, dto.missionAttempts);
 
         if (dto.appliedBattleResultIds != null)
         {
@@ -120,6 +133,9 @@ public sealed class GameSession
                 session.storyFlags.Add(flag);
             }
         }
+
+        FillSet(session.completedMissionIds, dto.completedMissionIds);
+        FillSet(session.unlockedCodexEntryIds, dto.unlockedCodexEntryIds);
 
         return session;
     }
@@ -157,6 +173,22 @@ public sealed class GameSession
         }
     }
 
+    private static void FillSet(HashSet<string> target, List<string> values)
+    {
+        if (values == null)
+        {
+            return;
+        }
+
+        foreach (string value in values)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                target.Add(value);
+            }
+        }
+    }
+
     [Serializable]
     public struct StringIntPair
     {
@@ -174,10 +206,15 @@ public sealed class GameSession
         public string currentChapterId;
         public List<string> recruitedCompanionIds;
         public List<StringIntPair> companionApproval;
+        public List<StringIntPair> companionInjury;
+        public List<StringIntPair> companionFatigue;
         public List<StringIntPair> factionReputation;
         public List<StringIntPair> inventory;
         public List<string> storyFlags;
+        public List<string> completedMissionIds;
+        public List<string> unlockedCodexEntryIds;
         public List<StringIntPair> intVars;
+        public List<StringIntPair> missionAttempts;
         public List<string> appliedBattleResultIds;
         public int actionsTaken;
         public long savedAtUnixSeconds;

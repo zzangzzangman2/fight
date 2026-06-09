@@ -84,16 +84,15 @@ public sealed class MovementResolver
             return cost;
         }
 
-        Queue<Vector2Int> frontier = new Queue<Vector2Int>();
-        frontier.Enqueue(start);
+        List<Vector2Int> frontier = new List<Vector2Int> { start };
         cost[start] = 0;
 
         while (frontier.Count > 0)
         {
-            Vector2Int current = frontier.Dequeue();
+            Vector2Int current = PopLowestCost(frontier, cost);
             foreach (Vector2Int next in Neighbors(current))
             {
-                int moveCost = MoveCost(next);
+                int moveCost = MoveCost(current, next);
                 if (moveCost == int.MaxValue)
                 {
                     continue;
@@ -117,7 +116,10 @@ public sealed class MovementResolver
                 }
 
                 cost[next] = nextCost;
-                frontier.Enqueue(next);
+                if (!frontier.Contains(next))
+                {
+                    frontier.Add(next);
+                }
             }
         }
 
@@ -139,24 +141,49 @@ public sealed class MovementResolver
 
     public int MoveCost(Vector2Int cell)
     {
-        if (!IsInside(cell) || IsFallCell(cell) || GetTerrainType(cell) == TerrainType.Wall)
+        return MoveCost(cell, cell);
+    }
+
+    public int MoveCost(Vector2Int from, Vector2Int to)
+    {
+        if (!IsInside(to) || BlocksMovement(to) || IsFallCell(to) || GetTerrainType(to) == TerrainType.Wall)
         {
             return int.MaxValue;
         }
 
-        BattleCellData data = FindCell(cell);
+        BattleCellData data = FindCell(to);
         if (data != null)
         {
-            return data.walkable ? Mathf.Max(1, data.moveCost) : int.MaxValue;
+            if (!data.walkable || data.blocksMovement)
+            {
+                return int.MaxValue;
+            }
+
+            int elevationCost = ElevationCost(from, to);
+            return elevationCost == int.MaxValue ? int.MaxValue
+                                                 : Mathf.Max(1, data.moveCost + elevationCost +
+                                                                 HazardMoveCost(data.hazardType));
         }
 
-        TerrainTileData tile = TerrainTile(cell);
+        TerrainTileData tile = TerrainTile(to);
         if (tile != null)
         {
-            return tile.walkable ? Mathf.Max(1, tile.moveCost) : int.MaxValue;
+            if (!tile.walkable || tile.blocksMovement)
+            {
+                return int.MaxValue;
+            }
+
+            int elevationCost = ElevationCost(from, to);
+            return elevationCost == int.MaxValue ? int.MaxValue
+                                                 : Mathf.Max(1, tile.moveCost + elevationCost +
+                                                                 HazardMoveCost(tile.hazardType));
         }
 
-        return terrainTilemap == null || terrainTilemap.HasTile(ToTilemapCell(cell)) ? 1 : int.MaxValue;
+        int fallbackElevationCost = ElevationCost(from, to);
+        return fallbackElevationCost == int.MaxValue ? int.MaxValue
+                                                     : terrainTilemap == null || terrainTilemap.HasTile(ToTilemapCell(to))
+                                                         ? 1 + fallbackElevationCost
+                                                         : int.MaxValue;
     }
 
     public bool CanStand(Vector2Int cell)
@@ -203,6 +230,50 @@ public sealed class MovementResolver
 
         TerrainTileData tile = TerrainTile(cell);
         return tile == null ? CoverType.None : tile.coverType;
+    }
+
+    public bool IsChokePoint(Vector2Int cell)
+    {
+        BattleCellData data = FindCell(cell);
+        if (data != null)
+        {
+            return data.isChokePoint || data.capacity <= 1;
+        }
+
+        TerrainTileData tile = TerrainTile(cell);
+        return tile != null && (tile.isChokePoint || tile.capacity <= 1);
+    }
+
+    public bool BlocksMovement(Vector2Int cell)
+    {
+        BattleCellData data = FindCell(cell);
+        if (data != null)
+        {
+            return data.blocksMovement || !data.walkable;
+        }
+
+        TerrainTileData tile = TerrainTile(cell);
+        return tile != null && (tile.blocksMovement || !tile.walkable);
+    }
+
+    public bool BlocksLineOfSight(Vector2Int cell)
+    {
+        BattleCellData data = FindCell(cell);
+        if (data != null)
+        {
+            return data.blocksLineOfSight || data.terrainType == TerrainType.Wall ||
+                   data.terrainType == TerrainType.Bamboo || data.hazardType == HazardType.Smoke;
+        }
+
+        TerrainTileData tile = TerrainTile(cell);
+        if (tile != null)
+        {
+            return tile.blocksLineOfSight || tile.terrainType == TerrainType.Wall ||
+                   tile.terrainType == TerrainType.Bamboo || tile.hazardType == HazardType.Smoke;
+        }
+
+        TerrainType terrain = GetTerrainType(cell);
+        return terrain == TerrainType.Wall || terrain == TerrainType.Bamboo;
     }
 
     public HazardType GetHazardType(Vector2Int cell)
@@ -297,6 +368,58 @@ public sealed class MovementResolver
     private TerrainTileData TerrainTile(Vector2Int cell)
     {
         return terrainTilemap == null ? null : terrainTilemap.GetTile<TerrainTileData>(ToTilemapCell(cell));
+    }
+
+    private static Vector2Int PopLowestCost(List<Vector2Int> frontier, Dictionary<Vector2Int, int> cost)
+    {
+        int bestIndex = 0;
+        int bestCost = int.MaxValue;
+        for (int i = 0; i < frontier.Count; i++)
+        {
+            Vector2Int cell = frontier[i];
+            int value = cost.TryGetValue(cell, out int c) ? c : int.MaxValue;
+            if (value < bestCost)
+            {
+                bestCost = value;
+                bestIndex = i;
+            }
+        }
+
+        Vector2Int result = frontier[bestIndex];
+        frontier.RemoveAt(bestIndex);
+        return result;
+    }
+
+    private int ElevationCost(Vector2Int from, Vector2Int to)
+    {
+        if (from == to)
+        {
+            return 0;
+        }
+
+        int diff = GetElevation(to) - GetElevation(from);
+        if (diff >= 3)
+        {
+            return int.MaxValue;
+        }
+
+        return diff > 0 ? diff : 0;
+    }
+
+    private static int HazardMoveCost(HazardType hazard)
+    {
+        switch (hazard)
+        {
+        case HazardType.Slippery:
+        case HazardType.Ice:
+        case HazardType.Trap:
+            return 1;
+        case HazardType.Fire:
+        case HazardType.DeepWater:
+            return 2;
+        default:
+            return 0;
+        }
     }
 
     private Vector3Int ToTilemapCell(Vector2Int cell)

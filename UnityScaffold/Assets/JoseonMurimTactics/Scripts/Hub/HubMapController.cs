@@ -71,8 +71,7 @@ public sealed class HubMapController : MonoBehaviour
 
     private bool HasWounded()
     {
-        BattleResultData last = root != null ? root.Session.lastBattleResult : null;
-        return last != null && last.woundedCompanions != null && last.woundedCompanions.Count > 0;
+        return root != null && root.CompanionStates != null && root.CompanionStates.InjuredCount() > 0;
     }
 }
 }

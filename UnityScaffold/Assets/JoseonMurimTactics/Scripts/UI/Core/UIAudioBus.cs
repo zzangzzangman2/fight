@@ -29,9 +29,11 @@ public sealed class UIAudioBus : MonoBehaviour
 
     private void Play(AudioClip clip)
     {
-        if (source != null && clip != null && GameSettings.Load().sfxVolume > 0f)
+        GameSettings settings = GameSettings.Load();
+        float volume = settings.masterVolume * settings.sfxVolume * settings.uiVolume;
+        if (source != null && clip != null && volume > 0f)
         {
-            source.PlayOneShot(clip, GameSettings.Load().sfxVolume);
+            source.PlayOneShot(clip, volume);
         }
     }
 }

@@ -10,6 +10,7 @@ const outputRoot = path.join(resourcesRoot, "AuthoringContent");
 const mediaRoot = path.join(outputRoot, "Media");
 const manifestPath = path.join(outputRoot, "content_manifest.json");
 const backupRoot = path.join(outputRoot, "Backups");
+const mapAssetCatalogPath = path.join(resourcesRoot, "MapAssets", "map_asset_catalog.json");
 const port = Number(process.env.PORT || 5178);
 
 const mediaFolders = {
@@ -171,6 +172,22 @@ function defaultBackgrounds() {
       notes: "기존 테스트 지도"
     }
   ];
+}
+
+function defaultMapAssets() {
+  if (!fs.existsSync(mapAssetCatalogPath)) {
+    return [];
+  }
+
+  try {
+    const catalog = JSON.parse(fs.readFileSync(mapAssetCatalogPath, "utf8"));
+    return (catalog.assets || []).map(asset => ({
+      ...asset,
+      previewUrl: asset.previewUrl || `/resources/${asset.file || `${asset.resourcePath}.png`}`
+    }));
+  } catch {
+    return [];
+  }
 }
 
 function gameDefaultScenes() {
@@ -365,6 +382,7 @@ function defaultManifest() {
     backgrounds: defaultBackgrounds(),
     portraits: [],
     props: [],
+    mapAssets: defaultMapAssets(),
     dialogueScenes: gameDefaultScenes()
   };
   return rebuildNodes(manifest);
@@ -405,6 +423,7 @@ function mergeGameDefaults(manifest, replaceSeededScenes = false) {
   manifest.backgrounds = mergeById(manifest.backgrounds, seed.backgrounds);
   manifest.portraits ||= [];
   manifest.props ||= [];
+  manifest.mapAssets = mergeById(manifest.mapAssets, seed.mapAssets);
   manifest.dialogueScenes ||= [];
 
   if (replaceSeededScenes) {
@@ -508,7 +527,16 @@ async function handleApi(req, res, url) {
       sceneCount: manifest.dialogueScenes?.length || 0,
       characterCount: manifest.characters?.length || 0,
       mediaCount: (manifest.backgrounds?.length || 0) + (manifest.portraits?.length || 0) + (manifest.props?.length || 0),
+      mapAssetCount: manifest.mapAssets?.length || 0,
       updatedAt: manifest.updatedAt || ""
+    });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/map-assets") {
+    sendJson(res, 200, {
+      ok: true,
+      assets: defaultMapAssets()
     });
     return true;
   }

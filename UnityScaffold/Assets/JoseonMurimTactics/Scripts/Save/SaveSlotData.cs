@@ -14,6 +14,8 @@ public sealed class SaveSlotData
     public int silver;
     public int companionCount;
     public string recentMissionId;
+    public bool versionMismatch;
+    public string versionWarning;
 
     public static SaveSlotData FromSummary(SaveSlotSummary summary)
     {
@@ -30,7 +32,9 @@ public sealed class SaveSlotData
                                   savedAtText = summary.savedAtText,
                                   silver = summary.silver,
                                   companionCount = summary.companionCount,
-                                  recentMissionId = summary.recentMissionId };
+                                  recentMissionId = summary.recentMissionId,
+                                  versionMismatch = summary.versionMismatch,
+                                  versionWarning = summary.versionWarning };
     }
 }
 }

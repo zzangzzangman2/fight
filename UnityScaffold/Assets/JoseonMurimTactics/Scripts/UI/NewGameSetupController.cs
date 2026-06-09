@@ -9,12 +9,14 @@ namespace JoseonMurimTactics
 public sealed class NewGameSetupController : MonoBehaviour
 {
     private static readonly string[] SectPresets = { "천광검문", "백두검문", "한양검계", "청해무관", "흑립방" };
+    private static readonly string[] ForbiddenSectWords = { "비속어", "욕설", "음란", "성인", "혐오" };
 
     private GameRoot root;
     private string sectName = "백두천광검문";
     private GameDifficulty difficulty = GameDifficulty.Murim;
     private HeroDisposition disposition = HeroDisposition.Romantic;
     private StartingArt art = StartingArt.Sword;
+    private bool showConfirm;
 
     private void Awake()
     {
@@ -62,7 +64,7 @@ public sealed class NewGameSetupController : MonoBehaviour
         GUI.Label(new Rect(margin, y, leftW, lineH), "문파명", UiTheme.Heading);
         y += lineH + 6f * s;
         sectName =
-            GUI.TextField(new Rect(margin, y, leftW * 0.44f, btnH), sectName ?? string.Empty, 8, UiTheme.TextField);
+            GUI.TextField(new Rect(margin, y, leftW * 0.44f, btnH), sectName ?? string.Empty, 12, UiTheme.TextField);
         float px = margin + leftW * 0.44f + 8f * s;
         float pw = (leftW * 0.56f - 8f * s);
         float presetW = (pw - 8f * s * 4f) / 5f;
@@ -75,7 +77,7 @@ public sealed class NewGameSetupController : MonoBehaviour
         }
         y += btnH + gap;
         GUI.Label(new Rect(margin, y - gap + 2f * s, leftW, 24f * s),
-                  IsSectNameValid() ? "2~8자 문파명 사용 가능" : "문파명은 공백 없이 2~8자로 정해야 합니다.",
+                  IsSectNameValid() ? "2~12자 문파명 사용 가능" : SectNameValidationMessage(),
                   UiTheme.SmallMuted);
 
         GUI.Label(new Rect(margin, y, leftW, lineH), "박성준 성향", UiTheme.Heading);
@@ -120,10 +122,14 @@ public sealed class NewGameSetupController : MonoBehaviour
         GUI.enabled = IsSectNameValid();
         if (Btn(new Rect(w - margin - bw, by, bw, 56f * s), "이야기 시작 →", true))
         {
-            Commit();
-            root.Flow.GoToPrologue();
+            showConfirm = true;
         }
         GUI.enabled = true;
+
+        if (showConfirm)
+        {
+            DrawConfirm(w, h, s);
+        }
     }
 
     private void Commit()
@@ -134,7 +140,43 @@ public sealed class NewGameSetupController : MonoBehaviour
         session.heroDisposition = disposition;
         session.startingArt = art;
         session.currentChapterId = "CHAPTER_01";
+        root.Flags.SetFlag(StoryFlags.Chapter1Started);
         Debug.Log($"[NewGameSetup] sect={session.sectName} diff={difficulty} disp={disposition} art={art}");
+    }
+
+    private void DrawConfirm(float w, float h, float s)
+    {
+        Rect dim = new Rect(0f, 0f, w, h);
+        UiTheme.DrawFill(dim, new Color(0f, 0f, 0f, 0.35f));
+
+        float pw = 520f * s;
+        float ph = 300f * s;
+        Rect panel = new Rect(w * 0.5f - pw * 0.5f, h * 0.5f - ph * 0.5f, pw, ph);
+        UiTheme.DrawPanel(panel);
+
+        float x = panel.x + 24f * s;
+        float y = panel.y + 20f * s;
+        float innerW = panel.width - 48f * s;
+        GUI.Label(new Rect(x, y, innerW, 34f * s), "이 설정으로 시작할까요?", UiTheme.Heading);
+        y += 48f * s;
+        SummaryLine(x, ref y, innerW, s, "문파명", NormalizeSectName());
+        SummaryLine(x, ref y, innerW, s, "난이도", StoryEnumLabels.Label(difficulty));
+        SummaryLine(x, ref y, innerW, s, "성향", StoryEnumLabels.Label(disposition));
+        SummaryLine(x, ref y, innerW, s, "초기 무공", StoryEnumLabels.Label(art));
+        y += 8f * s;
+        GUI.Label(new Rect(x, y, innerW, 48f * s), "풍류 성향은 대화, 재치, 도발 판정 중심으로 적용됩니다.", UiTheme.SmallMuted);
+
+        float bw = 180f * s;
+        if (Btn(new Rect(panel.x + 24f * s, panel.yMax - 62f * s, bw, 44f * s), "다시 고르기", false))
+        {
+            showConfirm = false;
+        }
+
+        if (Btn(new Rect(panel.xMax - bw - 24f * s, panel.yMax - 62f * s, bw, 44f * s), "시작", true))
+        {
+            Commit();
+            root.Flow.GoToPrologue();
+        }
     }
 
     private static void SummaryLine(float x, ref float y, float w, float s, string label, string value)
@@ -207,13 +249,68 @@ public sealed class NewGameSetupController : MonoBehaviour
     private bool IsSectNameValid()
     {
         string normalized = NormalizeSectName();
-        return normalized.Length >= 2 && normalized.Length <= 8 && !normalized.Contains(" ");
+        if (normalized.Length < 2 || normalized.Length > 12 || HasWhitespace(normalized))
+        {
+            return false;
+        }
+
+        foreach (string word in ForbiddenSectWords)
+        {
+            if (normalized.Contains(word))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private string NormalizeSectName()
     {
         string value = string.IsNullOrWhiteSpace(sectName) ? "해동검문" : sectName.Trim();
-        return value.Length > 8 ? value.Substring(0, 8) : value;
+        return value.Length > 12 ? value.Substring(0, 12) : value;
+    }
+
+    private string SectNameValidationMessage()
+    {
+        string normalized = NormalizeSectName();
+        if (normalized.Length < 2 || normalized.Length > 12)
+        {
+            return "문파명은 앞뒤 공백을 제외하고 2~12자로 정해야 합니다.";
+        }
+
+        if (HasWhitespace(normalized))
+        {
+            return "문파명에는 공백을 넣을 수 없습니다.";
+        }
+
+        foreach (string word in ForbiddenSectWords)
+        {
+            if (normalized.Contains(word))
+            {
+                return "문파명에 사용할 수 없는 표현이 포함되어 있습니다.";
+            }
+        }
+
+        return "문파명을 확인해 주세요.";
+    }
+
+    private static bool HasWhitespace(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return false;
+        }
+
+        foreach (char c in value)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string BonusPreview(HeroDisposition d, StartingArt a)

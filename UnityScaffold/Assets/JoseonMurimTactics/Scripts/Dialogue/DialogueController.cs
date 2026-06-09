@@ -10,6 +10,8 @@ namespace JoseonMurimTactics
 public sealed class DialogueController
 {
     private const float AutoAdvanceDelay = 1.05f;
+    private const float SkipAdvanceDelay = 0.08f;
+    private const int MaxHistoryLines = 48;
 
     private readonly DialogueScript script;
     private readonly GameRoot root;
@@ -19,9 +21,24 @@ public sealed class DialogueController
     private int visibleChars;
     private float typeAccumulator;
     private float autoAdvanceTimer;
+    private bool skipMode;
+    private bool hasAutoOverride;
+    private bool autoDialogueOverride;
+    private QuickPanel quickPanel;
+    private Vector2 logScroll;
+    private string quickMessage;
+    private float quickMessageTimer;
 
     public bool IsFinished { get; private set; }
     public string LastEffect { get; private set; }
+
+    private enum QuickPanel
+    {
+        None,
+        Log,
+        Save,
+        Load
+    }
 
     public DialogueController(DialogueScript script, GameRoot root)
     {
@@ -43,8 +60,15 @@ public sealed class DialogueController
 
         float s = UiTheme.Scale;
         GameSettings settings = GameSettings.Load();
+        TickQuickMessage();
+        bool effectiveAuto = EffectiveAuto(settings);
         bool hasSpeaker = !string.IsNullOrEmpty(current.speakerName);
         bool hasChoices = current.HasChoices;
+        if (skipMode && hasChoices)
+        {
+            skipMode = false;
+            SetQuickMessage("선택지는 직접 골라주세요.");
+        }
 
         float margin = Mathf.Clamp(38f * s, 22f, 58f * s);
         float boxH = Mathf.Clamp(hasChoices ? 410f * s : 292f * s, screenH * 0.30f, screenH * 0.52f);
@@ -87,10 +111,14 @@ public sealed class DialogueController
         }
         else
         {
-            DrawAdvanceButton(box, s, complete, settings.autoDialogue);
+            DrawAdvanceButton(box, s, complete, effectiveAuto, skipMode);
         }
 
-        HandleAutoAdvance(settings, complete);
+        DrawQuickBar(screenW, screenH, box, s, settings);
+        DrawQuickPanel(screenW, screenH, box, s);
+        DrawQuickMessage(box, s);
+
+        HandleAutoAdvance(settings, complete, effectiveAuto);
     }
 
     private void PrepareCurrentNode()
@@ -107,7 +135,7 @@ public sealed class DialogueController
 
         string speaker = string.IsNullOrEmpty(current.speakerName) ? "서술" : current.speakerName;
         history.Add($"{speaker}: {current.line}");
-        if (history.Count > 8)
+        while (history.Count > MaxHistoryLines)
         {
             history.RemoveAt(0);
         }
@@ -153,6 +181,12 @@ public sealed class DialogueController
             return string.Empty;
         }
 
+        if (skipMode)
+        {
+            visibleChars = line.Length;
+            return line;
+        }
+
         bool repaint = Event.current == null || Event.current.type == EventType.Repaint;
         if (visibleChars < line.Length && repaint)
         {
@@ -176,9 +210,9 @@ public sealed class DialogueController
         return visible;
     }
 
-    private void HandleAutoAdvance(GameSettings settings, bool complete)
+    private void HandleAutoAdvance(GameSettings settings, bool complete, bool autoDialogue)
     {
-        if (!complete || current == null || current.HasChoices || !settings.autoDialogue)
+        if (!complete || current == null || current.HasChoices || (!autoDialogue && !skipMode))
         {
             autoAdvanceTimer = 0f;
             return;
@@ -191,7 +225,9 @@ public sealed class DialogueController
         }
 
         autoAdvanceTimer += Time.unscaledDeltaTime;
-        if (autoAdvanceTimer >= AutoAdvanceDelay)
+        float delay = skipMode ? SkipAdvanceDelay : Mathf.Lerp(AutoAdvanceDelay * 1.35f, AutoAdvanceDelay * 0.45f,
+                                                               Mathf.Clamp01(settings.autoTextSpeed));
+        if (autoAdvanceTimer >= delay)
         {
             Advance(current.nextNodeId);
         }
@@ -304,7 +340,7 @@ public sealed class DialogueController
         }
     }
 
-    private void DrawAdvanceButton(Rect box, float s, bool complete, bool autoDialogue)
+    private void DrawAdvanceButton(Rect box, float s, bool complete, bool autoDialogue, bool skipping)
     {
         float bw = 168f * s;
         Rect button = new Rect(box.xMax - 40f * s - bw, box.yMax - 58f * s, bw, 42f * s);
@@ -315,8 +351,318 @@ public sealed class DialogueController
         }
 
         GUIStyle hint = new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleRight };
-        string hintText = autoDialogue && complete && !current.HasChoices ? "자동 진행" : "Space / Enter";
+        string hintText = skipping ? "빨리감기" : autoDialogue && complete && !current.HasChoices ? "자동 진행" : "Space / Enter";
         GUI.Label(new Rect(button.x - 180f * s, button.y + 8f * s, 168f * s, 24f * s), hintText, hint);
+    }
+
+    private void DrawQuickBar(float screenW, float screenH, Rect box, float s, GameSettings settings)
+    {
+        float gap = Mathf.Max(4f, 6f * s);
+        float bw = Mathf.Max(54f, 68f * s);
+        float bh = Mathf.Max(24f, 30f * s);
+        float total = bw * 5f + gap * 4f;
+        if (total > screenW - 20f)
+        {
+            bw = Mathf.Max(42f, (screenW - 20f - gap * 4f) / 5f);
+            total = bw * 5f + gap * 4f;
+        }
+
+        Rect bar = new Rect(Mathf.Max(10f, box.xMax - total), Mathf.Min(screenH - bh - 5f, box.yMax + 6f * s), total,
+                            bh);
+        float x = bar.x;
+        if (QuickButton(new Rect(x, bar.y, bw, bh), "LOG", quickPanel == QuickPanel.Log, s))
+        {
+            TogglePanel(QuickPanel.Log);
+        }
+
+        x += bw + gap;
+        if (QuickButton(new Rect(x, bar.y, bw, bh), "SAVE", quickPanel == QuickPanel.Save, s))
+        {
+            TogglePanel(QuickPanel.Save);
+        }
+
+        x += bw + gap;
+        if (QuickButton(new Rect(x, bar.y, bw, bh), "LOAD", quickPanel == QuickPanel.Load, s))
+        {
+            TogglePanel(QuickPanel.Load);
+        }
+
+        x += bw + gap;
+        bool auto = EffectiveAuto(settings);
+        if (QuickButton(new Rect(x, bar.y, bw, bh), "AUTO", auto, s))
+        {
+            hasAutoOverride = true;
+            autoDialogueOverride = !auto;
+            SetQuickMessage(autoDialogueOverride ? "자동 진행 켜짐" : "자동 진행 꺼짐");
+        }
+
+        x += bw + gap;
+        if (QuickButton(new Rect(x, bar.y, bw, bh), "SKIP", skipMode, s))
+        {
+            if (current.HasChoices)
+            {
+                skipMode = false;
+                SetQuickMessage("선택지는 건너뛸 수 없습니다.");
+            }
+            else
+            {
+                skipMode = !skipMode;
+                SetQuickMessage(skipMode ? "빨리감기 켜짐" : "빨리감기 꺼짐");
+            }
+        }
+    }
+
+    private bool QuickButton(Rect rect, string label, bool active, float s)
+    {
+        GUIStyle style = new GUIStyle(active ? UiTheme.ButtonPrimary : UiTheme.Button)
+        {
+            fontSize = Mathf.Max(11, Mathf.RoundToInt(14f * s)),
+            padding = new RectOffset(4, 4, 3, 3)
+        };
+        return GUI.Button(rect, label, style);
+    }
+
+    private void DrawQuickPanel(float screenW, float screenH, Rect box, float s)
+    {
+        if (quickPanel == QuickPanel.None)
+        {
+            return;
+        }
+
+        float width = Mathf.Min(620f * s, screenW - 36f * s);
+        float targetHeight = quickPanel == QuickPanel.Log ? 440f * s : quickPanel == QuickPanel.Load ? 430f * s
+                                                                                                     : 360f * s;
+        float height = Mathf.Min(targetHeight, screenH - 110f * s);
+        width = Mathf.Max(360f, width);
+        float minHeight = quickPanel == QuickPanel.Load ? 360f : quickPanel == QuickPanel.Save ? 310f : 300f;
+        height = Mathf.Min(Mathf.Max(minHeight, height), screenH - 90f * s);
+        Rect panel = new Rect(screenW - width - 42f * s, Mathf.Max(70f * s, box.y - height - 16f * s), width,
+                              height);
+        if (panel.x < 18f * s)
+        {
+            panel.x = 18f * s;
+            panel.width = screenW - 36f * s;
+        }
+
+        UiTheme.DrawPanel(panel, true);
+        string title = quickPanel == QuickPanel.Log ? "대화 로그" : quickPanel == QuickPanel.Save ? "저장" : "불러오기";
+        GUI.Label(new Rect(panel.x + 20f * s, panel.y + 14f * s, panel.width - 92f * s, 32f * s), title,
+                  UiTheme.Heading);
+        if (GUI.Button(new Rect(panel.xMax - 62f * s, panel.y + 12f * s, 42f * s, 32f * s), "닫기",
+                       SmallPanelButtonStyle(s)))
+        {
+            quickPanel = QuickPanel.None;
+            return;
+        }
+
+        Rect inner = new Rect(panel.x + 20f * s, panel.y + 56f * s, panel.width - 40f * s, panel.height - 76f * s);
+        switch (quickPanel)
+        {
+        case QuickPanel.Log:
+            DrawLogPanel(inner, s);
+            break;
+        case QuickPanel.Save:
+            DrawSlotPanel(inner, s, true);
+            break;
+        case QuickPanel.Load:
+            DrawSlotPanel(inner, s, false);
+            break;
+        }
+    }
+
+    private void DrawLogPanel(Rect rect, float s)
+    {
+        GUI.Label(new Rect(rect.x, rect.y, rect.width, 24f * s), "지나간 대사를 다시 봅니다.", UiTheme.SmallMuted);
+        Rect view = new Rect(rect.x, rect.y + 30f * s, rect.width, rect.height - 30f * s);
+        float lineH = Mathf.Max(48f, 58f * s);
+        float contentH = Mathf.Max(view.height + 1f, history.Count * lineH + 12f * s);
+        logScroll = GUI.BeginScrollView(view, logScroll, new Rect(0f, 0f, view.width - 18f * s, contentH));
+
+        if (history.Count == 0)
+        {
+            GUI.Label(new Rect(0f, 0f, view.width - 24f * s, 28f * s), "아직 기록된 대사가 없습니다.", UiTheme.Body);
+        }
+        else
+        {
+            GUIStyle speakerStyle = new GUIStyle(UiTheme.Small) { fontStyle = FontStyle.Bold };
+            speakerStyle.normal.textColor = UiTheme.SealRed;
+            GUIStyle lineStyle = new GUIStyle(UiTheme.Body) { fontSize = Mathf.Max(14, Mathf.RoundToInt(18f * s)) };
+            float y = 0f;
+            for (int i = 0; i < history.Count; i++)
+            {
+                SplitHistory(history[i], out string speaker, out string line);
+                GUI.Label(new Rect(0f, y, view.width - 24f * s, 20f * s), speaker, speakerStyle);
+                GUI.Label(new Rect(0f, y + 20f * s, view.width - 24f * s, lineH - 18f * s), line, lineStyle);
+                y += lineH;
+            }
+        }
+
+        GUI.EndScrollView();
+    }
+
+    private void DrawSlotPanel(Rect rect, float s, bool saveMode)
+    {
+        string caption = saveMode ? "수동 슬롯에 현재 진행을 기록합니다." : "저장된 진행을 불러옵니다.";
+        GUI.Label(new Rect(rect.x, rect.y, rect.width, 24f * s), caption, UiTheme.SmallMuted);
+        float y = rect.y + 34f * s;
+
+        if (saveMode)
+        {
+            foreach (string slot in SaveManager.ManualSlots)
+            {
+                DrawSlotRow(rect.x, ref y, rect.width, s, slot, true);
+            }
+        }
+        else
+        {
+            foreach (string slot in SaveManager.AllSlots)
+            {
+                DrawSlotRow(rect.x, ref y, rect.width, s, slot, false);
+            }
+        }
+    }
+
+    private void DrawSlotRow(float x, ref float y, float width, float s, string slot, bool saveMode)
+    {
+        SaveSlotSummary summary = root != null && root.Save != null ? root.Save.Peek(slot) : new SaveSlotSummary();
+        Rect row = new Rect(x, y, width, Mathf.Max(58f, 64f * s));
+        UiTheme.DrawPanel(row, true);
+
+        GUI.Label(new Rect(row.x + 14f * s, row.y + 8f * s, 96f * s, 22f * s), SlotLabel(slot), UiTheme.Body);
+        string detail = summary.exists
+                            ? $"{summary.chapterTitle} · {summary.location} · {summary.playTimeText} · {summary.savedAtText}"
+                            : "비어 있음";
+        GUI.Label(new Rect(row.x + 14f * s, row.y + 34f * s, row.width - 142f * s, 22f * s), detail,
+                  UiTheme.SmallMuted);
+
+        bool canUse = saveMode || summary.exists;
+        GUI.enabled = canUse;
+        string label = saveMode ? "저장" : "로드";
+        if (GUI.Button(new Rect(row.xMax - 104f * s, row.y + 13f * s, 84f * s, 38f * s), label,
+                       saveMode ? UiTheme.ButtonPrimary : UiTheme.Button))
+        {
+            if (saveMode)
+            {
+                SaveToSlot(slot);
+            }
+            else
+            {
+                LoadFromSlot(slot);
+            }
+        }
+
+        GUI.enabled = true;
+        y += row.height + 10f * s;
+    }
+
+    private void SaveToSlot(string slot)
+    {
+        bool ok = root != null && root.Save != null && root.Session != null && root.Save.Save(root.Session, slot);
+        SetQuickMessage(ok ? $"{SlotLabel(slot)} 저장 완료" : "저장 실패");
+        if (ok)
+        {
+            quickPanel = QuickPanel.None;
+        }
+    }
+
+    private void LoadFromSlot(string slot)
+    {
+        if (root == null || root.Save == null)
+        {
+            SetQuickMessage("로드 실패");
+            return;
+        }
+
+        GameSession loaded = root.Save.Load(slot);
+        if (loaded == null)
+        {
+            SetQuickMessage("로드 실패");
+            return;
+        }
+
+        root.LoadExistingSession(loaded);
+        SetQuickMessage($"{SlotLabel(slot)} 로드 완료");
+        quickPanel = QuickPanel.None;
+        skipMode = false;
+        if (root.Flags.HasFlag(StoryFlags.HubUnlocked) || root.Flags.HasFlag(StoryFlags.PrologueCompleted))
+        {
+            root.Flow.GoToHub(root.Session.currentHubId);
+        }
+        else
+        {
+            root.Flow.GoToPrologue();
+        }
+    }
+
+    private void DrawQuickMessage(Rect box, float s)
+    {
+        if (quickMessageTimer <= 0f || string.IsNullOrEmpty(quickMessage))
+        {
+            return;
+        }
+
+        float w = Mathf.Min(320f * s, box.width * 0.42f);
+        Rect toast = new Rect(box.xMax - w - 40f * s, box.y - 64f * s, w, 38f * s);
+        UiTheme.DrawFill(toast, new Color(UiTheme.Ink.r, UiTheme.Ink.g, UiTheme.Ink.b, 0.72f));
+        GUIStyle style = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+        style.normal.textColor = UiTheme.HanjiPanel;
+        GUI.Label(toast, quickMessage, style);
+    }
+
+    private void SetQuickMessage(string message)
+    {
+        quickMessage = message;
+        quickMessageTimer = 1.45f;
+    }
+
+    private void TickQuickMessage()
+    {
+        if (quickMessageTimer <= 0f)
+        {
+            return;
+        }
+
+        bool repaint = Event.current == null || Event.current.type == EventType.Repaint;
+        if (repaint)
+        {
+            quickMessageTimer = Mathf.Max(0f, quickMessageTimer - Time.unscaledDeltaTime);
+        }
+    }
+
+    private bool EffectiveAuto(GameSettings settings)
+    {
+        return hasAutoOverride ? autoDialogueOverride : settings.autoDialogue;
+    }
+
+    private void TogglePanel(QuickPanel panel)
+    {
+        quickPanel = quickPanel == panel ? QuickPanel.None : panel;
+    }
+
+    private static GUIStyle SmallPanelButtonStyle(float s)
+    {
+        GUIStyle style = new GUIStyle(UiTheme.Button) { fontSize = Mathf.Max(11, Mathf.RoundToInt(14f * s)) };
+        style.padding = new RectOffset(4, 4, 3, 3);
+        return style;
+    }
+
+    private static void SplitHistory(string entry, out string speaker, out string line)
+    {
+        int split = string.IsNullOrEmpty(entry) ? -1 : entry.IndexOf(": ");
+        if (split <= 0)
+        {
+            speaker = "서술";
+            line = entry ?? string.Empty;
+            return;
+        }
+
+        speaker = entry.Substring(0, split);
+        line = entry.Substring(split + 2);
+    }
+
+    private static string SlotLabel(string slot)
+    {
+        return slot == SaveManager.AutoSlot ? "자동" : "수동 " + slot;
     }
 
     private void DrawTailGlyph(Rect box, float s)

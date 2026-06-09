@@ -148,8 +148,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62f2a742e6ce4fe3af7c040e2c21817f, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestController
-  width: 12
-  height: 8
+  width: 16
+  height: 12
   tileWidth: 1.16
   tileHeight: 0.62
   unitDefinitions:
@@ -157,9 +157,9 @@ MonoBehaviour:
     displayName: 박성준
     faction: 0
     visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
-    startCell: {x: 1, y: 2}
+    startCell: {x: 7, y: 8}
     sectName: 백두산 백두검문
-    age: 20
+    age: 17
     mbti: ENTP
     elementName: 빛
     weaponName: 검
@@ -185,7 +185,7 @@ MonoBehaviour:
     displayName: 백련
     faction: 0
     visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
-    startCell: {x: 1, y: 4}
+    startCell: {x: 6, y: 9}
     sectName: 강원 설악창문
     age: 17
     mbti: INFJ
@@ -213,7 +213,7 @@ MonoBehaviour:
     displayName: 도아린
     faction: 0
     visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
-    startCell: {x: 2, y: 5}
+    startCell: {x: 8, y: 8}
     sectName: 경상 화왕도문
     age: 16
     mbti: ESTP
@@ -237,17 +237,17 @@ MonoBehaviour:
     specialPower: 6
     specialAttackBonus: 2
     specialEffect: 6
-  - id: seo_a
-    displayName: 서아
+  - id: jin_seoyul
+    displayName: 진서율
     faction: 0
-    visual: {fileID: 11400000, guid: bb014a386f3600589a86a20cc7f5c441, type: 2}
-    startCell: {x: 2, y: 1}
+    visual: {fileID: 11400000, guid: a16d4e93f0c64f23b5ac5771b6b1f0cb, type: 2}
+    startCell: {x: 10, y: 8}
     sectName: 경성 천뢰봉문
-    age: 13
-    mbti: ENFP
+    age: 15
+    mbti: ENTP
     elementName: 전기
     weaponName: 봉
-    speechTone: 밝고 빠른 질문형 말투
+    speechTone: 빠르고 장난기 있는 추리형 말투
     maxHp: 24
     maxInner: 4
     initiative: 18
@@ -265,18 +265,18 @@ MonoBehaviour:
     specialPower: 4
     specialAttackBonus: 3
     specialEffect: 1
-  - id: mae_hwaryeong
-    displayName: 매화령
+  - id: seo_a
+    displayName: 신서아
     faction: 0
-    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
-    startCell: {x: 0, y: 5}
-    sectName: 전라 풍매문
-    age: 18
-    mbti: ENFJ
+    visual: {fileID: 11400000, guid: d394e6b7a4f3404097dd5e1a2dd56916, type: 2}
+    startCell: {x: 4, y: 8}
+    sectName: 전라도 남원 화접풍류문
+    age: 13
+    mbti: ENFP
     elementName: 바람/꽃
     weaponName: 부채
-    speechTone: 부드럽고 사교적인 말투
-    maxHp: 28
+    speechTone: 밝고 씩씩한 막내 말투
+    maxHp: 24
     maxInner: 5
     initiative: 13
     agility: 14
@@ -286,7 +286,7 @@ MonoBehaviour:
     defense: 13
     damageMin: 4
     damageMax: 7
-    specialName: 풍매선
+    specialName: 꽃바람
     specialRange: 3
     specialCost: 1
     specialCooldown: 2
@@ -297,8 +297,8 @@ MonoBehaviour:
     displayName: 한비연
     faction: 0
     visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
-    startCell: {x: 0, y: 1}
-    sectName: 경성 흑연문
+    startCell: {x: 2, y: 7}
+    sectName: 황해도 구월산 흑련암문
     age: 17
     mbti: ISTP
     elementName: 어둠/독
@@ -314,19 +314,19 @@ MonoBehaviour:
     defense: 13
     damageMin: 4
     damageMax: 8
-    specialName: 흑연독침
+    specialName: 흑련독침
     specialRange: 3
     specialCost: 1
     specialCooldown: 2
     specialPower: 3
     specialAttackBonus: 2
     specialEffect: 3
-  - id: zhongyuan_guard_1
-    displayName: 중원 호위검수
+  - id: iron_wolf_guard_1
+    displayName: 철랑문 검수
     faction: 1
     visual: {fileID: 11400000, guid: 7f1a763097089996c20b6c46f9367093, type: 2}
-    startCell: {x: 9, y: 1}
-    sectName: 중원무림맹
+    startCell: {x: 7, y: 1}
+    sectName: 철랑문
     age: 24
     mbti: ISTJ
     elementName: 철
@@ -342,19 +342,19 @@ MonoBehaviour:
     defense: 14
     damageMin: 5
     damageMax: 8
-    specialName: 정도검
+    specialName: 철랑검
     specialRange: 1
     specialCost: 1
     specialCooldown: 2
     specialPower: 4
     specialAttackBonus: 1
     specialEffect: 1
-  - id: zhongyuan_guard_2
-    displayName: 중원 장창수
+  - id: iron_wolf_spear_1
+    displayName: 철랑문 장창수
     faction: 1
     visual: {fileID: 11400000, guid: b8332b8583947925754c36f3ebc60e8e, type: 2}
-    startCell: {x: 9, y: 6}
-    sectName: 중원무림맹
+    startCell: {x: 5, y: 1}
+    sectName: 철랑문
     age: 25
     mbti: ESTJ
     elementName: 철
@@ -370,24 +370,24 @@ MonoBehaviour:
     defense: 15
     damageMin: 5
     damageMax: 9
-    specialName: 쇄진창
+    specialName: 쇄랑창
     specialRange: 2
     specialCost: 1
     specialCooldown: 2
     specialPower: 4
     specialAttackBonus: 1
     specialEffect: 6
-  - id: wijigang
-    displayName: 감찰사 위지강
+  - id: iron_wolf_captain
+    displayName: 철랑문 정찰조장
     faction: 1
     visual: {fileID: 11400000, guid: b1a7ac4054895e811cf8b22f95691ff7, type: 2}
-    startCell: {x: 10, y: 4}
-    sectName: 중원무림맹 감찰단
+    startCell: {x: 12, y: 2}
+    sectName: 철랑문
     age: 31
     mbti: ENTJ
     elementName: 압박
     weaponName: 검
-    speechTone: 권위적인 관화
+    speechTone: 거칠고 얕보는 말투
     maxHp: 38
     maxInner: 4
     initiative: 13
@@ -398,7 +398,7 @@ MonoBehaviour:
     defense: 16
     damageMin: 6
     damageMax: 11
-    specialName: 현판압령
+    specialName: 흑랑표식
     specialRange: 4
     specialCost: 1
     specialCooldown: 2
@@ -481,7 +481,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 4.2
+  orthographic size: 5.8
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -506,7 +506,7 @@ Transform:
   m_GameObject: {fileID: 1921515604}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.6, z: -10}
+  m_LocalPosition: {x: 1.1, y: 4.2, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

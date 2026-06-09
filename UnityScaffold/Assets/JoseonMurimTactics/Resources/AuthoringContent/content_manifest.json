@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-06-09T08:11:53.949Z",
+  "updatedAt": "2026-06-09T08:39:50.391Z",
   "project": {
     "title": "조선 무협 SRPG",
     "note": "콘텐츠 편집기에서 저장하면 Unity Resources의 게임 대사에 즉시 반영됩니다."
@@ -24,7 +24,7 @@
       "portraitId": "",
       "portraitResource": "",
       "notes": "백두천광검문의 현 문주.",
-      "age": 0,
+      "age": 62,
       "sectId": "baekdu_light_sword",
       "sectName": "백두천광검문"
     },
@@ -101,7 +101,7 @@
       "portraitId": "",
       "portraitResource": "",
       "notes": "황해 흑련암문.",
-      "age": 18,
+      "age": 15,
       "sectId": "heukryeon_shadow",
       "sectName": "흑련암문"
     }
@@ -1282,6 +1282,936 @@
           "choices": []
         }
       ]
+    }
+  ],
+  "mapAssets": [
+    {
+      "id": "map_tile_plain_moss",
+      "title": "백두 이끼 평지",
+      "category": "terrain",
+      "subtype": "Plain",
+      "resourcePath": "MapAssets/Tiles/plain_moss",
+      "previewUrl": "/resources/MapAssets/Tiles/plain_moss.png",
+      "file": "MapAssets/Tiles/plain_moss.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Plain"
+      ],
+      "notes": "하단 진입로와 완만한 초지용 기본 타일"
+    },
+    {
+      "id": "map_tile_hill_moss",
+      "title": "백두 능선 언덕",
+      "category": "terrain",
+      "subtype": "Hill",
+      "resourcePath": "MapAssets/Tiles/hill_moss",
+      "previewUrl": "/resources/MapAssets/Tiles/hill_moss.png",
+      "file": "MapAssets/Tiles/hill_moss.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Hill"
+      ],
+      "notes": "고저 차가 보이는 능선/언덕 타일"
+    },
+    {
+      "id": "map_tile_stone_courtyard",
+      "title": "폐사당 석정 마당",
+      "category": "terrain",
+      "subtype": "Stone",
+      "resourcePath": "MapAssets/Tiles/stone_courtyard",
+      "previewUrl": "/resources/MapAssets/Tiles/stone_courtyard.png",
+      "file": "MapAssets/Tiles/stone_courtyard.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Stone"
+      ],
+      "notes": "중앙 마당과 중립 보행 지형"
+    },
+    {
+      "id": "map_tile_road_stair",
+      "title": "중앙 돌계단 길",
+      "category": "terrain",
+      "subtype": "Road",
+      "resourcePath": "MapAssets/Tiles/road_stair",
+      "previewUrl": "/resources/MapAssets/Tiles/road_stair.png",
+      "file": "MapAssets/Tiles/road_stair.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Road"
+      ],
+      "notes": "중앙 병목 돌계단/진입로"
+    },
+    {
+      "id": "map_tile_shrine_floor",
+      "title": "천광 사당 석단",
+      "category": "terrain",
+      "subtype": "ShrineFloor",
+      "resourcePath": "MapAssets/Tiles/shrine_floor",
+      "previewUrl": "/resources/MapAssets/Tiles/shrine_floor.png",
+      "file": "MapAssets/Tiles/shrine_floor.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "ShrineFloor"
+      ],
+      "notes": "목표 지점과 폐사당 고지용 타일"
+    },
+    {
+      "id": "map_tile_bamboo_floor",
+      "title": "대숲 그림자 바닥",
+      "category": "terrain",
+      "subtype": "Bamboo",
+      "resourcePath": "MapAssets/Tiles/bamboo_floor",
+      "previewUrl": "/resources/MapAssets/Tiles/bamboo_floor.png",
+      "file": "MapAssets/Tiles/bamboo_floor.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Bamboo"
+      ],
+      "notes": "좌측 대나무숲 샛길"
+    },
+    {
+      "id": "map_tile_forest_floor",
+      "title": "짙은 산림 바닥",
+      "category": "terrain",
+      "subtype": "Forest",
+      "resourcePath": "MapAssets/Tiles/forest_floor",
+      "previewUrl": "/resources/MapAssets/Tiles/forest_floor.png",
+      "file": "MapAssets/Tiles/forest_floor.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Forest"
+      ],
+      "notes": "시야를 가리는 숲 지형"
+    },
+    {
+      "id": "map_tile_shallow_water",
+      "title": "압록 얕은 물결",
+      "category": "terrain",
+      "subtype": "ShallowWater",
+      "resourcePath": "MapAssets/Tiles/shallow_water",
+      "previewUrl": "/resources/MapAssets/Tiles/shallow_water.png",
+      "file": "MapAssets/Tiles/shallow_water.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "ShallowWater"
+      ],
+      "notes": "이동 부담이 있는 얕은 물"
+    },
+    {
+      "id": "map_tile_deep_water",
+      "title": "검푸른 깊은 물",
+      "category": "terrain",
+      "subtype": "DeepWater",
+      "resourcePath": "MapAssets/Tiles/deep_water",
+      "previewUrl": "/resources/MapAssets/Tiles/deep_water.png",
+      "file": "MapAssets/Tiles/deep_water.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "DeepWater"
+      ],
+      "notes": "통행 제한이 강한 깊은 물"
+    },
+    {
+      "id": "map_tile_wood_plank",
+      "title": "낡은 목판 바닥",
+      "category": "terrain",
+      "subtype": "Wood",
+      "resourcePath": "MapAssets/Tiles/wood_plank",
+      "previewUrl": "/resources/MapAssets/Tiles/wood_plank.png",
+      "file": "MapAssets/Tiles/wood_plank.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Wood"
+      ],
+      "notes": "누각/목재 지형"
+    },
+    {
+      "id": "map_tile_wood_bridge",
+      "title": "낡은 나무다리",
+      "category": "terrain",
+      "subtype": "Bridge",
+      "resourcePath": "MapAssets/Tiles/wood_bridge",
+      "previewUrl": "/resources/MapAssets/Tiles/wood_bridge.png",
+      "file": "MapAssets/Tiles/wood_bridge.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Bridge"
+      ],
+      "notes": "끊거나 우회할 수 있는 다리"
+    },
+    {
+      "id": "map_tile_roof_tile",
+      "title": "붉은 기와지붕",
+      "category": "terrain",
+      "subtype": "Roof",
+      "resourcePath": "MapAssets/Tiles/roof_tile",
+      "previewUrl": "/resources/MapAssets/Tiles/roof_tile.png",
+      "file": "MapAssets/Tiles/roof_tile.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Roof"
+      ],
+      "notes": "높은 지붕/누각 고지"
+    },
+    {
+      "id": "map_tile_cliff_face",
+      "title": "검은 절벽면",
+      "category": "terrain",
+      "subtype": "Cliff",
+      "resourcePath": "MapAssets/Tiles/cliff_face",
+      "previewUrl": "/resources/MapAssets/Tiles/cliff_face.png",
+      "file": "MapAssets/Tiles/cliff_face.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Cliff"
+      ],
+      "notes": "통행 불가 절벽/시야 차단"
+    },
+    {
+      "id": "map_tile_wall_broken",
+      "title": "무너진 담장",
+      "category": "terrain",
+      "subtype": "Wall",
+      "resourcePath": "MapAssets/Tiles/wall_broken",
+      "previewUrl": "/resources/MapAssets/Tiles/wall_broken.png",
+      "file": "MapAssets/Tiles/wall_broken.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Wall"
+      ],
+      "notes": "폐사당 담장과 높은 벽"
+    },
+    {
+      "id": "map_tile_rubble",
+      "title": "흩어진 잔해",
+      "category": "terrain",
+      "subtype": "Rubble",
+      "resourcePath": "MapAssets/Tiles/rubble",
+      "previewUrl": "/resources/MapAssets/Tiles/rubble.png",
+      "file": "MapAssets/Tiles/rubble.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Rubble"
+      ],
+      "notes": "엄폐/이동 부담을 주는 잔해"
+    },
+    {
+      "id": "map_tile_mud_path",
+      "title": "질척한 산길",
+      "category": "terrain",
+      "subtype": "Mud",
+      "resourcePath": "MapAssets/Tiles/mud_path",
+      "previewUrl": "/resources/MapAssets/Tiles/mud_path.png",
+      "file": "MapAssets/Tiles/mud_path.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Mud"
+      ],
+      "notes": "비 온 뒤 산길/속도 저하 지형"
+    },
+    {
+      "id": "map_tile_snow_edge",
+      "title": "백두 잔설 바닥",
+      "category": "terrain",
+      "subtype": "Snow",
+      "resourcePath": "MapAssets/Tiles/snow_edge",
+      "previewUrl": "/resources/MapAssets/Tiles/snow_edge.png",
+      "file": "MapAssets/Tiles/snow_edge.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Snow"
+      ],
+      "notes": "백두산 잔설 지형"
+    },
+    {
+      "id": "map_tile_ice_slick",
+      "title": "서리 낀 얼음판",
+      "category": "terrain",
+      "subtype": "Ice",
+      "resourcePath": "MapAssets/Tiles/ice_slick",
+      "previewUrl": "/resources/MapAssets/Tiles/ice_slick.png",
+      "file": "MapAssets/Tiles/ice_slick.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Ice"
+      ],
+      "notes": "서리/빙결 전술 지형"
+    },
+    {
+      "id": "map_tile_gate_threshold",
+      "title": "문루 문턱",
+      "category": "terrain",
+      "subtype": "Gate",
+      "resourcePath": "MapAssets/Tiles/gate_threshold",
+      "previewUrl": "/resources/MapAssets/Tiles/gate_threshold.png",
+      "file": "MapAssets/Tiles/gate_threshold.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Gate"
+      ],
+      "notes": "문/입구/봉쇄 지형"
+    },
+    {
+      "id": "map_tile_fire_scorch",
+      "title": "불길 그을림",
+      "category": "terrain",
+      "subtype": "Fire",
+      "resourcePath": "MapAssets/Tiles/fire_scorch",
+      "previewUrl": "/resources/MapAssets/Tiles/fire_scorch.png",
+      "file": "MapAssets/Tiles/fire_scorch.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Fire"
+      ],
+      "notes": "화염이 남은 위험 지형"
+    },
+    {
+      "id": "map_tile_smoke_veil",
+      "title": "연무 낀 바닥",
+      "category": "terrain",
+      "subtype": "Smoke",
+      "resourcePath": "MapAssets/Tiles/smoke_veil",
+      "previewUrl": "/resources/MapAssets/Tiles/smoke_veil.png",
+      "file": "MapAssets/Tiles/smoke_veil.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Smoke"
+      ],
+      "notes": "시야 차단 연무 지형"
+    },
+    {
+      "id": "map_tile_trap_mark",
+      "title": "암기 함정 표식",
+      "category": "terrain",
+      "subtype": "Trap",
+      "resourcePath": "MapAssets/Tiles/trap_mark",
+      "previewUrl": "/resources/MapAssets/Tiles/trap_mark.png",
+      "file": "MapAssets/Tiles/trap_mark.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Trap"
+      ],
+      "notes": "함정/위험 표시 타일"
+    },
+    {
+      "id": "map_object_sect_signboard",
+      "title": "백두천광 현판",
+      "category": "object",
+      "subtype": "SectSignboard",
+      "resourcePath": "MapAssets/Objects/sect_signboard",
+      "previewUrl": "/resources/MapAssets/Objects/sect_signboard.png",
+      "file": "MapAssets/Objects/sect_signboard.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "SectSignboard"
+      ],
+      "notes": "보호 목표 오브젝트"
+    },
+    {
+      "id": "map_object_incense_burner",
+      "title": "제단 향로",
+      "category": "object",
+      "subtype": "IncenseBurner",
+      "resourcePath": "MapAssets/Objects/incense_burner",
+      "previewUrl": "/resources/MapAssets/Objects/incense_burner.png",
+      "file": "MapAssets/Objects/incense_burner.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "IncenseBurner"
+      ],
+      "notes": "연막/기도 연출 오브젝트"
+    },
+    {
+      "id": "map_object_red_lantern",
+      "title": "붉은 등불",
+      "category": "object",
+      "subtype": "Lantern",
+      "resourcePath": "MapAssets/Objects/red_lantern",
+      "previewUrl": "/resources/MapAssets/Objects/red_lantern.png",
+      "file": "MapAssets/Objects/red_lantern.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "Lantern"
+      ],
+      "notes": "화염 상호작용 오브젝트"
+    },
+    {
+      "id": "map_object_oil_jar",
+      "title": "기름항아리",
+      "category": "object",
+      "subtype": "OilJar",
+      "resourcePath": "MapAssets/Objects/oil_jar",
+      "previewUrl": "/resources/MapAssets/Objects/oil_jar.png",
+      "file": "MapAssets/Objects/oil_jar.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "OilJar"
+      ],
+      "notes": "폭발/화염 전술 오브젝트"
+    },
+    {
+      "id": "map_object_wine_cart",
+      "title": "술수레",
+      "category": "object",
+      "subtype": "WineCart",
+      "resourcePath": "MapAssets/Objects/wine_cart",
+      "previewUrl": "/resources/MapAssets/Objects/wine_cart.png",
+      "file": "MapAssets/Objects/wine_cart.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "WineCart"
+      ],
+      "notes": "이동 엄폐 오브젝트"
+    },
+    {
+      "id": "map_object_fallen_wall",
+      "title": "무너진 담장 조각",
+      "category": "object",
+      "subtype": "FallenWall",
+      "resourcePath": "MapAssets/Objects/fallen_wall",
+      "previewUrl": "/resources/MapAssets/Objects/fallen_wall.png",
+      "file": "MapAssets/Objects/fallen_wall.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "FallenWall"
+      ],
+      "notes": "엄폐/시야 차단 오브젝트"
+    },
+    {
+      "id": "map_object_bridge_rope",
+      "title": "낡은 다리 밧줄",
+      "category": "object",
+      "subtype": "BridgeRope",
+      "resourcePath": "MapAssets/Objects/bridge_rope",
+      "previewUrl": "/resources/MapAssets/Objects/bridge_rope.png",
+      "file": "MapAssets/Objects/bridge_rope.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "BridgeRope"
+      ],
+      "notes": "다리 붕괴 상호작용 오브젝트"
+    },
+    {
+      "id": "map_object_bamboo_bundle",
+      "title": "대나무 묶음",
+      "category": "object",
+      "subtype": "BambooBundle",
+      "resourcePath": "MapAssets/Objects/bamboo_bundle",
+      "previewUrl": "/resources/MapAssets/Objects/bamboo_bundle.png",
+      "file": "MapAssets/Objects/bamboo_bundle.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "BambooBundle"
+      ],
+      "notes": "넘겨서 길목을 막는 오브젝트"
+    },
+    {
+      "id": "map_object_stone_lantern",
+      "title": "석등",
+      "category": "object",
+      "subtype": "RockLantern",
+      "resourcePath": "MapAssets/Objects/stone_lantern",
+      "previewUrl": "/resources/MapAssets/Objects/stone_lantern.png",
+      "file": "MapAssets/Objects/stone_lantern.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "RockLantern"
+      ],
+      "notes": "낙석/파괴 연출 오브젝트"
+    },
+    {
+      "id": "map_object_falling_boulder",
+      "title": "낙석 바위",
+      "category": "object",
+      "subtype": "Rockfall",
+      "resourcePath": "MapAssets/Objects/falling_boulder",
+      "previewUrl": "/resources/MapAssets/Objects/falling_boulder.png",
+      "file": "MapAssets/Objects/falling_boulder.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "Rockfall"
+      ],
+      "notes": "낙석 위험 표시"
+    },
+    {
+      "id": "map_object_flame_pillar",
+      "title": "솟는 화염",
+      "category": "object",
+      "subtype": "Fire",
+      "resourcePath": "MapAssets/Objects/flame_pillar",
+      "previewUrl": "/resources/MapAssets/Objects/flame_pillar.png",
+      "file": "MapAssets/Objects/flame_pillar.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "Fire"
+      ],
+      "notes": "화염 상태 연출"
+    },
+    {
+      "id": "map_object_smoke_wisp",
+      "title": "흩어지는 연무",
+      "category": "object",
+      "subtype": "Smoke",
+      "resourcePath": "MapAssets/Objects/smoke_wisp",
+      "previewUrl": "/resources/MapAssets/Objects/smoke_wisp.png",
+      "file": "MapAssets/Objects/smoke_wisp.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "Smoke"
+      ],
+      "notes": "연막 상태 연출"
+    },
+    {
+      "id": "map_tile_baekdu_snow_plain",
+      "title": "백두 설원 평지",
+      "category": "terrain",
+      "subtype": "Snow",
+      "resourcePath": "MapAssets/Tiles/baekdu_snow_plain",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_snow_plain.png",
+      "file": "MapAssets/Tiles/baekdu_snow_plain.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Snow"
+      ],
+      "notes": "백두산 설산 기본 설원 타일"
+    },
+    {
+      "id": "map_tile_baekdu_deep_snow",
+      "title": "백두 깊은 눈더미",
+      "category": "terrain",
+      "subtype": "DeepSnow",
+      "resourcePath": "MapAssets/Tiles/baekdu_deep_snow",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_deep_snow.png",
+      "file": "MapAssets/Tiles/baekdu_deep_snow.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "DeepSnow"
+      ],
+      "notes": "이동을 늦추는 깊은 적설 지형"
+    },
+    {
+      "id": "map_tile_baekdu_wind_snow_ridge",
+      "title": "바람깎인 설릉",
+      "category": "terrain",
+      "subtype": "SnowRidge",
+      "resourcePath": "MapAssets/Tiles/baekdu_wind_snow_ridge",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_wind_snow_ridge.png",
+      "file": "MapAssets/Tiles/baekdu_wind_snow_ridge.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "SnowRidge"
+      ],
+      "notes": "고저차가 보이는 설산 능선"
+    },
+    {
+      "id": "map_tile_baekdu_ice_slick",
+      "title": "백두 빙판",
+      "category": "terrain",
+      "subtype": "Ice",
+      "resourcePath": "MapAssets/Tiles/baekdu_ice_slick",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_ice_slick.png",
+      "file": "MapAssets/Tiles/baekdu_ice_slick.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "Ice"
+      ],
+      "notes": "미끄러짐/빙결 전술용 얼음판"
+    },
+    {
+      "id": "map_tile_baekdu_frozen_stream",
+      "title": "얼어붙은 얕은 계류",
+      "category": "terrain",
+      "subtype": "FrozenStream",
+      "resourcePath": "MapAssets/Tiles/baekdu_frozen_stream",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_frozen_stream.png",
+      "file": "MapAssets/Tiles/baekdu_frozen_stream.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "FrozenStream"
+      ],
+      "notes": "얕은 물이 얼어붙은 지형"
+    },
+    {
+      "id": "map_tile_baekdu_dark_frozen_water",
+      "title": "검푸른 결빙수",
+      "category": "terrain",
+      "subtype": "FrozenDeepWater",
+      "resourcePath": "MapAssets/Tiles/baekdu_dark_frozen_water",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_dark_frozen_water.png",
+      "file": "MapAssets/Tiles/baekdu_dark_frozen_water.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "FrozenDeepWater"
+      ],
+      "notes": "깊은 물이 얼어붙은 위험 지형"
+    },
+    {
+      "id": "map_tile_baekdu_volcanic_snow_rock",
+      "title": "눈 덮인 화산암",
+      "category": "terrain",
+      "subtype": "VolcanicRock",
+      "resourcePath": "MapAssets/Tiles/baekdu_volcanic_snow_rock",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_volcanic_snow_rock.png",
+      "file": "MapAssets/Tiles/baekdu_volcanic_snow_rock.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "VolcanicRock"
+      ],
+      "notes": "백두 화산암과 눈이 섞인 지형"
+    },
+    {
+      "id": "map_tile_baekdu_snow_basalt_cliff",
+      "title": "설산 현무암 절벽",
+      "category": "terrain",
+      "subtype": "BasaltCliff",
+      "resourcePath": "MapAssets/Tiles/baekdu_snow_basalt_cliff",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_snow_basalt_cliff.png",
+      "file": "MapAssets/Tiles/baekdu_snow_basalt_cliff.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "BasaltCliff"
+      ],
+      "notes": "통행 불가/시야 차단 절벽"
+    },
+    {
+      "id": "map_tile_baekdu_snow_stone_courtyard",
+      "title": "눈 덮인 석정",
+      "category": "terrain",
+      "subtype": "SnowStone",
+      "resourcePath": "MapAssets/Tiles/baekdu_snow_stone_courtyard",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_snow_stone_courtyard.png",
+      "file": "MapAssets/Tiles/baekdu_snow_stone_courtyard.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "SnowStone"
+      ],
+      "notes": "사당 주변 석정 설원"
+    },
+    {
+      "id": "map_tile_baekdu_snow_shrine_floor",
+      "title": "백두 설사당 석단",
+      "category": "terrain",
+      "subtype": "SnowShrineFloor",
+      "resourcePath": "MapAssets/Tiles/baekdu_snow_shrine_floor",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_snow_shrine_floor.png",
+      "file": "MapAssets/Tiles/baekdu_snow_shrine_floor.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "SnowShrineFloor"
+      ],
+      "notes": "금문양이 희미한 설산 사당 바닥"
+    },
+    {
+      "id": "map_tile_baekdu_frozen_stair_road",
+      "title": "얼어붙은 돌계단",
+      "category": "terrain",
+      "subtype": "FrozenRoad",
+      "resourcePath": "MapAssets/Tiles/baekdu_frozen_stair_road",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_frozen_stair_road.png",
+      "file": "MapAssets/Tiles/baekdu_frozen_stair_road.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "FrozenRoad"
+      ],
+      "notes": "빙결된 계단형 병목 지형"
+    },
+    {
+      "id": "map_tile_baekdu_snow_mountain_pass",
+      "title": "설산 고갯길",
+      "category": "terrain",
+      "subtype": "SnowPass",
+      "resourcePath": "MapAssets/Tiles/baekdu_snow_mountain_pass",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_snow_mountain_pass.png",
+      "file": "MapAssets/Tiles/baekdu_snow_mountain_pass.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "SnowPass"
+      ],
+      "notes": "갈색 흙길과 눈이 섞인 산길"
+    },
+    {
+      "id": "map_tile_baekdu_snow_bamboo_floor",
+      "title": "눈 대숲 바닥",
+      "category": "terrain",
+      "subtype": "SnowBamboo",
+      "resourcePath": "MapAssets/Tiles/baekdu_snow_bamboo_floor",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_snow_bamboo_floor.png",
+      "file": "MapAssets/Tiles/baekdu_snow_bamboo_floor.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "SnowBamboo"
+      ],
+      "notes": "눈 덮인 대나무숲 지형"
+    },
+    {
+      "id": "map_tile_baekdu_snow_pine_floor",
+      "title": "눈 소나무숲 바닥",
+      "category": "terrain",
+      "subtype": "SnowPine",
+      "resourcePath": "MapAssets/Tiles/baekdu_snow_pine_floor",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_snow_pine_floor.png",
+      "file": "MapAssets/Tiles/baekdu_snow_pine_floor.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "SnowPine"
+      ],
+      "notes": "소나무와 눈이 섞인 숲 지형"
+    },
+    {
+      "id": "map_tile_baekdu_hot_spring_ground",
+      "title": "백두 온천 김 바닥",
+      "category": "terrain",
+      "subtype": "HotSpring",
+      "resourcePath": "MapAssets/Tiles/baekdu_hot_spring_ground",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_hot_spring_ground.png",
+      "file": "MapAssets/Tiles/baekdu_hot_spring_ground.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "HotSpring"
+      ],
+      "notes": "눈 속 온천과 증기 지형"
+    },
+    {
+      "id": "map_tile_baekdu_cracked_ice_hazard",
+      "title": "갈라진 빙하 함정",
+      "category": "terrain",
+      "subtype": "CrackedIce",
+      "resourcePath": "MapAssets/Tiles/baekdu_cracked_ice_hazard",
+      "previewUrl": "/resources/MapAssets/Tiles/baekdu_cracked_ice_hazard.png",
+      "file": "MapAssets/Tiles/baekdu_cracked_ice_hazard.png",
+      "tags": [
+        "MAP",
+        "tile",
+        "murim",
+        "CrackedIce"
+      ],
+      "notes": "파괴/추락 위험이 있는 얼음 지형"
+    },
+    {
+      "id": "map_object_baekdu_snow_pine",
+      "title": "눈 덮인 소나무",
+      "category": "object",
+      "subtype": "SnowPine",
+      "resourcePath": "MapAssets/Objects/baekdu_snow_pine",
+      "previewUrl": "/resources/MapAssets/Objects/baekdu_snow_pine.png",
+      "file": "MapAssets/Objects/baekdu_snow_pine.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "SnowPine"
+      ],
+      "notes": "설산 숲/시야 차단 소품"
+    },
+    {
+      "id": "map_object_baekdu_snowdrift_cover",
+      "title": "큰 눈더미 엄폐",
+      "category": "object",
+      "subtype": "SnowCover",
+      "resourcePath": "MapAssets/Objects/baekdu_snowdrift_cover",
+      "previewUrl": "/resources/MapAssets/Objects/baekdu_snowdrift_cover.png",
+      "file": "MapAssets/Objects/baekdu_snowdrift_cover.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "SnowCover"
+      ],
+      "notes": "설산 전투용 엄폐 오브젝트"
+    },
+    {
+      "id": "map_object_baekdu_ice_crystal",
+      "title": "푸른 빙정 군락",
+      "category": "object",
+      "subtype": "IceCrystal",
+      "resourcePath": "MapAssets/Objects/baekdu_ice_crystal",
+      "previewUrl": "/resources/MapAssets/Objects/baekdu_ice_crystal.png",
+      "file": "MapAssets/Objects/baekdu_ice_crystal.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "IceCrystal"
+      ],
+      "notes": "빙결 위험/시야 포인트 오브젝트"
+    },
+    {
+      "id": "map_object_baekdu_frozen_stone_lantern",
+      "title": "얼어붙은 석등",
+      "category": "object",
+      "subtype": "FrozenLantern",
+      "resourcePath": "MapAssets/Objects/baekdu_frozen_stone_lantern",
+      "previewUrl": "/resources/MapAssets/Objects/baekdu_frozen_stone_lantern.png",
+      "file": "MapAssets/Objects/baekdu_frozen_stone_lantern.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "FrozenLantern"
+      ],
+      "notes": "설산 사당 조명 오브젝트"
+    },
+    {
+      "id": "map_object_baekdu_broken_snow_gate",
+      "title": "무너진 설문",
+      "category": "object",
+      "subtype": "SnowGate",
+      "resourcePath": "MapAssets/Objects/baekdu_broken_snow_gate",
+      "previewUrl": "/resources/MapAssets/Objects/baekdu_broken_snow_gate.png",
+      "file": "MapAssets/Objects/baekdu_broken_snow_gate.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "SnowGate"
+      ],
+      "notes": "눈 덮인 사당 문루 잔해"
+    },
+    {
+      "id": "map_object_baekdu_frozen_rope_posts",
+      "title": "얼어붙은 밧줄 말뚝",
+      "category": "object",
+      "subtype": "FrozenRope",
+      "resourcePath": "MapAssets/Objects/baekdu_frozen_rope_posts",
+      "previewUrl": "/resources/MapAssets/Objects/baekdu_frozen_rope_posts.png",
+      "file": "MapAssets/Objects/baekdu_frozen_rope_posts.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "FrozenRope"
+      ],
+      "notes": "빙결된 다리/길목 오브젝트"
+    },
+    {
+      "id": "map_object_baekdu_snow_boulder",
+      "title": "눈 덮인 화산 바위",
+      "category": "object",
+      "subtype": "SnowBoulder",
+      "resourcePath": "MapAssets/Objects/baekdu_snow_boulder",
+      "previewUrl": "/resources/MapAssets/Objects/baekdu_snow_boulder.png",
+      "file": "MapAssets/Objects/baekdu_snow_boulder.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "SnowBoulder"
+      ],
+      "notes": "낙석/엄폐 겸용 바위"
+    },
+    {
+      "id": "map_object_baekdu_hot_spring_steam",
+      "title": "온천 증기",
+      "category": "object",
+      "subtype": "HotSpringSteam",
+      "resourcePath": "MapAssets/Objects/baekdu_hot_spring_steam",
+      "previewUrl": "/resources/MapAssets/Objects/baekdu_hot_spring_steam.png",
+      "file": "MapAssets/Objects/baekdu_hot_spring_steam.png",
+      "tags": [
+        "MAP",
+        "object",
+        "murim",
+        "HotSpringSteam"
+      ],
+      "notes": "시야를 흐리는 김/연무 효과"
     }
   ]
 }
