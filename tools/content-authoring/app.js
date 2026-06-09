@@ -17,6 +17,7 @@ let serverStatus = null;
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
+const offlineResourcesRoot = "../../UnityScaffold/Assets/JoseonMurimTactics/Resources/";
 
 function uid(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
@@ -289,9 +290,7 @@ function renderScenePreview(scene) {
   const background = content.backgrounds.find(item => item.id === scene.backgroundId);
   const firstLine = scene.entries.find(item => item.line && item.line.trim()) || scene.entries[0];
   const speaker = content.characters.find(item => item.id === firstLine?.speakerId);
-  const image = background?.previewUrl
-    ? `<img src="${escapeAttr(background.previewUrl)}" alt="">`
-    : "<span>배경 미지정</span>";
+  const image = previewImageMarkup(mediaPreviewUrl(background), background?.title || "배경 미지정");
   preview.innerHTML = `
     <div class="scene-preview-image">${image}</div>
     <div class="scene-preview-copy">
@@ -300,6 +299,31 @@ function renderScenePreview(scene) {
       <p>${escapeHtml(speaker?.displayName || firstLine?.speakerId || "서술")} ${firstLine?.line ? "— " + escapeHtml(firstLine.line) : "— 첫 대사를 입력하세요."}</p>
     </div>
   `;
+}
+
+function mediaPreviewUrl(item) {
+  if (!item?.previewUrl) {
+    return "";
+  }
+
+  if (window.location.protocol === "file:" && item.previewUrl.startsWith("/resources/")) {
+    return offlineResourcesRoot + item.previewUrl.slice("/resources/".length);
+  }
+
+  if (window.location.protocol === "file:" && item.previewUrl.startsWith("/media/")) {
+    return offlineResourcesRoot + "AuthoringContent/Media/" + item.previewUrl.slice("/media/".length);
+  }
+
+  return item.previewUrl;
+}
+
+function previewImageMarkup(url, fallbackText) {
+  const fallback = escapeHtml(fallbackText || "미리보기 없음");
+  if (!url) {
+    return `<span>${fallback}</span>`;
+  }
+
+  return `<img src="${escapeAttr(url)}" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden>${fallback}</span>`;
 }
 
 function countChoices(scene) {
@@ -557,11 +581,7 @@ function fillPortraitSelect(select, value) {
 
 function portraitPreview(character) {
   const portrait = content.portraits.find(item => item.id === character.portraitId);
-  if (portrait?.previewUrl) {
-    return `<div class="portrait-thumb"><img src="${escapeAttr(portrait.previewUrl)}" alt=""></div>`;
-  }
-
-  return '<div class="portrait-thumb">초상화 없음</div>';
+  return `<div class="portrait-thumb">${previewImageMarkup(mediaPreviewUrl(portrait), "초상화 없음")}</div>`;
 }
 
 function renderMedia() {
@@ -576,9 +596,7 @@ function renderMediaGrid(selector, items, kind) {
   for (const item of items) {
     const card = document.createElement("article");
     card.className = "media-card";
-    const preview = item.previewUrl
-      ? `<div class="media-thumb"><img src="${escapeAttr(item.previewUrl)}" alt=""></div>`
-      : '<div class="media-thumb">미리보기 없음</div>';
+    const preview = `<div class="media-thumb">${previewImageMarkup(mediaPreviewUrl(item), "미리보기 없음")}</div>`;
     card.innerHTML = `
       ${preview}
       <label>표시 이름<input class="media-title" type="text" value="${escapeAttr(item.title || "")}"></label>
