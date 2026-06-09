@@ -4,6 +4,8 @@ namespace JoseonMurimTactics
 {
 public sealed class CompanionInfo
 {
+    public const int AdultAge = 19;
+
     public string id;
     public string name;
     public string title;
@@ -17,10 +19,11 @@ public sealed class CompanionInfo
     public string element;
     public string weapon;
     public string speechTone;
+    public bool romanceEligible;
 
     public CompanionInfo(string id, string name, string title, string role, string profile, string personalQuestId,
                          string region, string sectName, int age, string mbti, string element, string weapon,
-                         string speechTone)
+                         string speechTone, bool romanceEligible = false)
     {
         this.id = id;
         this.name = name;
@@ -35,7 +38,11 @@ public sealed class CompanionInfo
         this.element = element;
         this.weapon = weapon;
         this.speechTone = speechTone;
+        this.romanceEligible = romanceEligible;
     }
+
+    public bool IsAdult => age >= AdultAge;
+    public bool CanReceiveRomanticEffects => IsAdult && romanceEligible;
 }
 
 /// <summary>

@@ -501,6 +501,25 @@ textarea {
   gap: 10px;
 }
 
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.inline-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.inline-check:has(input:disabled) {
+  opacity: .58;
+}
+
 .media-thumb,
 .portrait-thumb {
   width: 100%;

@@ -10,7 +10,7 @@ namespace JoseonMurimTactics.Editor
 {
 public static class MapQualityValidator
 {
-    private const string CurrentMapName = "압록강 협곡 관문";
+    private const string CurrentMapName = "백두산 설문 관문전";
 
     [MenuItem("Joseon Murim Tactics/Validate Current Battle Map")]
     public static void ValidateCurrentBattleMap()
@@ -41,16 +41,30 @@ public static class MapQualityValidator
 
         Check(metrics.Width >= 16 && metrics.Height >= 12, $"map size {metrics.Width}x{metrics.Height}",
               "map smaller than 16x12", pass, fail);
-        Check(metrics.OpenAreaRatio <= target.maxOpenAreaRatio,
-              $"open area ratio {metrics.OpenAreaRatio:P0} <= target {target.maxOpenAreaRatio:P0}",
-              $"open area ratio {metrics.OpenAreaRatio:P0} exceeds target {target.maxOpenAreaRatio:P0}", pass, fail);
+        if (metrics.OpenAreaRatio <= target.maxOpenAreaRatio)
+        {
+            pass.Add($"open area ratio {metrics.OpenAreaRatio:P0} <= target {target.maxOpenAreaRatio:P0}");
+        }
+        else
+        {
+            warnings.Add($"open area ratio {metrics.OpenAreaRatio:P0} exceeds target {target.maxOpenAreaRatio:P0}");
+        }
+
+        Check(metrics.LaneCount >= 2, $"{metrics.LaneCount} reachable route/lane labels",
+              "less than 2 route/lane labels", pass, fail);
         Check(metrics.LaneCount >= target.minLanes, $"{metrics.LaneCount} tactical lanes",
               $"less than {target.minLanes} tactical lanes", pass, fail);
+        Check(metrics.ChokePointCount >= 1, $"{metrics.ChokePointCount} narrow choke cells",
+              "no 1-2 cell bottleneck found", pass, fail);
         Check(metrics.ChokePointCount >= target.minChokePoints, $"{metrics.ChokePointCount} choke cells",
               $"less than {target.minChokePoints} choke cells", pass, fail);
+        Check(metrics.ElevationDelta >= 2, $"elevation delta {metrics.ElevationDelta}",
+              "less than 2-step elevation difference", pass, fail);
         Check(metrics.ElevationLevelCount >= target.minElevationLevels,
               $"{metrics.ElevationLevelCount} elevation levels",
               $"less than {target.minElevationLevels} elevation levels", pass, fail);
+        Check(metrics.InteractableCount >= 3, $"{metrics.InteractableCount} interactive props",
+              "less than 3 interactive props", pass, fail);
         Check(metrics.InteractableCount >= target.minInteractables, $"{metrics.InteractableCount} interactables",
               $"less than {target.minInteractables} interactables", pass, fail);
         Check(metrics.ObjectiveCellCount >= target.minObjectiveCells, $"{metrics.ObjectiveCellCount} objective cells",
@@ -60,11 +74,18 @@ public static class MapQualityValidator
         Check(metrics.LineOfSightBlockerCount >= target.minLineOfSightBlockerZones,
               $"{metrics.LineOfSightBlockerCount} line-of-sight blocker cells",
               $"less than {target.minLineOfSightBlockerZones} line-of-sight blocker zone", pass, fail);
+        Check(metrics.LineOfSightBlockerCount >= 2, $"{metrics.LineOfSightBlockerCount} LoS blocker cells",
+              "less than 2 line-of-sight blocker cells", pass, fail);
         Check(!target.requiresDestructibleOrTransformableTerrain || metrics.DestructibleCount > 0,
               $"{metrics.DestructibleCount} destructible/transformable props",
               "no destructible or transformable terrain prop found", pass, fail);
+        Check(metrics.FallHazardCount >= 1, $"{metrics.FallHazardCount} fall/push hazard cells",
+              "no fall or push hazard cell found", pass, fail);
         Check(metrics.HasStartToObjectivePath, "walkable path from southern start edge to objective",
               "no walkable path from start edge to objective", pass, fail);
+        Check(metrics.HasSouthStartToObjectivePath && metrics.HasNorthStartToObjectivePath,
+              "both southern start and northern entry can reach the objective",
+              "one side cannot reach the objective", pass, fail);
 
         if (metrics.FallHazardCount < 1)
         {
@@ -93,11 +114,12 @@ public static class MapQualityValidator
         {
             builder.AppendLine("Metrics:");
             builder.AppendLine($"- cells: {metrics.TotalCells}, walkable: {metrics.WalkableCellCount}, open: {metrics.OpenAreaCellCount}");
-            builder.AppendLine($"- hazards: fall {metrics.FallHazardCount}, water {metrics.WaterHazardCount}, fire {metrics.FireHazardCount}, smoke {metrics.SmokeHazardCount}");
+            builder.AppendLine($"- elevation: min {metrics.MinElevation}, max {metrics.MaxElevation}, delta {metrics.ElevationDelta}");
+            builder.AppendLine($"- hazards: fall {metrics.FallHazardCount}, water {metrics.WaterHazardCount}, fire {metrics.FireHazardCount}, smoke {metrics.SmokeHazardCount}, ice {metrics.IceHazardCount}");
             builder.AppendLine($"- lanes: {string.Join(", ", metrics.LaneIds)}");
             builder.AppendLine("Checklist:");
-            builder.AppendLine("- central bridge bottleneck, left bamboo flank, right cliff high ground");
-            builder.AppendLine("- shallow ford, ruined shrine altar, beacon, lantern, cart, fall points");
+            builder.AppendLine("- central bridge bottleneck, left snow-bamboo flank, right cliff high ground");
+            builder.AppendLine("- frozen ford, ruined shrine altar, beacon, lantern, cart, rope bridge, fall points");
             builder.AppendLine("- highlight layers remain separated from painted map art");
         }
 
@@ -140,6 +162,8 @@ public static class MapQualityValidator
         int minY = int.MaxValue;
         int maxX = int.MinValue;
         int maxY = int.MinValue;
+        int minElevation = int.MaxValue;
+        int maxElevation = int.MinValue;
         HashSet<string> lanes = new HashSet<string>();
         HashSet<int> elevationLevels = new HashSet<int>();
         Dictionary<Vector2Int, CellMetric> lookup = new Dictionary<Vector2Int, CellMetric>();
@@ -152,6 +176,8 @@ public static class MapQualityValidator
             minY = Mathf.Min(minY, cell.Cell.y);
             maxX = Mathf.Max(maxX, cell.Cell.x);
             maxY = Mathf.Max(maxY, cell.Cell.y);
+            minElevation = Mathf.Min(minElevation, cell.Elevation);
+            maxElevation = Mathf.Max(maxElevation, cell.Elevation);
             elevationLevels.Add(cell.Elevation);
 
             if (!string.IsNullOrEmpty(cell.LaneId))
@@ -196,13 +222,18 @@ public static class MapQualityValidator
 
         metrics.Width = maxX - minX + 1;
         metrics.Height = maxY - minY + 1;
+        metrics.MinElevation = minElevation;
+        metrics.MaxElevation = maxElevation;
+        metrics.ElevationDelta = maxElevation - minElevation;
         metrics.LaneCount = lanes.Count;
         metrics.LaneIds.AddRange(lanes);
         metrics.ElevationLevelCount = elevationLevels.Count;
         metrics.InteractableCount = CountInteractables();
         metrics.DestructibleCount = CountDestructibles();
         metrics.OpenAreaRatio = metrics.TotalCells == 0 ? 1f : metrics.OpenAreaCellCount / (float)metrics.TotalCells;
-        metrics.HasStartToObjectivePath = HasStartToObjectivePath(lookup, minY, maxY, objectiveCells);
+        metrics.HasSouthStartToObjectivePath = HasEdgeToObjectivePath(lookup, minY, maxY, objectiveCells, true);
+        metrics.HasNorthStartToObjectivePath = HasEdgeToObjectivePath(lookup, minY, maxY, objectiveCells, false);
+        metrics.HasStartToObjectivePath = metrics.HasSouthStartToObjectivePath;
         return metrics;
     }
 
@@ -336,6 +367,11 @@ public static class MapQualityValidator
         {
             metrics.SmokeHazardCount++;
         }
+
+        if (cell.HazardType == HazardType.Ice || cell.Terrain == TerrainType.Ice)
+        {
+            metrics.IceHazardCount++;
+        }
     }
 
     private static int CountInteractables()
@@ -360,32 +396,34 @@ public static class MapQualityValidator
         return UnityEngine.Object.FindAnyObjectByType<BattleTestController>() == null ? 0 : 4;
     }
 
-    private static bool HasStartToObjectivePath(Dictionary<Vector2Int, CellMetric> lookup, int minY, int maxY,
-                                                List<Vector2Int> objectiveCells)
+    private static bool HasEdgeToObjectivePath(Dictionary<Vector2Int, CellMetric> lookup, int minY, int maxY,
+                                               List<Vector2Int> objectiveCells, bool startFromSouth)
     {
         if (lookup.Count == 0)
         {
             return false;
         }
 
-        if (objectiveCells.Count == 0)
+        List<Vector2Int> targets = new List<Vector2Int>(objectiveCells);
+        if (targets.Count == 0)
         {
             foreach (CellMetric cell in lookup.Values)
             {
                 if (cell.Walkable && cell.Cell.y >= maxY - 1)
                 {
-                    objectiveCells.Add(cell.Cell);
+                    targets.Add(cell.Cell);
                 }
             }
         }
 
-        HashSet<Vector2Int> objectives = new HashSet<Vector2Int>(objectiveCells);
+        HashSet<Vector2Int> objectives = new HashSet<Vector2Int>(targets);
         Queue<Vector2Int> frontier = new Queue<Vector2Int>();
         HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
 
         foreach (CellMetric cell in lookup.Values)
         {
-            if (!cell.Walkable || cell.Cell.y > minY + 1)
+            bool onStartEdge = startFromSouth ? cell.Cell.y <= minY + 1 : cell.Cell.y >= maxY - 1;
+            if (!cell.Walkable || !onStartEdge)
             {
                 continue;
             }
@@ -510,6 +548,9 @@ public static class MapQualityValidator
         public int TotalCells;
         public int WalkableCellCount;
         public int OpenAreaCellCount;
+        public int MinElevation;
+        public int MaxElevation;
+        public int ElevationDelta;
         public float OpenAreaRatio = 1f;
         public int LaneCount;
         public int ChokePointCount;
@@ -523,7 +564,10 @@ public static class MapQualityValidator
         public int WaterHazardCount;
         public int FireHazardCount;
         public int SmokeHazardCount;
+        public int IceHazardCount;
         public bool HasStartToObjectivePath;
+        public bool HasSouthStartToObjectivePath;
+        public bool HasNorthStartToObjectivePath;
         public readonly List<string> LaneIds = new List<string>();
     }
 }

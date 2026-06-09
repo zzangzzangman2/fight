@@ -43,16 +43,17 @@ const sectOptions = [
   { id: "sobaek_village", label: "소백약방", aliases: ["소백약방", "소백촌"] }
 ];
 const characterMetaDefaults = {
-  park_sungjun: { age: 20, sectId: "baekdu_light_sword" },
-  park_mugyeom: { age: 0, sectId: "baekdu_light_sword" },
-  yeon_ok: { age: 0, sectId: "baekdu_light_sword" },
-  cho_hui: { age: 0, sectId: "sobaek_village" },
-  baek_ryeon: { age: 17, sectId: "seorak_spear" },
-  do_arin: { age: 18, sectId: "hwawang_blade" },
-  jin_seoyul: { age: 16, sectId: "cheonroe_staff" },
-  seo_a: { age: 13, sectId: "hwajeop_fan" },
-  han_biyeon: { age: 18, sectId: "heukryeon_shadow" }
+  park_sungjun: { age: 20, sectId: "baekdu_light_sword", romanceEligible: false },
+  park_mugyeom: { age: 0, sectId: "baekdu_light_sword", romanceEligible: false },
+  yeon_ok: { age: 0, sectId: "baekdu_light_sword", romanceEligible: false },
+  cho_hui: { age: 0, sectId: "sobaek_village", romanceEligible: false },
+  baek_ryeon: { age: 17, sectId: "seorak_spear", romanceEligible: false },
+  do_arin: { age: 18, sectId: "hwawang_blade", romanceEligible: false },
+  jin_seoyul: { age: 16, sectId: "cheonroe_staff", romanceEligible: false },
+  seo_a: { age: 13, sectId: "hwajeop_fan", romanceEligible: false },
+  han_biyeon: { age: 18, sectId: "heukryeon_shadow", romanceEligible: false }
 };
+const romanticAdultAge = 19;
 const apiFallbackBases = ["http://127.0.0.1:5179", "http://127.0.0.1:5178"];
 
 let content = null;
@@ -186,6 +187,15 @@ function normalizeAge(value) {
   return Number.isFinite(age) && age >= 1 && age <= 150 ? age : 0;
 }
 
+function canUseRomanticIntent(choice, characters) {
+  if (!choice?.romanticIntent || !choice.approvalId) {
+    return false;
+  }
+
+  const character = (characters || []).find(item => item.id === choice.approvalId);
+  return !!character && normalizeAge(character.age) >= romanticAdultAge && !!character.romanceEligible;
+}
+
 function inferAge(character) {
   const text = `${character?.notes || ""} ${character?.role || ""}`;
   const match = text.match(/(\d{1,3})\s*세/);
@@ -249,6 +259,7 @@ function normalize(data) {
   for (const character of normalized.characters) {
     const meta = characterMetaDefaults[character.id] || {};
     character.age = normalizeAge(character.age) || normalizeAge(meta.age) || inferAge(character);
+    character.romanceEligible = !!character.romanceEligible || !!meta.romanceEligible;
     character.sectId = validSectId(character.sectId) ? character.sectId : meta.sectId || inferSectId(character);
     character.sectName = sectLabel(character.sectId);
   }
@@ -284,7 +295,7 @@ function normalize(data) {
         choice.battleValue = Number.isFinite(Number(choice.battleValue))
           ? Number(choice.battleValue)
           : Number(choice.battleModifiers?.[0]?.delta || 0);
-        choice.romanticIntent = !!choice.romanticIntent;
+        choice.romanticIntent = canUseRomanticIntent(choice, normalized.characters);
         choice.sceneCommand ||= "";
       }
     }
@@ -698,6 +709,7 @@ function renderCharacters() {
         <label>나이<select class="char-age"></select></label>
         <label>문파<select class="char-sect"></select></label>
       </div>
+      <label class="inline-check"><input class="char-romance-eligible" type="checkbox"> 성인 로맨스 효과 허용</label>
       <label>초상화<select class="char-portrait"></select></label>
       <label>메모<textarea class="char-notes" rows="3">${escapeHtml(character.notes || "")}</textarea></label>
       <button class="danger delete-character" type="button">인물 삭제</button>
@@ -705,9 +717,12 @@ function renderCharacters() {
     const ageSelect = card.querySelector(".char-age");
     const sectSelect = card.querySelector(".char-sect");
     const portraitSelect = card.querySelector(".char-portrait");
+    const romanceEligibleInput = card.querySelector(".char-romance-eligible");
     fillAgeSelect(ageSelect, character.age);
     fillSectSelect(sectSelect, character.sectId);
     fillPortraitSelect(portraitSelect, character.portraitId);
+    romanceEligibleInput.checked = !!character.romanceEligible && normalizeAge(character.age) >= romanticAdultAge;
+    romanceEligibleInput.disabled = normalizeAge(character.age) < romanticAdultAge;
     card.querySelector(".char-name").addEventListener("input", event => {
       character.displayName = event.target.value;
       renderScenes();
@@ -717,6 +732,14 @@ function renderCharacters() {
     });
     ageSelect.addEventListener("change", event => {
       character.age = normalizeAge(event.target.value);
+      if (character.age < romanticAdultAge) {
+        character.romanceEligible = false;
+      }
+
+      renderCharacters();
+    });
+    romanceEligibleInput.addEventListener("change", event => {
+      character.romanceEligible = normalizeAge(character.age) >= romanticAdultAge && event.target.checked;
     });
     sectSelect.addEventListener("change", event => {
       character.sectId = event.target.value;
@@ -913,6 +936,7 @@ function prepareForSave() {
   output.characters.forEach(character => {
     character.id = slug(character.id || character.displayName, "character");
     character.age = normalizeAge(character.age);
+    character.romanceEligible = !!character.romanceEligible && character.age >= romanticAdultAge;
     character.sectId = validSectId(character.sectId) ? character.sectId : "";
     character.sectName = sectLabel(character.sectId);
   });
@@ -947,7 +971,7 @@ function prepareForSave() {
           approvalChanges: choice.approvalId ? [{ id: choice.approvalId, delta: Number(choice.approvalDelta || 0) }] : [],
           factionChanges: choice.factionId ? [{ id: choice.factionId, delta: Number(choice.factionDelta || 0) }] : [],
           battleModifiers: choice.battleKey ? [{ id: choice.battleKey, delta: Number(choice.battleValue || 0) }] : [],
-          romanticIntent: !!choice.romanticIntent,
+          romanticIntent: canUseRomanticIntent(choice, output.characters),
           sceneCommand: choice.sceneCommand || ""
         }))
       };

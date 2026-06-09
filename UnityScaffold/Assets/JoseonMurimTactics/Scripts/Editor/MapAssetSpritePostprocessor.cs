@@ -6,6 +6,8 @@ namespace JoseonMurimTactics
 public sealed class MapAssetSpritePostprocessor : AssetPostprocessor
 {
     private const string MapAssetRoot = "Assets/JoseonMurimTactics/Resources/MapAssets/";
+    private const float TilePixelsPerUnit = 512f;
+    private const float ObjectPixelsPerUnit = 320f;
 
     private void OnPreprocessTexture()
     {
@@ -15,13 +17,24 @@ public sealed class MapAssetSpritePostprocessor : AssetPostprocessor
         }
 
         TextureImporter importer = (TextureImporter)assetImporter;
+
+        if (assetPath.Contains("/Source/"))
+        {
+            importer.textureType = TextureImporterType.Default;
+            importer.mipmapEnabled = false;
+            importer.isReadable = false;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            return;
+        }
+
         importer.textureType = TextureImporterType.Sprite;
         importer.spriteImportMode = SpriteImportMode.Single;
         importer.mipmapEnabled = false;
         importer.alphaIsTransparency = true;
         importer.filterMode = FilterMode.Bilinear;
-        importer.textureCompression = TextureImporterCompression.Uncompressed;
-        importer.spritePixelsPerUnit = assetPath.Contains("/Tiles/") ? 512f : 320f;
+        importer.textureCompression = TextureImporterCompression.CompressedHQ;
+        importer.spritePixelsPerUnit = assetPath.Contains("/Tiles/") ? TilePixelsPerUnit : ObjectPixelsPerUnit;
     }
 }
 }

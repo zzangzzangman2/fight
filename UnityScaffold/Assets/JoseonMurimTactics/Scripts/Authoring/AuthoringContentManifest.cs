@@ -57,6 +57,7 @@ public sealed class AuthoringCharacter
     public string displayName;
     public string role;
     public int age;
+    public bool romanceEligible;
     public string sectId;
     public string sectName;
     public string portraitId;

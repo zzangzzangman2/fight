@@ -1,15 +1,28 @@
-# 조선 무협 SRPG v0.9
+# 조선 무협 SRPG v1.6 Pipeline Hardening
 
-> 현재 작업 브랜치: `noncombat-ui-v1.0` /
-> 기준 브랜치: `story-start-v0.8` /
-> 현재 게임 루프 버전: `v0.9` /
-> 다음 목표: `v1.0` 비전투 UI / 허브 / 스토리 구조 정리
+> 현재 작업 브랜치: `map-quality-v1.2` /
+> 기준 흐름: `story-start-v0.8` → `noncombat-ui-v1.1` → `map-quality-v1.2` /
+> 현재 게임 루프 버전: `v1.6 pipeline hardening` /
+> 다음 목표: 대표 수작업 맵, 맵 검증, 콘텐츠 제작 파이프라인 안정화
 
-`main` 브랜치는 구버전 전투 프로토타입 기준일 수 있습니다. 비전투 UI, 허브, 저장/설정, 스토리 흐름 작업은 `story-start-v0.8`에서 파생된 `noncombat-ui-v1.0` 브랜치를 기준으로 확인하세요.
+`main` 브랜치는 구버전/안정 기준입니다. 최신 맵 파이프라인, 콘텐츠 편집기, Unity Resources 연동, BattleTest Tilemap 전장은 `map-quality-v1.2` 브랜치에서 확인하세요.
+
+브랜치별 목적:
+
+- `main`: 구버전 전투 프로토타입과 안정 기준.
+- `story-start-v0.8`: Boot부터 프롤로그까지의 시작 루프.
+- `noncombat-ui-v1.1`: 타이틀, 새 게임, 허브, 저장/설정 등 비전투 UI 흐름.
+- `map-quality-v1.2`: Tilemap 전장, 맵 에셋, 콘텐츠 편집기, 오프라인 기본값, palette refine 통합 브랜치.
 
 조선 문파들이 중원무림맹의 흡수와 동화 압박에 맞서 해동문을 중심으로 연합하는 Unity 기반 SRPG 게임 루프 프로토타입입니다.
 
-이 저장소의 현재 목표는 단순한 “전투 테스트”가 아니라, 타이틀에서 시작해 도입부, 첫 선택, 튜토리얼 전투, 전투 결과, 해동문 허브로 이어지는 플레이 가능한 게임 루프를 검증하는 것입니다.
+이 저장소의 현재 목표는 단순한 “전투 테스트”가 아니라, 타이틀에서 시작해 도입부, 첫 선택, 튜토리얼 전투, 전투 결과, 허브로 이어지는 플레이 가능한 게임 루프와 제작용 MAP/대사 파이프라인을 함께 검증하는 것입니다.
+
+최근 흐름:
+
+- `e8cb8d1`: Tilemap 전장, 맵 에셋 파이프라인, Unity Resources 연동 기반 확장.
+- `3282d01`: 콘텐츠 편집기 레이아웃과 palette refine.
+- 현재 hardening: 압축된 코드 포맷 정리, 대표맵 지표 강화, 연령/로맨스 안전 가드 복구, README 최신화.
 
 ## 현재 구현된 씬
 
@@ -18,7 +31,7 @@
 - `NewGameSetup`: 난이도, 문파명, 박성준 성향, 초기 무공을 고릅니다.
 - `Prologue`: 중원 감찰단의 현판령과 박성준의 첫 선택지를 보여줍니다.
 - `BattlePrep`: 첫 전투의 승패 조건, 보상, 전투 보정, 위험 정보를 확인합니다.
-- `BattleTest`: 폐사당 방어전 전투 프로토타입입니다.
+- `BattleTest`: `백두산 설문 관문전` 대표맵 전투 프로토타입입니다.
 - `BattleResult`: 승패, 보상, 평판, 동료 승인도, 무림 소문을 정산합니다.
 - `Hub_Pyesadang`: 전투 후 해동문 폐사당 거점에서 출정, 연무장, 동료, 문파, 객잔, 의원, 장터, 서고, 저장, 설정을 확인합니다.
 - `MissionBoard`: 임무를 선택해 전투 준비로 이동합니다.
@@ -67,13 +80,22 @@ Boot
 
 ## Battle Map Tilemap Pipeline
 
-- BattleTest now uses a Unity 2D Tilemap battlefield by default; the old per-cell diamond GameObject renderer is kept behind `useLegacyDiamondTerrain` for debug fallback.
-- Author production maps under `UnityScaffold/Assets/JoseonMurimTactics/Art/BattleMaps`.
-- Use `Joseon Murim Tactics > Battle Maps > Generate Tile Assets` to regenerate `TerrainTileData`, prop tiles, overlay tiles, and battle-map materials from `Resources/MapAssets`.
-- Scene maps should attach `BattleMapTilemapBinder` to `Grid_BattleMap` and keep visual layers separate: Ground, Road, Water, Cliff, Decor, Props, Overlay, Highlight_Move, Highlight_Attack, Highlight_Danger.
-- `TacticalGridOverlay` is the tactical source of truth for move cost, elevation, cover, line-of-sight blocking, fall, water, fire, smoke, objective, and lane data.
-- Interactive map props should use `MapPropView` plus the needed tactical component: `CoverProvider`, `LineOfSightBlocker`, `DestructibleProp`, `InteractableProp`, or `MapLightAnchor`.
-- Run `Joseon Murim Tactics > Validate Current Battle Map` before committing a map. The validator checks open-area ratio, lanes, chokepoints, elevation levels, interactables, high ground, line-of-sight blockers, destructible terrain, and start-to-objective pathing.
+- BattleTest는 Unity 2D Tilemap 전장을 기본으로 사용합니다. 기존 per-cell diamond GameObject 렌더러는 `useLegacyDiamondTerrain` 디버그 fallback에서만 사용합니다.
+- 제작 맵은 `UnityScaffold/Assets/JoseonMurimTactics/Art/BattleMaps` 아래에서 관리합니다.
+- `Joseon Murim Tactics > Battle Maps > Generate Tile Assets`로 `Resources/MapAssets`의 Tiles/Objects를 `TerrainTileData`, prop tile, overlay tile, battle-map material로 재생성합니다.
+- Scene map은 `Grid_BattleMap`에 `BattleMapTilemapBinder`를 붙이고 레이어를 분리합니다: Ground, Road, Water, Cliff, Decor, Props, Overlay, Highlight_Move, Highlight_Attack, Highlight_Danger.
+- `TacticalGridOverlay`가 move cost, elevation, cover, line-of-sight block, fall, water, ice, fire, smoke, objective, lane 데이터의 source of truth입니다.
+- Interactive map prop은 `MapPropView`와 필요한 전술 컴포넌트(`CoverProvider`, `LineOfSightBlocker`, `DestructibleProp`, `InteractableProp`, `MapLightAnchor`)를 함께 사용합니다.
+- `Joseon Murim Tactics > Validate Current Battle Map`은 최소 2개 경로, 1~2칸 병목, 2단계 이상 고저차, 3개 이상 상호작용 프롭, 2개 이상 시야 차단 지형, 낙하/밀치기 지점, 양측 시작점-목표 도달 가능성, open-area warning을 검사합니다.
+
+## MAP Authoring Tool
+
+- 제작 도구는 `tools/content-authoring` 아래에만 둡니다. 게임 런타임 UI는 browser CSS에 의존하지 않습니다.
+- 빠른 실행: `run-content-authoring.cmd` 또는 `node tools/content-authoring/server.js`.
+- 서버 실행 모드는 저장 시 `UnityScaffold/Assets/JoseonMurimTactics/Resources/AuthoringContent/content_manifest.json`에 바로 반영합니다.
+- `index.html`을 file://로 직접 열면 `defaults.js` 기반 오프라인 미리보기를 사용하고, 저장 서버가 없을 때는 `content_manifest.json` 다운로드로 fallback합니다.
+- Prologue는 `AuthoringContentManifest.LoadFromResources()`로 `chapter1_prologue`를 우선 로드하고, manifest가 없거나 비어 있으면 C# fallback 대사를 사용합니다.
+- 미성년 또는 `romanceEligible=false` 캐릭터에게 `romanticIntent` 선택지를 저장하거나 런타임 적용하려 하면 차단됩니다.
 
 ## 전투 방향
 

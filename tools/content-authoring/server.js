@@ -12,6 +12,7 @@ const manifestPath = path.join(outputRoot, "content_manifest.json");
 const backupRoot = path.join(outputRoot, "Backups");
 const mapAssetCatalogPath = path.join(resourcesRoot, "MapAssets", "map_asset_catalog.json");
 const port = Number(process.env.PORT || 5178);
+const romanticAdultAge = 19;
 
 const mediaFolders = {
   backgrounds: "Backgrounds",
@@ -134,17 +135,26 @@ function choice(text, disposition, targetEntryId, options = {}) {
   };
 }
 
+function canUseRomanticIntent(choiceItem, characters) {
+  if (!choiceItem?.romanticIntent || !choiceItem.approvalId) {
+    return false;
+  }
+
+  const character = (characters || []).find(item => item.id === choiceItem.approvalId);
+  return !!character && Number(character.age || 0) >= romanticAdultAge && !!character.romanceEligible;
+}
+
 function defaultCharacters() {
   return [
-    { id: "park_sungjun", displayName: "박성준", role: "백두천광검문 소문주 · 빛/검", age: 20, sectId: "baekdu_light_sword", sectName: "백두천광검문", portraitId: "", portraitResource: "", notes: "20세. 주인공." },
-    { id: "park_mugyeom", displayName: "박무겸", role: "병든 문주", age: 0, sectId: "baekdu_light_sword", sectName: "백두천광검문", portraitId: "", portraitResource: "", notes: "백두천광검문의 현 문주." },
-    { id: "yeon_ok", displayName: "연옥", role: "엄격한 사범", age: 0, sectId: "baekdu_light_sword", sectName: "백두천광검문", portraitId: "", portraitResource: "", notes: "성준을 단련시키는 사범." },
-    { id: "cho_hui", displayName: "초희", role: "소백촌 약방", age: 0, sectId: "sobaek_village", sectName: "소백약방", portraitId: "", portraitResource: "", notes: "초반 생계와 약재 루프의 연결 인물." },
-    { id: "baek_ryeon", displayName: "백련", role: "설악창문 · 서리/창", age: 17, sectId: "seorak_spear", sectName: "설악창문", portraitId: "", portraitResource: "", notes: "강원 설악창문." },
-    { id: "do_arin", displayName: "도아린", role: "화왕도문 · 불/도", age: 18, sectId: "hwawang_blade", sectName: "화왕도문", portraitId: "", portraitResource: "", notes: "경상 화왕도문." },
-    { id: "jin_seoyul", displayName: "진서율", role: "천뢰봉문 · 전기/봉", age: 16, sectId: "cheonroe_staff", sectName: "천뢰봉문", portraitId: "", portraitResource: "", notes: "경성 천뢰봉문." },
-    { id: "seo_a", displayName: "신서아", role: "화접풍류문 · 바람/꽃/부채", age: 13, sectId: "hwajeop_fan", sectName: "화접풍류문", portraitId: "", portraitResource: "", notes: "13세. 전라 화접풍류문." },
-    { id: "han_biyeon", displayName: "한비연", role: "흑련암문 · 어둠/독/암기", age: 18, sectId: "heukryeon_shadow", sectName: "흑련암문", portraitId: "", portraitResource: "", notes: "황해 흑련암문." }
+    { id: "park_sungjun", displayName: "박성준", role: "백두천광검문 소문주 · 빛/검", age: 20, romanceEligible: false, sectId: "baekdu_light_sword", sectName: "백두천광검문", portraitId: "", portraitResource: "", notes: "20세. 주인공." },
+    { id: "park_mugyeom", displayName: "박무겸", role: "병든 문주", age: 0, romanceEligible: false, sectId: "baekdu_light_sword", sectName: "백두천광검문", portraitId: "", portraitResource: "", notes: "백두천광검문의 현 문주." },
+    { id: "yeon_ok", displayName: "연옥", role: "엄격한 사범", age: 0, romanceEligible: false, sectId: "baekdu_light_sword", sectName: "백두천광검문", portraitId: "", portraitResource: "", notes: "성준을 단련시키는 사범." },
+    { id: "cho_hui", displayName: "초희", role: "소백촌 약방", age: 0, romanceEligible: false, sectId: "sobaek_village", sectName: "소백약방", portraitId: "", portraitResource: "", notes: "초반 생계와 약재 루프의 연결 인물." },
+    { id: "baek_ryeon", displayName: "백련", role: "설악창문 · 서리/창", age: 17, romanceEligible: false, sectId: "seorak_spear", sectName: "설악창문", portraitId: "", portraitResource: "", notes: "강원 설악창문." },
+    { id: "do_arin", displayName: "도아린", role: "화왕도문 · 불/도", age: 18, romanceEligible: false, sectId: "hwawang_blade", sectName: "화왕도문", portraitId: "", portraitResource: "", notes: "경상 화왕도문." },
+    { id: "jin_seoyul", displayName: "진서율", role: "천뢰봉문 · 전기/봉", age: 16, romanceEligible: false, sectId: "cheonroe_staff", sectName: "천뢰봉문", portraitId: "", portraitResource: "", notes: "경성 천뢰봉문." },
+    { id: "seo_a", displayName: "신서아", role: "화접풍류문 · 바람/꽃/부채", age: 13, romanceEligible: false, sectId: "hwajeop_fan", sectName: "화접풍류문", portraitId: "", portraitResource: "", notes: "13세. 전라 화접풍류문." },
+    { id: "han_biyeon", displayName: "한비연", role: "흑련암문 · 어둠/독/암기", age: 18, romanceEligible: false, sectId: "heukryeon_shadow", sectName: "흑련암문", portraitId: "", portraitResource: "", notes: "황해 흑련암문." }
   ];
 }
 
@@ -321,7 +331,7 @@ function buildNodesForScene(scene, characters) {
         approvalChanges: item.approvalId ? [{ id: item.approvalId, delta: Number(item.approvalDelta || 0) }] : [],
         factionChanges: item.factionId ? [{ id: item.factionId, delta: Number(item.factionDelta || 0) }] : [],
         battleModifiers: item.battleKey ? [{ id: item.battleKey, delta: Number(item.battleValue || 0) }] : [],
-        romanticIntent: !!item.romanticIntent,
+        romanticIntent: canUseRomanticIntent(item, characters),
         sceneCommand: item.sceneCommand || ""
       }))
     };
@@ -329,6 +339,10 @@ function buildNodesForScene(scene, characters) {
 }
 
 function rebuildNodes(manifest) {
+  for (const character of manifest.characters || []) {
+    character.romanceEligible = !!character.romanceEligible && Number(character.age || 0) >= romanticAdultAge;
+  }
+
   for (const scene of manifest.dialogueScenes || []) {
     scene.entries ||= [];
     if (scene.entries.length === 0 && Array.isArray(scene.nodes) && scene.nodes.length > 0) {

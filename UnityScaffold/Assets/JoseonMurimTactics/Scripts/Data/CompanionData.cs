@@ -34,6 +34,7 @@ public sealed class CompanionData : ScriptableObject
     public string region;
     public string sectName;
     public int age;
+    public bool romanceEligible;
     public string mbti;
     public string element;
     public string weapon;

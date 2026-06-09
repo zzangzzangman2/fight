@@ -25,8 +25,9 @@ public sealed class BattleTestController : MonoBehaviour
     private const int FireInteractDamage = 4;
     private const int FallDamage = 10;
     private const int HighGroundRangeBonusElevation = 2;
-    private const string MapDisplayName = "폐사당 고개 방어전";
-    private const string MapConcept = "좁은 돌계단과 대나무숲 샛길, 낡은 나무다리, 누각 고지를 이용해 철랑문의 돌파를 막는 수비전";
+    private const string MapDisplayName = "백두산 설문 관문전";
+    private const string MapConcept =
+        "중앙 1칸 협로, 좌측 설죽림 우회로, 우측 절벽 고지, 얼어붙은 여울과 붕괴 가능한 다리 밧줄을 쓰는 대표 수작업 전장";
     private static readonly bool UseLegacyOnGui = false;
 
     private readonly List<BattleTestUnit> units = new List<BattleTestUnit>();
@@ -340,10 +341,10 @@ public sealed class BattleTestController : MonoBehaviour
         float x = (Screen.width * 0.5f) - (widthPx * 0.5f);
         GUI.Box(new Rect(x, 18f, widthPx, 112f), GUIContent.none, panelStyle);
         GUI.Label(new Rect(x + 16f, 30f, widthPx - 32f, 24f), "목표", titleStyle);
-        GUI.Label(new Rect(x + 16f, 58f, widthPx - 32f, 20f), "중원 사절 호위대를 제압", labelStyle);
-        GUI.Label(new Rect(x + 16f, 80f, widthPx - 32f, 18f), "추천: 대나무숲 엄폐, 지붕 고저 +2, 향로/등불 활용",
+        GUI.Label(new Rect(x + 16f, 58f, widthPx - 32f, 20f), "중원 감찰단을 설문 관문 안쪽 제단 전에 저지", labelStyle);
+        GUI.Label(new Rect(x + 16f, 80f, widthPx - 32f, 18f), "추천: 설죽림 엄폐, 절벽 고지 +2, 향로/등불/밧줄 활용",
                   smallStyle);
-        GUI.Label(new Rect(x + 16f, 98f, widthPx - 32f, 18f), "위험: 화염 칸 진입 시 피해", smallStyle);
+        GUI.Label(new Rect(x + 16f, 98f, widthPx - 32f, 18f), "위험: 낙하·빙판·화염·연막 지형", smallStyle);
     }
 
     private void DrawLogPanel()
@@ -1122,6 +1123,10 @@ public sealed class BattleTestController : MonoBehaviour
                         new Vector2Int(2, 7), new Color(0.18f, 0.58f, 0.28f, 1f));
         AddInteractable(propRoot, "stone_lantern", "석등", BattleTestInteractableKind.Rockfall,
                         new Vector2Int(10, 9), new Color(0.62f, 0.57f, 0.49f, 1f));
+        AddInteractable(propRoot, "snow_pine", "눈덮인 소나무", BattleTestInteractableKind.BambooFall,
+                        new Vector2Int(2, 9), new Color(0.32f, 0.55f, 0.38f, 1f));
+        AddInteractable(propRoot, "frozen_boulder", "눈덮인 바위", BattleTestInteractableKind.Rockfall,
+                        new Vector2Int(11, 8), new Color(0.68f, 0.70f, 0.66f, 1f));
     }
 
     private void AddInteractable(Transform parent, string id, string displayName, BattleTestInteractableKind kind,
@@ -4129,10 +4134,10 @@ public sealed class BattleTestController : MonoBehaviour
 
     private TerrainProfile ResolveTerrain(int x, int y)
     {
-        return ResolveYaluCanyonGateTerrain(x, y);
+        return ResolveBaekduSnowGateTerrain(x, y);
     }
 
-    private TerrainProfile ResolveYaluCanyonGateTerrain(int x, int y)
+    private TerrainProfile ResolveBaekduSnowGateTerrain(int x, int y)
     {
         if (x <= 3 && y >= 4 && y <= 10)
         {
@@ -4149,7 +4154,7 @@ public sealed class BattleTestController : MonoBehaviour
             {
                 return new TerrainProfile(TerrainType.Bridge, new Color(0.46f, 0.29f, 0.14f, 1f), 1, 0, 1, true,
                                           false, true, false, false, "central_bridge",
-                                          "Central bridge bottleneck over the Yalu gorge.");
+                                          "Central bridge bottleneck over the frozen Snow Gate stream.");
             }
 
             if ((x >= 1 && x <= 3) || (x >= 12 && x <= 14))
@@ -4161,7 +4166,7 @@ public sealed class BattleTestController : MonoBehaviour
 
             return new TerrainProfile(TerrainType.DeepWater, new Color(0.08f, 0.22f, 0.31f, 1f), 0, 0, 99, false,
                                       false, false, false, true, "yalu_river",
-                                      "Deep Yalu channel: impassable water and fall hazard.");
+                                      "Deep frozen channel: impassable water and fall hazard.");
         }
 
         if ((x == 5 || x == 9) && y >= 4 && y <= 7)
@@ -4169,6 +4174,13 @@ public sealed class BattleTestController : MonoBehaviour
             return new TerrainProfile(TerrainType.Cliff, new Color(0.24f, 0.23f, 0.20f, 1f), 2, 0, 99, false,
                                       true, false, false, true, "bridge_cliff",
                                       "Bridge-side cliff drop: blocks path and sight.");
+        }
+
+        if (x == 7 && y == 9)
+        {
+            return new TerrainProfile(TerrainType.Smoke, new Color(0.44f, 0.52f, 0.48f, 1f), 2, 2, 2, true, true,
+                                      false, false, true, "ruined_shrine_altar",
+                                      "Incense smoke hazard: blocks sight and grants temporary cover around the altar.");
         }
 
         if (x >= 11 && x <= 15 && y >= 6 && y <= 10)
@@ -4201,6 +4213,13 @@ public sealed class BattleTestController : MonoBehaviour
                                       "Southern approach road feeding into the bridge choke.");
         }
 
+        if (x == 6 && y == 2)
+        {
+            return new TerrainProfile(TerrainType.Fire, new Color(0.84f, 0.28f, 0.12f, 1f), 0, 0, 2, true, false,
+                                      false, false, true, "enemy_approach",
+                                      "Lantern fire hazard: a controlled flame pocket near the southern approach.");
+        }
+
         if (x >= 4 && x <= 10 && y >= 6 && y <= 8)
         {
             bool rubble = (x == 9 && y == 7) || (x == 10 && y == 7);
@@ -4223,6 +4242,13 @@ public sealed class BattleTestController : MonoBehaviour
                                       0, cartLane ? 1 : 0, cartLane ? 2 : 1, true, false, x == 7 && y == 3,
                                       false, false, "enemy_approach",
                                       "Enemy approach: open ground leading to carts, lanterns, and the bridge.");
+        }
+
+        if (x >= 13 && x <= 14 && y >= 1 && y <= 2)
+        {
+            return new TerrainProfile(TerrainType.Ice, new Color(0.62f, 0.78f, 0.86f, 1f), 0, 0, 2, true, false,
+                                      false, false, true, "right_shoal",
+                                      "Frozen shoal: slippery alternate crossing beneath the cliff.");
         }
 
         if (x >= 12 && y <= 4)
@@ -4248,7 +4274,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         return new TerrainProfile(TerrainType.Stone, new Color(0.47f, 0.43f, 0.34f, 1f), 1, 0, 1, true, false,
                                   false, false, false, "canyon_floor",
-                                  "Canyon floor: standard tactical ground around the Yalu gate.");
+                                  "Snow Gate courtyard floor: standard tactical ground around the Baekdu pass.");
     }
 
     private TerrainProfile ResolveLegacyShrineTerrain(int x, int y)
@@ -4425,6 +4451,8 @@ public sealed class BattleTestController : MonoBehaviour
         interactableAssetSprites["bridge_rope"] = LoadMapSprite("Objects/bridge_rope");
         interactableAssetSprites["bamboo_bundle"] = LoadMapSprite("Objects/bamboo_bundle");
         interactableAssetSprites["stone_lantern"] = LoadMapSprite("Objects/stone_lantern");
+        interactableAssetSprites["snow_pine"] = LoadMapSprite("Objects/baekdu_snow_pine");
+        interactableAssetSprites["frozen_boulder"] = LoadMapSprite("Objects/baekdu_snow_boulder");
         interactableAssetSprites["fire"] = LoadMapSprite("Objects/flame_pillar");
         interactableAssetSprites["smoke"] = LoadMapSprite("Objects/smoke_wisp");
         interactableAssetSprites["rockfall"] = LoadMapSprite("Objects/falling_boulder");
