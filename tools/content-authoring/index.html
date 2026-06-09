@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>조선 무협 SRPG 콘텐츠 편집기</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="editor-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="kicker">Joseon Murim</span>
+        <h1>콘텐츠 편집기</h1>
+      </div>
+      <nav class="tabs" aria-label="편집 영역">
+        <button class="tab active" data-tab="dialogue" type="button">대사</button>
+        <button class="tab" data-tab="characters" type="button">인물</button>
+        <button class="tab" data-tab="media" type="button">배경/에셋</button>
+        <button class="tab" data-tab="guide" type="button">적용 상태</button>
+      </nav>
+      <section class="project-card">
+        <label>
+          프로젝트명
+          <input id="projectTitle" type="text">
+        </label>
+        <label>
+          메모
+          <textarea id="projectNote" rows="4"></textarea>
+        </label>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <p id="saveState">불러오는 중</p>
+          <strong id="targetPath">Unity Resources</strong>
+        </div>
+        <div class="top-actions">
+          <button id="reloadButton" class="secondary" type="button">다시 불러오기</button>
+          <button id="saveButton" class="primary" type="button">게임에 적용 저장</button>
+        </div>
+      </header>
+
+      <section id="dialogueTab" class="view active">
+        <div class="split-layout">
+          <aside class="scene-list-panel">
+            <div class="section-head">
+              <h2>대사 씬</h2>
+              <button id="addSceneButton" class="icon-text" type="button">+ 씬</button>
+            </div>
+            <ol id="sceneList" class="scene-list"></ol>
+          </aside>
+
+          <section class="editor-panel">
+            <div class="section-head">
+              <h2 id="sceneHeading">대사 씬</h2>
+              <button id="deleteSceneButton" class="danger" type="button">삭제</button>
+            </div>
+            <div class="form-grid">
+              <label>
+                씬 제목
+                <input id="sceneTitle" type="text">
+              </label>
+              <label>
+                장소
+                <input id="sceneLocation" type="text">
+              </label>
+              <label>
+                기본 배경
+                <select id="sceneBackground"></select>
+              </label>
+            </div>
+
+            <div class="section-head line-head">
+              <h2>대사 흐름</h2>
+              <button id="addLineButton" class="icon-text" type="button">+ 대사</button>
+            </div>
+            <ol id="lineList" class="line-list"></ol>
+          </section>
+        </div>
+      </section>
+
+      <section id="charactersTab" class="view">
+        <div class="section-head">
+          <h2>인물 카드</h2>
+          <button id="addCharacterButton" class="icon-text" type="button">+ 인물</button>
+        </div>
+        <div id="characterGrid" class="card-grid"></div>
+      </section>
+
+      <section id="mediaTab" class="view">
+        <div class="upload-row">
+          <label class="upload-box">
+            <span>배경 이미지 추가</span>
+            <input id="backgroundUpload" type="file" accept="image/*" multiple>
+          </label>
+          <label class="upload-box">
+            <span>초상화 추가</span>
+            <input id="portraitUpload" type="file" accept="image/*" multiple>
+          </label>
+          <label class="upload-box">
+            <span>소품/이벤트 에셋 추가</span>
+            <input id="propUpload" type="file" accept="image/*,audio/*" multiple>
+          </label>
+        </div>
+        <div class="media-columns">
+          <section>
+            <h2>배경</h2>
+            <div id="backgroundGrid" class="media-grid"></div>
+          </section>
+          <section>
+            <h2>초상화</h2>
+            <div id="portraitGrid" class="media-grid"></div>
+          </section>
+          <section>
+            <h2>소품/사운드</h2>
+            <div id="propGrid" class="media-grid"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="guideTab" class="view">
+        <div class="guide-panel">
+          <h2>저장 방식</h2>
+          <p>이 화면은 JSON을 직접 보여주지 않습니다. 저장하면 내부에서 대사 목록을 Unity용 노드 데이터로 변환하고, Resources 폴더 아래 매니페스트와 업로드 에셋 경로를 갱신합니다.</p>
+          <ul>
+            <li>대사 저장 위치: <code>UnityScaffold/Assets/JoseonMurimTactics/Resources/AuthoringContent/content_manifest.json</code></li>
+            <li>업로드 에셋 위치: <code>UnityScaffold/Assets/JoseonMurimTactics/Resources/AuthoringContent/Media</code></li>
+            <li>Unity 로더: <code>AuthoringContentManifest.LoadFromResources()</code></li>
+          </ul>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <template id="lineTemplate">
+    <li class="line-card">
+      <div class="line-toolbar">
+        <strong class="line-number">대사</strong>
+        <div>
+          <button class="move-up" type="button">위</button>
+          <button class="move-down" type="button">아래</button>
+          <button class="duplicate-line" type="button">복제</button>
+          <button class="delete-line danger" type="button">삭제</button>
+        </div>
+      </div>
+      <div class="form-grid">
+        <label>
+          화자
+          <select class="line-speaker"></select>
+        </label>
+        <label>
+          표정/톤
+          <input class="line-mood" type="text" placeholder="예: 단호, 농담, 분노">
+        </label>
+        <label>
+          배경 전환
+          <select class="line-background"></select>
+        </label>
+      </div>
+      <label>
+        대사
+        <textarea class="line-text" rows="4" placeholder="여기에 대사를 입력"></textarea>
+      </label>
+      <div class="choices-block">
+        <div class="section-head">
+          <h3>선택지</h3>
+          <button class="add-choice icon-text" type="button">+ 선택지</button>
+        </div>
+        <ol class="choice-list"></ol>
+      </div>
+    </li>
+  </template>
+
+  <template id="choiceTemplate">
+    <li class="choice-card">
+      <label>
+        선택지 문장
+        <input class="choice-text" type="text" placeholder="플레이어가 누를 문장">
+      </label>
+      <div class="form-grid">
+        <label>
+          성향
+          <select class="choice-disposition">
+            <option value="-1">없음</option>
+            <option value="0">협도</option>
+            <option value="1">왕도</option>
+            <option value="2">패도</option>
+            <option value="3">풍류</option>
+          </select>
+        </label>
+        <label>
+          다음 흐름
+          <select class="choice-target"></select>
+        </label>
+        <label>
+          플래그
+          <input class="choice-flag" type="text" placeholder="예: helped_villagers">
+        </label>
+      </div>
+      <button class="delete-choice danger" type="button">선택지 삭제</button>
+    </li>
+  </template>
+
+  <script src="./app.js"></script>
+</body>
+</html>
