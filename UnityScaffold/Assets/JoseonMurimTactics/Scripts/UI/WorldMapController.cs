@@ -18,12 +18,14 @@ namespace JoseonMurimTactics
         private void OnGUI()
         {
             UiTheme.Begin(true);
+            UiTheme.DrawMountains();
             float w = Screen.width;
             float h = Screen.height;
             float s = UiTheme.Scale;
 
-            GUI.Label(new Rect(0f, 60f * s, w, 56f * s), "제1장 · 의주 객잔", UiTheme.Title);
-            GUI.Label(new Rect(0f, 120f * s, w, 30f * s), "― 다음 장 준비 중 ―", UiTheme.BodyCenter);
+            UiTheme.LabelShadow(new Rect(0f, 58f * s, w, 58f * s), "제1장 · 의주 객잔", UiTheme.Title);
+            GUI.Label(new Rect(0f, 122f * s, w, 30f * s), "― 다음 장 준비 중 ―", UiTheme.BodyCenter);
+            UiTheme.DrawDivider(w * 0.5f, 162f * s, 360f * s);
 
             float pw = Mathf.Min(720f * s, w - 120f * s);
             Rect panel = new Rect(w * 0.5f - pw * 0.5f, 180f * s, pw, 260f * s);

@@ -21,16 +21,15 @@ namespace JoseonMurimTactics
         private void OnGUI()
         {
             UiTheme.Begin(true);
+            UiTheme.DrawMountains();
             float w = Screen.width;
             float h = Screen.height;
             float s = UiTheme.Scale;
 
-            // 좌측 세로 먹선 장식
-            UiTheme.DrawFill(new Rect(w * 0.5f - 220f * s, h * 0.16f, 3f * s, 2f * s), UiTheme.Gold);
-
-            GUI.Label(new Rect(0f, h * 0.14f, w, 100f * s), "海東劍門", UiTheme.Logo);
+            UiTheme.LabelShadow(new Rect(0f, h * 0.13f, w, 104f * s), "海東劍門", UiTheme.Logo);
             GUI.Label(new Rect(0f, h * 0.27f, w, 50f * s), "조선 무협 SRPG", UiTheme.Title);
-            GUI.Label(new Rect(0f, h * 0.345f, w, 30f * s), "― 압록강의 현판령 ―", UiTheme.BodyCenter);
+            UiTheme.DrawDivider(w * 0.5f, h * 0.345f, 360f * s);
+            GUI.Label(new Rect(0f, h * 0.365f, w, 30f * s), "― 압록강의 현판령 ―", UiTheme.BodyCenter);
 
             float bw = 320f * s;
             float bh = 58f * s;

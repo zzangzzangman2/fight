@@ -89,8 +89,9 @@ namespace JoseonMurimTactics
             string banner = won ? "승 리" : "패 배";
             GUIStyle bannerStyle = new GUIStyle(UiTheme.Logo) { fontSize = Mathf.RoundToInt(56 * s) };
             bannerStyle.normal.textColor = won ? UiTheme.Navy : UiTheme.SealRed;
-            GUI.Label(new Rect(0f, 28f * s, w, 80f * s), banner, bannerStyle);
+            UiTheme.LabelShadow(new Rect(0f, 28f * s, w, 80f * s), banner, bannerStyle);
             GUI.Label(new Rect(0f, 104f * s, w, 30f * s), def.title, UiTheme.BodyCenter);
+            UiTheme.DrawDivider(w * 0.5f, 140f * s, 420f * s);
 
             // 등급 인장
             float seal = 92f * s;

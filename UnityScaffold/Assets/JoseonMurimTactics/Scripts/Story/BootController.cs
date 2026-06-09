@@ -33,19 +33,21 @@ namespace JoseonMurimTactics
         private void OnGUI()
         {
             UiTheme.Begin(true);
+            UiTheme.DrawMountains();
 
             float w = Screen.width;
             float h = Screen.height;
             float s = UiTheme.Scale;
 
-            GUI.Label(new Rect(0f, h * 0.36f, w, 90f * s), "海東", UiTheme.Logo);
-            GUI.Label(new Rect(0f, h * 0.50f, w, 50f * s), "조선 무협 SRPG", UiTheme.Title);
+            UiTheme.LabelShadow(new Rect(0f, h * 0.34f, w, 96f * s), "海東", UiTheme.Logo);
+            GUI.Label(new Rect(0f, h * 0.49f, w, 50f * s), "조선 무협 SRPG", UiTheme.Title);
+            UiTheme.DrawDivider(w * 0.5f, h * 0.575f, 320f * s);
 
             // 인장
-            float seal = 64f * s;
-            UiTheme.DrawSeal(new Rect(w * 0.5f - seal * 0.5f, h * 0.60f, seal, seal), "印");
+            float seal = 60f * s;
+            UiTheme.DrawSeal(new Rect(w * 0.5f - seal * 0.5f, h * 0.61f, seal, seal), "印");
 
-            GUI.Label(new Rect(0f, h * 0.74f, w, 30f * s), "불러오는 중...", UiTheme.BodyCenter);
+            GUI.Label(new Rect(0f, h * 0.75f, w, 30f * s), "불러오는 중...", UiTheme.BodyCenter);
         }
     }
 }

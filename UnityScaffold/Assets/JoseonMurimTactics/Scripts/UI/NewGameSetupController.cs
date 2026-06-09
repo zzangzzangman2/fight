@@ -37,7 +37,7 @@ namespace JoseonMurimTactics
             float margin = 48f * s;
 
             GUI.Label(new Rect(margin, 28f * s, w - margin * 2f, 50f * s), "새 게임", UiTheme.Title);
-            UiTheme.DrawHLine(new Rect(margin, 84f * s, w - margin * 2f, 2f * s), UiTheme.Gold);
+            UiTheme.DrawDivider(w * 0.5f, 88f * s, w - margin * 2f);
 
             float colTop = 104f * s;
             float leftW = (w - margin * 2f) * 0.60f;

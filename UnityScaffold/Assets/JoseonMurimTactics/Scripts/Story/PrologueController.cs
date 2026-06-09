@@ -30,6 +30,7 @@ namespace JoseonMurimTactics
             Rect banner = new Rect(0f, 24f * s, w, 44f * s);
             GUI.Label(banner, "제0장 · 압록강의 현판령", UiTheme.Title);
             GUI.Label(new Rect(0f, 70f * s, w, 28f * s), "의주 근처 압록강 폐사당 — 비 내리는 저녁", UiTheme.BodyCenter);
+            UiTheme.DrawDivider(w * 0.5f, 108f * s, 420f * s);
 
             if (!dialogue.IsFinished)
             {
