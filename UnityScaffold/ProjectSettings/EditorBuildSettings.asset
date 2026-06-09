@@ -21,7 +21,16 @@ EditorBuildSettings:
     path: Assets/JoseonMurimTactics/Scenes/Hub_Pyesadang.unity
     guid: fe62e4dc46404fdeabd0a8741ef2b961
   - enabled: 1
+    path: Assets/JoseonMurimTactics/Scenes/BattlePrep.unity
+    guid: 087a196d96bb4dc2bbc0d4f63b9fd82e
+  - enabled: 1
     path: Assets/JoseonMurimTactics/Scenes/BattleTest.unity
     guid: 0fd63a50db8c2d44bbcf7ccd5c23cec9
+  - enabled: 1
+    path: Assets/JoseonMurimTactics/Scenes/BattleResult.unity
+    guid: bf00b04e7a0047a5be724168e2c8d994
+  - enabled: 1
+    path: Assets/JoseonMurimTactics/Scenes/WorldMap.unity
+    guid: 275a0d2e67a54fe888163f08489cf838
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

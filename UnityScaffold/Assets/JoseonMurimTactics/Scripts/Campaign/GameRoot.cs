@@ -21,6 +21,7 @@ namespace JoseonMurimTactics
         public FactionReputationService Reputation { get; private set; }
         public SaveManager Save { get; private set; }
         public IAINarrationService Narration { get; private set; }
+        public QuestManager Quests { get; private set; }
 
         public bool IsFading { get; private set; }
 
@@ -61,6 +62,40 @@ namespace JoseonMurimTactics
             }
         }
 
+        private void OnEnable()
+        {
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+        }
+
+        /// <summary>
+        /// 스토리 흐름으로 전투 씬에 들어오면, 기존 BattleTest 씬/컨트롤러를 건드리지 않고
+        /// 결과 복귀용 오버레이를 런타임에 주입한다(설계 §5: BattleEntryAdapter 방식).
+        /// 전투 씬을 에디터에서 직접 열면 PendingBattleId가 없어 주입되지 않는다.
+        /// </summary>
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (scene.name != SceneNames.Battle)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(BattleResultBridge.CurrentBattleId))
+            {
+                return;
+            }
+
+            if (FindObjectOfType<BattleReturnOverlay>() == null)
+            {
+                GameObject go = new GameObject("BattleReturnOverlay");
+                go.AddComponent<BattleReturnOverlay>();
+            }
+        }
+
         /// <summary>새 게임 시작 시 깨끗한 세션으로 교체.</summary>
         public void BeginNewSession()
         {
@@ -78,6 +113,7 @@ namespace JoseonMurimTactics
             Flags = new StoryFlagService(Session);
             Approval = new CompanionApprovalService(Session);
             Reputation = new FactionReputationService(Session);
+            Quests = new QuestManager(Flags);
             Save = Save ?? new SaveManager();
             Narration = Narration ?? new MockAINarrationService();
             Flow = Flow ?? new SceneFlowController(this);
