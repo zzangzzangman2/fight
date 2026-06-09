@@ -1,71 +1,77 @@
 # 조선 무협 SRPG v0.9
 
-중원 무림맹의 강압에 맞서 흩어진 조선 문파들이 해동문 박성준을 중심으로 뭉치는, 조선 무협 SRPG입니다.
+조선 문파들이 중원무림맹의 흡수와 동화 압박에 맞서 해동문을 중심으로 연합하는 Unity 기반 SRPG 게임 루프 프로토타입입니다.
 
-이 버전은 더 이상 "전투 테스트 씬"이 아니라 **게임 루프 프로토타입**입니다.
-타이틀에서 시작해 → 프롤로그 → 거점(허브) → 임무 선택 → 출격 준비 → 전투 → 결과 → 거점 복귀까지
-하나의 흐름으로 이어집니다.
+이 저장소의 현재 목표는 단순한 “전투 테스트”가 아니라, 타이틀에서 시작해 도입부, 첫 선택, 튜토리얼 전투, 전투 결과, 해동문 허브로 이어지는 플레이 가능한 게임 루프를 검증하는 것입니다.
 
-## 게임 흐름 (씬)
+## 현재 구현된 씬
 
+- `Boot`: GameRoot와 세션 서비스를 준비하고 타이틀로 진입합니다.
+- `Title`: 새 게임, 이어하기, 전투 테스트, 설정, 종료 진입점입니다.
+- `NewGameSetup`: 난이도, 문파명, 박성준 성향, 초기 무공을 고릅니다.
+- `Prologue`: 중원 감찰단의 현판령과 박성준의 첫 선택지를 보여줍니다.
+- `BattlePrep`: 첫 전투의 승패 조건, 보상, 전투 보정, 위험 정보를 확인합니다.
+- `BattleTest`: 폐사당 방어전 전투 프로토타입입니다.
+- `BattleResult`: 승패, 보상, 평판, 동료 승인도, 무림 소문을 정산합니다.
+- `Hub_Pyesadang`: 전투 후 해동문 폐사당 거점에서 출정, 연무장, 동료, 문파, 객잔, 의원, 장터, 서고, 저장, 설정을 확인합니다.
+- `MissionBoard`: 임무를 선택해 전투 준비로 이동합니다.
+- `WorldMap`: 다음 장 확장 전 임시 월드맵 자리입니다.
+- `CharacterAssetPreview`: 캐릭터 비주얼 확인용 개발 씬입니다.
+
+## 실행 순서
+
+Unity 6000.4 계열에서 `UnityScaffold` 프로젝트를 열고 `Boot` 씬을 실행합니다.
+
+기본 루프:
+
+```text
+Boot
+ → Title
+ → NewGameSetup
+ → Prologue
+ → BattlePrep
+ → BattleTest
+ → BattleResult
+ → Hub_Pyesadang
+ → MissionBoard / BattlePrep / BattleTest ...
 ```
-Boot → Title → NewGameSetup → Prologue
-     → Hub_Pyesadang → MissionBoard → BattlePrep → BattleTest → BattleResult → Hub_Pyesadang
-                                                                             ↘ WorldMap(다음 장 예고)
-```
 
-| 씬 | 역할 |
-|---|---|
-| `Boot` | 로고/로딩, 전역 GameRoot 초기화 → 타이틀 |
-| `Title` | 새 게임 / 이어하기(저장 있을 때) / 설정 / 종료 |
-| `NewGameSetup` | 난이도 · 문파명 · 박성준 성향 · 초기 무공 선택 |
-| `Prologue` | 압록강 폐사당 — 위지강의 현판령, 4가지 성향 선택지 |
-| `Hub_Pyesadang` | 해동문 거점: 출정/연무장/동료/문파/객잔/의원/장터/서고/저장/설정 |
-| `MissionBoard` | 출정 임무 선택(적 정보·보상·위험 지형) |
-| `BattlePrep` | 출격 준비: 승패 조건·보조 목표·인원·보상·맵 미리보기 |
-| `BattleTest` | 전투 (기존 전투 씬 재사용) |
-| `BattleResult` | 승/패·등급·보상·평판/승인도 변화·무림 소문 |
-| `WorldMap` | 제1장 의주 객잔 예고(준비 중) |
+타이틀의 `전투 시험` 버튼은 스토리 도입 없이 전투 루프만 빠르게 확인하는 개발용 진입점입니다.
 
-## 실행
+## 완료된 것
 
-1. Unity **6000.3.0f1**(이상)로 `UnityScaffold` 프로젝트를 연다.
-2. `Assets/JoseonMurimTactics/Scenes/Boot.unity`를 열고 Play.
-   - 빌드 세팅에 `Boot`이 인덱스 0으로 등록되어 있어 빌드/플레이 모두 타이틀부터 시작한다.
-3. 조작은 기본적으로 마우스(버튼)이며, 전투(BattleTest)는 키보드(1 이동 / 2 공격 / 3 무공 / 4 방어 / Space 턴 종료 / R 재시작)도 사용한다.
+- GameRoot 기반 세션/저장/씬 전환 흐름
+- 타이틀, 새 게임 설정, 프롤로그, 첫 선택지
+- 중원 감찰단의 현판령과 조선 문파 연합 도입부
+- 첫 전투 준비, 전투 결과, 해동문 허브 루프
+- 임무 게시판과 첫 임무 흐름
+- 캐릭터 비주얼 데이터와 2D 전장 표시
+- d20 명중 판정, 반격, 추격, 무공 비용/쿨다운
+- 지형지물 상호작용과 전투 예측 표시
 
-`index.html`은 초기 조작감 확인용 v0.4 HTML 프로토타입으로 참고용으로만 남겨둔다.
+## 아직 임시인 것
 
-## 완료된 것 / 임시(placeholder)
+- BattleTest 전투 HUD는 Canvas/TextMeshPro 전환 중입니다.
+- 전투 맵은 런타임 생성 diamond tile 기반이며, Tilemap 전환은 이후 단계입니다.
+- 직업별 모션, 무기별 애니메이션, Timeline 전투 연출은 아직 제외했습니다.
+- SkillData ScriptableObject와 BattleTest 전투 루프의 완전 연결은 이후 작업입니다.
+- 월드맵과 설정 화면은 자리만 잡힌 상태입니다.
+- 세이브 슬롯 UI, 사운드, 해상도 설정은 미구현입니다.
 
-**완료(게임 루프·시작부·허브):**
-- 타이틀→프롤로그→허브→임무→출격 준비→전투→결과→복귀 전체 흐름
-- GameRoot(세션·서비스 허브), 저장/로드(단일 자동 저장 슬롯), 스토리 플래그
-- 동료 승인도 / 세력 평판 / 문파 기조(정책) / 무림 소문(Mock)
-- 밝은 조선 무협풍 시작부 UI(한지/먹/남청/인장/금), 한글 표기
+## 전투 방향
 
-**임시/다음 단계:**
-- 전투는 기존 `BattleTest`를 재사용하며 유닛/지형은 placeholder다. 전투 결과는 실제 승패를 읽어 결과 화면으로 넘긴다.
-- 시작부 UI는 코드 기반 IMGUI다. 전투 HUD의 Canvas/TextMeshPro 생산형 UI 교체는 별도 전투 작업 트랙에서 진행 중이다.
-- 캐릭터/배경 일러스트, 음성, 컷신은 아직 placeholder(이름/실루엣/색상)다.
-- AI 내레이션(무림 소문/NPC 잡담)은 `MockAINarrationService` 고정 문장이며, 메인 진행/수치 판정에는 쓰지 않는다.
+v0.9 전투는 고전 SRPG 감각을 목표로 합니다.
 
-## 세계관 / 주인공·동료 방향
+- 아군 페이즈에서 원하는 아군을 자유 순서로 행동시킵니다.
+- 모든 아군이 행동하면 적 페이즈로 넘어갑니다.
+- 공격 전 예측창에서 명중, 피해, 내공, 쿨다운, 지형 보정, 반격, 추격, 예상 HP를 확인합니다.
+- 전투 로그는 짧은 피드백 중심으로 두고, 상세 d20 계산은 별도 상세 표시로 옮길 예정입니다.
 
-중원 무림맹의 강경 정파가 조선 문파들을 하위 분파로 흡수하려 하며 중원식 언어·예법·문파 등록을 강요한다.
-약소한 조선 문파들은 해동문 박성준을 중심으로 연합을 시도한다.
+## 장기 방향
 
-박성준은 풍류·호색 기믹을 유지하되, 시스템에서는 노골적 묘사가 아니라 심리전·허세·도발·동료 승인도 리스크로 처리한다.
-여성 동료(윤서화·백련·한비연·도아린·매화령·강초희)는 모두 독립적인 성인 고수로, 각자 무공·전투 역할·개인 목표·정치적 입장을 가진다.
-
-## 코드 구조 (UnityScaffold)
-
-- `Scripts/Campaign` — GameRoot, GameSession, SaveManager, QuestManager, BattleEntry/ResultBridge, Mission/Companion/Battle 카탈로그
-- `Scripts/Story` — SceneFlow, StoryFlag(+상수), 성향/승인도/평판 서비스, Boot/Prologue
-- `Scripts/UI` — UiTheme(무협 IMGUI 스킨) + Title/NewGameSetup/MissionBoard/BattlePrep/BattleResult/WorldMap
-- `Scripts/Hub` — HubController
-- `Scripts/Dialogue` — DialogueController/모델
-- `Scripts/Data` — ScriptableObject(Companion/Chapter/Faction/Quest/BattleEntry/Mission)
-- `Scripts/Presentation`, `Scripts/Runtime` — 전투(BattleTest) 계열
-
-진행 브랜치: `story-start-v0.8` (시작부/허브/UI v0.8–v0.9 작업).
+- Canvas 기반 전투 UI 프리팹화
+- TextMeshPro 한글 UI 정리
+- 지형 목표와 위험 지형 경고 강화
+- 다중 무공 슬롯과 직업/문파별 무공 성장
+- 3세력 전투를 위한 NeutralPhase 확장
+- 전투 연출, 카메라 포커스, 데미지 팝업, 파훼 팝업

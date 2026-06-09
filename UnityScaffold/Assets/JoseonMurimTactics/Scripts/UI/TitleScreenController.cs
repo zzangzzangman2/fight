@@ -30,12 +30,13 @@ namespace JoseonMurimTactics
             GUI.Label(new Rect(0f, h * 0.27f, w, 50f * s), "조선 무협 SRPG", UiTheme.Title);
             UiTheme.DrawDivider(w * 0.5f, h * 0.345f, 360f * s);
             GUI.Label(new Rect(0f, h * 0.365f, w, 30f * s), "― 압록강의 현판령 ―", UiTheme.BodyCenter);
+            GUI.Label(new Rect(0f, h * 0.405f, w, 26f * s), "배경 시안: 압록강 안개 / 백두산 능선 / 한양 외곽", UiTheme.SmallMuted);
 
             float bw = 320f * s;
-            float bh = 58f * s;
-            float gap = 18f * s;
+            float bh = 52f * s;
+            float gap = 14f * s;
             float x = w * 0.5f - bw * 0.5f;
-            float y = h * 0.46f;
+            float y = h * 0.45f;
 
             if (Button(new Rect(x, y, bw, bh), "새 게임", true))
             {
@@ -56,6 +57,12 @@ namespace JoseonMurimTactics
             GUI.enabled = true;
             y += bh + gap;
 
+            if (Button(new Rect(x, y, bw, bh), "전투 시험", false))
+            {
+                root.Flow.GoToBattle(HubController.FirstBattleId);
+            }
+            y += bh + gap;
+
             if (Button(new Rect(x, y, bw, bh), "설정", false))
             {
                 showSettings = !showSettings;
@@ -68,7 +75,7 @@ namespace JoseonMurimTactics
             }
 
             GUI.Label(new Rect(0f, h - 40f * s, w, 28f * s),
-                "v0.8 Story Start Framework", UiTheme.SmallMuted);
+                "v0.9 게임 루프 프로토타입", UiTheme.SmallMuted);
 
             if (showSettings)
             {
@@ -85,7 +92,7 @@ namespace JoseonMurimTactics
 
             GUI.Label(new Rect(panel.x + 24f * s, panel.y + 18f * s, pw - 48f * s, 34f * s), "설정", UiTheme.Heading);
             GUI.Label(new Rect(panel.x + 24f * s, panel.y + 64f * s, pw - 48f * s, 100f * s),
-                "v0.8에서는 설정 항목이 아직 준비 중입니다.\n해상도/소리 옵션은 이후 버전에서 추가됩니다.", UiTheme.Body);
+                "v0.9에서는 설정 항목이 아직 준비 중입니다.\n해상도/소리 옵션은 이후 버전에서 추가됩니다.", UiTheme.Body);
 
             float bw = 160f * s;
             if (Button(new Rect(panel.x + pw - bw - 24f * s, panel.y + ph - 58f * s, bw, 44f * s), "닫기", false))

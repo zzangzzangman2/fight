@@ -4,7 +4,7 @@ namespace JoseonMurimTactics
 {
     /// <summary>
     /// [4] Prologue — 압록강 폐사당. 위지강의 현판령, 윤서화의 반발, 백련의 충돌,
-    /// 박성준의 조선 문파 자치 선언(4성향 선택지). 종료 시 윤서화·백련 합류 후 허브로.
+    /// 박성준의 조선 문파 자치 선언(4성향 선택지). 종료 시 윤서화·백련 합류 후 첫 전투 준비로.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PrologueController : MonoBehaviour
@@ -52,10 +52,9 @@ namespace JoseonMurimTactics
             root.Session.RecruitCompanion(CompanionCatalog.BaekRyeon);
             root.Flags.SetFlag(StoryFlags.PrologueCompleted);
             root.Flags.SetFlag(StoryFlags.JoseonAllianceStarted);
-            root.Flags.SetFlag(StoryFlags.HubUnlocked);
             root.Flags.SetFlag(StoryFlags.BaekRyeonRecruited);
             root.Save.Save(root.Session); // 첫 자동 저장
-            root.Flow.GoToHub(SceneNames.HubPyesadang);
+            root.Flow.GoToBattlePrep(HubController.FirstBattleId);
         }
 
         private static DialogueScript BuildPrologue()

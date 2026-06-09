@@ -55,6 +55,7 @@ namespace JoseonMurimTactics
             {
                 root.Flags.SetFlag(StoryFlags.FirstBattleWon);
                 root.Flags.SetFlag(StoryFlags.EnvoyDefeated);
+                root.Flags.SetFlag(StoryFlags.HubUnlocked);
             }
 
             root.Save.Save(root.Session);
