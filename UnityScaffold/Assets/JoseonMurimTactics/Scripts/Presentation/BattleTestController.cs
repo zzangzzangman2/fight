@@ -14,6 +14,10 @@ namespace JoseonMurimTactics
         public float tileHeight = 0.62f;
         public BattleTestUnitDefinition[] unitDefinitions = new BattleTestUnitDefinition[0];
 
+        private const int SmokeCoverBonus = 2;
+        private const int CoverInteractBonus = 2;
+        private const int FireInteractDamage = 4;
+
         private readonly List<BattleTestUnit> units = new List<BattleTestUnit>();
         private readonly List<string> battleLog = new List<string>();
         private readonly List<BattleTestInteractable> interactables = new List<BattleTestInteractable>();
@@ -82,7 +86,11 @@ namespace JoseonMurimTactics
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.Alpha1))
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                SetCommandMode(BattleCommandMode.Move);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha1))
             {
                 SetCommandMode(BattleCommandMode.Move);
             }
@@ -178,7 +186,7 @@ namespace JoseonMurimTactics
                 GuardActiveUnit();
             }
 
-            GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
+            GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted && HasUsableInteractable(activeUnit);
             if (GUI.Button(new Rect(34f, 230f, 92f, 30f), "Interact"))
             {
                 SetCommandMode(BattleCommandMode.Interact);
@@ -202,7 +210,7 @@ namespace JoseonMurimTactics
                 string skillLine = activeUnit.definition.specialName;
                 string cooldown = activeUnit.specialCooldownLeft > 0 ? $"CD {activeUnit.specialCooldownLeft}" : "Ready";
                 GUI.Label(new Rect(34f, 266f, 304f, 22f), $"Skill: {skillLine} ({cooldown})", smallStyle);
-                GUI.Label(new Rect(34f, 290f, 304f, 22f), $"Agi: {activeUnit.definition.agility}   Counter: {CounterSummary(activeUnit)}", smallStyle);
+                GUI.Label(new Rect(34f, 290f, 304f, 22f), $"Agi: {AgilityValue(activeUnit)}   Counter: {CounterSummary(activeUnit)}", smallStyle);
             }
         }
 
@@ -238,7 +246,7 @@ namespace JoseonMurimTactics
 
         private void DrawInspectPanel()
         {
-            GUI.Box(new Rect(18f, 356f, 340f, 166f), GUIContent.none, panelStyle);
+            GUI.Box(new Rect(18f, 356f, 340f, 190f), GUIContent.none, panelStyle);
             GUI.Label(new Rect(34f, 368f, 300f, 26f), "Inspect", titleStyle);
 
             if (hoveredUnit != null)
@@ -256,7 +264,17 @@ namespace JoseonMurimTactics
                 GUI.Label(new Rect(34f, 398f, 300f, 22f), $"{hoveredTile.terrain}  ({hoveredTile.cell.x},{hoveredTile.cell.y})", labelStyle);
                 GUI.Label(new Rect(34f, 422f, 300f, 22f), $"Move Cost {hoveredTile.moveCost}   Cover +{hoveredTile.coverBonus}", smallStyle);
                 GUI.Label(new Rect(34f, 446f, 300f, 22f), $"Elevation {hoveredTile.elevation}   Walkable {YesNo(hoveredTile.walkable)}", smallStyle);
-                GUI.Label(new Rect(34f, 470f, 300f, 22f), prop == null ? $"Hazard: {TileHazardText(hoveredTile)}" : $"Object: {prop.displayName}", smallStyle);
+                if (prop != null)
+                {
+                    int distance = activeUnit == null ? -1 : GridDistance(activeUnit.cell, prop.cell);
+                    bool usable = activeUnit != null && !activeUnit.acted && distance <= 1;
+                    GUI.Label(new Rect(34f, 470f, 300f, 22f), $"Object: {prop.displayName}", smallStyle);
+                    GUI.Label(new Rect(34f, 494f, 300f, 22f), $"Effect: {InteractableEffectText(prop.kind)}   Usable: {YesNo(usable)}", smallStyle);
+                }
+                else
+                {
+                    GUI.Label(new Rect(34f, 470f, 300f, 22f), $"Hazard: {TileHazardText(hoveredTile)}", smallStyle);
+                }
                 return;
             }
 
@@ -266,21 +284,38 @@ namespace JoseonMurimTactics
         private void DrawForecastPanel()
         {
             float x = Screen.width - 386f;
-            GUI.Box(new Rect(x, 480f, 368f, 158f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(x + 16f, 492f, 336f, 26f), "Battle Forecast", titleStyle);
+            GUI.Box(new Rect(x, 452f, 368f, 224f), GUIContent.none, panelStyle);
+            GUI.Label(new Rect(x + 16f, 464f, 336f, 26f), "Battle Forecast", titleStyle);
 
             BattleForecast forecast = BuildForecast(activeUnit, hoveredUnit);
             if (!forecast.valid)
             {
-                GUI.Label(new Rect(x + 16f, 522f, 336f, 24f), "Hover a target in Attack or Skill mode.", smallStyle);
+                if (!string.IsNullOrEmpty(forecast.actorName))
+                {
+                    GUI.Label(new Rect(x + 16f, 494f, 336f, 22f), $"{forecast.actorName} -> {forecast.targetName}  [{forecast.commandName}]", labelStyle);
+                    GUI.Label(new Rect(x + 16f, 520f, 336f, 20f), $"Invalid: {forecast.invalidReason}", smallStyle);
+                    GUI.Label(new Rect(x + 16f, 542f, 336f, 20f), $"Distance {forecast.distance} / Range {forecast.range}", smallStyle);
+                    GUI.Label(new Rect(x + 16f, 564f, 336f, 20f), forecast.costText, smallStyle);
+                }
+                else
+                {
+                    GUI.Label(new Rect(x + 16f, 494f, 336f, 24f), forecast.invalidReason, smallStyle);
+                }
+
                 return;
             }
 
-            GUI.Label(new Rect(x + 16f, 522f, 336f, 22f), $"{forecast.actorName} -> {forecast.targetName}  [{forecast.commandName}]", labelStyle);
-            GUI.Label(new Rect(x + 16f, 548f, 336f, 20f), $"Range {forecast.distance}: {forecast.rangeText}", smallStyle);
-            GUI.Label(new Rect(x + 16f, 570f, 336f, 20f), $"Hit: d20 + {forecast.attackBonus} + height {forecast.heightBonus} vs DEF {forecast.defense}", smallStyle);
-            GUI.Label(new Rect(x + 16f, 592f, 336f, 20f), forecast.damageText, smallStyle);
-            GUI.Label(new Rect(x + 16f, 614f, 336f, 20f), forecast.counterText, smallStyle);
+            GUI.Label(new Rect(x + 16f, 494f, 336f, 22f), $"{forecast.actorName} -> {forecast.targetName}  [{forecast.commandName}]", labelStyle);
+            GUI.Label(new Rect(x + 16f, 520f, 336f, 20f), $"Distance {forecast.distance} / Range {forecast.range}: {forecast.rangeText}", smallStyle);
+            string hitText = forecast.neededRollText == "No attack roll"
+                ? "Hit: No attack roll"
+                : $"Hit: d20 + {forecast.attackBonus} + height {forecast.heightBonus} + terrain {forecast.terrainBonus} vs DEF {forecast.defense}";
+            GUI.Label(new Rect(x + 16f, 542f, 336f, 20f), hitText, smallStyle);
+            GUI.Label(new Rect(x + 16f, 564f, 336f, 20f), $"Need: {forecast.neededRollText}", smallStyle);
+            GUI.Label(new Rect(x + 16f, 586f, 336f, 20f), forecast.damageText, smallStyle);
+            GUI.Label(new Rect(x + 16f, 608f, 336f, 20f), forecast.hpAfterText, smallStyle);
+            GUI.Label(new Rect(x + 16f, 630f, 336f, 20f), $"{forecast.counterText}   {forecast.followUpText}", smallStyle);
+            GUI.Label(new Rect(x + 16f, 650f, 336f, 20f), forecast.costText, smallStyle);
         }
 
         private void DrawRosterPanel()
@@ -324,7 +359,7 @@ namespace JoseonMurimTactics
             units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
             CenterCamera();
 
-            AddLog("Battle test ready.");
+            AddLog("[System] Battle test ready.");
             BeginTurn();
         }
 
@@ -496,7 +531,7 @@ namespace JoseonMurimTactics
                     activeUnit.acted = false;
                     aiQueued = false;
                     commandMode = BattleCommandMode.Move;
-                    AddLog($"Turn: {activeUnit.definition.displayName}");
+                    AddLog($"[Turn] {activeUnit.definition.displayName}");
                     RefreshHighlights();
                     RefreshUnits();
                     return;
@@ -555,7 +590,7 @@ namespace JoseonMurimTactics
                 }
                 else
                 {
-                    AddLog("No enemy target.");
+                    AddLog("[UI] No enemy target.");
                 }
 
                 return;
@@ -569,7 +604,7 @@ namespace JoseonMurimTactics
                 }
                 else
                 {
-                    AddLog("No skill target.");
+                    AddLog("[UI] No skill target.");
                 }
 
                 return;
@@ -583,7 +618,7 @@ namespace JoseonMurimTactics
                 }
                 else
                 {
-                    AddLog("No object target.");
+                    AddLog("[UI] No object target.");
                 }
 
                 return;
@@ -605,20 +640,20 @@ namespace JoseonMurimTactics
         {
             if (unit.moved)
             {
-                AddLog("Move already spent.");
+                AddLog("[Move] Move already spent.");
                 return;
             }
 
             if (!destination.walkable || UnitAt(destination.cell) != null)
             {
-                AddLog("Blocked tile.");
+                AddLog("[Move] Blocked tile.");
                 return;
             }
 
             Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
             if (!reachable.ContainsKey(destination.cell))
             {
-                AddLog("Out of movement range.");
+                AddLog("[Move] Out of movement range.");
                 return;
             }
 
@@ -626,14 +661,14 @@ namespace JoseonMurimTactics
             unit.moved = true;
             ApplyTileEntry(unit, destination);
             StartCoroutine(AnimateMove(unit, UnitWorldPosition(destination.cell)));
-            AddLog($"{unit.definition.displayName} moved.");
+            AddLog($"[Move] {unit.definition.displayName} moved.");
         }
 
         private bool TryAttack(BattleTestUnit attacker, BattleTestUnit target, bool endAfterAttack)
         {
             if (attacker.acted)
             {
-                AddLog("Action already spent.");
+                AddLog("[Action] Action already spent.");
                 return false;
             }
 
@@ -645,7 +680,7 @@ namespace JoseonMurimTactics
             int distance = GridDistance(attacker.cell, target.cell);
             if (distance > attacker.definition.attackRange)
             {
-                AddLog("Target out of range.");
+                AddLog("[Attack] Target out of range.");
                 return false;
             }
 
@@ -685,7 +720,7 @@ namespace JoseonMurimTactics
 
             if (!hit)
             {
-                AddLog($"{attacker.definition.displayName} missed {target.definition.displayName}. d20 {d20}+{attackBonus}+{heightBonus} vs {defense}");
+                AddLog($"[Miss] {attacker.definition.displayName} missed {target.definition.displayName}. d20 {d20}+{attackBonus}+{heightBonus} vs DEF {defense}");
                 return false;
             }
 
@@ -707,13 +742,14 @@ namespace JoseonMurimTactics
             }
 
             target.hp = Mathf.Max(0, target.hp - damage);
-            AddLog($"{attacker.definition.displayName} hit {target.definition.displayName} for {damage}. d20 {d20}+{attackBonus}+{heightBonus} vs {defense}");
+            AddLog($"[Hit] {attacker.definition.displayName} rolls {d20}+{attackBonus}+{heightBonus} vs DEF {defense}.");
+            AddLog($"[Damage] {target.definition.displayName} takes {damage}.");
 
             if (target.hp == 0)
             {
                 target.defeated = true;
                 target.view.SetDefeated(true);
-                AddLog($"{target.definition.displayName} defeated.");
+                AddLog($"[Damage] {target.definition.displayName} defeated.");
             }
 
             return true;
@@ -723,20 +759,20 @@ namespace JoseonMurimTactics
         {
             if (!CanUseSpecial(actor))
             {
-                AddLog("Skill unavailable.");
+                AddLog("[Skill] Skill unavailable.");
                 return false;
             }
 
             if (!IsValidSpecialTarget(actor, target))
             {
-                AddLog("Invalid skill target.");
+                AddLog("[Skill] Invalid skill target.");
                 return false;
             }
 
             int distance = GridDistance(actor.cell, target.cell);
             if (distance > actor.definition.specialRange)
             {
-                AddLog("Skill target out of range.");
+                AddLog("[Skill] Skill target out of range.");
                 return false;
             }
 
@@ -765,27 +801,27 @@ namespace JoseonMurimTactics
                     target.hp += Mathf.Max(0, healed);
                     target.poisoned = false;
                     target.chilled = false;
-                    AddLog($"{actor.definition.displayName} used {actor.definition.specialName}. {target.definition.displayName} healed {healed}.");
+                    AddLog($"[Skill] {actor.definition.displayName} used {actor.definition.specialName}. {target.definition.displayName} healed {healed}.");
                     return false;
                 case BattleSpecialEffect.Poison:
-                    ResolveAttack(actor, target, true);
-                    if (allowStatus && !target.defeated)
+                    bool poisonHit = ResolveAttack(actor, target, true);
+                    if (allowStatus && poisonHit && !target.defeated)
                     {
                         target.poisoned = true;
-                        AddLog($"{target.definition.displayName} poisoned.");
+                        AddLog($"[Status] {target.definition.displayName} poisoned.");
                     }
                     return true;
                 case BattleSpecialEffect.Freeze:
-                    ResolveAttack(actor, target, true);
-                    if (allowStatus && !target.defeated)
+                    bool freezeHit = ResolveAttack(actor, target, true);
+                    if (allowStatus && freezeHit && !target.defeated)
                     {
                         target.chilled = true;
-                        AddLog($"{target.definition.displayName} slowed.");
+                        AddLog($"[Status] {target.definition.displayName} slowed.");
                     }
                     return true;
                 case BattleSpecialEffect.Mark:
                     target.marked = true;
-                    AddLog($"{actor.definition.displayName} marked {target.definition.displayName}.");
+                    AddLog($"[Status] {actor.definition.displayName} marked {target.definition.displayName}.");
                     return false;
                 case BattleSpecialEffect.BreakGuard:
                     target.guarded = false;
@@ -808,7 +844,7 @@ namespace JoseonMurimTactics
             BattleTestCounterMove counter = FindCounterMove(target, attacker);
             if (counter.valid)
             {
-                AddLog($"{target.definition.displayName} counter: {counter.label}.");
+                AddLog($"[Counter] {target.definition.displayName} uses {counter.label}.");
                 if (counter.special)
                 {
                     target.inner = Mathf.Max(0, target.inner - target.definition.specialCost);
@@ -822,12 +858,12 @@ namespace JoseonMurimTactics
             }
             else
             {
-                AddLog($"{target.definition.displayName} cannot counter.");
+                AddLog($"[Counter] {target.definition.displayName} cannot counter.");
             }
 
             if (!attacker.defeated && !target.defeated && CanFollowUp(attacker, target, special))
             {
-                AddLog($"{attacker.definition.displayName} follow-up attack.");
+                AddLog($"[Follow-up] {attacker.definition.displayName} attacks again.");
                 ResolveAttack(attacker, target, special);
             }
         }
@@ -840,14 +876,14 @@ namespace JoseonMurimTactics
             }
 
             int distance = GridDistance(defender.cell, attacker.cell);
+            if (distance <= defender.definition.attackRange)
+            {
+                return new BattleTestCounterMove(false, "Attack");
+            }
+
             if (CanUseCounterSpecial(defender) && distance <= defender.definition.specialRange)
             {
                 return new BattleTestCounterMove(true, defender.definition.specialName);
-            }
-
-            if (distance <= defender.definition.attackRange)
-            {
-                return new BattleTestCounterMove(false, "Basic Attack");
             }
 
             return BattleTestCounterMove.None;
@@ -860,10 +896,7 @@ namespace JoseonMurimTactics
                 return false;
             }
 
-            return unit.definition.specialEffect == BattleSpecialEffect.Strike
-                || unit.definition.specialEffect == BattleSpecialEffect.Poison
-                || unit.definition.specialEffect == BattleSpecialEffect.Freeze
-                || unit.definition.specialEffect == BattleSpecialEffect.BreakGuard;
+            return IsHostileAttackSpecial(unit.definition.specialEffect);
         }
 
         private bool CanFollowUp(BattleTestUnit attacker, BattleTestUnit target, bool special)
@@ -879,21 +912,31 @@ namespace JoseonMurimTactics
                 return false;
             }
 
-            return attacker.definition.agility - target.definition.agility >= 5;
+            return AgilityValue(attacker) - AgilityValue(target) >= 5;
+        }
+
+        private int AgilityValue(BattleTestUnit unit)
+        {
+            if (unit == null)
+            {
+                return 0;
+            }
+
+            return unit.definition.agility >= 0 ? unit.definition.agility : unit.definition.initiative;
         }
 
         private bool TryInteract(BattleTestUnit actor, BattleTestTile clickedTile)
         {
             if (actor == null || actor.acted)
             {
-                AddLog("Action already spent.");
+                AddLog("[Action] Action already spent.");
                 return false;
             }
 
             BattleTestInteractable interactable = FindUsableInteractable(actor, clickedTile.cell);
             if (interactable == null)
             {
-                AddLog("No usable terrain object in reach.");
+                AddLog("[Terrain] No usable terrain object in reach.");
                 return false;
             }
 
@@ -910,10 +953,10 @@ namespace JoseonMurimTactics
                     if (tile != null)
                     {
                         tile.smokeTurns = 2;
-                        tile.coverBonus += 3;
+                        tile.coverBonus = tile.baseCoverBonus + (tile.extraCover ? CoverInteractBonus : 0) + SmokeCoverBonus;
                         RefreshTerrainTint(tile);
                     }
-                    AddLog($"{actor.definition.displayName} used {interactable.displayName}: smoke cover.");
+                    AddLog($"[Terrain] {actor.definition.displayName} used {interactable.displayName}: cover +{SmokeCoverBonus}.");
                     break;
                 case BattleTestInteractableKind.Fire:
                     if (tile != null)
@@ -921,21 +964,21 @@ namespace JoseonMurimTactics
                         tile.fireTurns = 2;
                         RefreshTerrainTint(tile);
                     }
-                    DamageUnitsAround(actor, interactable.cell, 1, random.Next(4, 9), "flame");
-                    AddLog($"{actor.definition.displayName} used {interactable.displayName}: flame zone.");
+                    DamageUnitsAround(actor, interactable.cell, 1, FireInteractDamage, "flame");
+                    AddLog($"[Terrain] {actor.definition.displayName} used {interactable.displayName}: flame damage {FireInteractDamage}.");
                     break;
                 case BattleTestInteractableKind.Cover:
                     if (tile != null)
                     {
                         if (!tile.extraCover)
                         {
-                            tile.coverBonus += 4;
+                            tile.coverBonus += CoverInteractBonus;
                             tile.extraCover = true;
                         }
 
                         RefreshTerrainTint(tile);
                     }
-                    AddLog($"{actor.definition.displayName} shoved {interactable.displayName}: heavy cover.");
+                    AddLog($"[Terrain] {actor.definition.displayName} shoved {interactable.displayName}: cover +{CoverInteractBonus}.");
                     break;
             }
 
@@ -955,7 +998,7 @@ namespace JoseonMurimTactics
 
             activeUnit.guarded = true;
             activeUnit.acted = true;
-            AddLog($"{activeUnit.definition.displayName} guards.");
+            AddLog($"[Guard] {activeUnit.definition.displayName} guards.");
             RefreshHighlights();
             RefreshUnits();
         }
@@ -1087,7 +1130,7 @@ namespace JoseonMurimTactics
             if (unit.poisoned)
             {
                 unit.hp = Mathf.Max(0, unit.hp - 3);
-                AddLog($"{unit.definition.displayName} takes 3 poison damage.");
+                AddLog($"[Status] Poison deals 3 to {unit.definition.displayName}.");
                 if (unit.hp == 0)
                 {
                     unit.defeated = true;
@@ -1118,7 +1161,7 @@ namespace JoseonMurimTactics
 
                 if (previousSmoke > 0 && tile.smokeTurns == 0)
                 {
-                    tile.coverBonus = tile.baseCoverBonus + (tile.extraCover ? 4 : 0);
+                    tile.coverBonus = tile.baseCoverBonus + (tile.extraCover ? CoverInteractBonus : 0);
                     faded = true;
                 }
 
@@ -1135,7 +1178,7 @@ namespace JoseonMurimTactics
 
             if (faded)
             {
-                AddLog("Terrain effects faded.");
+                AddLog("[Terrain] Terrain effects faded.");
             }
         }
 
@@ -1176,41 +1219,115 @@ namespace JoseonMurimTactics
 
         private BattleForecast BuildForecast(BattleTestUnit actor, BattleTestUnit target)
         {
-            if (actor == null || target == null || actor.defeated || target.defeated || actor.definition.faction == target.definition.faction)
+            if (actor == null || actor.defeated)
             {
-                return BattleForecast.Invalid;
+                return BattleForecast.Invalid("No active attacker.");
             }
 
-            bool special = commandMode == BattleCommandMode.Skill && CanUseSpecial(actor) && IsValidSpecialTarget(actor, target);
             bool attack = commandMode == BattleCommandMode.Attack;
+            bool special = commandMode == BattleCommandMode.Skill;
             if (!attack && !special)
             {
-                return BattleForecast.Invalid;
+                return BattleForecast.Invalid("Select Attack or Skill, then hover a target.");
             }
 
+            if (target == null)
+            {
+                return BattleForecast.Invalid("Hover a target in Attack or Skill mode.");
+            }
+
+            string commandName = special ? actor.definition.specialName : "Attack";
             int range = special ? actor.definition.specialRange : actor.definition.attackRange;
             int distance = GridDistance(actor.cell, target.cell);
+            string costText = special
+                ? $"Cost: {actor.definition.specialCost} inner, CD {actor.definition.specialCooldown}"
+                : "Cost: action";
+
+            if (target.defeated)
+            {
+                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "Target already defeated.", distance, range, costText);
+            }
+
+            if (special)
+            {
+                string unavailable = SpecialUnavailableReason(actor);
+                if (!string.IsNullOrEmpty(unavailable))
+                {
+                    return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, unavailable, distance, range, costText);
+                }
+
+                if (!IsValidSpecialTarget(actor, target))
+                {
+                    return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "No valid skill target.", distance, range, costText);
+                }
+            }
+            else if (target.definition.faction == actor.definition.faction)
+            {
+                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "No valid hostile target.", distance, range, costText);
+            }
+
+            if (distance > range)
+            {
+                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "Out of range.", distance, range, costText);
+            }
+
             BattleTestTile from = TileAt(actor.cell);
             BattleTestTile to = TileAt(target.cell);
             int heightBonus = from != null && to != null && from.elevation > to.elevation ? 2 : 0;
+            int terrainBonus = 0;
             int attackBonus = actor.definition.attackBonus + (special ? actor.definition.specialAttackBonus : 0);
-            int damageMin = actor.definition.damageMin + (special ? actor.definition.specialPower : 0) + heightBonus;
-            int damageMax = actor.definition.damageMax + (special ? actor.definition.specialPower : 0) + heightBonus;
-            BattleTestCounterMove counter = FindCounterMove(target, actor);
-            bool followUp = distance <= range && CanFollowUp(actor, target, special);
+            int defense = DefenseValue(target, to);
+            bool attackLike = !special || IsHostileAttackSpecial(actor.definition.specialEffect);
+            BattleTestCounterMove counter = attackLike ? FindCounterMove(target, actor) : BattleTestCounterMove.None;
+            bool followUp = attackLike && CanFollowUp(actor, target, special);
+            string neededRollText = attackLike ? NeededRollText(defense, attackBonus, heightBonus, terrainBonus) : "No attack roll";
+            if (!attackLike)
+            {
+                attackBonus = 0;
+                heightBonus = 0;
+                terrainBonus = 0;
+                defense = 0;
+            }
+
+            int damageMin = 0;
+            int damageMax = 0;
+            string damageText = "Damage: none";
+            string hpAfterText = $"Target HP after: {target.hp}-{target.hp}";
+            if (attackLike)
+            {
+                damageMin = actor.definition.damageMin + (special ? actor.definition.specialPower : 0) + heightBonus;
+                damageMax = actor.definition.damageMax + (special ? actor.definition.specialPower : 0) + heightBonus;
+                if (target.guarded)
+                {
+                    damageMin = Mathf.Max(1, Mathf.CeilToInt(damageMin * 0.55f));
+                    damageMax = Mathf.Max(1, Mathf.CeilToInt(damageMax * 0.55f));
+                }
+
+                damageMin = Mathf.Max(1, damageMin);
+                damageMax = Mathf.Max(1, damageMax);
+                damageText = $"Damage: {damageMin}-{damageMax} (crit x2 on nat 20)";
+                hpAfterText = $"Target HP after: {Mathf.Max(0, target.hp - damageMax)}-{Mathf.Max(0, target.hp - damageMin)}";
+            }
 
             return new BattleForecast(
                 true,
+                string.Empty,
                 actor.definition.displayName,
                 target.definition.displayName,
-                special ? actor.definition.specialName : "Attack",
+                commandName,
                 distance,
+                range,
                 distance <= range ? "in range" : "out of range",
                 attackBonus,
                 heightBonus,
-                DefenseValue(target, to),
-                $"Damage: {Mathf.Max(1, damageMin)}-{Mathf.Max(1, damageMax)}{(followUp ? " + follow-up" : string.Empty)}",
-                counter.valid ? $"Counter: {counter.label}" : "Counter: none");
+                terrainBonus,
+                defense,
+                neededRollText,
+                damageText,
+                hpAfterText,
+                counter.valid ? $"Counter: {counter.label}" : "Counter: none",
+                followUp ? $"Follow-up: yes (AGI {AgilityValue(actor)} vs {AgilityValue(target)})" : "Follow-up: no",
+                costText);
         }
 
         private string CounterSummary(BattleTestUnit unit)
@@ -1221,6 +1338,60 @@ namespace JoseonMurimTactics
             }
 
             return CanUseCounterSpecial(unit) ? unit.definition.specialName : $"Attack R{unit.definition.attackRange}";
+        }
+
+        private string SpecialUnavailableReason(BattleTestUnit unit)
+        {
+            if (unit == null)
+            {
+                return "No active unit.";
+            }
+
+            if (unit.acted)
+            {
+                return "Already acted.";
+            }
+
+            if (unit.definition.specialEffect == BattleSpecialEffect.None)
+            {
+                return "No skill equipped.";
+            }
+
+            if (unit.inner < unit.definition.specialCost)
+            {
+                return $"Not enough inner ({unit.inner}/{unit.definition.specialCost}).";
+            }
+
+            if (unit.specialCooldownLeft > 0)
+            {
+                return $"Cooldown {unit.specialCooldownLeft} turn(s).";
+            }
+
+            return string.Empty;
+        }
+
+        private bool IsHostileAttackSpecial(BattleSpecialEffect effect)
+        {
+            return effect == BattleSpecialEffect.Strike
+                || effect == BattleSpecialEffect.Poison
+                || effect == BattleSpecialEffect.Freeze
+                || effect == BattleSpecialEffect.BreakGuard;
+        }
+
+        private string NeededRollText(int defense, int attackBonus, int heightBonus, int terrainBonus)
+        {
+            int needed = defense - attackBonus - heightBonus - terrainBonus;
+            if (needed <= 2)
+            {
+                return "2+ on d20 (natural 1 misses)";
+            }
+
+            if (needed > 20)
+            {
+                return "20 only (natural 20 crits)";
+            }
+
+            return $"{needed}+ on d20";
         }
 
         private int DefenseValue(BattleTestUnit unit, BattleTestTile tile)
@@ -1255,12 +1426,12 @@ namespace JoseonMurimTactics
             {
                 int damage = random.Next(2, 6);
                 unit.hp = Mathf.Max(0, unit.hp - damage);
-                AddLog($"{unit.definition.displayName} entered flame: {damage} damage.");
+                AddLog($"[Terrain] {unit.definition.displayName} entered flame: {damage} damage.");
                 if (unit.hp == 0)
                 {
                     unit.defeated = true;
                     unit.view.SetDefeated(true);
-                    AddLog($"{unit.definition.displayName} defeated.");
+                    AddLog($"[Damage] {unit.definition.displayName} defeated.");
                 }
             }
         }
@@ -1280,12 +1451,12 @@ namespace JoseonMurimTactics
                 }
 
                 unit.hp = Mathf.Max(0, unit.hp - damage);
-                AddLog($"{unit.definition.displayName} takes {damage} {reason} damage.");
+                AddLog($"[Terrain] {unit.definition.displayName} takes {damage} {reason} damage.");
                 if (unit.hp == 0)
                 {
                     unit.defeated = true;
                     unit.view.SetDefeated(true);
-                    AddLog($"{unit.definition.displayName} defeated.");
+                    AddLog($"[Damage] {unit.definition.displayName} defeated.");
                 }
             }
         }
@@ -1306,6 +1477,24 @@ namespace JoseonMurimTactics
             }
 
             return null;
+        }
+
+        private bool HasUsableInteractable(BattleTestUnit actor)
+        {
+            if (actor == null)
+            {
+                return false;
+            }
+
+            foreach (BattleTestInteractable interactable in interactables)
+            {
+                if (!interactable.used && GridDistance(actor.cell, interactable.cell) <= 1)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private BattleTestInteractable GetInteractableAt(Vector2Int cell)
@@ -1345,6 +1534,21 @@ namespace JoseonMurimTactics
             }
 
             return states.Count == 0 ? "None" : string.Join(", ", states);
+        }
+
+        private string InteractableEffectText(BattleTestInteractableKind kind)
+        {
+            switch (kind)
+            {
+                case BattleTestInteractableKind.Smoke:
+                    return $"Smoke cover +{SmokeCoverBonus}";
+                case BattleTestInteractableKind.Fire:
+                    return $"Fire damage {FireInteractDamage}";
+                case BattleTestInteractableKind.Cover:
+                    return $"Cover +{CoverInteractBonus}";
+                default:
+                    return "-";
+            }
         }
 
         private void RefreshTerrainTint(BattleTestTile tile)
@@ -1423,6 +1627,12 @@ namespace JoseonMurimTactics
         {
             if (activeUnit == null || activeUnit.definition.faction != Faction.Ally)
             {
+                return;
+            }
+
+            if (mode == BattleCommandMode.Interact && (activeUnit.acted || !HasUsableInteractable(activeUnit)))
+            {
+                AddLog("[UI] No usable terrain object in reach.");
                 return;
             }
 
@@ -1691,7 +1901,7 @@ namespace JoseonMurimTactics
 
             battleOver = true;
             ClearHighlights();
-            AddLog(alliesAlive ? "Victory." : "Defeat.");
+            AddLog(alliesAlive ? "[System] Victory." : "[System] Defeat.");
             return true;
         }
 
@@ -1794,8 +2004,8 @@ namespace JoseonMurimTactics
         {
             float guiY = Screen.height - screenPosition.y;
             Vector2 point = new Vector2(screenPosition.x, guiY);
-            Rect leftPanel = new Rect(18f, 18f, 340f, 504f);
-            Rect rightPanel = new Rect(Screen.width - 386f, 18f, 368f, 620f);
+            Rect leftPanel = new Rect(18f, 18f, 340f, 528f);
+            Rect rightPanel = new Rect(Screen.width - 386f, 18f, 368f, 700f);
             Rect bottomPanel = new Rect(18f, Screen.height - 118f, Screen.width - 36f, 100f);
             return leftPanel.Contains(point) || rightPanel.Contains(point) || bottomPanel.Contains(point);
         }
@@ -1890,33 +2100,55 @@ namespace JoseonMurimTactics
 
         private readonly struct BattleForecast
         {
-            public static readonly BattleForecast Invalid = new BattleForecast(false, string.Empty, string.Empty, string.Empty, 0, string.Empty, 0, 0, 0, string.Empty, string.Empty);
+            public static BattleForecast Invalid(string reason)
+            {
+                return new BattleForecast(false, reason, string.Empty, string.Empty, string.Empty, 0, 0, string.Empty, 0, 0, 0, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+            }
+
+            public static BattleForecast Invalid(string actorName, string targetName, string commandName, string reason, int distance, int range, string costText)
+            {
+                return new BattleForecast(false, reason, actorName, targetName, commandName, distance, range, "invalid", 0, 0, 0, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, costText);
+            }
 
             public readonly bool valid;
+            public readonly string invalidReason;
             public readonly string actorName;
             public readonly string targetName;
             public readonly string commandName;
             public readonly int distance;
+            public readonly int range;
             public readonly string rangeText;
             public readonly int attackBonus;
             public readonly int heightBonus;
+            public readonly int terrainBonus;
             public readonly int defense;
+            public readonly string neededRollText;
             public readonly string damageText;
+            public readonly string hpAfterText;
             public readonly string counterText;
+            public readonly string followUpText;
+            public readonly string costText;
 
-            public BattleForecast(bool valid, string actorName, string targetName, string commandName, int distance, string rangeText, int attackBonus, int heightBonus, int defense, string damageText, string counterText)
+            public BattleForecast(bool valid, string invalidReason, string actorName, string targetName, string commandName, int distance, int range, string rangeText, int attackBonus, int heightBonus, int terrainBonus, int defense, string neededRollText, string damageText, string hpAfterText, string counterText, string followUpText, string costText)
             {
                 this.valid = valid;
+                this.invalidReason = invalidReason;
                 this.actorName = actorName;
                 this.targetName = targetName;
                 this.commandName = commandName;
                 this.distance = distance;
+                this.range = range;
                 this.rangeText = rangeText;
                 this.attackBonus = attackBonus;
                 this.heightBonus = heightBonus;
+                this.terrainBonus = terrainBonus;
                 this.defense = defense;
+                this.neededRollText = neededRollText;
                 this.damageText = damageText;
+                this.hpAfterText = hpAfterText;
                 this.counterText = counterText;
+                this.followUpText = followUpText;
+                this.costText = costText;
             }
         }
 
@@ -1973,7 +2205,7 @@ namespace JoseonMurimTactics
         public int maxHp = 30;
         public int maxInner = 3;
         public int initiative = 10;
-        public int agility = 12;
+        public int agility = -1;
         public int moveRange = 4;
         public int attackRange = 1;
         public int attackBonus = 5;
