@@ -12,6 +12,7 @@ namespace JoseonMurimTactics
     {
         private GameRoot root;
         private BattleDefinition def;
+        private MissionInfo mission;
 
         private void Awake()
         {
@@ -20,6 +21,17 @@ namespace JoseonMurimTactics
                 ? HubController.FirstBattleId
                 : BattleEntryAdapter.PendingBattleId;
             def = BattleCatalog.Get(id);
+            mission = FindMission(id);
+        }
+
+        private static MissionInfo FindMission(string battleId)
+        {
+            foreach (MissionInfo m in MissionCatalog.All)
+            {
+                if (m.battleId == battleId) return m;
+            }
+
+            return null;
         }
 
         private void OnGUI()
@@ -44,6 +56,15 @@ namespace JoseonMurimTactics
             float lx = left.x + 22f * s;
             float lw = left.width - 44f * s;
             float y = left.y + 18f * s;
+
+            if (mission != null)
+            {
+                GUI.Label(new Rect(lx, y, lw, 32f * s), "임무 개요", UiTheme.Heading); y += 36f * s;
+                Pair(lx, ref y, lw, s, "적 세력", mission.enemyFaction);
+                Pair(lx, ref y, lw, s, "추천 레벨", "Lv." + mission.recommendedLevel + " · " + mission.difficulty);
+                y += 10f * s;
+            }
+
             GUI.Label(new Rect(lx, y, lw, 32f * s), "승리 조건", UiTheme.Heading); y += 38f * s;
             GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 28f * s), "◎ " + def.victoryCondition, UiTheme.Body); y += 40f * s;
 
@@ -77,6 +98,21 @@ namespace JoseonMurimTactics
             }
             ry += 10f * s;
 
+            GUI.Label(new Rect(rx, ry, rw, 32f * s), "예상 보상", UiTheme.Heading); ry += 36f * s;
+            if (def.silverReward > 0)
+            {
+                GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 26f * s), "· 은전 " + def.silverReward, UiTheme.Small);
+                ry += 28f * s;
+            }
+            List<string> rewards = mission != null && mission.rewardPreview.Count > 0 ? new List<string>(mission.rewardPreview) : def.rewardItems;
+            foreach (string item in rewards)
+            {
+                if (item.StartsWith("은전")) continue;
+                GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 26f * s), "· " + item, UiTheme.Small);
+                ry += 28f * s;
+            }
+            ry += 10f * s;
+
             List<string> mods = CollectBattleModifiers();
             GUI.Label(new Rect(rx, ry, rw, 32f * s), "전투 시작 보정", UiTheme.Heading); ry += 38f * s;
             if (mods.Count == 0)
@@ -93,6 +129,15 @@ namespace JoseonMurimTactics
                 }
             }
             ry += 12f * s;
+
+            if (mission != null && !string.IsNullOrEmpty(mission.dangerNotes))
+            {
+                Rect warn = new Rect(rx, ry, rw, 58f * s);
+                UiTheme.DrawFill(warn, new Color(0.706f, 0.220f, 0.169f, 0.14f));
+                GUI.Label(new Rect(warn.x + 10f * s, warn.y + 6f * s, warn.width - 20f * s, warn.height - 12f * s),
+                    "⚠ " + mission.dangerNotes, UiTheme.Small);
+                ry += 66f * s;
+            }
 
             GUI.Label(new Rect(rx, ry, rw, 32f * s), "맵 미리보기", UiTheme.Heading); ry += 38f * s;
             Rect mapRect = new Rect(rx, ry, rw, Mathf.Max(60f * s, right.yMax - 22f * s - ry));
@@ -113,6 +158,13 @@ namespace JoseonMurimTactics
                 root.Session.actionsTaken++;
                 root.Flow.GoToBattle(def.id);
             }
+        }
+
+        private static void Pair(float x, ref float y, float w, float s, string label, string value)
+        {
+            GUI.Label(new Rect(x + 10f * s, y, w * 0.34f, 28f * s), label, UiTheme.SmallMuted);
+            GUI.Label(new Rect(x + 10f * s + w * 0.34f, y, w * 0.66f - 10f * s, 28f * s), value, UiTheme.Body);
+            y += 30f * s;
         }
 
         private List<string> CollectBattleModifiers()
