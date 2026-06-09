@@ -130,6 +130,11 @@ namespace JoseonMurimTactics
             }
             y += 8f * s;
 
+            GUI.Label(new Rect(x, y, wdt, 24f * s), "보조 목표 / 실패 결과 / 세력 변화", UiTheme.SmallMuted); y += 28f * s;
+            GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s), "· 보조 목표: 제단 보존 / 부상자 최소화 / 8턴 이내", UiTheme.Small); y += 26f * s;
+            GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s), "· 실패: 중원무림맹 위압 상승, 허브 기능 일부 지연", UiTheme.Small); y += 26f * s;
+            GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s), "· 예상 변화: 조선문파연합 +5 / 감찰단 적대 +5", UiTheme.Small); y += 34f * s;
+
             if (!string.IsNullOrEmpty(m.dangerNotes))
             {
                 Rect warn = new Rect(x, y, wdt, 64f * s);

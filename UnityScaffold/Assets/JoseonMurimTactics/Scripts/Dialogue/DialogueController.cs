@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 namespace JoseonMurimTactics
@@ -13,7 +12,11 @@ namespace JoseonMurimTactics
     {
         private readonly DialogueScript script;
         private readonly GameRoot root;
+        private readonly List<string> history = new List<string>();
         private DialogueNode current;
+        private string preparedNodeId;
+        private int visibleChars;
+        private float typeAccumulator;
 
         public bool IsFinished { get; private set; }
         public string LastEffect { get; private set; }
@@ -32,6 +35,8 @@ namespace JoseonMurimTactics
             {
                 return;
             }
+
+            PrepareCurrentNode();
 
             float s = UiTheme.Scale;
             float margin = 40f * s;
@@ -52,6 +57,7 @@ namespace JoseonMurimTactics
             }
 
             UiTheme.DrawPanel(box);
+            DrawHistory(screenW, box.y - 120f * s, s);
 
             float pad = 26f * s;
             float innerX = box.x + pad;
@@ -71,7 +77,8 @@ namespace JoseonMurimTactics
 
             // 본문
             float textH = (choices ? 84f * s : box.height - (y - box.y) - 70f * s);
-            GUI.Label(new Rect(innerX, y, innerW, textH), current.line, UiTheme.Body);
+            string line = choices ? current.line : VisibleLine();
+            GUI.Label(new Rect(innerX, y, innerW, textH), line, UiTheme.Body);
             y += textH + 10f * s;
 
             if (choices)
@@ -82,7 +89,9 @@ namespace JoseonMurimTactics
                 {
                     DialogueChoice c = current.choices[i];
                     string prefix = c.disposition.HasValue ? $"[{StoryEnumLabels.Label(c.disposition.Value)}] " : string.Empty;
-                    if (GUI.Button(new Rect(innerX, y, innerW, bh), prefix + c.text, UiTheme.Button))
+                    string preview = PreviewEffects(c);
+                    string label = string.IsNullOrEmpty(preview) ? prefix + c.text : $"{prefix}{c.text}  ({preview})";
+                    if (GUI.Button(new Rect(innerX, y, innerW, bh), label, UiTheme.Button))
                     {
                         Choose(c);
                         return;
@@ -100,10 +109,80 @@ namespace JoseonMurimTactics
                 }
 
                 float bw = 180f * s;
-                if (GUI.Button(new Rect(box.xMax - pad - bw, box.yMax - pad - 44f * s, bw, 44f * s), "계속 ▶", UiTheme.ButtonPrimary))
+                string nextLabel = visibleChars < current.line.Length ? "전체 표시" : "계속 ▶";
+                if (GUI.Button(new Rect(box.xMax - pad - bw, box.yMax - pad - 44f * s, bw, 44f * s), nextLabel, UiTheme.ButtonPrimary))
                 {
-                    Advance(current.nextNodeId);
+                    if (visibleChars < current.line.Length)
+                    {
+                        visibleChars = current.line.Length;
+                    }
+                    else
+                    {
+                        Advance(current.nextNodeId);
+                    }
                 }
+            }
+        }
+
+        private void PrepareCurrentNode()
+        {
+            if (current == null || preparedNodeId == current.id)
+            {
+                return;
+            }
+
+            preparedNodeId = current.id;
+            visibleChars = current.HasChoices ? current.line.Length : 0;
+            typeAccumulator = 0f;
+
+            string speaker = string.IsNullOrEmpty(current.speakerName) ? "서술" : current.speakerName;
+            history.Add($"{speaker}: {current.line}");
+            if (history.Count > 8)
+            {
+                history.RemoveAt(0);
+            }
+        }
+
+        private string VisibleLine()
+        {
+            if (string.IsNullOrEmpty(current.line))
+            {
+                return string.Empty;
+            }
+
+            if (visibleChars < current.line.Length)
+            {
+                float speed = Mathf.Lerp(18f, 80f, GameSettings.Load().textSpeed);
+                typeAccumulator += Time.unscaledDeltaTime * speed;
+                int add = Mathf.FloorToInt(typeAccumulator);
+                if (add > 0)
+                {
+                    visibleChars = Mathf.Min(current.line.Length, visibleChars + add);
+                    typeAccumulator -= add;
+                }
+            }
+
+            return current.line.Substring(0, Mathf.Clamp(visibleChars, 0, current.line.Length));
+        }
+
+        private void DrawHistory(float screenW, float y, float s)
+        {
+            if (history.Count <= 1)
+            {
+                return;
+            }
+
+            float width = Mathf.Min(520f * s, screenW - 80f * s);
+            Rect panel = new Rect(screenW - width - 40f * s, Mathf.Max(114f * s, y), width, 104f * s);
+            UiTheme.DrawPanel(panel, true);
+            GUI.Label(new Rect(panel.x + 12f * s, panel.y + 8f * s, panel.width - 24f * s, 22f * s), "대화 로그", UiTheme.SmallMuted);
+
+            int start = Mathf.Max(0, history.Count - 3);
+            float lineY = panel.y + 34f * s;
+            for (int i = start; i < history.Count; i++)
+            {
+                GUI.Label(new Rect(panel.x + 12f * s, lineY, panel.width - 24f * s, 20f * s), history[i], UiTheme.SmallMuted);
+                lineY += 22f * s;
             }
         }
 
@@ -144,9 +223,35 @@ namespace JoseonMurimTactics
             return parts.Count == 0 ? string.Empty : string.Join("   ", parts);
         }
 
+        private static string PreviewEffects(DialogueChoice c)
+        {
+            List<string> parts = new List<string>();
+            foreach (IdDelta d in c.approvalChanges)
+            {
+                if (d.delta != 0) parts.Add($"{CompanionCatalog.Name(d.id)} {Signed(d.delta)}");
+            }
+
+            foreach (IdDelta d in c.factionChanges)
+            {
+                if (d.delta != 0) parts.Add($"{FactionIds.Label(d.id)} {Signed(d.delta)}");
+            }
+
+            foreach (IdDelta d in c.battleModifiers)
+            {
+                if (d.delta != 0) parts.Add("전투 보정 " + Signed(d.delta));
+            }
+
+            return parts.Count == 0 ? string.Empty : string.Join(", ", parts);
+        }
+
         private static string Arrow(int delta)
         {
             return delta > 0 ? "↑" : "↓";
+        }
+
+        private static string Signed(int delta)
+        {
+            return delta > 0 ? "+" + delta : delta.ToString();
         }
 
         private void Advance(string nextId)
@@ -160,6 +265,7 @@ namespace JoseonMurimTactics
             }
 
             current = next;
+            preparedNodeId = null;
         }
     }
 }

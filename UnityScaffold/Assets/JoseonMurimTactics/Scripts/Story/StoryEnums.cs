@@ -23,7 +23,8 @@ namespace JoseonMurimTactics
         Sword,        // 검법
         Fist,         // 권법
         HiddenWeapon, // 암기
-        InnerArt      // 심법
+        InnerArt,     // 심법
+        Ice           // 빙공
     }
 
     /// <summary>동료 승인도 단계 (0~100 척도에서 파생).</summary>
@@ -92,6 +93,7 @@ namespace JoseonMurimTactics
                 case StartingArt.Fist: return "권법";
                 case StartingArt.HiddenWeapon: return "암기";
                 case StartingArt.InnerArt: return "심법";
+                case StartingArt.Ice: return "빙공";
                 default: return a.ToString();
             }
         }
@@ -104,6 +106,7 @@ namespace JoseonMurimTactics
                 case StartingArt.Fist: return "근접 권각. 밀치기와 돌파에 능하다.";
                 case StartingArt.HiddenWeapon: return "암기와 잠행. 원거리 제압과 정찰.";
                 case StartingArt.InnerArt: return "내공 심법. 회복과 기세 운용.";
+                case StartingArt.Ice: return "빙공. 방어와 둔화로 전장을 늦춘다.";
                 default: return string.Empty;
             }
         }
@@ -114,9 +117,9 @@ namespace JoseonMurimTactics
             {
                 case ApprovalStage.Distrust: return "불신";
                 case ApprovalStage.Wary: return "경계";
-                case ApprovalStage.Neutral: return "보통";
+                case ApprovalStage.Neutral: return "동행";
                 case ApprovalStage.Trust: return "신뢰";
-                case ApprovalStage.Comrade: return "동지";
+                case ApprovalStage.Comrade: return "맹약";
                 default: return s.ToString();
             }
         }

@@ -25,6 +25,11 @@ namespace JoseonMurimTactics
 
         public string GenerateNpcLine(string npcId, GameSession session)
         {
+            return GenerateRumorData(npcId, session).rumorText;
+        }
+
+        public RumorData GenerateRumorData(string npcId, GameSession session)
+        {
             List<string> lines = new List<string>
             {
                 "“요즘 강 건너에서 감찰단 깃발이 부쩍 늘었습디다.”",
@@ -38,7 +43,14 @@ namespace JoseonMurimTactics
                 index = (npcId.Length + (session != null ? session.actionsTaken : 0)) % lines.Count;
             }
 
-            return lines[index];
+            return new RumorData
+            {
+                rumorText = lines[index],
+                relatedFaction = index == 0 ? FactionIds.MurimInspectors : FactionIds.JoseonSects,
+                missionHintId = index == 2 ? "MISSION_UIJU_TAVERN_LEAD" : string.Empty,
+                dangerLevel = index == 0 ? 2 : 1,
+                unlockFlag = index == 2 ? "FLAG_RUMOR_PYESADANG_SPREAD" : string.Empty
+            };
         }
 
         public string GenerateCompanionReaction(string companionId, string eventId)

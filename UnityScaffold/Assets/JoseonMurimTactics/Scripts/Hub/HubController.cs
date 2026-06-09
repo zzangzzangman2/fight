@@ -11,6 +11,9 @@ namespace JoseonMurimTactics
     public sealed class HubController : MonoBehaviour
     {
         public const string FirstBattleId = "BATTLE_PYESADANG_DEFENSE";
+        private const int MaxDailyActions = 3;
+        private const string ActionPointKey = "hub:daily_actions_remaining";
+        private const string ActionPointInitializedFlag = "FLAG_HUB_ACTION_POINTS_READY";
 
         private enum HubMenu { Overview, Sortie, Training, Companions, Sect, Tavern, Infirmary, Market, Library, Save, Settings }
 
@@ -22,12 +25,17 @@ namespace JoseonMurimTactics
         private float toastTimer;
         private int loreIndex;
         private string rumor;
+        private RumorData rumorData;
+        private string pendingOverwriteSlot;
+        private GameSettings settings;
 
         private void Awake()
         {
             root = GameRoot.EnsureExists();
+            EnsureActionPoints();
+            settings = GameSettings.Load();
             AddLog($"{root.Session.sectName}의 임시 거점, 폐사당에 도착했다.");
-            rumor = root.Narration != null ? root.Narration.GenerateNpcLine("hub", root.Session) : string.Empty;
+            RefreshRumor("hub");
         }
 
         private void Update()
@@ -82,7 +90,7 @@ namespace JoseonMurimTactics
             GUI.Label(new Rect(bar.x + 18f * s, bar.y + 12f * s, bar.width * 0.34f, 34f * s), "해동문 · 폐사당 거점", UiTheme.Heading);
             string mid = $"{ses.sectName}  ·  제0장  ·  기조 {StoryEnumLabels.Label(ses.heroDisposition)}";
             GUI.Label(new Rect(bar.x + bar.width * 0.34f, bar.y + 15f * s, bar.width * 0.4f, 30f * s), mid, UiTheme.Body);
-            string right = $"위명 {root.Reputation.Get(FactionIds.JoseonSects)}   은전 {root.Flags.GetInt("silver")}";
+            string right = $"행동력 {ActionsRemaining}/{MaxDailyActions}   위명 {root.Reputation.Get(FactionIds.JoseonSects)}   은전 {root.Flags.GetInt("silver")}";
             GUI.Label(new Rect(bar.x + bar.width * 0.6f - 18f * s, bar.y + 15f * s, bar.width * 0.4f, 30f * s), right,
                 new GUIStyle(UiTheme.Body) { alignment = TextAnchor.MiddleRight });
         }
@@ -97,6 +105,12 @@ namespace JoseonMurimTactics
             float gap = 7f * s;
 
             MenuButton(ref y, x, bw, bh, gap, "출정", HubMenu.Sortie);
+            if (GUI.Button(new Rect(x, y, bw, bh), "지도", UiTheme.Button))
+            {
+                root.Flow.GoToWorldMap();
+            }
+
+            y += bh + gap;
             MenuButton(ref y, x, bw, bh, gap, "연무장", HubMenu.Training);
             MenuButton(ref y, x, bw, bh, gap, "동료", HubMenu.Companions);
             MenuButton(ref y, x, bw, bh, gap, "문파", HubMenu.Sect);
@@ -141,11 +155,49 @@ namespace JoseonMurimTactics
 
         private void DrawOverview(Rect r, float s)
         {
-            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "거점 개요", UiTheme.Heading);
-            GUI.Label(new Rect(r.x, r.y + 46f * s, r.width, r.height - 46f * s),
-                "비에 젖은 폐사당에 조선 문파의 첫 깃발이 섰다.\n\n" +
-                "전투만 하는 곳이 아니다. 동료와 이야기하고, 문파의 사정을 살피고, 객잔에서 소문을 듣고, 의원에서 부상을 다스린 뒤 출정하라.\n\n" +
-                "준비가 되면 '출정'에서 임무를 골라 압록강 폐사당 방어전에 나설 수 있다.", UiTheme.Body);
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "폐사당 거점", UiTheme.Heading);
+            GUI.Label(new Rect(r.x, r.y + 38f * s, r.width, 44f * s),
+                "비에 젖은 폐사당에 조선 문파의 첫 깃발이 섰다. 장소를 골라 오늘의 준비를 진행한다.", UiTheme.Body);
+
+            Rect yard = new Rect(r.x, r.y + 92f * s, r.width, Mathf.Min(360f * s, r.height - 140f * s));
+            UiTheme.DrawFill(yard, UiTheme.HanjiPanelAlt);
+            GUI.Label(new Rect(yard.x + 18f * s, yard.y + 14f * s, yard.width - 36f * s, 30f * s),
+                "폐사당 전경 placeholder: 본당 / 마루 / 객잔 천막 / 의원 / 장터 / 서고 / 출정 깃발", UiTheme.SmallMuted);
+
+            Hotspot(yard, 0.44f, 0.13f, 0.22f, 0.13f, s, "출정 깃발", HubMenu.Sortie, "!");
+            Hotspot(yard, 0.08f, 0.38f, 0.22f, 0.14f, s, "연무장", HubMenu.Training, ActionsRemaining > 0 ? "" : "!");
+            Hotspot(yard, 0.38f, 0.42f, 0.24f, 0.15f, s, "동료 마루", HubMenu.Companions, CompanionBadge());
+            Hotspot(yard, 0.40f, 0.68f, 0.22f, 0.14f, s, "현판 회의", HubMenu.Sect, "!");
+            Hotspot(yard, 0.68f, 0.30f, 0.22f, 0.14f, s, "객잔", HubMenu.Tavern, "!");
+            Hotspot(yard, 0.68f, 0.56f, 0.22f, 0.14f, s, "의원", HubMenu.Infirmary, InjuredCount() > 0 ? "!" : "");
+            Hotspot(yard, 0.09f, 0.64f, 0.20f, 0.13f, s, "장터", HubMenu.Market, "");
+            Hotspot(yard, 0.12f, 0.16f, 0.20f, 0.13f, s, "서고", HubMenu.Library, root.Flags.HasFlag(StoryFlags.FirstBattleWon) ? "!" : "");
+
+            float y = yard.yMax + 14f * s;
+            GUI.Label(new Rect(r.x, y, r.width * 0.55f, 28f * s), $"오늘 행동력: {ActionsRemaining}/{MaxDailyActions}", UiTheme.Body);
+            if (GUI.Button(new Rect(r.x + r.width - 160f * s, y - 6f * s, 160f * s, 42f * s), "하루 정리", UiTheme.Button))
+            {
+                root.Flags.SetInt(ActionPointKey, MaxDailyActions);
+                root.Flags.SetFlag(ActionPointInitializedFlag);
+                ShowToast("새 하루를 시작했다.");
+                AddLog("폐사당의 등불을 정리하고 새 하루를 맞았다.");
+            }
+        }
+
+        private void Hotspot(Rect parent, float px, float py, float pw, float ph, float s, string label, HubMenu target, string badge)
+        {
+            Rect rect = new Rect(parent.x + parent.width * px, parent.y + parent.height * py, parent.width * pw, parent.height * ph);
+            bool clicked = GUI.Button(rect, label, menu == target ? UiTheme.ButtonPrimary : UiTheme.Button);
+            if (!string.IsNullOrEmpty(badge))
+            {
+                Rect dot = new Rect(rect.xMax - 24f * s, rect.y + 6f * s, 18f * s, 18f * s);
+                UiTheme.DrawSeal(dot, badge);
+            }
+
+            if (clicked)
+            {
+                menu = target;
+            }
         }
 
         private void DrawSortie(Rect r, float s)
@@ -170,6 +222,7 @@ namespace JoseonMurimTactics
             {
                 if (GUI.Button(new Rect(r.x, r.y + (y - r.y), r.width * 0.78f, 46f * s), d, UiTheme.Button))
                 {
+                    TrySpendAction("연무장 수련");
                     AddLog($"{d} … 땀이 식기 전에 한 합 더.");
                     root.Session.actionsTaken++;
                     ShowToast("연무를 마쳤다.");
@@ -185,7 +238,7 @@ namespace JoseonMurimTactics
         {
             GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "동료", UiTheme.Heading);
             float y = r.y + 48f * s;
-            float cardH = 106f * s;
+            float cardH = 126f * s;
             foreach (string id in root.Session.recruitedCompanionIds)
             {
                 CompanionInfo info = CompanionCatalog.Info(id);
@@ -193,12 +246,15 @@ namespace JoseonMurimTactics
                 Rect card = new Rect(r.x, y, r.width, cardH);
                 UiTheme.DrawPanel(card, true);
                 GUI.Label(new Rect(card.x + 16f * s, card.y + 10f * s, card.width - 180f * s, 30f * s), $"{info.name} · {info.title}", UiTheme.Body);
-                GUI.Label(new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 180f * s, 24f * s),
-                    $"{info.age}세 · {info.mbti} · {info.region} {info.sectName}", UiTheme.SmallMuted);
+                GUI.Label(new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 180f * s, 26f * s),
+                    $"{info.age}세 · {info.mbti} · {info.region} {info.sectName} · {info.element}/{info.weapon}   |   {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})", UiTheme.SmallMuted);
                 GUI.Label(new Rect(card.x + 16f * s, card.y + 68f * s, card.width - 180f * s, 24f * s),
-                    $"{info.element} / {info.weapon}   |   {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})", UiTheme.SmallMuted);
+                    "고민: " + CompanionConcern(id), UiTheme.SmallMuted);
+                GUI.Label(new Rect(card.x + 16f * s, card.y + 92f * s, card.width - 180f * s, 24f * s),
+                    $"다음 대화: {NextCompanionTalk(id)}   |   상태: {(IsWounded(id) ? "부상" : "출전 가능")}", UiTheme.SmallMuted);
                 if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + card.height * 0.5f - 22f * s, 128f * s, 44f * s), "대화", UiTheme.Button))
                 {
+                    TrySpendAction("동료 대화");
                     talk = new DialogueController(BuildCompanionTalk(id), root);
                     root.Session.actionsTaken++;
                 }
@@ -221,9 +277,12 @@ namespace JoseonMurimTactics
             GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "문파 — 해동문", UiTheme.Heading);
             float y = r.y + 46f * s;
             Line(r.x, ref y, r.width, s, "위명", root.Reputation.Get(FactionIds.JoseonSects).ToString());
+            Line(r.x, ref y, r.width, s, "조선문파연합 결속", root.Reputation.Get(FactionIds.JoseonSects).ToString());
             Line(r.x, ref y, r.width, s, "중원무림맹 적대", (-root.Reputation.Get(FactionIds.ZhongyuanAlliance)).ToString());
             Line(r.x, ref y, r.width, s, "조정 관심", root.Reputation.Get(FactionIds.RoyalCourt).ToString());
             Line(r.x, ref y, r.width, s, "은전", root.Flags.GetInt("silver").ToString());
+            Line(r.x, ref y, r.width, s, "제자 / 부상자", $"{Mathf.Max(6, root.Session.recruitedCompanionIds.Count + 4)}명 / {InjuredCount()}명");
+            Line(r.x, ref y, r.width, s, "보급", $"약재 {root.Flags.GetInt("supply:medicine")} · 무기 {root.Flags.GetInt("supply:weapons")}");
             y += 8f * s;
 
             GUI.Label(new Rect(r.x, y, r.width, 30f * s), "문파 기조 (정책)", UiTheme.Heading); y += 38f * s;
@@ -243,6 +302,17 @@ namespace JoseonMurimTactics
             }
             y += 52f * s;
             GUI.Label(new Rect(r.x, y, r.width, 60f * s), "정책 효과 — " + PolicyEffect(root.Session.heroDisposition), UiTheme.Small);
+            y += 72f * s;
+
+            GUI.Label(new Rect(r.x, y, r.width, 28f * s), "세력 평판", UiTheme.Heading);
+            y += 34f * s;
+            FactionMeter(r.x, ref y, r.width, s, FactionIds.JoseonSects);
+            FactionMeter(r.x, ref y, r.width, s, FactionIds.ZhongyuanAlliance);
+            FactionMeter(r.x, ref y, r.width, s, FactionIds.MurimInspectors);
+            FactionMeter(r.x, ref y, r.width, s, FactionIds.RoyalCourt);
+            FactionMeter(r.x, ref y, r.width, s, FactionIds.BlackHatGuild);
+            GUI.Label(new Rect(r.x, y + 4f * s, r.width, 36f * s),
+                "최근 변화: 현판령 저지 소문으로 조선 소문파들이 해동문을 주시한다.", UiTheme.SmallMuted);
         }
 
         private static string PolicyEffect(HeroDisposition d)
@@ -265,12 +335,19 @@ namespace JoseonMurimTactics
             UiTheme.DrawFill(quote, UiTheme.HanjiPanelAlt);
             GUI.Label(new Rect(quote.x + 12f * s, quote.y + 10f * s, quote.width - 24f * s, quote.height - 20f * s),
                 string.IsNullOrEmpty(rumor) ? "..." : rumor, new GUIStyle(UiTheme.Body) { fontStyle = FontStyle.Italic });
-            if (GUI.Button(new Rect(r.x, r.y + 186f * s, r.width * 0.5f, 46f * s), "소문 더 듣기", UiTheme.Button))
+            if (rumorData != null)
             {
-                root.Session.actionsTaken++;
-                rumor = root.Narration.GenerateNpcLine("tavern" + root.Session.actionsTaken, root.Session);
+                GUI.Label(new Rect(r.x, r.y + 174f * s, r.width, 24f * s),
+                    $"관련 세력: {FactionIds.Label(rumorData.relatedFaction)} · 위험도 {rumorData.dangerLevel} · 단서 {SafeHint(rumorData.missionHintId)}",
+                    UiTheme.SmallMuted);
             }
-            GUI.Label(new Rect(r.x, r.y + 246f * s, r.width, 60f * s),
+            if (GUI.Button(new Rect(r.x, r.y + 208f * s, r.width * 0.5f, 46f * s), "소문 더 듣기", UiTheme.Button))
+            {
+                TrySpendAction("객잔 소문");
+                root.Session.actionsTaken++;
+                RefreshRumor("tavern" + root.Session.actionsTaken);
+            }
+            GUI.Label(new Rect(r.x, r.y + 268f * s, r.width, 60f * s),
                 "· 서브 의뢰와 동료 영입 소문은 이후 버전에서 열립니다.", UiTheme.SmallMuted);
         }
 
@@ -289,6 +366,7 @@ namespace JoseonMurimTactics
                 }
                 if (GUI.Button(new Rect(r.x, y + 8f * s, r.width * 0.6f, 48f * s), "치료하기", UiTheme.ButtonPrimary))
                 {
+                    TrySpendAction("의원 치료");
                     last.woundedCompanions.Clear();
                     ShowToast("동료의 상처를 다스렸다.");
                     AddLog("의원에서 동료들의 부상을 치료했다.");
@@ -345,6 +423,13 @@ namespace JoseonMurimTactics
             Rect body = new Rect(r.x, r.y + 96f * s, r.width, r.height - 96f * s);
             UiTheme.DrawFill(body, UiTheme.HanjiPanelAlt);
             GUI.Label(new Rect(body.x + 14f * s, body.y + 12f * s, body.width - 28f * s, body.height - 24f * s), LoreText(loreIndex), UiTheme.Body);
+
+            if (GUI.Button(new Rect(body.xMax - 150f * s, body.yMax - 48f * s, 132f * s, 36f * s), "연구 기록", UiTheme.Button))
+            {
+                TrySpendAction("서고 연구");
+                ShowToast("서고 기록을 정리했다.");
+                AddLog("서고에서 현판령과 세력 기록을 대조했다.");
+            }
         }
 
         private static string LoreText(int i)
@@ -361,22 +446,67 @@ namespace JoseonMurimTactics
         private void DrawSave(Rect r, float s)
         {
             GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "저장", UiTheme.Heading);
-            GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 56f * s), "현재 진행 상황을 자동 저장 슬롯에 기록한다.", UiTheme.Body);
-            if (GUI.Button(new Rect(r.x, r.y + 116f * s, r.width * 0.6f, 56f * s), "지금 저장", UiTheme.ButtonPrimary))
+            GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 30f * s), "자동 저장 1개 + 수동 슬롯 3개", UiTheme.SmallMuted);
+            float y = r.y + 86f * s;
+
+            DrawSaveSlot(r.x, ref y, r.width, s, SaveManager.AutoSlot);
+            foreach (string slot in SaveManager.ManualSlots)
             {
-                bool ok = root.Save.Save(root.Session);
-                ShowToast(ok ? "저장되었습니다." : "저장에 실패했습니다.");
-                AddLog(ok ? "진행 상황을 기록했다." : "저장에 실패했다.");
+                DrawSaveSlot(r.x, ref y, r.width, s, slot);
+            }
+
+            if (!string.IsNullOrEmpty(pendingOverwriteSlot))
+            {
+                Rect confirm = new Rect(r.x, r.yMax - 70f * s, r.width, 56f * s);
+                UiTheme.DrawFill(confirm, new Color(0.706f, 0.220f, 0.169f, 0.14f));
+                GUI.Label(new Rect(confirm.x + 12f * s, confirm.y + 12f * s, confirm.width - 250f * s, 28f * s),
+                    $"슬롯 {SlotLabel(pendingOverwriteSlot)}에 덮어쓸까요?", UiTheme.Body);
+                if (GUI.Button(new Rect(confirm.xMax - 220f * s, confirm.y + 8f * s, 96f * s, 40f * s), "덮어쓰기", UiTheme.ButtonPrimary))
+                {
+                    SaveToSlot(pendingOverwriteSlot);
+                    pendingOverwriteSlot = null;
+                }
+
+                if (GUI.Button(new Rect(confirm.xMax - 112f * s, confirm.y + 8f * s, 96f * s, 40f * s), "취소", UiTheme.Button))
+                {
+                    pendingOverwriteSlot = null;
+                }
             }
         }
 
         private void DrawSettings(Rect r, float s)
         {
             GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "설정", UiTheme.Heading);
-            GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 90f * s),
-                "해상도/소리/텍스트 속도 옵션은 이후 버전에서 추가됩니다.\n지금은 타이틀 화면의 설정과 동일하게 자리만 잡아둔 상태입니다.", UiTheme.Body);
-            if (GUI.Button(new Rect(r.x, r.y + 150f * s, r.width * 0.6f, 52f * s), "타이틀로", UiTheme.Button))
+            float y = r.y + 52f * s;
+            Slider(r.x, ref y, r.width, s, "BGM 볼륨", ref settings.bgmVolume);
+            Slider(r.x, ref y, r.width, s, "효과음 볼륨", ref settings.sfxVolume);
+            Slider(r.x, ref y, r.width, s, "텍스트 속도", ref settings.textSpeed);
+            Slider(r.x, ref y, r.width, s, "UI 크기", ref settings.uiScale, 0.8f, 1.4f);
+
+            settings.fullscreen = GUI.Toggle(new Rect(r.x, y, r.width, 28f * s), settings.fullscreen, "전체화면/창모드", UiTheme.Body);
+            y += 34f * s;
+            settings.screenShake = GUI.Toggle(new Rect(r.x, y, r.width, 28f * s), settings.screenShake, "화면 흔들림", UiTheme.Body);
+            y += 34f * s;
+            settings.autoDialogue = GUI.Toggle(new Rect(r.x, y, r.width, 28f * s), settings.autoDialogue, "자동 대화", UiTheme.Body);
+            y += 34f * s;
+            settings.detailedCombatMath = GUI.Toggle(new Rect(r.x, y, r.width, 28f * s), settings.detailedCombatMath, "전투 상세 계산 표시", UiTheme.Body);
+            y += 42f * s;
+
+            GUI.Label(new Rect(r.x, y, r.width, 24f * s), "해상도", UiTheme.SmallMuted);
+            y += 26f * s;
+            settings.resolutionIndex = GUI.SelectionGrid(new Rect(r.x, y, r.width * 0.72f, 38f * s),
+                Mathf.Clamp(settings.resolutionIndex, 0, 2), new[] { "1280x720", "1600x900", "1920x1080" }, 3, UiTheme.Button);
+            y += 54f * s;
+
+            if (GUI.Button(new Rect(r.x, y, r.width * 0.34f, 52f * s), "설정 저장", UiTheme.ButtonPrimary))
             {
+                settings.Save();
+                ShowToast("설정 저장");
+            }
+
+            if (GUI.Button(new Rect(r.x + r.width * 0.38f, y, r.width * 0.34f, 52f * s), "타이틀로", UiTheme.Button))
+            {
+                settings.Save();
                 root.Flow.GoToTitle();
             }
         }
@@ -399,6 +529,160 @@ namespace JoseonMurimTactics
                 GUI.Label(new Rect(rect.x + 18f * s, y + 64f * s, rect.width - 36f * s, 22f * s), root.Approval.GetStageLabel(id), UiTheme.SmallMuted);
                 y += 104f * s;
             }
+        }
+
+        private void DrawSaveSlot(float x, ref float y, float w, float s, string slot)
+        {
+            SaveSlotSummary summary = root.Save.Peek(slot);
+            Rect row = new Rect(x, y, w, 64f * s);
+            UiTheme.DrawPanel(row, true);
+
+            GUI.Label(new Rect(row.x + 14f * s, row.y + 8f * s, row.width * 0.24f, 24f * s), SlotLabel(slot), UiTheme.Body);
+            string detail = summary.exists
+                ? $"{summary.sectName} · {summary.chapterTitle} · {summary.playTimeText} · {summary.savedAtText}"
+                : "비어 있음";
+            GUI.Label(new Rect(row.x + 14f * s, row.y + 34f * s, row.width - 250f * s, 22f * s), detail, UiTheme.SmallMuted);
+
+            if (GUI.Button(new Rect(row.xMax - 224f * s, row.y + 12f * s, 96f * s, 40f * s), "저장", UiTheme.ButtonPrimary))
+            {
+                if (summary.exists)
+                {
+                    pendingOverwriteSlot = slot;
+                }
+                else
+                {
+                    SaveToSlot(slot);
+                }
+            }
+
+            GUI.enabled = summary.exists;
+            if (GUI.Button(new Rect(row.xMax - 116f * s, row.y + 12f * s, 96f * s, 40f * s), "불러오기", UiTheme.Button))
+            {
+                GameSession loaded = root.Save.Load(slot);
+                if (loaded != null)
+                {
+                    root.LoadExistingSession(loaded);
+                    ShowToast("불러왔습니다.");
+                    AddLog($"{SlotLabel(slot)}에서 진행을 불러왔다.");
+                }
+            }
+            GUI.enabled = true;
+
+            y += 74f * s;
+        }
+
+        private void SaveToSlot(string slot)
+        {
+            bool ok = root.Save.Save(root.Session, slot);
+            ShowToast(ok ? "저장되었습니다." : "저장에 실패했습니다.");
+            AddLog(ok ? $"{SlotLabel(slot)}에 진행 상황을 기록했다." : "저장에 실패했다.");
+        }
+
+        private void RefreshRumor(string sourceId)
+        {
+            if (root.Narration is MockAINarrationService mock)
+            {
+                rumorData = mock.GenerateRumorData(sourceId, root.Session);
+                rumor = rumorData != null ? rumorData.rumorText : string.Empty;
+            }
+            else
+            {
+                rumorData = null;
+                rumor = root.Narration != null ? root.Narration.GenerateNpcLine(sourceId, root.Session) : string.Empty;
+            }
+        }
+
+        private static string SafeHint(string hint)
+        {
+            return string.IsNullOrEmpty(hint) ? "없음" : hint;
+        }
+
+        private static string SlotLabel(string slot)
+        {
+            return slot == SaveManager.AutoSlot ? "자동 저장" : "슬롯 " + slot;
+        }
+
+        private int ActionsRemaining => Mathf.Clamp(root.Flags.GetInt(ActionPointKey), 0, MaxDailyActions);
+
+        private void EnsureActionPoints()
+        {
+            if (!root.Flags.HasFlag(ActionPointInitializedFlag))
+            {
+                root.Flags.SetInt(ActionPointKey, MaxDailyActions);
+                root.Flags.SetFlag(ActionPointInitializedFlag);
+            }
+        }
+
+        private void TrySpendAction(string label)
+        {
+            int remaining = ActionsRemaining;
+            if (remaining <= 0)
+            {
+                ShowToast("행동력이 부족합니다.");
+                AddLog($"{label}: 행동력이 부족하지만 v1.0에서는 경고만 표시한다.");
+                return;
+            }
+
+            root.Flags.SetInt(ActionPointKey, remaining - 1);
+        }
+
+        private string CompanionBadge()
+        {
+            return root.Session.recruitedCompanionIds.Count > 0 ? "!" : string.Empty;
+        }
+
+        private int InjuredCount()
+        {
+            BattleResultData last = root.Session.lastBattleResult;
+            return last != null && last.woundedCompanions != null ? last.woundedCompanions.Count : 0;
+        }
+
+        private bool IsWounded(string companionId)
+        {
+            BattleResultData last = root.Session.lastBattleResult;
+            return last != null && last.woundedCompanions != null && last.woundedCompanions.Contains(companionId);
+        }
+
+        private static string CompanionConcern(string companionId)
+        {
+            switch (companionId)
+            {
+                case "baek_ryeon": return "부상자와 약재 부족";
+                case "do_arin": return "정면승부로 문파 명예 회복";
+                case "seo_a": return "천뢰봉문 소식과 새 임무";
+                case "mae_hwaryeong": return "풍매문 연락망 복구";
+                case "han_biyeon": return "흑연문 배신자 단서";
+                default: return "문주의 결정을 지켜보는 중";
+            }
+        }
+
+        private string NextCompanionTalk(string companionId)
+        {
+            int approval = root.Approval.Get(companionId);
+            if (approval >= 80) return "맹약 이벤트 준비";
+            if (approval >= 60) return "신뢰 대화 가능";
+            if (approval >= 40) return "동행 대화 가능";
+            return "경계 완화 필요";
+        }
+
+        private void FactionMeter(float x, ref float y, float w, float s, string factionId)
+        {
+            int value = root.Reputation.Get(factionId);
+            GUI.Label(new Rect(x, y, w * 0.34f, 24f * s), FactionIds.Label(factionId), UiTheme.SmallMuted);
+            Rect bg = new Rect(x + w * 0.34f, y + 7f * s, w * 0.50f, 10f * s);
+            UiTheme.DrawFill(bg, UiTheme.HanjiPanelAlt);
+            float normalized = Mathf.InverseLerp(FactionReputationService.Min, FactionReputationService.Max, value);
+            UiTheme.DrawFill(new Rect(bg.x, bg.y, bg.width * normalized, bg.height), value >= 0 ? UiTheme.Teal : UiTheme.SealRed);
+            GUI.Label(new Rect(x + w * 0.86f, y, w * 0.14f, 24f * s), value.ToString(), UiTheme.SmallMuted);
+            y += 28f * s;
+        }
+
+        private static void Slider(float x, ref float y, float w, float s, string label, ref float value, float min = 0f, float max = 1f)
+        {
+            GUI.Label(new Rect(x, y, w * 0.34f, 26f * s), label, UiTheme.SmallMuted);
+            value = GUI.HorizontalSlider(new Rect(x + w * 0.34f, y + 8f * s, w * 0.48f, 20f * s), value, min, max);
+            GUI.Label(new Rect(x + w * 0.84f, y, w * 0.16f, 26f * s), value.ToString("0.00"), UiTheme.SmallMuted);
+            y += 34f * s;
         }
 
         private void DrawToast(float w, float h, float s)

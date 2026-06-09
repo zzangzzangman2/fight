@@ -163,9 +163,16 @@ namespace JoseonMurimTactics
             ry += 12f * s;
 
             GUI.Label(new Rect(rx, ry, rw, 32f * s), "무림 소문", UiTheme.Heading); ry += 38f * s;
-            UiTheme.DrawFill(new Rect(rx, ry, rw, right.yMax - 22f * s - ry), UiTheme.HanjiPanelAlt);
-            GUI.Label(new Rect(rx + 12f * s, ry + 10f * s, rw - 24f * s, right.yMax - 44f * s - ry),
+            Rect rumorBox = new Rect(rx, ry, rw, 96f * s);
+            UiTheme.DrawFill(rumorBox, UiTheme.HanjiPanelAlt);
+            GUI.Label(new Rect(rumorBox.x + 12f * s, rumorBox.y + 10f * s, rumorBox.width - 24f * s, rumorBox.height - 20f * s),
                 "“" + rumor + "”", new GUIStyle(UiTheme.Body) { fontStyle = FontStyle.Italic });
+            ry += 110f * s;
+
+            GUI.Label(new Rect(rx, ry, rw, 32f * s), "해금된 기능", UiTheme.Heading); ry += 34f * s;
+            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 객잔 소문 기능 확장", UiTheme.Small); ry += 26f * s;
+            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 서고: 현판령 항목 개방", UiTheme.Small); ry += 26f * s;
+            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 임무 게시판 다음 장 예고", UiTheme.Small);
 
             // 하단
             float bw = 280f * s;

@@ -8,7 +8,7 @@ namespace JoseonMurimTactics
     [DisallowMultipleComponent]
     public sealed class NewGameSetupController : MonoBehaviour
     {
-        private static readonly string[] SectPresets = { "해동검문", "백두무관", "청학검가", "의주문" };
+        private static readonly string[] SectPresets = { "해동검문", "백두천문", "한양검계", "청해무관", "흑립방" };
 
         private GameRoot root;
         private string sectName = "해동검문";
@@ -37,6 +37,8 @@ namespace JoseonMurimTactics
             float margin = 48f * s;
 
             GUI.Label(new Rect(margin, 28f * s, w - margin * 2f, 50f * s), "새 게임", UiTheme.Title);
+            GUI.Label(new Rect(margin, 70f * s, w - margin * 2f, 26f * s),
+                "1. 난이도  >  2. 문파명  >  3. 문주 성향  >  4. 초기 무공  >  5. 확인", UiTheme.SmallMuted);
             UiTheme.DrawDivider(w * 0.5f, 88f * s, w - margin * 2f);
 
             float colTop = 104f * s;
@@ -59,13 +61,20 @@ namespace JoseonMurimTactics
 
             GUI.Label(new Rect(margin, y, leftW, lineH), "문파명", UiTheme.Heading);
             y += lineH + 6f * s;
-            sectName = GUI.TextField(new Rect(margin, y, leftW * 0.62f, btnH), sectName ?? string.Empty, 16, UiTheme.TextField);
-            float px = margin + leftW * 0.62f + 8f * s;
-            float pw = (leftW * 0.38f - 8f * s);
-            // 프리셋 두 개를 작은 버튼으로
-            if (Btn(new Rect(px, y, pw * 0.5f - 4f * s, btnH), "해동검문", false)) sectName = "해동검문";
-            if (Btn(new Rect(px + pw * 0.5f + 4f * s, y, pw * 0.5f - 4f * s, btnH), "청학검가", false)) sectName = "청학검가";
+            sectName = GUI.TextField(new Rect(margin, y, leftW * 0.44f, btnH), sectName ?? string.Empty, 8, UiTheme.TextField);
+            float px = margin + leftW * 0.44f + 8f * s;
+            float pw = (leftW * 0.56f - 8f * s);
+            float presetW = (pw - 8f * s * 4f) / 5f;
+            for (int i = 0; i < SectPresets.Length; i++)
+            {
+                if (Btn(new Rect(px + (presetW + 8f * s) * i, y, presetW, btnH), SectPresets[i], false))
+                {
+                    sectName = SectPresets[i];
+                }
+            }
             y += btnH + gap;
+            GUI.Label(new Rect(margin, y - gap + 2f * s, leftW, 24f * s),
+                IsSectNameValid() ? "2~8자 문파명 사용 가능" : "문파명은 공백 없이 2~8자로 정해야 합니다.", UiTheme.SmallMuted);
 
             GUI.Label(new Rect(margin, y, leftW, lineH), "박성준 성향", UiTheme.Heading);
             y += lineH + 6f * s;
@@ -91,8 +100,11 @@ namespace JoseonMurimTactics
             SummaryLine(sx, ref sy, sw, s, "성향", StoryEnumLabels.Label(disposition));
             SummaryLine(sx, ref sy, sw, s, "초기 무공", StoryEnumLabels.Label(art));
             sy += 10f * s;
-            GUI.Label(new Rect(sx, sy, sw, 140f * s),
-                "신생 조선 문파의 문주 박성준.\n중원무림맹 감찰단의 현판령에 맞서\n흩어진 조선 문파를 하나로 묶는다.", UiTheme.Body);
+            GUI.Label(new Rect(sx, sy, sw, 110f * s),
+                "예상 보너스\n" + BonusPreview(disposition, art), UiTheme.Body);
+            sy += 120f * s;
+            GUI.Label(new Rect(sx, sy, sw, 118f * s),
+                "박성준은 폐사당의 낡은 현판 앞에 섰다.\n문파의 이름은 곧 깃발이고,\n깃발은 곧 싸움의 이유였다.", UiTheme.Small);
 
             // ----- 하단 버튼 -----
             float bw = 220f * s;
@@ -102,17 +114,19 @@ namespace JoseonMurimTactics
                 root.Flow.GoToTitle();
             }
 
+            GUI.enabled = IsSectNameValid();
             if (Btn(new Rect(w - margin - bw, by, bw, 56f * s), "이야기 시작 →", true))
             {
                 Commit();
                 root.Flow.GoToPrologue();
             }
+            GUI.enabled = true;
         }
 
         private void Commit()
         {
             GameSession session = root.Session;
-            session.sectName = string.IsNullOrWhiteSpace(sectName) ? "해동검문" : sectName.Trim();
+            session.sectName = NormalizeSectName();
             session.difficulty = difficulty;
             session.heroDisposition = disposition;
             session.startingArt = art;
@@ -157,7 +171,9 @@ namespace JoseonMurimTactics
         {
             float gap = 10f * UiTheme.Scale;
             float bw = (w - gap * 3f) / 4f;
-            StartingArt[] all = { StartingArt.Sword, StartingArt.Fist, StartingArt.HiddenWeapon, StartingArt.InnerArt };
+            StartingArt[] all = { StartingArt.Sword, StartingArt.Ice, StartingArt.HiddenWeapon, StartingArt.Fist, StartingArt.InnerArt };
+            gap = 8f * UiTheme.Scale;
+            bw = (w - gap * (all.Length - 1)) / all.Length;
             for (int i = 0; i < all.Length; i++)
             {
                 if (Toggle(new Rect(x + (bw + gap) * i, y, bw, h), StoryEnumLabels.Label(all[i]), sel == all[i]))
@@ -177,6 +193,32 @@ namespace JoseonMurimTactics
         private static bool Btn(Rect rect, string label, bool primary)
         {
             return GUI.Button(rect, label, primary ? UiTheme.ButtonPrimary : UiTheme.Button);
+        }
+
+        private bool IsSectNameValid()
+        {
+            string normalized = NormalizeSectName();
+            return normalized.Length >= 2 && normalized.Length <= 8 && !normalized.Contains(" ");
+        }
+
+        private string NormalizeSectName()
+        {
+            string value = string.IsNullOrWhiteSpace(sectName) ? "해동검문" : sectName.Trim();
+            return value.Length > 8 ? value.Substring(0, 8) : value;
+        }
+
+        private static string BonusPreview(HeroDisposition d, StartingArt a)
+        {
+            string disposition;
+            switch (d)
+            {
+                case HeroDisposition.Royal: disposition = "- 조정/명분 설득 +1\n- 사파 협상 리스크"; break;
+                case HeroDisposition.Chivalrous: disposition = "- 민심/동료 신뢰 +1\n- 약자 보호 보상 증가"; break;
+                case HeroDisposition.Conqueror: disposition = "- 위압/항복 유도 +1\n- 선한 동료 승인도 리스크"; break;
+                default: disposition = "- 대화/도발 판정 +1\n- 실패 시 승인도 하락 가능"; break;
+            }
+
+            return disposition + "\n- " + StoryEnumLabels.Label(a) + " 무공 해금";
         }
     }
 }

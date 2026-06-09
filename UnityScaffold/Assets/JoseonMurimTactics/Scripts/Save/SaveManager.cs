@@ -70,6 +70,12 @@ namespace JoseonMurimTactics
             return best;
         }
 
+        public SaveSlotSummary PeekLatestSaveSummary()
+        {
+            string slot = LatestSlotId();
+            return string.IsNullOrEmpty(slot) ? new SaveSlotSummary { exists = false } : Peek(slot);
+        }
+
         public bool Save(GameSession session, string slot)
         {
             if (session == null || string.IsNullOrEmpty(slot))

@@ -139,6 +139,11 @@ namespace JoseonMurimTactics
                 ry += 66f * s;
             }
 
+            GUI.Label(new Rect(rx, ry, rw, 32f * s), "추천 준비", UiTheme.Heading); ry += 36f * s;
+            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 제단 주변 엄폐 활용", UiTheme.Small); ry += 26f * s;
+            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 부상자 발생 시 전투 후 의원 확인", UiTheme.Small); ry += 26f * s;
+            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 동료 승인도 변화는 결과 화면에서 정산", UiTheme.Small); ry += 34f * s;
+
             GUI.Label(new Rect(rx, ry, rw, 32f * s), "맵 미리보기", UiTheme.Heading); ry += 38f * s;
             Rect mapRect = new Rect(rx, ry, rw, Mathf.Max(60f * s, right.yMax - 22f * s - ry));
             UiTheme.DrawFill(mapRect, UiTheme.HanjiPanelAlt);
