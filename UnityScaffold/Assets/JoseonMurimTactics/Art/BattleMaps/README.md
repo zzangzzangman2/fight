@@ -6,6 +6,7 @@ This folder keeps high-quality battle map assets separate from runtime test scaf
 - `Props`: Prop tile assets and later interactive prop prefabs.
 - `Overlays`: Range, danger, objective, and tactical overlay tiles.
 - `Materials`: URP 2D sprite-lit and highlight materials.
+- `Screenshots`: Validation previews for authored battle maps.
 
 Use `Joseon Murim Tactics > Battle Maps > Generate Tile Assets` in Unity to rebuild generated assets from
 `Resources/MapAssets`.
@@ -56,6 +57,8 @@ The first production sample is `압록강 협곡 관문`.
 - Shallow ford, ruined shrine altar, lanterns, cart, broken wall, and collapse points.
 - At least 6 interactable props using `MapPropView`, `InteractableProp`, and related tactical components.
 - Validate with `Joseon Murim Tactics > Validate Current Battle Map`.
+- Render the latest overview with
+  `JoseonMurimTactics.Editor.BattleMapDioramaSceneBuilder.RenderBaekduSnowGateScreenshots`.
 
 ## Map Quality Standard v1.7
 

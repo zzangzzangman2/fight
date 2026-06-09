@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -52,6 +53,32 @@ public static class BattleMapDioramaSceneBuilder
     {
         EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         MapQualityValidator.GenerateMapQualityReport();
+    }
+
+    public static void RenderBaekduSnowGateScreenshots()
+    {
+        EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        BattleMapSceneController controller = UnityEngine.Object.FindAnyObjectByType<BattleMapSceneController>();
+        if (controller != null)
+        {
+            controller.InitializeRuntime();
+        }
+
+        Camera camera = Camera.main != null ? Camera.main : UnityEngine.Object.FindAnyObjectByType<Camera>();
+        if (camera == null)
+        {
+            throw new InvalidOperationException("Battle map screenshot requires a camera.");
+        }
+
+        camera.orthographic = true;
+        camera.orthographicSize = 7.25f;
+        camera.transform.position = new Vector3(2.40f, 5.95f, -10f);
+
+        const string screenshotFolder = "Assets/JoseonMurimTactics/Art/BattleMaps/Screenshots";
+        EnsureFolder(screenshotFolder);
+        RenderCameraToPng(camera, screenshotFolder + "/baekdu_snowgate_v1_overview.png", 1600, 1000);
+        AssetDatabase.Refresh();
+        Debug.Log("[BattleMapDioramaSceneBuilder] Rendered Baekdu screenshot.");
     }
 
     private static BattleMapTilemapBinder CreateMapRoot()
@@ -938,6 +965,31 @@ public static class BattleMapDioramaSceneBuilder
         renderer.color = color;
         renderer.sortingOrder = sortingOrder;
         return renderer;
+    }
+
+    private static void RenderCameraToPng(Camera camera, string assetPath, int width, int height)
+    {
+        RenderTexture previousTarget = camera.targetTexture;
+        RenderTexture previousActive = RenderTexture.active;
+        RenderTexture texture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+        Texture2D output = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        try
+        {
+            camera.targetTexture = texture;
+            RenderTexture.active = texture;
+            camera.Render();
+            output.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            output.Apply();
+            File.WriteAllBytes(assetPath, output.EncodeToPNG());
+        }
+        finally
+        {
+            camera.targetTexture = previousTarget;
+            RenderTexture.active = previousActive;
+            UnityEngine.Object.DestroyImmediate(output);
+            texture.Release();
+            UnityEngine.Object.DestroyImmediate(texture);
+        }
     }
 
     private static InteractableEffectType EffectFor(InteractableKind kind)
