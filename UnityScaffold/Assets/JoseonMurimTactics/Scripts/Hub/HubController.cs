@@ -308,7 +308,7 @@ public sealed class HubController : MonoBehaviour
             GUI.Label(new Rect(card.x + 16f * s, card.y + 68f * s, card.width - 180f * s, 24f * s),
                       "고민: " + CompanionConcern(id), UiTheme.SmallMuted);
             GUI.Label(new Rect(card.x + 16f * s, card.y + 92f * s, card.width - 180f * s, 24f * s),
-                      $"다음 대화: {NextCompanionTalk(id)}   |   상태: {(IsWounded(id) ? "부상" : "출전 가능")}",
+                      $"다음 대화: {NextCompanionTalk(id)}   |   상태: {CompanionStatusText(id)}",
                       UiTheme.SmallMuted);
             if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + card.height * 0.5f - 22f * s, 128f * s, 44f * s),
                            "대화", UiTheme.Button))
@@ -476,24 +476,30 @@ public sealed class HubController : MonoBehaviour
     private void DrawInfirmary(Rect r, float s)
     {
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "의원", UiTheme.Heading);
-        BattleResultData last = root.Session.lastBattleResult;
+        System.Collections.Generic.List<string> injured = root.CompanionStates.InjuredCompanionIds();
         float y = r.y + 50f * s;
-        if (last != null && last.woundedCompanions.Count > 0)
+        if (injured.Count > 0)
         {
             GUI.Label(new Rect(r.x, y, r.width, 28f * s), "치료가 필요한 동료:", UiTheme.Body);
             y += 34f * s;
-            foreach (string id in last.woundedCompanions)
+            foreach (string id in injured)
             {
                 GUI.Label(new Rect(r.x + 10f * s, y, r.width - 10f * s, 26f * s),
-                          "· " + CompanionCatalog.Name(id) + " (부상)", UiTheme.Small);
+                          "· " + CompanionCatalog.Name(id) + " (" + CompanionStatusText(id) + ")", UiTheme.Small);
                 y += 28f * s;
             }
             if (GUI.Button(new Rect(r.x, y + 8f * s, r.width * 0.6f, 48f * s), "치료하기", UiTheme.ButtonPrimary))
             {
                 if (TrySpendAction("의원 치료"))
                 {
-                    last.woundedCompanions.Clear();
+                    root.CompanionStates.HealAll();
+                    if (root.Session.lastBattleResult != null)
+                    {
+                        root.Session.lastBattleResult.woundedCompanions.Clear();
+                    }
+
                     root.Flags.AddInt("supply:medicine", -Mathf.Min(1, Mathf.Max(0, root.Flags.GetInt("supply:medicine"))));
+                    root.Save.Save(root.Session);
                     ShowToast("동료의 상처를 다스렸다.");
                     AddLog("의원에서 동료들의 부상을 치료했다. 다음 출정 준비가 가벼워졌다.");
                 }
@@ -523,9 +529,19 @@ public sealed class HubController : MonoBehaviour
         GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 26f * s), $"보유 은전: {root.Flags.GetInt("silver")}",
                   UiTheme.Body);
         float y = r.y + 84f * s;
-        BuyRow(r, ref y, s, "medicine_bundle", "약재 꾸러미", 40, "전투 후 회복에 쓰인다.");
-        BuyRow(r, ref y, s, "inner_power_pill", "내공단", 60, "내공 회복 소모품.");
-        BuyRow(r, ref y, s, "throwing_dagger_bundle", "투척 비수 묶음", 30, "암기 보급.");
+        IReadOnlyList<ShopItemInfo> stock =
+            root.ShopRepository != null ? root.ShopRepository.StockFor("hub_market", root.Session) : null;
+        if (stock != null)
+        {
+            foreach (ShopItemInfo item in stock)
+            {
+                if (IsShopItemUnlocked(item))
+                {
+                    BuyRow(r, ref y, s, item.id, item.displayName, item.price, ShopItemDescription(item.id));
+                }
+            }
+        }
+
         y += 8f * s;
         GUI.Label(new Rect(r.x, y, r.width, 26f * s), "보유품", UiTheme.Heading);
         y += 34f * s;
@@ -559,6 +575,28 @@ public sealed class HubController : MonoBehaviour
         y += 60f * s;
     }
 
+    private bool IsShopItemUnlocked(ShopItemInfo item)
+    {
+        return item != null && (string.IsNullOrEmpty(item.unlockFlag) || root.Flags.HasFlag(item.unlockFlag));
+    }
+
+    private static string ShopItemDescription(string itemId)
+    {
+        switch (InventoryService.NormalizeItemId(itemId))
+        {
+        case "medicine_bundle":
+            return "전투 후 회복에 쓰인다.";
+        case "wood_bundle":
+            return "문파 시설 복구 재료.";
+        case "inner_power_pill":
+            return "내공 회복 소모품.";
+        case "throwing_dagger_bundle":
+            return "암기 보급.";
+        default:
+            return "보급품.";
+        }
+    }
+
     private void DrawLibrary(Rect r, float s)
     {
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "서고 — 도감", UiTheme.Heading);
@@ -575,8 +613,15 @@ public sealed class HubController : MonoBehaviour
         }
         Rect body = new Rect(r.x, r.y + 96f * s, r.width, r.height - 96f * s);
         UiTheme.DrawFill(body, UiTheme.HanjiPanelAlt);
+        string loreText = LoreText(loreIndex);
+        string unlockedLore = UnlockedLoreText();
+        if (!string.IsNullOrEmpty(unlockedLore))
+        {
+            loreText += "\n\n해금 기록\n" + unlockedLore;
+        }
+
         GUI.Label(new Rect(body.x + 14f * s, body.y + 12f * s, body.width - 28f * s, body.height - 24f * s),
-                  LoreText(loreIndex), UiTheme.Body);
+                  loreText, UiTheme.Body);
 
         if (GUI.Button(new Rect(body.xMax - 150f * s, body.yMax - 48f * s, 132f * s, 36f * s), "연구 기록",
                        UiTheme.Button))
@@ -616,6 +661,32 @@ public sealed class HubController : MonoBehaviour
         default:
             return string.Empty;
         }
+    }
+
+    private string UnlockedLoreText()
+    {
+        if (root == null || root.LoreRepository == null)
+        {
+            return string.Empty;
+        }
+
+        List<string> lines = new List<string>();
+        foreach (LoreEntry entry in root.LoreRepository.All)
+        {
+            if (entry == null)
+            {
+                continue;
+            }
+
+            bool unlocked = root.Session.unlockedCodexEntryIds.Contains(entry.id) ||
+                            (!string.IsNullOrEmpty(entry.unlockFlag) && root.Flags.HasFlag(entry.unlockFlag));
+            if (unlocked)
+            {
+                lines.Add("· " + entry.title + " — " + entry.body);
+            }
+        }
+
+        return string.Join("\n", lines);
     }
 
     private void DrawSave(Rect r, float s)
@@ -881,14 +952,26 @@ public sealed class HubController : MonoBehaviour
 
     private int InjuredCount()
     {
-        BattleResultData last = root.Session.lastBattleResult;
-        return last != null && last.woundedCompanions != null ? last.woundedCompanions.Count : 0;
+        return root != null && root.CompanionStates != null ? root.CompanionStates.InjuredCount() : 0;
     }
 
     private bool IsWounded(string companionId)
     {
-        BattleResultData last = root.Session.lastBattleResult;
-        return last != null && last.woundedCompanions != null && last.woundedCompanions.Contains(companionId);
+        return root != null && root.CompanionStates != null &&
+               root.CompanionStates.InjuryOf(companionId) != CompanionInjuryLevel.Healthy;
+    }
+
+    private string CompanionStatusText(string companionId)
+    {
+        if (root == null || root.CompanionStates == null)
+        {
+            return "출전 가능";
+        }
+
+        CompanionInjuryLevel injury = root.CompanionStates.InjuryOf(companionId);
+        string label = CompanionStateService.InjuryLabel(injury);
+        int fatigue = root.CompanionStates.FatigueOf(companionId);
+        return fatigue > 0 ? $"{label} · 피로 {fatigue}" : label;
     }
 
     private static string CompanionConcern(string companionId)
@@ -974,6 +1057,12 @@ public sealed class HubController : MonoBehaviour
 
     private static DialogueScript BuildCompanionTalk(string id)
     {
+        DialogueScript authored = TryBuildAuthoredCompanionTalk(id);
+        if (authored != null)
+        {
+            return authored;
+        }
+
         DialogueScript d = new DialogueScript();
         CompanionInfo info = CompanionCatalog.Info(id);
         string name = info != null ? info.name : id;
@@ -1028,6 +1117,35 @@ public sealed class HubController : MonoBehaviour
         }
 
         return d;
+    }
+
+    private static DialogueScript TryBuildAuthoredCompanionTalk(string companionId)
+    {
+        string sceneId = AuthoredCompanionSceneId(companionId);
+        if (string.IsNullOrEmpty(sceneId))
+        {
+            return null;
+        }
+
+        AuthoringContentManifest manifest = AuthoringContentManifest.LoadFromResources();
+        DialogueScript script = AuthoringDialogueAdapter.ToDialogueScript(manifest, sceneId);
+        return script.Nodes.Count > 0 ? script : null;
+    }
+
+    private static string AuthoredCompanionSceneId(string companionId)
+    {
+        if (companionId == CompanionCatalog.BaekRyeon)
+            return "companion_baek_ryeon_talk";
+        if (companionId == CompanionCatalog.DoArin)
+            return "companion_do_arin_talk";
+        if (companionId == CompanionCatalog.JinSeoyul)
+            return "companion_jin_seoyul_talk";
+        if (companionId == CompanionCatalog.SeoA)
+            return "companion_seo_a_talk";
+        if (companionId == CompanionCatalog.HanBiyeon)
+            return "companion_han_biyeon_talk";
+
+        return string.Empty;
     }
 }
 }

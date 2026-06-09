@@ -39,6 +39,7 @@
         </div>
         <div class="top-actions">
           <button id="reloadButton" class="secondary" type="button">다시 불러오기</button>
+          <button id="importDefaultsButton" class="secondary" type="button">게임 기본 대사 가져오기</button>
           <button id="saveButton" class="primary" type="button">게임에 적용 저장</button>
         </div>
       </header>
@@ -72,6 +73,7 @@
                 <select id="sceneBackground"></select>
               </label>
             </div>
+            <div id="scenePreview" class="scene-preview"></div>
 
             <div class="section-head line-head">
               <h2>대사 흐름</h2>
@@ -125,10 +127,12 @@
         <div class="guide-panel">
           <h2>저장 방식</h2>
           <p>이 화면은 JSON을 직접 보여주지 않습니다. 저장하면 내부에서 대사 목록을 Unity용 노드 데이터로 변환하고, Resources 폴더 아래 매니페스트와 업로드 에셋 경로를 갱신합니다.</p>
+          <div id="applyStatus" class="status-grid"></div>
           <ul>
             <li>대사 저장 위치: <code>UnityScaffold/Assets/JoseonMurimTactics/Resources/AuthoringContent/content_manifest.json</code></li>
             <li>업로드 에셋 위치: <code>UnityScaffold/Assets/JoseonMurimTactics/Resources/AuthoringContent/Media</code></li>
             <li>Unity 로더: <code>AuthoringContentManifest.LoadFromResources()</code></li>
+            <li>프롤로그와 동료 대화는 저장된 매니페스트가 있으면 그것을 우선 사용합니다.</li>
           </ul>
         </div>
       </section>
@@ -200,6 +204,46 @@
           <input class="choice-flag" type="text" placeholder="예: helped_villagers">
         </label>
       </div>
+      <details class="effect-panel">
+        <summary>선택지 효과</summary>
+        <div class="form-grid">
+          <label>
+            호감 대상
+            <select class="choice-approval"></select>
+          </label>
+          <label>
+            호감 변화
+            <input class="choice-approval-delta" type="number" step="1">
+          </label>
+          <label>
+            연애 의도
+            <select class="choice-romantic">
+              <option value="false">아님</option>
+              <option value="true">연애/플러팅</option>
+            </select>
+          </label>
+          <label>
+            세력
+            <select class="choice-faction"></select>
+          </label>
+          <label>
+            세력 변화
+            <input class="choice-faction-delta" type="number" step="1">
+          </label>
+          <label>
+            장면 명령
+            <input class="choice-command" type="text" placeholder="예: open_hub">
+          </label>
+          <label>
+            전투 보정 키
+            <input class="choice-battle-key" type="text" placeholder="예: dialogue_dc_down">
+          </label>
+          <label>
+            전투 보정값
+            <input class="choice-battle-value" type="number" step="1">
+          </label>
+        </div>
+      </details>
       <button class="delete-choice danger" type="button">선택지 삭제</button>
     </li>
   </template>

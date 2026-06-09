@@ -1,8 +1,19 @@
 const dispositionLabels = ["협도", "왕도", "패도", "풍류"];
+const factionOptions = [
+  ["", "없음"],
+  ["JOSEON_SECTS", "조선문파연합"],
+  ["ZHONGYUAN_ALLIANCE", "중원무림맹"],
+  ["MURIM_INSPECTORS", "무림맹 감찰단"],
+  ["ROYAL_COURT", "조정"],
+  ["DEMONIC_CULT", "마교"],
+  ["BLACK_HAT_GUILD", "흑립방"]
+];
 
 let content = null;
 let activeTab = "dialogue";
 let activeSceneId = "";
+let dirty = false;
+let serverStatus = null;
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
@@ -25,9 +36,14 @@ function setSaveState(text, strong) {
   if (strong) {
     $("#targetPath").textContent = strong;
   }
+  $("#saveButton").classList.toggle("dirty", dirty);
 }
 
 async function requestJson(url, options) {
+  if (window.location.protocol === "file:") {
+    throw new Error("기존 대사 자동 불러오기는 server.js로 실행해야 합니다. node server.js 후 http://127.0.0.1:5178 로 열어주세요.");
+  }
+
   const response = await fetch(url, options);
   const data = await response.json();
   if (!response.ok || data.ok === false) {
@@ -35,6 +51,16 @@ async function requestJson(url, options) {
   }
 
   return data;
+}
+
+function markDirty(message = "수정됨") {
+  dirty = true;
+  setSaveState(message, "저장하면 Unity Resources에 바로 반영");
+}
+
+function clearDirty(message, strong) {
+  dirty = false;
+  setSaveState(message, strong);
 }
 
 function normalize(data) {
@@ -65,6 +91,20 @@ function normalize(data) {
         choice.disposition = Number.isFinite(Number(choice.disposition)) ? Number(choice.disposition) : -1;
         choice.targetEntryId ||= "";
         choice.flagAdded ||= "";
+        choice.approvalId ||= choice.approvalChanges?.[0]?.id || "";
+        choice.approvalDelta = Number.isFinite(Number(choice.approvalDelta))
+          ? Number(choice.approvalDelta)
+          : Number(choice.approvalChanges?.[0]?.delta || 0);
+        choice.factionId ||= choice.factionChanges?.[0]?.id || "";
+        choice.factionDelta = Number.isFinite(Number(choice.factionDelta))
+          ? Number(choice.factionDelta)
+          : Number(choice.factionChanges?.[0]?.delta || 0);
+        choice.battleKey ||= choice.battleModifiers?.[0]?.id || "";
+        choice.battleValue = Number.isFinite(Number(choice.battleValue))
+          ? Number(choice.battleValue)
+          : Number(choice.battleModifiers?.[0]?.delta || 0);
+        choice.romanticIntent = !!choice.romanticIntent;
+        choice.sceneCommand ||= "";
       }
     }
   }
@@ -115,9 +155,10 @@ async function loadContent() {
   setSaveState("불러오는 중");
   content = normalize(await requestJson("/api/content"));
   activeSceneId = content.dialogueScenes[0]?.id || "";
+  serverStatus = await requestJson("/api/status").catch(() => null);
   bindProject();
   render();
-  setSaveState("편집 가능", "저장하면 Unity Resources에 반영");
+  clearDirty(`자동 불러오기 완료 · ${content.dialogueScenes.length}개 씬`, serverStatus?.manifestPath || "저장하면 Unity Resources에 반영");
 }
 
 function bindProject() {
@@ -167,6 +208,7 @@ function render() {
   renderScenes();
   renderCharacters();
   renderMedia();
+  renderApplyStatus();
 }
 
 function renderTabs() {
@@ -203,7 +245,45 @@ function renderScenes() {
   $("#sceneTitle").value = scene.title || "";
   $("#sceneLocation").value = scene.location || "";
   fillBackgroundSelect($("#sceneBackground"), scene.backgroundId, false);
+  renderScenePreview(scene);
   renderLines(scene);
+}
+
+function renderScenePreview(scene) {
+  const preview = $("#scenePreview");
+  const background = content.backgrounds.find(item => item.id === scene.backgroundId);
+  const firstLine = scene.entries.find(item => item.line && item.line.trim()) || scene.entries[0];
+  const speaker = content.characters.find(item => item.id === firstLine?.speakerId);
+  const image = background?.previewUrl
+    ? `<img src="${escapeAttr(background.previewUrl)}" alt="">`
+    : "<span>배경 미지정</span>";
+  preview.innerHTML = `
+    <div class="scene-preview-image">${image}</div>
+    <div class="scene-preview-copy">
+      <strong>${escapeHtml(scene.title || "대사 씬")}</strong>
+      <span>${escapeHtml(scene.location || "장소 미정")} · ${scene.entries.length}개 대사 · 선택지 ${countChoices(scene)}개</span>
+      <p>${escapeHtml(speaker?.displayName || firstLine?.speakerId || "서술")} ${firstLine?.line ? "— " + escapeHtml(firstLine.line) : "— 첫 대사를 입력하세요."}</p>
+    </div>
+  `;
+}
+
+function countChoices(scene) {
+  return scene.entries.reduce((sum, item) => sum + (item.choices?.length || 0), 0);
+}
+
+function renderApplyStatus() {
+  const panel = $("#applyStatus");
+  if (!panel || !content) {
+    return;
+  }
+
+  const status = serverStatus || {};
+  panel.innerHTML = `
+    <article><strong>${content.dialogueScenes.length}</strong><span>대사 씬</span></article>
+    <article><strong>${content.characters.length}</strong><span>인물</span></article>
+    <article><strong>${(content.backgrounds.length + content.portraits.length + content.props.length)}</strong><span>배경/에셋</span></article>
+    <article><strong>${status.updatedAt ? new Date(status.updatedAt).toLocaleTimeString() : "-"}</strong><span>최근 저장</span></article>
+  `;
 }
 
 function renderLines(scene) {
@@ -235,6 +315,7 @@ function renderLines(scene) {
       const clone = JSON.parse(JSON.stringify(entry));
       clone.id = uid("line");
       scene.entries.splice(index + 1, 0, clone);
+      markDirty("대사 복제됨");
       renderScenes();
     });
     node.querySelector(".delete-line").addEventListener("click", () => {
@@ -243,6 +324,7 @@ function renderLines(scene) {
       } else {
         scene.entries.splice(index, 1);
       }
+      markDirty("대사 삭제됨");
       renderScenes();
     });
     node.querySelector(".add-choice").addEventListener("click", () => {
@@ -251,8 +333,17 @@ function renderLines(scene) {
         text: "",
         disposition: -1,
         targetEntryId: "",
-        flagAdded: ""
+        flagAdded: "",
+        approvalId: "",
+        approvalDelta: 0,
+        factionId: "",
+        factionDelta: 0,
+        battleKey: "",
+        battleValue: 0,
+        romanticIntent: false,
+        sceneCommand: ""
       });
+      markDirty("선택지 추가됨");
       renderScenes();
     });
 
@@ -269,6 +360,14 @@ function renderChoices(scene, entry, list) {
     node.querySelector(".choice-disposition").value = String(choice.disposition ?? -1);
     fillChoiceTarget(node.querySelector(".choice-target"), scene, choice.targetEntryId);
     node.querySelector(".choice-flag").value = choice.flagAdded || "";
+    fillApprovalSelect(node.querySelector(".choice-approval"), choice.approvalId);
+    fillFactionSelect(node.querySelector(".choice-faction"), choice.factionId);
+    node.querySelector(".choice-approval-delta").value = String(choice.approvalDelta || 0);
+    node.querySelector(".choice-faction-delta").value = String(choice.factionDelta || 0);
+    node.querySelector(".choice-romantic").value = String(!!choice.romanticIntent);
+    node.querySelector(".choice-command").value = choice.sceneCommand || "";
+    node.querySelector(".choice-battle-key").value = choice.battleKey || "";
+    node.querySelector(".choice-battle-value").value = String(choice.battleValue || 0);
     node.querySelector(".choice-text").addEventListener("input", event => {
       choice.text = event.target.value;
     });
@@ -281,8 +380,33 @@ function renderChoices(scene, entry, list) {
     node.querySelector(".choice-flag").addEventListener("input", event => {
       choice.flagAdded = event.target.value.trim();
     });
+    node.querySelector(".choice-approval").addEventListener("change", event => {
+      choice.approvalId = event.target.value;
+    });
+    node.querySelector(".choice-approval-delta").addEventListener("input", event => {
+      choice.approvalDelta = Number(event.target.value || 0);
+    });
+    node.querySelector(".choice-faction").addEventListener("change", event => {
+      choice.factionId = event.target.value;
+    });
+    node.querySelector(".choice-faction-delta").addEventListener("input", event => {
+      choice.factionDelta = Number(event.target.value || 0);
+    });
+    node.querySelector(".choice-romantic").addEventListener("change", event => {
+      choice.romanticIntent = event.target.value === "true";
+    });
+    node.querySelector(".choice-command").addEventListener("input", event => {
+      choice.sceneCommand = event.target.value.trim();
+    });
+    node.querySelector(".choice-battle-key").addEventListener("input", event => {
+      choice.battleKey = event.target.value.trim();
+    });
+    node.querySelector(".choice-battle-value").addEventListener("input", event => {
+      choice.battleValue = Number(event.target.value || 0);
+    });
     node.querySelector(".delete-choice").addEventListener("click", () => {
       entry.choices.splice(index, 1);
+      markDirty("선택지 삭제됨");
       renderScenes();
     });
     list.append(node);
@@ -310,6 +434,28 @@ function fillChoiceTarget(select, scene, value) {
   select.value = value || "";
 }
 
+function fillApprovalSelect(select, value) {
+  select.innerHTML = '<option value="">없음</option>';
+  for (const character of content.characters) {
+    const option = document.createElement("option");
+    option.value = character.id;
+    option.textContent = character.displayName || character.id;
+    select.append(option);
+  }
+  select.value = value || "";
+}
+
+function fillFactionSelect(select, value) {
+  select.innerHTML = "";
+  for (const [id, label] of factionOptions) {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = label;
+    select.append(option);
+  }
+  select.value = value || "";
+}
+
 function moveEntry(scene, index, direction) {
   const next = index + direction;
   if (next < 0 || next >= scene.entries.length) {
@@ -318,6 +464,7 @@ function moveEntry(scene, index, direction) {
 
   const [entry] = scene.entries.splice(index, 1);
   scene.entries.splice(next, 0, entry);
+  markDirty("대사 순서 변경됨");
   renderScenes();
 }
 
@@ -355,6 +502,7 @@ function renderCharacters() {
     });
     card.querySelector(".delete-character").addEventListener("click", () => {
       content.characters = content.characters.filter(item => item !== character);
+      markDirty("인물 삭제됨");
       render();
     });
     grid.append(card);
@@ -416,6 +564,7 @@ function renderMediaGrid(selector, items, kind) {
       if (index >= 0) {
         list.splice(index, 1);
       }
+      markDirty("에셋 삭제됨");
       render();
     });
     grid.append(card);
@@ -445,7 +594,7 @@ async function uploadFiles(kind, files) {
     });
   }
   render();
-  setSaveState("업로드 완료. 저장하면 게임 매니페스트에 반영됩니다.");
+  markDirty("업로드 완료 · 저장 필요");
 }
 
 function uniqueMediaId(kind, id) {
@@ -502,10 +651,11 @@ function prepareForSave() {
               : nextNodeId,
           requiredFlags: [],
           flagsAdded: choice.flagAdded ? [choice.flagAdded] : [],
-          approvalChanges: [],
-          factionChanges: [],
-          battleModifiers: [],
-          sceneCommand: ""
+          approvalChanges: choice.approvalId ? [{ id: choice.approvalId, delta: Number(choice.approvalDelta || 0) }] : [],
+          factionChanges: choice.factionId ? [{ id: choice.factionId, delta: Number(choice.factionDelta || 0) }] : [],
+          battleModifiers: choice.battleKey ? [{ id: choice.battleKey, delta: Number(choice.battleValue || 0) }] : [],
+          romanticIntent: !!choice.romanticIntent,
+          sceneCommand: choice.sceneCommand || ""
         }))
       };
     });
@@ -523,8 +673,9 @@ async function saveContent() {
     body: JSON.stringify(output)
   });
   content = normalize(output);
+  serverStatus = await requestJson("/api/status").catch(() => serverStatus);
   render();
-  setSaveState(`저장 완료 ${new Date(result.updatedAt).toLocaleTimeString()}`, result.manifestPath);
+  clearDirty(`게임 적용 완료 ${new Date(result.updatedAt).toLocaleTimeString()}`, result.manifestPath);
 }
 
 function escapeHtml(value) {
@@ -547,6 +698,7 @@ function bindEvents() {
   });
   $("#reloadButton").addEventListener("click", loadContent);
   $("#saveButton").addEventListener("click", () => saveContent().catch(error => setSaveState(`저장 실패: ${error.message}`)));
+  $("#importDefaultsButton").addEventListener("click", () => importDefaults().catch(error => setSaveState(`가져오기 실패: ${error.message}`)));
   $("#projectTitle").addEventListener("input", () => {
     content.project.title = $("#projectTitle").value;
   });
@@ -557,6 +709,7 @@ function bindEvents() {
     const scene = newScene();
     content.dialogueScenes.push(scene);
     activeSceneId = scene.id;
+    markDirty("새 씬 추가됨");
     render();
   });
   $("#deleteSceneButton").addEventListener("click", () => {
@@ -567,29 +720,65 @@ function bindEvents() {
       content.dialogueScenes = content.dialogueScenes.filter(scene => scene.id !== activeSceneId);
       activeSceneId = content.dialogueScenes[0].id;
     }
+    markDirty("씬 삭제됨");
     render();
   });
   $("#sceneTitle").addEventListener("input", event => {
     activeScene().title = event.target.value;
     $("#sceneHeading").textContent = event.target.value || "대사 씬";
+    renderScenePreview(activeScene());
   });
   $("#sceneLocation").addEventListener("input", event => {
     activeScene().location = event.target.value;
+    renderScenePreview(activeScene());
   });
   $("#sceneBackground").addEventListener("change", event => {
     activeScene().backgroundId = event.target.value;
+    renderScenePreview(activeScene());
   });
   $("#addLineButton").addEventListener("click", () => {
     activeScene().entries.push(newEntry());
+    markDirty("대사 추가됨");
     renderScenes();
   });
   $("#addCharacterButton").addEventListener("click", () => {
     content.characters.push(newCharacter());
+    markDirty("인물 추가됨");
     render();
   });
   $("#backgroundUpload").addEventListener("change", event => uploadFiles("backgrounds", event.target.files).catch(error => setSaveState(`업로드 실패: ${error.message}`)));
   $("#portraitUpload").addEventListener("change", event => uploadFiles("portraits", event.target.files).catch(error => setSaveState(`업로드 실패: ${error.message}`)));
   $("#propUpload").addEventListener("change", event => uploadFiles("props", event.target.files).catch(error => setSaveState(`업로드 실패: ${error.message}`)));
+  document.addEventListener("input", event => {
+    if (event.target.matches("input:not([type=file]), textarea")) {
+      markDirty("수정됨");
+    }
+  });
+  document.addEventListener("change", event => {
+    if (event.target.matches("select")) {
+      markDirty("수정됨");
+    }
+  });
+}
+
+async function importDefaults() {
+  const replace = window.confirm("게임 기본 프롤로그/동료 대화를 다시 가져올까요? 같은 기본 씬은 최신 기본값으로 교체하고, 직접 만든 씬은 유지합니다.");
+  if (!replace) {
+    return;
+  }
+
+  setSaveState("게임 기본 대사 가져오는 중");
+  const result = await requestJson("/api/import-defaults", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ replace: true })
+  });
+  content = normalize(result.manifest);
+  activeSceneId = content.dialogueScenes[0]?.id || "";
+  serverStatus = await requestJson("/api/status").catch(() => serverStatus);
+  bindProject();
+  render();
+  clearDirty(`기본 대사 적용 완료 ${new Date(result.updatedAt).toLocaleTimeString()}`, result.manifestPath);
 }
 
 bindEvents();

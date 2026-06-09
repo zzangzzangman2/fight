@@ -71,6 +71,12 @@ public sealed class PrologueController : MonoBehaviour
 
     private static DialogueScript BuildPrologue()
     {
+        DialogueScript authored = TryBuildAuthoredDialogue("chapter1_prologue");
+        if (authored != null)
+        {
+            return authored;
+        }
+
         DialogueScript d = new DialogueScript();
 
         d.Add(new DialogueNode("c1_000", "",
@@ -195,6 +201,13 @@ public sealed class PrologueController : MonoBehaviour
             null));
 
         return d;
+    }
+
+    private static DialogueScript TryBuildAuthoredDialogue(string sceneId)
+    {
+        AuthoringContentManifest manifest = AuthoringContentManifest.LoadFromResources();
+        DialogueScript script = AuthoringDialogueAdapter.ToDialogueScript(manifest, sceneId);
+        return script.Nodes.Count > 0 ? script : null;
     }
 }
 }
