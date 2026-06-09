@@ -15,6 +15,12 @@ EditorBuildSettings:
     path: Assets/JoseonMurimTactics/Scenes/NewGameSetup.unity
     guid: 122248789bff49d69efe70dbe4fded0f
   - enabled: 1
+    path: Assets/JoseonMurimTactics/Scenes/Prologue.unity
+    guid: 8191518382be4425be4a361bb9133560
+  - enabled: 1
+    path: Assets/JoseonMurimTactics/Scenes/Hub_Pyesadang.unity
+    guid: fe62e4dc46404fdeabd0a8741ef2b961
+  - enabled: 1
     path: Assets/JoseonMurimTactics/Scenes/BattleTest.unity
     guid: 0fd63a50db8c2d44bbcf7ccd5c23cec9
   m_configObjects: {}
