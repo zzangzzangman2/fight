@@ -62,7 +62,7 @@ namespace JoseonMurimTactics
             };
             m1.rewardPreview.Add("은전 120");
             m1.rewardPreview.Add("약재 꾸러미");
-            m1.rewardPreview.Add("무공 단서: 월하반조검");
+            m1.rewardPreview.Add("무공 단서: 설악창결");
             list.Add(m1);
 
             MissionInfo m2 = new MissionInfo

@@ -303,8 +303,8 @@ namespace JoseonMurimTactics
             {
                 GUI.Label(new Rect(34f, 398f, 300f, 22f), $"{hoveredUnit.definition.displayName} ({FactionLabel(hoveredUnit.definition.faction)})", labelStyle);
                 GUI.Label(new Rect(34f, 422f, 300f, 22f), $"체력 {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   방어 {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}", smallStyle);
-                GUI.Label(new Rect(34f, 446f, 300f, 22f), $"상태: {UnitStatusText(hoveredUnit)}", smallStyle);
-                GUI.Label(new Rect(34f, 470f, 300f, 22f), $"무공: {hoveredUnit.definition.specialName}", smallStyle);
+                GUI.Label(new Rect(34f, 446f, 300f, 22f), $"{hoveredUnit.definition.age}세 · {hoveredUnit.definition.mbti} · {hoveredUnit.definition.elementName}/{hoveredUnit.definition.weaponName}", smallStyle);
+                GUI.Label(new Rect(34f, 470f, 300f, 22f), $"상태: {UnitStatusText(hoveredUnit)}   무공: {hoveredUnit.definition.specialName}", smallStyle);
                 return;
             }
 
@@ -612,7 +612,7 @@ namespace JoseonMurimTactics
         {
             if (hoveredUnit != null)
             {
-                return $"{hoveredUnit.definition.displayName} ({FactionLabel(hoveredUnit.definition.faction)})\n체력 {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   방어 {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}\n상태: {UnitStatusText(hoveredUnit)}\n무공: {hoveredUnit.definition.specialName}";
+                return $"{hoveredUnit.definition.displayName} ({FactionLabel(hoveredUnit.definition.faction)})\n{hoveredUnit.definition.age}세 · {hoveredUnit.definition.mbti} · {hoveredUnit.definition.sectName}\n{hoveredUnit.definition.elementName}/{hoveredUnit.definition.weaponName} · {hoveredUnit.definition.speechTone}\n체력 {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   방어 {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}\n상태: {UnitStatusText(hoveredUnit)}\n무공: {hoveredUnit.definition.specialName}";
             }
 
             if (hoveredTile != null)
@@ -2895,6 +2895,12 @@ namespace JoseonMurimTactics
         public Faction faction;
         public CharacterVisualData visual;
         public Vector2Int startCell;
+        public string sectName;
+        public int age;
+        public string mbti;
+        public string elementName;
+        public string weaponName;
+        public string speechTone;
         public int maxHp = 30;
         public int maxInner = 3;
         public int initiative = 10;

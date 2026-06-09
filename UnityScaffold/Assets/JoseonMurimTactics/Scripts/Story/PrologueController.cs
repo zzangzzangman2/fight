@@ -3,8 +3,8 @@ using UnityEngine;
 namespace JoseonMurimTactics
 {
     /// <summary>
-    /// [4] Prologue — 압록강 폐사당. 위지강의 현판령, 윤서화의 반발, 백련의 충돌,
-    /// 박성준의 조선 문파 자치 선언(4성향 선택지). 종료 시 윤서화·백련 합류 후 첫 전투 준비로.
+    /// [4] Prologue — 압록강 폐사당. 위지강의 현판령, 도아린의 반발, 백련의 충돌,
+    /// 박성준의 조선 문파 자치 선언(4성향 선택지). 종료 시 도아린·백련 합류 후 첫 전투 준비로.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PrologueController : MonoBehaviour
@@ -48,8 +48,8 @@ namespace JoseonMurimTactics
         private void Finish()
         {
             // 동료 합류 (CH00 availableCompanionIds)
-            root.Session.RecruitCompanion(CompanionCatalog.YunSeohwa);
             root.Session.RecruitCompanion(CompanionCatalog.BaekRyeon);
+            root.Session.RecruitCompanion(CompanionCatalog.DoArin);
             root.Flags.SetFlag(StoryFlags.PrologueCompleted);
             root.Flags.SetFlag(StoryFlags.JoseonAllianceStarted);
             root.Flags.SetFlag(StoryFlags.BaekRyeonRecruited);
@@ -69,8 +69,8 @@ namespace JoseonMurimTactics
                 "“오늘부로 이 일대 조선 문파는 무림맹의 하위 분파로 편입된다. 문파명은 중원식으로 고치고, 가전 무공서를 제출하며, 모든 공식 문서는 중원 관화로만 작성하라.”",
                 "p2"));
 
-            d.Add(new DialogueNode("p2", "윤서화",
-                "“…우리 검가의 현판은 백성의 피로 세운 것이오. 이름도, 무공도 당신들의 표준에 내줄 수는 없소.”",
+            d.Add(new DialogueNode("p2", "도아린",
+                "“…우리 도문의 현판은 선대가 피로 지킨 거다. 이름도, 불씨도 당신들 표준에 내줄 수 없어.”",
                 "p3"));
 
             d.Add(new DialogueNode("p3", "감찰사 위지강",
@@ -90,7 +90,7 @@ namespace JoseonMurimTactics
 
             choice.choices.Add(new DialogueChoice(
                 "백성의 피로 세운 문파를 남의 현판 아래 둘 수는 없소.", HeroDisposition.Chivalrous, "p7")
-                .Approval(CompanionCatalog.YunSeohwa, +8)
+                .Approval(CompanionCatalog.DoArin, +8)
                 .Approval(CompanionCatalog.BaekRyeon, +8)
                 .Faction(FactionIds.ZhongyuanAlliance, -6)
                 .Faction(FactionIds.JoseonSects, +5)
@@ -99,7 +99,7 @@ namespace JoseonMurimTactics
 
             choice.choices.Add(new DialogueChoice(
                 "무림의 예법을 논하려면, 먼저 사신(使臣)을 대하는 예부터 지키시오.", HeroDisposition.Royal, "p7")
-                .Approval(CompanionCatalog.YunSeohwa, +3)
+                .Approval(CompanionCatalog.DoArin, +3)
                 .Faction(FactionIds.ZhongyuanAlliance, -4)
                 .Faction(FactionIds.RoyalCourt, +4)
                 .Flag("FLAG_ROYAL_STANCE")
@@ -108,7 +108,7 @@ namespace JoseonMurimTactics
             choice.choices.Add(new DialogueChoice(
                 "내 검 아래 꿇고도 그 ‘표준’이란 말을 할 수 있는지 보자.", HeroDisposition.Conqueror, "p7")
                 .Approval(CompanionCatalog.BaekRyeon, -4)
-                .Approval(CompanionCatalog.YunSeohwa, +2)
+                .Approval(CompanionCatalog.DoArin, +2)
                 .Faction(FactionIds.ZhongyuanAlliance, -7)
                 .Flag("FLAG_CONQUEROR_STANCE")
                 .Battle("park_momentum", 1)
@@ -117,7 +117,7 @@ namespace JoseonMurimTactics
             choice.choices.Add(new DialogueChoice(
                 "문파 이름도, 여인의 이름도, 억지로 바꾸라 하면 매력이 죽는 법이오.", HeroDisposition.Romantic, "p7")
                 .Approval(CompanionCatalog.HanBiyeon, +8)
-                .Approval(CompanionCatalog.YunSeohwa, -6)
+                .Approval(CompanionCatalog.DoArin, -6)
                 .Faction(FactionIds.ZhongyuanAlliance, -5)
                 .Flag("FLAG_ROMANTIC_TAUNTED_INSPECTOR")
                 .Battle("park_momentum", 1)

@@ -165,7 +165,7 @@ namespace JoseonMurimTactics
             GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 50f * s),
                 "기초 조작과 무공을 점검하는 곳. (실전 성장·대련은 이후 버전)", UiTheme.Small);
             float y = r.y + 100f * s;
-            string[] drills = { "박성준 — 기본 검로 점검", "윤서화 — 반격 연습", "백련 — 한기 운용" };
+            string[] drills = { "박성준 — 백두광검 검로 점검", "백련 — 설악창 한기 운용", "도아린 — 화왕도 돌파 연습" };
             foreach (string d in drills)
             {
                 if (GUI.Button(new Rect(r.x, r.y + (y - r.y), r.width * 0.78f, 46f * s), d, UiTheme.Button))
@@ -185,7 +185,7 @@ namespace JoseonMurimTactics
         {
             GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "동료", UiTheme.Heading);
             float y = r.y + 48f * s;
-            float cardH = 92f * s;
+            float cardH = 106f * s;
             foreach (string id in root.Session.recruitedCompanionIds)
             {
                 CompanionInfo info = CompanionCatalog.Info(id);
@@ -193,8 +193,10 @@ namespace JoseonMurimTactics
                 Rect card = new Rect(r.x, y, r.width, cardH);
                 UiTheme.DrawPanel(card, true);
                 GUI.Label(new Rect(card.x + 16f * s, card.y + 10f * s, card.width - 180f * s, 30f * s), $"{info.name} · {info.title}", UiTheme.Body);
-                GUI.Label(new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 180f * s, 26f * s),
-                    $"{info.role}   |   {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})", UiTheme.SmallMuted);
+                GUI.Label(new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 180f * s, 24f * s),
+                    $"{info.age}세 · {info.mbti} · {info.region} {info.sectName}", UiTheme.SmallMuted);
+                GUI.Label(new Rect(card.x + 16f * s, card.y + 68f * s, card.width - 180f * s, 24f * s),
+                    $"{info.element} / {info.weapon}   |   {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})", UiTheme.SmallMuted);
                 if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + card.height * 0.5f - 22f * s, 128f * s, 44f * s), "대화", UiTheme.Button))
                 {
                     talk = new DialogueController(BuildCompanionTalk(id), root);
@@ -204,12 +206,12 @@ namespace JoseonMurimTactics
             }
             GUI.Label(new Rect(r.x, y + 4f * s, r.width, 26f * s), "── 이후 합류 예정 ──", UiTheme.SmallMuted);
             y += 34f * s;
-            string[] locked = { CompanionCatalog.HanBiyeon, CompanionCatalog.DoArin, CompanionCatalog.MaeHwaryeong, CompanionCatalog.KangChohui };
+            string[] locked = { CompanionCatalog.SeoA, CompanionCatalog.MaeHwaryeong, CompanionCatalog.HanBiyeon };
             foreach (string id in locked)
             {
                 CompanionInfo info = CompanionCatalog.Info(id);
                 if (info == null || root.Session.HasCompanion(id)) continue;
-                GUI.Label(new Rect(r.x, y, r.width, 26f * s), $"🔒 {info.name} — {info.title}", UiTheme.SmallMuted);
+                GUI.Label(new Rect(r.x, y, r.width, 26f * s), $"🔒 {info.name} — {info.region} {info.sectName} / {info.element} / {info.weapon}", UiTheme.SmallMuted);
                 y += 28f * s;
             }
         }
@@ -351,7 +353,7 @@ namespace JoseonMurimTactics
             {
                 case 0: return "중원무림맹의 강경 정파가 조선 문파들을 ‘하위 분파’로 흡수하려 한다. 무공·예법·기록·언어를 중원식으로 바꾸라 강요하는 가운데, 흩어진 조선 문파들이 해동문 박성준을 중심으로 연합하기 시작한다.";
                 case 1: return "· 조선문파연합: 해동문이 묶어가는 신흥 연합.\n· 중원무림맹(강경파): 흡수·동화를 밀어붙이는 권력층.\n· 무림맹 감찰단: 현판령을 집행하는 첨병.\n· 조정 / 마교 / 흑립방: 각자의 셈을 가진 변수들.";
-                case 2: return "· 검법(윤서화): 월하반조검 — 반격에 능한 정공의 검로.\n· 빙공(백련): 설화심법 — 한기로 적을 늦추고 아군을 회복.\n· 암기(한비연): 비화독침 — 잠행과 원거리 견제.\n· 권법/창술/음공: 이후 동료와 함께 확장.";
+                case 2: return "· 백두광검(박성준): 빛과 검으로 파훼를 만든다.\n· 설악창(백련): 서리와 창으로 적을 묶는다.\n· 화왕도(도아린): 불과 도로 정면을 돌파한다.\n· 천뢰봉(서아): 전기와 봉으로 빠르게 흔든다.\n· 풍매선(매화령): 바람과 꽃, 부채로 지원한다.\n· 흑연암기(한비연): 어둠과 독, 단검·암기로 빈틈을 찌른다.";
                 default: return string.Empty;
             }
         }
@@ -428,25 +430,37 @@ namespace JoseonMurimTactics
             CompanionInfo info = CompanionCatalog.Info(id);
             string name = info != null ? info.name : id;
 
-            if (id == CompanionCatalog.YunSeohwa)
+            if (id == CompanionCatalog.BaekRyeon)
             {
-                d.Add(new DialogueNode("t0", name, "“문주. 깃발은 세웠으나, 검을 들 자들의 마음까지 세운 것은 아니오.”", "t1"));
+                d.Add(new DialogueNode("t0", name, "“창끝은 차갑게 두겠습니다. 다만, 사람을 살릴 길까지 얼리지는 말아 주세요.”", "t1"));
                 DialogueNode c = new DialogueNode("t1", "박성준", "(어떻게 답할까?)");
-                c.choices.Add(new DialogueChoice("정중히 — 그대의 검에 기대겠소.", HeroDisposition.Chivalrous, "t2a").Approval(id, +3));
-                c.choices.Add(new DialogueChoice("농담으로 — 마음은 차차 열리는 법이지.", HeroDisposition.Romantic, "t2b").Approval(id, -3));
+                c.choices.Add(new DialogueChoice("다친 제자들부터 살피자.", HeroDisposition.Chivalrous, "t2a").Approval(id, +3));
+                c.choices.Add(new DialogueChoice("냉정하게 — 지금은 전열이 먼저다.", HeroDisposition.Conqueror, "t2b").Approval(id, -2));
                 d.Add(c);
-                d.Add(new DialogueNode("t2a", name, "윤서화가 짧게 고개를 끄덕인다. “…기대에 어긋나지 않겠소.”", null));
-                d.Add(new DialogueNode("t2b", name, "윤서화의 눈이 차가워진다. “지금은 그럴 때가 아니오.”", null));
+                d.Add(new DialogueNode("t2a", name, "백련이 조용히 고개를 숙인다. “…네. 그 말이면 충분합니다.”", null));
+                d.Add(new DialogueNode("t2b", name, "백련의 눈빛이 잠시 얼어붙는다. “그 냉정함이 사람을 버리지 않길 바랍니다.”", null));
             }
-            else if (id == CompanionCatalog.BaekRyeon)
+            else if (id == CompanionCatalog.DoArin)
             {
-                d.Add(new DialogueNode("t0", name, "“다친 제자들은 고비를 넘겼어요. 다만, 약재가 곧 동날 거예요.”", "t1"));
+                d.Add(new DialogueNode("t0", name, "“문주, 복잡하게 재지 말자. 저놈들이 밀고 오면, 내가 먼저 불길 열게.”", "t1"));
                 DialogueNode c = new DialogueNode("t1", "박성준", "(어떻게 답할까?)");
-                c.choices.Add(new DialogueChoice("제자들 안부부터 챙긴다.", HeroDisposition.Chivalrous, "t2a").Approval(id, +3));
-                c.choices.Add(new DialogueChoice("약재 걱정은 나중, 지금은 출정이 먼저요.", HeroDisposition.Conqueror, "t2b").Approval(id, -2));
+                c.choices.Add(new DialogueChoice("좋다. 단, 혼자 앞서지 마라.", HeroDisposition.Royal, "t2a").Approval(id, +2));
+                c.choices.Add(new DialogueChoice("앞장서라. 길은 힘으로 연다.", HeroDisposition.Conqueror, "t2b").Approval(id, +4));
                 d.Add(c);
-                d.Add(new DialogueNode("t2a", name, "백련이 옅게 웃는다. “…고마워요, 문주.”", null));
-                d.Add(new DialogueNode("t2b", name, "백련이 입술을 다문다. “사람이 먼저예요, 문주.”", null));
+                d.Add(new DialogueNode("t2a", name, "도아린이 도집을 툭 친다. “알았어. 한 발만 먼저 간다, 한 발만.”", null));
+                d.Add(new DialogueNode("t2b", name, "도아린이 씩 웃는다. “그 말 기다렸어.”", null));
+            }
+            else if (id == CompanionCatalog.SeoA)
+            {
+                d.Add(new DialogueNode("t0", name, "“문주님! 저 방금 번개가 어디로 튀는지 봤어요. 아, 아니, 진짜로요!”", null));
+            }
+            else if (id == CompanionCatalog.MaeHwaryeong)
+            {
+                d.Add(new DialogueNode("t0", name, "“바람은 억지로 잡으면 달아나요. 사람 마음도 비슷하답니다, 문주님.”", null));
+            }
+            else if (id == CompanionCatalog.HanBiyeon)
+            {
+                d.Add(new DialogueNode("t0", name, "“정면으로 부딪히는 건 취향이 아니야. 대신, 등 뒤의 길은 내가 볼게.”", null));
             }
             else
             {

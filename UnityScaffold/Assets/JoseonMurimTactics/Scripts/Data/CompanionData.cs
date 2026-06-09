@@ -23,6 +23,13 @@ namespace JoseonMurimTactics
         public string displayName;
         public string title;
         public string role;
+        public string region;
+        public string sectName;
+        public int age;
+        public string mbti;
+        public string element;
+        public string weapon;
+        public string speechTone;
         [TextArea] public string profile;
         public Sprite portraitPlaceholder;
         public List<string> startingSkillIds = new List<string>();

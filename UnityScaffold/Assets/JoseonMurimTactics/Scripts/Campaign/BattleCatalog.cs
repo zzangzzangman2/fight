@@ -60,8 +60,8 @@ namespace JoseonMurimTactics
             };
 
             d.roster.Add("박성준");
-            d.roster.Add("윤서화");
             d.roster.Add("백련");
+            d.roster.Add("도아린");
 
             d.defeatConditions.Add("박성준 전투불능");
             d.defeatConditions.Add("백련 전투불능");
@@ -72,12 +72,12 @@ namespace JoseonMurimTactics
             d.objectives.Add(new BattleObjective("OBJ_KEEP_ALTAR", "제단을 부수지 않는다", true));
 
             d.rewardItems.Add("약재 꾸러미");
-            d.rewardItems.Add("무공 단서: 월하반조검");
+            d.rewardItems.Add("무공 단서: 설악창결");
 
             d.factionOnWin.Add(new IdDelta(FactionIds.ZhongyuanAlliance, -10)); // 적대도 +10 = 평판 -10
             d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +5));
             d.approvalOnWin.Add(new IdDelta(CompanionCatalog.BaekRyeon, +4));
-            d.approvalOnWin.Add(new IdDelta(CompanionCatalog.YunSeohwa, +3));
+            d.approvalOnWin.Add(new IdDelta(CompanionCatalog.DoArin, +3));
 
             return d;
         }

@@ -153,132 +153,258 @@ MonoBehaviour:
   tileWidth: 1.16
   tileHeight: 0.62
   unitDefinitions:
-  - id: yeon_sowol
-    displayName: Yeon Sowol
+  - id: park_sungjun
+    displayName: 박성준
     faction: 0
     visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
-    startCell: {x: 1, y: 1}
-    maxHp: 34
-    maxInner: 4
-    initiative: 14
+    startCell: {x: 1, y: 2}
+    sectName: 백두산 백두검문
+    age: 20
+    mbti: ENTP
+    elementName: 빛
+    weaponName: 검
+    speechTone: 능청스럽지만 결정적 순간에는 단호함
+    maxHp: 36
+    maxInner: 5
+    initiative: 15
+    agility: 16
     moveRange: 4
     attackRange: 1
-    attackBonus: 6
+    attackBonus: 7
     defense: 15
     damageMin: 6
     damageMax: 10
-    specialName: Moonlit Sword
+    specialName: 백두광검
     specialRange: 1
-    specialCost: 1
-    specialCooldown: 2
+    specialCost: 0
+    specialCooldown: 1
     specialPower: 5
     specialAttackBonus: 2
-    specialEffect: 1
-  - id: seo_arin
-    displayName: Seo Arin
-    faction: 0
-    visual: {fileID: 11400000, guid: 7b1ede8616ecb6b4797e42d572084460, type: 2}
-    startCell: {x: 1, y: 3}
-    maxHp: 28
-    maxInner: 4
-    initiative: 11
-    moveRange: 5
-    attackRange: 1
-    attackBonus: 5
-    defense: 13
-    damageMin: 4
-    damageMax: 7
-    specialName: Pure Remedy
-    specialRange: 3
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 10
-    specialAttackBonus: 0
-    specialEffect: 2
-  - id: nam_soyu
-    displayName: Nam Soyu
+    specialEffect: 5
+  - id: baek_ryeon
+    displayName: 백련
     faction: 0
     visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
-    startCell: {x: 2, y: 5}
-    maxHp: 26
-    maxInner: 3
-    initiative: 17
-    moveRange: 5
-    attackRange: 1
-    attackBonus: 7
-    defense: 13
+    startCell: {x: 1, y: 4}
+    sectName: 강원 설악창문
+    age: 17
+    mbti: INFJ
+    elementName: 얼음/서리
+    weaponName: 창
+    speechTone: 차분한 존댓말
+    maxHp: 30
+    maxInner: 4
+    initiative: 12
+    agility: 13
+    moveRange: 4
+    attackRange: 2
+    attackBonus: 5
+    defense: 14
     damageMin: 5
-    damageMax: 9
-    specialName: Bright Rush
-    specialRange: 1
+    damageMax: 8
+    specialName: 설악빙창
+    specialRange: 2
     specialCost: 1
     specialCooldown: 2
     specialPower: 4
-    specialAttackBonus: 3
-    specialEffect: 6
-  - id: mok_hyang
-    displayName: Mok Hyang
-    faction: 1
-    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
-    startCell: {x: 9, y: 1}
-    maxHp: 28
-    maxInner: 4
-    initiative: 16
-    moveRange: 5
-    attackRange: 3
-    attackBonus: 6
-    defense: 14
-    damageMin: 4
-    damageMax: 8
-    specialName: Silent Needle
-    specialRange: 3
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 3
-    specialAttackBonus: 2
-    specialEffect: 3
-  - id: han_jiyu
-    displayName: Han Jiyu
-    faction: 1
-    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
-    startCell: {x: 9, y: 6}
-    maxHp: 24
-    maxInner: 4
-    initiative: 13
-    moveRange: 4
-    attackRange: 4
-    attackBonus: 5
-    defense: 13
-    damageMin: 4
-    damageMax: 7
-    specialName: Cold Reading
-    specialRange: 4
-    specialCost: 1
-    specialCooldown: 2
-    specialPower: 0
-    specialAttackBonus: 0
-    specialEffect: 5
-  - id: kang_hana
-    displayName: Kang Hana
-    faction: 1
+    specialAttackBonus: 1
+    specialEffect: 4
+  - id: do_arin
+    displayName: 도아린
+    faction: 0
     visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
-    startCell: {x: 10, y: 4}
-    maxHp: 36
+    startCell: {x: 2, y: 5}
+    sectName: 경상 화왕도문
+    age: 16
+    mbti: ESTP
+    elementName: 불
+    weaponName: 도
+    speechTone: 짧고 거친 직설
+    maxHp: 34
     maxInner: 3
-    initiative: 12
+    initiative: 14
+    agility: 15
     moveRange: 4
     attackRange: 1
-    attackBonus: 6
-    defense: 16
+    attackBonus: 7
+    defense: 14
     damageMin: 6
     damageMax: 11
-    specialName: Iron Fist
+    specialName: 화왕참
     specialRange: 1
     specialCost: 1
     specialCooldown: 2
     specialPower: 6
     specialAttackBonus: 2
     specialEffect: 6
+  - id: seo_a
+    displayName: 서아
+    faction: 0
+    visual: {fileID: 11400000, guid: bb014a386f3600589a86a20cc7f5c441, type: 2}
+    startCell: {x: 2, y: 1}
+    sectName: 경성 천뢰봉문
+    age: 13
+    mbti: ENFP
+    elementName: 전기
+    weaponName: 봉
+    speechTone: 밝고 빠른 질문형 말투
+    maxHp: 24
+    maxInner: 4
+    initiative: 18
+    agility: 19
+    moveRange: 5
+    attackRange: 2
+    attackBonus: 6
+    defense: 12
+    damageMin: 4
+    damageMax: 7
+    specialName: 천뢰봉무
+    specialRange: 2
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 3
+    specialEffect: 1
+  - id: mae_hwaryeong
+    displayName: 매화령
+    faction: 0
+    visual: {fileID: 11400000, guid: 46db68e316fdc3743b214941cca70dbc, type: 2}
+    startCell: {x: 0, y: 5}
+    sectName: 전라 풍매문
+    age: 18
+    mbti: ENFJ
+    elementName: 바람/꽃
+    weaponName: 부채
+    speechTone: 부드럽고 사교적인 말투
+    maxHp: 28
+    maxInner: 5
+    initiative: 13
+    agility: 14
+    moveRange: 5
+    attackRange: 3
+    attackBonus: 5
+    defense: 13
+    damageMin: 4
+    damageMax: 7
+    specialName: 풍매선
+    specialRange: 3
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 0
+    specialAttackBonus: 0
+    specialEffect: 5
+  - id: han_biyeon
+    displayName: 한비연
+    faction: 0
+    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
+    startCell: {x: 0, y: 1}
+    sectName: 경성 흑연문
+    age: 17
+    mbti: ISTP
+    elementName: 어둠/독
+    weaponName: 단검·암기
+    speechTone: 짧고 비꼬는 듯한 말투
+    maxHp: 27
+    maxInner: 4
+    initiative: 16
+    agility: 17
+    moveRange: 5
+    attackRange: 3
+    attackBonus: 6
+    defense: 13
+    damageMin: 4
+    damageMax: 8
+    specialName: 흑연독침
+    specialRange: 3
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 3
+    specialAttackBonus: 2
+    specialEffect: 3
+  - id: zhongyuan_guard_1
+    displayName: 중원 호위검수
+    faction: 1
+    visual: {fileID: 11400000, guid: 7f1a763097089996c20b6c46f9367093, type: 2}
+    startCell: {x: 9, y: 1}
+    sectName: 중원무림맹
+    age: 24
+    mbti: ISTJ
+    elementName: 철
+    weaponName: 검
+    speechTone: 딱딱한 명령조
+    maxHp: 30
+    maxInner: 3
+    initiative: 12
+    agility: 12
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 5
+    defense: 14
+    damageMin: 5
+    damageMax: 8
+    specialName: 정도검
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 1
+    specialEffect: 1
+  - id: zhongyuan_guard_2
+    displayName: 중원 장창수
+    faction: 1
+    visual: {fileID: 11400000, guid: b8332b8583947925754c36f3ebc60e8e, type: 2}
+    startCell: {x: 9, y: 6}
+    sectName: 중원무림맹
+    age: 25
+    mbti: ESTJ
+    elementName: 철
+    weaponName: 장창
+    speechTone: 위압적인 말투
+    maxHp: 32
+    maxInner: 3
+    initiative: 11
+    agility: 12
+    moveRange: 4
+    attackRange: 2
+    attackBonus: 5
+    defense: 15
+    damageMin: 5
+    damageMax: 9
+    specialName: 쇄진창
+    specialRange: 2
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 1
+    specialEffect: 6
+  - id: wijigang
+    displayName: 감찰사 위지강
+    faction: 1
+    visual: {fileID: 11400000, guid: b1a7ac4054895e811cf8b22f95691ff7, type: 2}
+    startCell: {x: 10, y: 4}
+    sectName: 중원무림맹 감찰단
+    age: 31
+    mbti: ENTJ
+    elementName: 압박
+    weaponName: 검
+    speechTone: 권위적인 관화
+    maxHp: 38
+    maxInner: 4
+    initiative: 13
+    agility: 13
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 7
+    defense: 16
+    damageMin: 6
+    damageMax: 11
+    specialName: 현판압령
+    specialRange: 4
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 0
+    specialAttackBonus: 0
+    specialEffect: 5
 --- !u!4 &1799756062
 Transform:
   m_ObjectHideFlags: 0

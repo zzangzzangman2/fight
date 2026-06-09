@@ -45,12 +45,16 @@ namespace JoseonMurimTactics
         {
             switch (companionId)
             {
-                case "yun_seohwa":
-                    return "윤서화가 검집을 매만지며 짧게 고개를 끄덕인다.";
                 case "baek_ryeon":
-                    return "백련이 다친 이의 곁을 떠나지 않은 채 당신을 바라본다.";
+                    return "백련이 창대를 조용히 세우고 주변의 부상자를 먼저 살핀다.";
+                case "do_arin":
+                    return "도아린이 도집을 툭 치며 “먼저 치면 되지?”라고 웃는다.";
+                case "seo_a":
+                    return "서아가 봉끝에 튄 잔전기를 보고 눈을 반짝인다. “봤죠? 방금 봤죠?”";
+                case "mae_hwaryeong":
+                    return "매화령이 부채를 접으며 꽃잎처럼 가볍게 미소 짓는다.";
                 case "han_biyeon":
-                    return "한비연이 입꼬리를 올리며 “제법인데?”라고 흘린다.";
+                    return "한비연이 그림자 쪽으로 한 걸음 물러나며 “제법인데?”라고 흘린다.";
                 default:
                     return "동료가 말없이 당신의 결정을 가늠한다.";
             }

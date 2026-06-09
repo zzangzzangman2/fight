@@ -14,12 +14,12 @@ namespace JoseonMurimTactics.Editor
 
         private static readonly CharacterSpec[] Characters =
         {
-            new CharacterSpec("park_sungjun", "Park Sungjun", "park_sungjun_fullbody.png", -3.75f, 1.34f),
-            new CharacterSpec("yun_seohwa", "Yun Seohwa", "yun_seohwa_fullbody.png", -2.25f, 1.22f),
-            new CharacterSpec("baek_ryeon", "Baek Ryeon", "baek_ryeon_fullbody.png", -0.75f, 1.18f),
-            new CharacterSpec("han_biyeon", "Han Biyeon", "han_biyeon_fullbody.png", 0.75f, 1.18f),
-            new CharacterSpec("do_arin", "Do Arin", "do_arin_fullbody.png", 2.25f, 1.22f),
-            new CharacterSpec("strategist", "Strategist", "strategist_fullbody.png", 3.75f, 1.22f)
+            new CharacterSpec("park_sungjun", "박성준", "park_sungjun_fullbody.png", -3.75f, 1.34f),
+            new CharacterSpec("yun_seohwa", "매화령", "yun_seohwa_fullbody.png", -2.25f, 1.22f),
+            new CharacterSpec("baek_ryeon", "백련", "baek_ryeon_fullbody.png", -0.75f, 1.18f),
+            new CharacterSpec("han_biyeon", "한비연", "han_biyeon_fullbody.png", 0.75f, 1.18f),
+            new CharacterSpec("do_arin", "도아린", "do_arin_fullbody.png", 2.25f, 1.22f),
+            new CharacterSpec("strategist", "서아", "strategist_fullbody.png", 3.75f, 1.22f)
         };
 
         [MenuItem("Joseon Murim Tactics/Open Character Asset Preview")]
