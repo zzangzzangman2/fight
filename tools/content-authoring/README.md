@@ -3,9 +3,9 @@
 Run `run-content-authoring.cmd`, then open the printed local URL.
 
 If the local port is blocked, opening `index.html` directly still loads the
-embedded default game dialogue from `defaults.js`. In that offline mode the
-editor can preview and edit content, and saving downloads `content_manifest.json`
-instead of writing directly into Unity.
+embedded default game dialogue from `defaults.js`. If `server.js` is running on
+`127.0.0.1`, even a plain `file://` page can save directly into Unity Resources
+through the local API instead of downloading JSON.
 
 The editor hides raw JSON from the user. Saving converts the UI state into:
 

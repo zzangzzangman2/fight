@@ -56,6 +56,9 @@ public sealed class AuthoringCharacter
     public string id;
     public string displayName;
     public string role;
+    public int age;
+    public string sectId;
+    public string sectName;
     public string portraitId;
     public string portraitResource;
     public string notes;

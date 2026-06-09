@@ -1,6 +1,6 @@
 window.JOSEON_AUTHORING_DEFAULTS = {
   "version": 1,
-  "updatedAt": "2026-06-09T06:46:57.486Z",
+  "updatedAt": "2026-06-09T08:11:53.949Z",
   "project": {
     "title": "조선 무협 SRPG",
     "note": "콘텐츠 편집기에서 저장하면 Unity Resources의 게임 대사에 즉시 반영됩니다."
@@ -12,7 +12,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "백두천광검문 소문주 · 빛/검",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "20세. 주인공."
+      "notes": "20세. 주인공.",
+      "age": 20,
+      "sectId": "baekdu_light_sword",
+      "sectName": "백두천광검문"
     },
     {
       "id": "park_mugyeom",
@@ -20,7 +23,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "병든 문주",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "백두천광검문의 현 문주."
+      "notes": "백두천광검문의 현 문주.",
+      "age": 0,
+      "sectId": "baekdu_light_sword",
+      "sectName": "백두천광검문"
     },
     {
       "id": "yeon_ok",
@@ -28,7 +34,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "엄격한 사범",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "성준을 단련시키는 사범."
+      "notes": "성준을 단련시키는 사범.",
+      "age": 0,
+      "sectId": "baekdu_light_sword",
+      "sectName": "백두천광검문"
     },
     {
       "id": "cho_hui",
@@ -36,7 +45,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "소백촌 약방",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "초반 생계와 약재 루프의 연결 인물."
+      "notes": "초반 생계와 약재 루프의 연결 인물.",
+      "age": 0,
+      "sectId": "sobaek_village",
+      "sectName": "소백촌"
     },
     {
       "id": "baek_ryeon",
@@ -44,7 +56,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "설악창문 · 서리/창",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "강원 설악창문."
+      "notes": "강원 설악창문.",
+      "age": 17,
+      "sectId": "seorak_spear",
+      "sectName": "설악창문"
     },
     {
       "id": "do_arin",
@@ -52,7 +67,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "화왕도문 · 불/도",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "경상 화왕도문."
+      "notes": "경상 화왕도문.",
+      "age": 18,
+      "sectId": "hwawang_blade",
+      "sectName": "화왕도문"
     },
     {
       "id": "jin_seoyul",
@@ -60,7 +78,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "천뢰봉문 · 전기/봉",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "경성 천뢰봉문."
+      "notes": "경성 천뢰봉문.",
+      "age": 16,
+      "sectId": "cheonroe_staff",
+      "sectName": "천뢰봉문"
     },
     {
       "id": "seo_a",
@@ -68,7 +89,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "화접풍류문 · 바람/꽃/부채",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "13세. 전라 화접풍류문."
+      "notes": "13세. 전라 화접풍류문.",
+      "age": 13,
+      "sectId": "hwajeop_fan",
+      "sectName": "화접풍류문"
     },
     {
       "id": "han_biyeon",
@@ -76,7 +100,10 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "role": "흑련암문 · 어둠/독/암기",
       "portraitId": "",
       "portraitResource": "",
-      "notes": "황해 흑련암문."
+      "notes": "황해 흑련암문.",
+      "age": 18,
+      "sectId": "heukryeon_shadow",
+      "sectName": "흑련암문"
     }
   ],
   "backgrounds": [

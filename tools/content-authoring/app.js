@@ -8,16 +8,52 @@ const factionOptions = [
   ["DEMONIC_CULT", "마교"],
   ["BLACK_HAT_GUILD", "흑립방"]
 ];
+const sectOptions = [
+  { id: "", label: "문파 미정", aliases: [] },
+  { id: "baekdu_light_sword", label: "백두천광검문", aliases: ["백두천광검문", "백두산"] },
+  { id: "seorak_spear", label: "설악창문", aliases: ["설악창문", "강원"] },
+  { id: "hwawang_blade", label: "화왕도문", aliases: ["화왕도문", "경상"] },
+  { id: "cheonroe_staff", label: "천뢰봉문", aliases: ["천뢰봉문", "경성"] },
+  { id: "hwajeop_fan", label: "화접풍류문", aliases: ["화접풍류문", "전라"] },
+  { id: "heukryeon_shadow", label: "흑련암문", aliases: ["흑련암문", "황해"] },
+  { id: "joseon_sects", label: "조선문파연합", aliases: ["조선문파연합", "조선 문파"] },
+  { id: "nine_schools", label: "구파일방", aliases: ["구파일방"] },
+  { id: "five_great_families", label: "오대세가", aliases: ["오대세가"] },
+  { id: "zhongyuan_alliance", label: "중원무림맹", aliases: ["중원무림맹", "무림맹"] },
+  { id: "demonic_cult", label: "마교", aliases: ["마교"] },
+  { id: "black_hat_guild", label: "흑립방", aliases: ["흑립방"] },
+  { id: "murim_inspectors", label: "무림맹 감찰단", aliases: ["감찰단"] },
+  { id: "royal_court", label: "조정", aliases: ["조정"] },
+  { id: "sobaek_village", label: "소백촌", aliases: ["소백촌"] }
+];
+const characterMetaDefaults = {
+  park_sungjun: { age: 20, sectId: "baekdu_light_sword" },
+  park_mugyeom: { age: 0, sectId: "baekdu_light_sword" },
+  yeon_ok: { age: 0, sectId: "baekdu_light_sword" },
+  cho_hui: { age: 0, sectId: "sobaek_village" },
+  baek_ryeon: { age: 17, sectId: "seorak_spear" },
+  do_arin: { age: 18, sectId: "hwawang_blade" },
+  jin_seoyul: { age: 16, sectId: "cheonroe_staff" },
+  seo_a: { age: 13, sectId: "hwajeop_fan" },
+  han_biyeon: { age: 18, sectId: "heukryeon_shadow" }
+};
+const apiFallbackBases = ["http://127.0.0.1:5179", "http://127.0.0.1:5178"];
 
 let content = null;
-let activeTab = "dialogue";
+let activeTab = initialTab();
 let activeSceneId = "";
 let dirty = false;
 let serverStatus = null;
+let apiBase = window.location.protocol === "file:" ? null : "";
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
 const offlineResourcesRoot = "../../UnityScaffold/Assets/JoseonMurimTactics/Resources/";
+
+function initialTab() {
+  const requested = new URLSearchParams(window.location.search).get("tab");
+  return ["dialogue", "characters", "media", "mapAssets", "guide"].includes(requested) ? requested : "dialogue";
+}
 
 function uid(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
@@ -41,15 +77,58 @@ function setSaveState(text, strong) {
 }
 
 async function requestJson(url, options) {
-  const response = await fetch(url, options);
-  const data = await response.json();
-  if (!response.ok || data.ok === false) {
-    const error = new Error(data.error || response.statusText);
-    error.fromServer = true;
-    throw error;
+  let lastError = null;
+  for (const base of apiCandidates(url)) {
+    try {
+      const response = await fetch(withApiBase(url, base), options);
+      const data = await response.json();
+      if (!response.ok || data.ok === false) {
+        const error = new Error(data.error || response.statusText);
+        error.fromServer = true;
+        throw error;
+      }
+
+      apiBase = base;
+      return data;
+    } catch (error) {
+      if (error.fromServer) {
+        throw error;
+      }
+      lastError = error;
+    }
   }
 
-  return data;
+  const error = new Error(window.location.protocol === "file:"
+    ? "로컬 저장 서버가 실행 중이 아닙니다. tools/content-authoring/server.js를 백그라운드로 실행해야 게임 파일에 바로 저장됩니다."
+    : lastError?.message || "로컬 저장 서버에 연결하지 못했습니다.");
+  error.networkUnavailable = true;
+  throw error;
+}
+
+function apiCandidates(url) {
+  if (/^https?:\/\//i.test(url)) {
+    return [""];
+  }
+
+  const bases = [];
+  if (apiBase !== null) {
+    bases.push(apiBase);
+  }
+  if (window.location.protocol === "file:") {
+    bases.push(...apiFallbackBases);
+  } else {
+    bases.push("");
+  }
+
+  return [...new Set(bases)];
+}
+
+function withApiBase(url, base) {
+  if (/^https?:\/\//i.test(url) || !base) {
+    return url;
+  }
+
+  return `${base}${url}`;
 }
 
 function markDirty(message = "수정됨") {
@@ -68,6 +147,55 @@ function cloneEmbeddedDefaults() {
   }
 
   return JSON.parse(JSON.stringify(window.JOSEON_AUTHORING_DEFAULTS));
+}
+
+function embeddedMapAssets() {
+  const assets = window.JOSEON_MAP_ASSET_CATALOG?.assets || [];
+  return JSON.parse(JSON.stringify(assets));
+}
+
+function mergeMapAssets(items) {
+  const output = Array.isArray(items) ? [...items] : [];
+  for (const asset of embeddedMapAssets()) {
+    if (!output.some(item => item.id === asset.id)) {
+      output.push(asset);
+    }
+  }
+
+  return output;
+}
+
+function normalizeAge(value) {
+  const age = Number.parseInt(value, 10);
+  return Number.isFinite(age) && age >= 1 && age <= 150 ? age : 0;
+}
+
+function inferAge(character) {
+  const text = `${character?.notes || ""} ${character?.role || ""}`;
+  const match = text.match(/(\d{1,3})\s*세/);
+  return match ? normalizeAge(match[1]) : 0;
+}
+
+function validSectId(value) {
+  return sectOptions.some(option => option.id === value);
+}
+
+function sectLabel(value) {
+  return sectOptions.find(option => option.id === value)?.label || "";
+}
+
+function inferSectId(character) {
+  const text = `${character?.role || ""} ${character?.notes || ""} ${character?.displayName || ""}`;
+  for (const option of sectOptions) {
+    if (!option.id) {
+      continue;
+    }
+    if (option.aliases.some(alias => alias && text.includes(alias))) {
+      return option.id;
+    }
+  }
+
+  return "";
 }
 
 function applyEmbeddedDefaults({ message, dirtyState = false } = {}) {
@@ -99,7 +227,15 @@ function normalize(data) {
   normalized.backgrounds ||= [];
   normalized.portraits ||= [];
   normalized.props ||= [];
+  normalized.mapAssets = mergeMapAssets(normalized.mapAssets);
   normalized.dialogueScenes ||= [];
+
+  for (const character of normalized.characters) {
+    const meta = characterMetaDefaults[character.id] || {};
+    character.age = normalizeAge(character.age) || normalizeAge(meta.age) || inferAge(character);
+    character.sectId = validSectId(character.sectId) ? character.sectId : meta.sectId || inferSectId(character);
+    character.sectName = sectLabel(character.sectId);
+  }
 
   for (const scene of normalized.dialogueScenes) {
     scene.id ||= uid("scene");
@@ -174,6 +310,9 @@ function newCharacter() {
     id: uid("character"),
     displayName: "새 인물",
     role: "",
+    age: 0,
+    sectId: "",
+    sectName: "",
     portraitId: "",
     portraitResource: "",
     notes: ""
@@ -244,6 +383,7 @@ function render() {
   renderScenes();
   renderCharacters();
   renderMedia();
+  renderMapAssets();
   renderApplyStatus();
 }
 
@@ -341,6 +481,7 @@ function renderApplyStatus() {
     <article><strong>${content.dialogueScenes.length}</strong><span>대사 씬</span></article>
     <article><strong>${content.characters.length}</strong><span>인물</span></article>
     <article><strong>${(content.backgrounds.length + content.portraits.length + content.props.length)}</strong><span>배경/에셋</span></article>
+    <article><strong>${content.mapAssets?.length || 0}</strong><span>MAP 에셋</span></article>
     <article><strong>${status.updatedAt ? new Date(status.updatedAt).toLocaleTimeString() : "-"}</strong><span>최근 저장</span></article>
   `;
 }
@@ -537,11 +678,19 @@ function renderCharacters() {
       ${portraitPreview(character)}
       <label>이름<input class="char-name" type="text" value="${escapeAttr(character.displayName || "")}"></label>
       <label>역할<input class="char-role" type="text" value="${escapeAttr(character.role || "")}"></label>
+      <div class="character-meta-grid">
+        <label>나이<select class="char-age"></select></label>
+        <label>문파<select class="char-sect"></select></label>
+      </div>
       <label>초상화<select class="char-portrait"></select></label>
       <label>메모<textarea class="char-notes" rows="3">${escapeHtml(character.notes || "")}</textarea></label>
       <button class="danger delete-character" type="button">인물 삭제</button>
     `;
+    const ageSelect = card.querySelector(".char-age");
+    const sectSelect = card.querySelector(".char-sect");
     const portraitSelect = card.querySelector(".char-portrait");
+    fillAgeSelect(ageSelect, character.age);
+    fillSectSelect(sectSelect, character.sectId);
     fillPortraitSelect(portraitSelect, character.portraitId);
     card.querySelector(".char-name").addEventListener("input", event => {
       character.displayName = event.target.value;
@@ -549,6 +698,13 @@ function renderCharacters() {
     });
     card.querySelector(".char-role").addEventListener("input", event => {
       character.role = event.target.value;
+    });
+    ageSelect.addEventListener("change", event => {
+      character.age = normalizeAge(event.target.value);
+    });
+    sectSelect.addEventListener("change", event => {
+      character.sectId = event.target.value;
+      character.sectName = sectLabel(character.sectId);
     });
     portraitSelect.addEventListener("change", event => {
       character.portraitId = event.target.value;
@@ -566,6 +722,28 @@ function renderCharacters() {
     });
     grid.append(card);
   }
+}
+
+function fillAgeSelect(select, value) {
+  select.innerHTML = '<option value="0">나이 미정</option>';
+  for (let age = 1; age <= 150; age += 1) {
+    const option = document.createElement("option");
+    option.value = String(age);
+    option.textContent = `${age}세`;
+    select.append(option);
+  }
+  select.value = String(normalizeAge(value));
+}
+
+function fillSectSelect(select, value) {
+  select.innerHTML = "";
+  for (const optionData of sectOptions) {
+    const option = document.createElement("option");
+    option.value = optionData.id;
+    option.textContent = optionData.label;
+    select.append(option);
+  }
+  select.value = validSectId(value) ? value : "";
 }
 
 function fillPortraitSelect(select, value) {
@@ -624,6 +802,49 @@ function renderMediaGrid(selector, items, kind) {
   }
 }
 
+function renderMapAssets() {
+  const stats = $("#mapAssetStats");
+  const assets = content?.mapAssets || [];
+  const tiles = assets.filter(item => item.category === "terrain");
+  const objects = assets.filter(item => item.category !== "terrain");
+
+  if (stats) {
+    stats.innerHTML = `
+      <article><strong>${tiles.length}</strong><span>타일</span></article>
+      <article><strong>${objects.length}</strong><span>오브젝트</span></article>
+      <article><strong>${assets.length}</strong><span>전체</span></article>
+    `;
+  }
+
+  renderMapAssetGrid("#mapTileGrid", tiles);
+  renderMapAssetGrid("#mapObjectGrid", objects);
+}
+
+function renderMapAssetGrid(selector, items) {
+  const grid = $(selector);
+  if (!grid) {
+    return;
+  }
+
+  grid.innerHTML = "";
+  for (const item of items) {
+    const card = document.createElement("article");
+    card.className = "map-asset-card";
+    const tags = (item.tags || []).slice(0, 4).map(tag => `<span>${escapeHtml(tag)}</span>`).join("");
+    card.innerHTML = `
+      <div class="map-asset-thumb">${previewImageMarkup(mediaPreviewUrl(item), item.title || item.id)}</div>
+      <div class="map-asset-copy">
+        <strong>${escapeHtml(item.title || item.id)}</strong>
+        <span>${escapeHtml(item.subtype || item.category || "")}</span>
+        <p>${escapeHtml(item.notes || "")}</p>
+        <small>${escapeHtml(item.resourcePath || "")}</small>
+        <div class="map-asset-tags">${tags}</div>
+      </div>
+    `;
+    grid.append(card);
+  }
+}
+
 function mediaList(kind) {
   if (kind === "backgrounds") return content.backgrounds;
   if (kind === "portraits") return content.portraits;
@@ -675,6 +896,9 @@ function prepareForSave() {
   output.version = 1;
   output.characters.forEach(character => {
     character.id = slug(character.id || character.displayName, "character");
+    character.age = normalizeAge(character.age);
+    character.sectId = validSectId(character.sectId) ? character.sectId : "";
+    character.sectName = sectLabel(character.sectId);
   });
 
   for (const scene of output.dialogueScenes) {
@@ -734,25 +958,12 @@ async function saveContent() {
     if (error.fromServer) {
       throw error;
     }
-    downloadManifest(output);
     content = normalize(output);
     serverStatus = null;
     render();
     dirty = true;
-    setSaveState("서버 없음 · content_manifest.json 내려받음", "직접 게임 적용은 node server.js 실행 후 저장 필요");
+    setSaveState("저장 실패 · 로컬 저장 서버 필요", "JSON 내려받기 대신 tools/content-authoring/server.js가 실행 중일 때 게임 파일에 바로 저장합니다.");
   }
-}
-
-function downloadManifest(output) {
-  const blob = new Blob([`${JSON.stringify(output, null, 2)}\n`], { type: "application/json;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "content_manifest.json";
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function escapeHtml(value) {
