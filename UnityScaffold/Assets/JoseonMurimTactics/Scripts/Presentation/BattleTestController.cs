@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -51,15 +50,15 @@ public sealed class BattleTestController : MonoBehaviour
     private GUIStyle smallStyle;
     private GUIStyle logStyle;
     private Canvas hudCanvas;
-    private TMP_Text hudPhaseText;
-    private TMP_Text hudActiveText;
-    private TMP_Text hudResourceText;
-    private TMP_Text hudObjectiveText;
-    private TMP_Text hudPhaseListText;
-    private TMP_Text hudLogText;
-    private TMP_Text hudInspectText;
-    private TMP_Text hudForecastText;
-    private TMP_Text hudRosterText;
+    private Text hudPhaseText;
+    private Text hudActiveText;
+    private Text hudResourceText;
+    private Text hudObjectiveText;
+    private Text hudPhaseListText;
+    private Text hudLogText;
+    private Text hudInspectText;
+    private Text hudForecastText;
+    private Text hudRosterText;
     private Button hudMoveButton;
     private Button hudAttackButton;
     private Button hudSkillButton;
@@ -479,6 +478,7 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         EnsureEventSystem();
+        UiTheme.EnsureStyles();
         hudCommandButtons.Clear();
 
         GameObject canvasObject = new GameObject("BattleCanvasHud", typeof(RectTransform), typeof(Canvas),
@@ -498,11 +498,11 @@ public sealed class BattleTestController : MonoBehaviour
         RectTransform active = CreatePanel(root, "현재 행동 패널", new Vector2(0f, 1f), new Vector2(0f, 1f),
                                            new Vector2(0f, 1f), new Vector2(18f, -18f), new Vector2(340f, 326f));
         hudPhaseText = CreateHudText(active, "페이즈", new Rect(16f, 12f, 308f, 30f), string.Empty, 22f,
-                                     TextAlignmentOptions.Left, true);
+                                     TextAnchor.MiddleLeft, true);
         hudActiveText = CreateHudText(active, "행동 유닛", new Rect(16f, 48f, 308f, 54f), string.Empty, 17f,
-                                      TextAlignmentOptions.TopLeft, false);
+                                      TextAnchor.UpperLeft, false);
         hudResourceText = CreateHudText(active, "자원", new Rect(16f, 106f, 308f, 54f), string.Empty, 15f,
-                                        TextAlignmentOptions.TopLeft, false);
+                                        TextAnchor.UpperLeft, false);
         hudMoveButton = CreateHudButton(active, "이동", new Rect(16f, 176f, 70f, 30f), "이동",
                                         () => SetCommandMode(BattleCommandMode.Move));
         hudAttackButton = CreateHudButton(active, "공격", new Rect(94f, 176f, 70f, 30f), "공격",
@@ -516,51 +516,51 @@ public sealed class BattleTestController : MonoBehaviour
             CreateHudButton(active, "페이즈 종료", new Rect(118f, 218f, 104f, 32f), "페이즈 종료", EndTurn);
         hudResetButton = CreateHudButton(active, "재시작", new Rect(230f, 218f, 90f, 32f), "재시작", BuildBattle);
         hudObjectiveText = CreateHudText(active, "전술 힌트", new Rect(16f, 264f, 308f, 50f), string.Empty, 14f,
-                                         TextAlignmentOptions.TopLeft, false);
+                                         TextAnchor.UpperLeft, false);
 
         RectTransform objective = CreatePanel(root, "목표 패널", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                                               new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(500f, 112f));
-        CreateHudText(objective, "목표 제목", new Rect(16f, 12f, 468f, 24f), "목표", 20f, TextAlignmentOptions.Left,
+        CreateHudText(objective, "목표 제목", new Rect(16f, 12f, 468f, 24f), "목표", 20f, TextAnchor.MiddleLeft,
                       true);
         CreateHudText(
             objective, "목표 본문", new Rect(16f, 42f, 468f, 76f),
             "중원 사절 호위대를 제압\n추천: 대나무숲 엄폐, 지붕 고저 +2, 향로/등불 활용\n위험: 화염 칸 진입 시 피해",
-            15f, TextAlignmentOptions.TopLeft, false);
+            15f, TextAnchor.UpperLeft, false);
 
         RectTransform phase = CreatePanel(root, "페이즈 패널", new Vector2(1f, 1f), new Vector2(1f, 1f),
                                           new Vector2(1f, 1f), new Vector2(-18f, -18f), new Vector2(368f, 194f));
-        CreateHudText(phase, "페이즈 제목", new Rect(16f, 12f, 336f, 24f), "행동 순서", 20f, TextAlignmentOptions.Left,
+        CreateHudText(phase, "페이즈 제목", new Rect(16f, 12f, 336f, 24f), "행동 순서", 20f, TextAnchor.MiddleLeft,
                       true);
         hudPhaseListText = CreateHudText(phase, "페이즈 목록", new Rect(16f, 42f, 336f, 144f), string.Empty, 14f,
-                                         TextAlignmentOptions.TopLeft, false);
+                                         TextAnchor.UpperLeft, false);
 
         RectTransform log = CreatePanel(root, "전투 기록 패널", new Vector2(1f, 1f), new Vector2(1f, 1f),
                                         new Vector2(1f, 1f), new Vector2(-18f, -224f), new Vector2(368f, 244f));
-        CreateHudText(log, "전투 기록 제목", new Rect(16f, 12f, 336f, 24f), "전투 기록", 20f, TextAlignmentOptions.Left,
+        CreateHudText(log, "전투 기록 제목", new Rect(16f, 12f, 336f, 24f), "전투 기록", 20f, TextAnchor.MiddleLeft,
                       true);
         hudLogText = CreateHudText(log, "전투 기록", new Rect(16f, 42f, 336f, 200f), string.Empty, 14f,
-                                   TextAlignmentOptions.TopLeft, false);
+                                   TextAnchor.UpperLeft, false);
 
         RectTransform inspect = CreatePanel(root, "정보 패널", new Vector2(0f, 1f), new Vector2(0f, 1f),
                                             new Vector2(0f, 1f), new Vector2(18f, -356f), new Vector2(340f, 190f));
-        CreateHudText(inspect, "정보 제목", new Rect(16f, 12f, 308f, 24f), "정보", 20f, TextAlignmentOptions.Left,
+        CreateHudText(inspect, "정보 제목", new Rect(16f, 12f, 308f, 24f), "정보", 20f, TextAnchor.MiddleLeft,
                       true);
         hudInspectText = CreateHudText(inspect, "정보 본문", new Rect(16f, 42f, 308f, 144f), string.Empty, 14f,
-                                       TextAlignmentOptions.TopLeft, false);
+                                       TextAnchor.UpperLeft, false);
 
         RectTransform forecast = CreatePanel(root, "전투 예측 패널", new Vector2(1f, 1f), new Vector2(1f, 1f),
                                              new Vector2(1f, 1f), new Vector2(-18f, -452f), new Vector2(368f, 224f));
         CreateHudText(forecast, "전투 예측 제목", new Rect(16f, 12f, 336f, 24f), "전투 예측", 20f,
-                      TextAlignmentOptions.Left, true);
+                      TextAnchor.MiddleLeft, true);
         hudForecastText = CreateHudText(forecast, "전투 예측", new Rect(16f, 40f, 336f, 184f), string.Empty, 13f,
-                                        TextAlignmentOptions.TopLeft, false);
+                                        TextAnchor.UpperLeft, false);
 
         RectTransform roster = CreatePanel(root, "부대 현황 패널", new Vector2(0f, 0f), new Vector2(1f, 0f),
                                            new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(-36f, 100f));
         CreateHudText(roster, "부대 현황 제목", new Rect(16f, 12f, 240f, 24f), "부대 현황", 20f,
-                      TextAlignmentOptions.Left, true);
+                      TextAnchor.MiddleLeft, true);
         hudRosterText = CreateHudText(roster, "부대 현황", new Rect(16f, 42f, 1220f, 54f), string.Empty, 14f,
-                                      TextAlignmentOptions.TopLeft, false);
+                                      TextAnchor.UpperLeft, false);
 
         RefreshCanvasHud();
     }
@@ -593,23 +593,26 @@ public sealed class BattleTestController : MonoBehaviour
         return rect;
     }
 
-    private TMP_Text CreateHudText(RectTransform parent, string name, Rect frame, string text, float size,
-                                   TextAlignmentOptions alignment, bool bold)
+    private Text CreateHudText(RectTransform parent, string name, Rect frame, string text, float size,
+                               TextAnchor alignment, bool bold)
     {
-        GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+        GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
         RectTransform rect = textObject.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         SetTopLeft(rect, frame);
 
-        TMP_Text tmp = textObject.GetComponent<TMP_Text>();
-        tmp.text = text;
-        tmp.fontSize = size;
-        tmp.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
-        tmp.alignment = alignment;
-        tmp.color = bold ? new Color(0.96f, 0.90f, 0.78f, 1f) : new Color(0.88f, 0.84f, 0.74f, 1f);
-        tmp.textWrappingMode = TextWrappingModes.Normal;
-        tmp.overflowMode = TextOverflowModes.Ellipsis;
-        return tmp;
+        Text uiText = textObject.GetComponent<Text>();
+        uiText.text = text;
+        uiText.font = UiTheme.Font;
+        uiText.fontSize = Mathf.RoundToInt(size);
+        uiText.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
+        uiText.alignment = alignment;
+        uiText.color = bold ? new Color(0.96f, 0.90f, 0.78f, 1f) : new Color(0.88f, 0.84f, 0.74f, 1f);
+        uiText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        uiText.verticalOverflow = VerticalWrapMode.Truncate;
+        uiText.raycastTarget = false;
+        uiText.supportRichText = true;
+        return uiText;
     }
 
     private Button CreateHudButton(RectTransform parent, string name, Rect frame, string label, Action action)
@@ -635,8 +638,8 @@ public sealed class BattleTestController : MonoBehaviour
         button.colors = colors;
         button.onClick.AddListener(() => action());
 
-        TMP_Text text = CreateHudText(rect, "라벨", new Rect(0f, 4f, frame.width, frame.height - 8f), label, 14f,
-                                      TextAlignmentOptions.Center, true);
+        Text text = CreateHudText(rect, "라벨", new Rect(0f, 4f, frame.width, frame.height - 8f), label, 14f,
+                                      TextAnchor.MiddleCenter, true);
         text.color = new Color(0.98f, 0.93f, 0.82f, 1f);
 
         if (name == "이동" || name == "공격" || name == "무공" || name == "지형")
@@ -847,7 +850,7 @@ public sealed class BattleTestController : MonoBehaviour
         return builder.ToString();
     }
 
-    private static void SetText(TMP_Text text, string value)
+    private static void SetText(Text text, string value)
     {
         if (text != null)
         {
