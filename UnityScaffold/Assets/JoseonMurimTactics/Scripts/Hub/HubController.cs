@@ -4,15 +4,15 @@ using UnityEngine;
 namespace JoseonMurimTactics
 {
     /// <summary>
-    /// [5] Hub_Pyesadang — 폐사당 임시 거점. 메뉴형 허브(설계 §11):
-    /// 동료 대화 / 문파 관리 / 수련 / 정찰 / 출격 / 저장.
+    /// 해동문 본산 허브(설계 v0.9 §2-4, §5). 메뉴형 허브가 이제 게임의 중심.
+    /// 출정 / 연무장 / 동료 / 문파 / 객잔 / 의원 / 장터 / 서고 / 저장 / 설정.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HubController : MonoBehaviour
     {
         public const string FirstBattleId = "BATTLE_PYESADANG_DEFENSE";
 
-        private enum HubMenu { Overview, Companions, Sect, Training, Scout, Sortie, Save }
+        private enum HubMenu { Overview, Sortie, Training, Companions, Sect, Tavern, Infirmary, Market, Library, Save, Settings }
 
         private GameRoot root;
         private HubMenu menu = HubMenu.Overview;
@@ -20,12 +20,14 @@ namespace JoseonMurimTactics
         private readonly List<string> log = new List<string>();
         private string toast;
         private float toastTimer;
-        private Vector2 scroll;
+        private int loreIndex;
+        private string rumor;
 
         private void Awake()
         {
             root = GameRoot.EnsureExists();
             AddLog($"{root.Session.sectName}의 임시 거점, 폐사당에 도착했다.");
+            rumor = root.Narration != null ? root.Narration.GenerateNpcLine("hub", root.Session) : string.Empty;
         }
 
         private void Update()
@@ -44,79 +46,72 @@ namespace JoseonMurimTactics
             float h = Screen.height;
             float s = UiTheme.Scale;
 
-            // 동료 대화 진행 중이면 대화창 우선
             if (talk != null)
             {
                 GUI.Label(new Rect(0f, 28f * s, w, 40f * s), "동료와 대화", UiTheme.Title);
                 talk.Draw(w, h);
-                if (talk.IsFinished)
-                {
-                    talk = null;
-                }
-
+                if (talk.IsFinished) talk = null;
                 return;
             }
 
-            float margin = 36f * s;
+            float margin = 32f * s;
             DrawTopBar(w, s, margin);
 
             float top = 96f * s;
-            float bottom = h - 56f * s;
-            float menuW = 230f * s;
-            float rightW = 320f * s;
-            float centerX = margin + menuW + 18f * s;
-            float centerW = w - margin - rightW - 18f * s - centerX;
+            float bottom = h - 52f * s;
+            float menuW = 210f * s;
+            float rightW = 300f * s;
+            float centerX = margin + menuW + 16f * s;
+            float centerW = w - margin - rightW - 16f * s - centerX;
 
             DrawMenu(new Rect(margin, top, menuW, bottom - top), s);
             DrawContent(new Rect(centerX, top, centerW, bottom - top), s);
             DrawCompanionSummary(new Rect(w - margin - rightW, top, rightW, bottom - top), s);
 
-            // 하단 로그/힌트
             string hint = log.Count > 0 ? log[log.Count - 1] : "메뉴를 선택하세요.";
-            GUI.Label(new Rect(margin, bottom + 14f * s, w - margin * 2f, 30f * s), "• " + hint, UiTheme.SmallMuted);
+            GUI.Label(new Rect(margin, bottom + 12f * s, w - margin * 2f, 28f * s), "• " + hint, UiTheme.SmallMuted);
 
-            if (!string.IsNullOrEmpty(toast))
-            {
-                DrawToast(w, h, s);
-            }
+            if (!string.IsNullOrEmpty(toast)) DrawToast(w, h, s);
         }
 
         private void DrawTopBar(float w, float s, float margin)
         {
-            Rect bar = new Rect(margin, 22f * s, w - margin * 2f, 60f * s);
+            Rect bar = new Rect(margin, 20f * s, w - margin * 2f, 58f * s);
             UiTheme.DrawPanel(bar, true);
             GameSession ses = root.Session;
-            GUI.Label(new Rect(bar.x + 18f * s, bar.y + 12f * s, bar.width * 0.4f, 36f * s), "폐사당 임시 거점", UiTheme.Heading);
-            string mid = $"{ses.sectName}  ·  제0장  ·  성향 {StoryEnumLabels.Label(ses.heroDisposition)}";
-            GUI.Label(new Rect(bar.x + bar.width * 0.36f, bar.y + 16f * s, bar.width * 0.4f, 30f * s), mid, UiTheme.Body);
-            int renown = root.Reputation.Get(FactionIds.JoseonSects);
-            string right = $"위명 {renown}   행동 {ses.actionsTaken}";
-            GUIStyle r = new GUIStyle(UiTheme.Body) { alignment = TextAnchor.MiddleRight };
-            GUI.Label(new Rect(bar.x + bar.width * 0.6f - 18f * s, bar.y + 16f * s, bar.width * 0.4f, 30f * s), right, r);
+            GUI.Label(new Rect(bar.x + 18f * s, bar.y + 12f * s, bar.width * 0.34f, 34f * s), "해동문 · 폐사당 거점", UiTheme.Heading);
+            string mid = $"{ses.sectName}  ·  제0장  ·  기조 {StoryEnumLabels.Label(ses.heroDisposition)}";
+            GUI.Label(new Rect(bar.x + bar.width * 0.34f, bar.y + 15f * s, bar.width * 0.4f, 30f * s), mid, UiTheme.Body);
+            string right = $"위명 {root.Reputation.Get(FactionIds.JoseonSects)}   은전 {root.Flags.GetInt("silver")}";
+            GUI.Label(new Rect(bar.x + bar.width * 0.6f - 18f * s, bar.y + 15f * s, bar.width * 0.4f, 30f * s), right,
+                new GUIStyle(UiTheme.Body) { alignment = TextAnchor.MiddleRight });
         }
 
         private void DrawMenu(Rect rect, float s)
         {
             UiTheme.DrawPanel(rect);
-            float x = rect.x + 16f * s;
-            float y = rect.y + 16f * s;
-            float bw = rect.width - 32f * s;
-            float bh = 54f * s;
-            float gap = 10f * s;
+            float x = rect.x + 14f * s;
+            float y = rect.y + 14f * s;
+            float bw = rect.width - 28f * s;
+            float bh = 46f * s;
+            float gap = 7f * s;
 
-            MenuButton(ref y, x, bw, bh, gap, "동료 대화", HubMenu.Companions);
-            MenuButton(ref y, x, bw, bh, gap, "문파 관리", HubMenu.Sect);
-            MenuButton(ref y, x, bw, bh, gap, "수련", HubMenu.Training);
-            MenuButton(ref y, x, bw, bh, gap, "정찰", HubMenu.Scout);
-            y += gap;
             MenuButton(ref y, x, bw, bh, gap, "출정", HubMenu.Sortie);
+            MenuButton(ref y, x, bw, bh, gap, "연무장", HubMenu.Training);
+            MenuButton(ref y, x, bw, bh, gap, "동료", HubMenu.Companions);
+            MenuButton(ref y, x, bw, bh, gap, "문파", HubMenu.Sect);
+            MenuButton(ref y, x, bw, bh, gap, "객잔", HubMenu.Tavern);
+            MenuButton(ref y, x, bw, bh, gap, "의원", HubMenu.Infirmary);
+            MenuButton(ref y, x, bw, bh, gap, "장터", HubMenu.Market);
+            MenuButton(ref y, x, bw, bh, gap, "서고", HubMenu.Library);
+            y += gap;
             MenuButton(ref y, x, bw, bh, gap, "저장", HubMenu.Save);
+            MenuButton(ref y, x, bw, bh, gap, "설정", HubMenu.Settings);
         }
 
         private void MenuButton(ref float y, float x, float bw, float bh, float gap, string label, HubMenu target)
         {
-            bool sel = menu == target;
-            if (GUI.Button(new Rect(x, y, bw, bh), label, sel ? UiTheme.ButtonPrimary : UiTheme.Button))
+            if (GUI.Button(new Rect(x, y, bw, bh), label, menu == target ? UiTheme.ButtonPrimary : UiTheme.Button))
             {
                 menu = target;
             }
@@ -128,15 +123,18 @@ namespace JoseonMurimTactics
         {
             UiTheme.DrawPanel(rect);
             Rect inner = new Rect(rect.x + 22f * s, rect.y + 18f * s, rect.width - 44f * s, rect.height - 36f * s);
-
             switch (menu)
             {
+                case HubMenu.Sortie: DrawSortie(inner, s); break;
+                case HubMenu.Training: DrawTraining(inner, s); break;
                 case HubMenu.Companions: DrawCompanions(inner, s); break;
                 case HubMenu.Sect: DrawSect(inner, s); break;
-                case HubMenu.Training: DrawTraining(inner, s); break;
-                case HubMenu.Scout: DrawScout(inner, s); break;
-                case HubMenu.Sortie: DrawSortie(inner, s); break;
+                case HubMenu.Tavern: DrawTavern(inner, s); break;
+                case HubMenu.Infirmary: DrawInfirmary(inner, s); break;
+                case HubMenu.Market: DrawMarket(inner, s); break;
+                case HubMenu.Library: DrawLibrary(inner, s); break;
                 case HubMenu.Save: DrawSave(inner, s); break;
+                case HubMenu.Settings: DrawSettings(inner, s); break;
                 default: DrawOverview(inner, s); break;
             }
         }
@@ -146,93 +144,8 @@ namespace JoseonMurimTactics
             GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "거점 개요", UiTheme.Heading);
             GUI.Label(new Rect(r.x, r.y + 46f * s, r.width, r.height - 46f * s),
                 "비에 젖은 폐사당에 조선 문파의 첫 깃발이 섰다.\n\n" +
-                "전투만 하는 곳이 아니다. 동료와 이야기하고, 문파의 사정을 살피고, 다음 싸움을 정찰한 뒤 출격하라.\n\n" +
-                "왼쪽 메뉴에서 할 일을 고르고, 준비가 되면 '출격'으로 압록강 폐사당 방어전에 나설 수 있다.",
-                UiTheme.Body);
-        }
-
-        private void DrawCompanions(Rect r, float s)
-        {
-            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "동료 대화", UiTheme.Heading);
-            float y = r.y + 48f * s;
-            float cardH = 92f * s;
-
-            foreach (string id in root.Session.recruitedCompanionIds)
-            {
-                CompanionInfo info = CompanionCatalog.Info(id);
-                if (info == null) continue;
-                Rect card = new Rect(r.x, y, r.width, cardH);
-                UiTheme.DrawPanel(card, true);
-                GUI.Label(new Rect(card.x + 16f * s, card.y + 10f * s, card.width - 200f * s, 30f * s), $"{info.name} · {info.title}", UiTheme.Body);
-                GUI.Label(new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 200f * s, 26f * s),
-                    $"{info.role}   |   {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})", UiTheme.SmallMuted);
-                if (GUI.Button(new Rect(card.xMax - 150f * s, card.y + card.height * 0.5f - 24f * s, 134f * s, 48f * s), "대화", UiTheme.Button))
-                {
-                    talk = new DialogueController(BuildCompanionTalk(id), root);
-                    root.Session.actionsTaken++;
-                }
-
-                y += cardH + 12f * s;
-            }
-
-            // 잠긴 슬롯
-            GUI.Label(new Rect(r.x, y + 6f * s, r.width, 26f * s), "── 아직 합류하지 않은 고수들 ──", UiTheme.SmallMuted);
-            y += 38f * s;
-            string[] locked = { CompanionCatalog.HanBiyeon, CompanionCatalog.DoArin, CompanionCatalog.MaeHwaryeong, CompanionCatalog.KangChohui };
-            foreach (string id in locked)
-            {
-                CompanionInfo info = CompanionCatalog.Info(id);
-                if (info == null || root.Session.HasCompanion(id)) continue;
-                GUI.Label(new Rect(r.x, y, r.width, 26f * s), $"🔒 {info.name} — {info.title} (이후 장에서 합류)", UiTheme.SmallMuted);
-                y += 30f * s;
-            }
-        }
-
-        private void DrawSect(Rect r, float s)
-        {
-            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "문파 관리", UiTheme.Heading);
-            float y = r.y + 50f * s;
-            Line(r.x, ref y, r.width, s, "문파명", root.Session.sectName);
-            Line(r.x, ref y, r.width, s, "성향", StoryEnumLabels.Label(root.Session.heroDisposition));
-            Line(r.x, ref y, r.width, s, "초기 무공", StoryEnumLabels.Label(root.Session.startingArt));
-            y += 12f * s;
-            GUI.Label(new Rect(r.x, y, r.width, 30f * s), "세력 평판", UiTheme.Heading);
-            y += 40f * s;
-            string[] factions = { FactionIds.JoseonSects, FactionIds.ZhongyuanAlliance, FactionIds.RoyalCourt, FactionIds.DemonicCult };
-            foreach (string f in factions)
-            {
-                Line(r.x, ref y, r.width, s, FactionIds.Label(f), root.Reputation.Get(f).ToString());
-            }
-        }
-
-        private void DrawTraining(Rect r, float s)
-        {
-            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "수련", UiTheme.Heading);
-            GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 60f * s),
-                "v0.8에서는 수련 연출만 제공한다. 실제 능력치 성장은 이후 버전에서 붙는다.", UiTheme.Small);
-            float y = r.y + 110f * s;
-            string[] drills = { "박성준 — 기본 무공 점검", "윤서화 — 반격 검로 단련", "백련 — 한기 운용 수련" };
-            foreach (string drill in drills)
-            {
-                if (GUI.Button(new Rect(r.x, y, r.width * 0.8f, 50f * s), drill, UiTheme.Button))
-                {
-                    AddLog($"{drill} … 땀이 식기 전에 한 합 더.");
-                    root.Session.actionsTaken++;
-                    ShowToast("수련을 마쳤다.");
-                }
-
-                y += 60f * s;
-            }
-        }
-
-        private void DrawScout(Rect r, float s)
-        {
-            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "정찰 — 압록강 폐사당 방어전", UiTheme.Heading);
-            GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, r.height - 48f * s),
-                "<b>적 구성</b>\n  · 중원 감찰사 위지강 (대장, 제압 목표)\n  · 감찰단 호위무사 다수, 원거리 암기수 포함\n\n" +
-                "<b>지형 힌트</b>\n  · 무너진 다리와 물가 — 도하 지점이 좁다.\n  · 제단 주변은 엄폐가 좋다. 제단을 부수지 말 것.\n\n" +
-                "<b>보조 목표</b>\n  · 다친 조선 제자 구출\n  · 제단 보존\n  · 위지강을 죽이지 않고 제압",
-                UiTheme.Body);
+                "전투만 하는 곳이 아니다. 동료와 이야기하고, 문파의 사정을 살피고, 객잔에서 소문을 듣고, 의원에서 부상을 다스린 뒤 출정하라.\n\n" +
+                "준비가 되면 '출정'에서 임무를 골라 압록강 폐사당 방어전에 나설 수 있다.", UiTheme.Body);
         }
 
         private void DrawSortie(Rect r, float s)
@@ -246,16 +159,223 @@ namespace JoseonMurimTactics
             }
         }
 
+        private void DrawTraining(Rect r, float s)
+        {
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "연무장", UiTheme.Heading);
+            GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 50f * s),
+                "기초 조작과 무공을 점검하는 곳. (실전 성장·대련은 이후 버전)", UiTheme.Small);
+            float y = r.y + 100f * s;
+            string[] drills = { "박성준 — 기본 검로 점검", "윤서화 — 반격 연습", "백련 — 한기 운용" };
+            foreach (string d in drills)
+            {
+                if (GUI.Button(new Rect(r.x, r.y + (y - r.y), r.width * 0.78f, 46f * s), d, UiTheme.Button))
+                {
+                    AddLog($"{d} … 땀이 식기 전에 한 합 더.");
+                    root.Session.actionsTaken++;
+                    ShowToast("연무를 마쳤다.");
+                }
+                y += 54f * s;
+            }
+            GUI.Label(new Rect(r.x, y + 6f * s, r.width, 120f * s),
+                "전투 조작 순서: ①유닛 선택 ②파란 칸 이동 ③적 사거리 확인 ④공격/무공 ⑤예측 확인 ⑥주사위 ⑦반격 확인 ⑧대기 ⑨페이즈 종료.",
+                UiTheme.SmallMuted);
+        }
+
+        private void DrawCompanions(Rect r, float s)
+        {
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "동료", UiTheme.Heading);
+            float y = r.y + 48f * s;
+            float cardH = 92f * s;
+            foreach (string id in root.Session.recruitedCompanionIds)
+            {
+                CompanionInfo info = CompanionCatalog.Info(id);
+                if (info == null) continue;
+                Rect card = new Rect(r.x, y, r.width, cardH);
+                UiTheme.DrawPanel(card, true);
+                GUI.Label(new Rect(card.x + 16f * s, card.y + 10f * s, card.width - 180f * s, 30f * s), $"{info.name} · {info.title}", UiTheme.Body);
+                GUI.Label(new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 180f * s, 26f * s),
+                    $"{info.role}   |   {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})", UiTheme.SmallMuted);
+                if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + card.height * 0.5f - 22f * s, 128f * s, 44f * s), "대화", UiTheme.Button))
+                {
+                    talk = new DialogueController(BuildCompanionTalk(id), root);
+                    root.Session.actionsTaken++;
+                }
+                y += cardH + 12f * s;
+            }
+            GUI.Label(new Rect(r.x, y + 4f * s, r.width, 26f * s), "── 이후 합류 예정 ──", UiTheme.SmallMuted);
+            y += 34f * s;
+            string[] locked = { CompanionCatalog.HanBiyeon, CompanionCatalog.DoArin, CompanionCatalog.MaeHwaryeong, CompanionCatalog.KangChohui };
+            foreach (string id in locked)
+            {
+                CompanionInfo info = CompanionCatalog.Info(id);
+                if (info == null || root.Session.HasCompanion(id)) continue;
+                GUI.Label(new Rect(r.x, y, r.width, 26f * s), $"🔒 {info.name} — {info.title}", UiTheme.SmallMuted);
+                y += 28f * s;
+            }
+        }
+
+        private void DrawSect(Rect r, float s)
+        {
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "문파 — 해동문", UiTheme.Heading);
+            float y = r.y + 46f * s;
+            Line(r.x, ref y, r.width, s, "위명", root.Reputation.Get(FactionIds.JoseonSects).ToString());
+            Line(r.x, ref y, r.width, s, "중원무림맹 적대", (-root.Reputation.Get(FactionIds.ZhongyuanAlliance)).ToString());
+            Line(r.x, ref y, r.width, s, "조정 관심", root.Reputation.Get(FactionIds.RoyalCourt).ToString());
+            Line(r.x, ref y, r.width, s, "은전", root.Flags.GetInt("silver").ToString());
+            y += 8f * s;
+
+            GUI.Label(new Rect(r.x, y, r.width, 30f * s), "문파 기조 (정책)", UiTheme.Heading); y += 38f * s;
+            HeroDisposition[] all = { HeroDisposition.Royal, HeroDisposition.Chivalrous, HeroDisposition.Conqueror, HeroDisposition.Romantic };
+            float gap = 8f * s;
+            float bw = (r.width - gap * 3f) / 4f;
+            for (int i = 0; i < all.Length; i++)
+            {
+                bool sel = root.Session.heroDisposition == all[i];
+                if (GUI.Button(new Rect(r.x + (bw + gap) * i, y, bw, 44f * s), StoryEnumLabels.Label(all[i]),
+                        sel ? UiTheme.ButtonPrimary : UiTheme.Button))
+                {
+                    root.Session.heroDisposition = all[i];
+                    ShowToast($"문파 기조를 {StoryEnumLabels.Label(all[i])}(으)로 정했다.");
+                    AddLog($"해동문의 기조가 {StoryEnumLabels.Label(all[i])}(으)로 바뀌었다.");
+                }
+            }
+            y += 52f * s;
+            GUI.Label(new Rect(r.x, y, r.width, 60f * s), "정책 효과 — " + PolicyEffect(root.Session.heroDisposition), UiTheme.Small);
+        }
+
+        private static string PolicyEffect(HeroDisposition d)
+        {
+            switch (d)
+            {
+                case HeroDisposition.Royal: return "왕도: 명성 획득 증가, 적 항복 유도에 유리. 사파/마교와 마찰 가능.";
+                case HeroDisposition.Chivalrous: return "협도: 민심 보너스, 약자 보호 보조 목표에 유리. 협박 선택지 약화.";
+                case HeroDisposition.Conqueror: return "패도: 적 기세 감소에 강함. 선한 동료 승인도 리스크.";
+                case HeroDisposition.Romantic: return "풍류: 대화·도발 보너스. 실패 시 승인도/적대 리스크.";
+                default: return string.Empty;
+            }
+        }
+
+        private void DrawTavern(Rect r, float s)
+        {
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "객잔", UiTheme.Heading);
+            GUI.Label(new Rect(r.x, r.y + 46f * s, r.width, 28f * s), "무림의 소문이 술잔을 타고 흐른다.", UiTheme.SmallMuted);
+            Rect quote = new Rect(r.x, r.y + 80f * s, r.width, 90f * s);
+            UiTheme.DrawFill(quote, UiTheme.HanjiPanelAlt);
+            GUI.Label(new Rect(quote.x + 12f * s, quote.y + 10f * s, quote.width - 24f * s, quote.height - 20f * s),
+                string.IsNullOrEmpty(rumor) ? "..." : rumor, new GUIStyle(UiTheme.Body) { fontStyle = FontStyle.Italic });
+            if (GUI.Button(new Rect(r.x, r.y + 186f * s, r.width * 0.5f, 46f * s), "소문 더 듣기", UiTheme.Button))
+            {
+                root.Session.actionsTaken++;
+                rumor = root.Narration.GenerateNpcLine("tavern" + root.Session.actionsTaken, root.Session);
+            }
+            GUI.Label(new Rect(r.x, r.y + 246f * s, r.width, 60f * s),
+                "· 서브 의뢰와 동료 영입 소문은 이후 버전에서 열립니다.", UiTheme.SmallMuted);
+        }
+
+        private void DrawInfirmary(Rect r, float s)
+        {
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "의원", UiTheme.Heading);
+            BattleResultData last = root.Session.lastBattleResult;
+            float y = r.y + 50f * s;
+            if (last != null && last.woundedCompanions.Count > 0)
+            {
+                GUI.Label(new Rect(r.x, y, r.width, 28f * s), "치료가 필요한 동료:", UiTheme.Body); y += 34f * s;
+                foreach (string id in last.woundedCompanions)
+                {
+                    GUI.Label(new Rect(r.x + 10f * s, y, r.width - 10f * s, 26f * s), "· " + CompanionCatalog.Name(id) + " (부상)", UiTheme.Small);
+                    y += 28f * s;
+                }
+                if (GUI.Button(new Rect(r.x, y + 8f * s, r.width * 0.6f, 48f * s), "치료하기", UiTheme.ButtonPrimary))
+                {
+                    last.woundedCompanions.Clear();
+                    ShowToast("동료의 상처를 다스렸다.");
+                    AddLog("의원에서 동료들의 부상을 치료했다.");
+                }
+            }
+            else
+            {
+                GUI.Label(new Rect(r.x, y, r.width, 60f * s), "지금은 치료가 필요한 동료가 없다.\n전투에서 다친 동료가 생기면 이곳에서 회복시킨다.", UiTheme.Body);
+            }
+        }
+
+        private void DrawMarket(Rect r, float s)
+        {
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "장터", UiTheme.Heading);
+            GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 26f * s), $"보유 은전: {root.Flags.GetInt("silver")}", UiTheme.Body);
+            float y = r.y + 84f * s;
+            BuyRow(r, ref y, s, "약재 꾸러미", 40, "전투 후 회복에 쓰인다.");
+            BuyRow(r, ref y, s, "내공단", 60, "내공 회복 소모품.");
+            BuyRow(r, ref y, s, "투척 비수 묶음", 30, "암기 보급.");
+            GUI.Label(new Rect(r.x, y + 6f * s, r.width, 40f * s), "· 장비/무공 상점은 이후 버전에서 확장됩니다.", UiTheme.SmallMuted);
+        }
+
+        private void BuyRow(Rect r, ref float y, float s, string item, int price, string desc)
+        {
+            Rect row = new Rect(r.x, y, r.width, 54f * s);
+            GUI.Label(new Rect(row.x, row.y + 4f * s, row.width * 0.5f, 26f * s), item, UiTheme.Body);
+            GUI.Label(new Rect(row.x, row.y + 28f * s, row.width * 0.6f, 22f * s), desc, UiTheme.SmallMuted);
+            bool canBuy = root.Flags.GetInt("silver") >= price;
+            GUI.enabled = canBuy;
+            if (GUI.Button(new Rect(row.xMax - 150f * s, row.y + 6f * s, 140f * s, 42f * s), $"구매 ({price})", UiTheme.Button))
+            {
+                root.Flags.AddInt("silver", -price);
+                ShowToast($"{item} 구매");
+                AddLog($"장터에서 {item}을(를) 샀다. (-{price}은전)");
+            }
+            GUI.enabled = true;
+            y += 60f * s;
+        }
+
+        private void DrawLibrary(Rect r, float s)
+        {
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "서고 — 도감", UiTheme.Heading);
+            float gap = 8f * s;
+            float bw = (r.width - gap * 2f) / 3f;
+            string[] tabs = { "세계관", "세력", "무공" };
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                if (GUI.Button(new Rect(r.x + (bw + gap) * i, r.y + 44f * s, bw, 40f * s), tabs[i],
+                        loreIndex == i ? UiTheme.ButtonPrimary : UiTheme.Button))
+                {
+                    loreIndex = i;
+                }
+            }
+            Rect body = new Rect(r.x, r.y + 96f * s, r.width, r.height - 96f * s);
+            UiTheme.DrawFill(body, UiTheme.HanjiPanelAlt);
+            GUI.Label(new Rect(body.x + 14f * s, body.y + 12f * s, body.width - 28f * s, body.height - 24f * s), LoreText(loreIndex), UiTheme.Body);
+        }
+
+        private static string LoreText(int i)
+        {
+            switch (i)
+            {
+                case 0: return "중원무림맹의 강경 정파가 조선 문파들을 ‘하위 분파’로 흡수하려 한다. 무공·예법·기록·언어를 중원식으로 바꾸라 강요하는 가운데, 흩어진 조선 문파들이 해동문 박성준을 중심으로 연합하기 시작한다.";
+                case 1: return "· 조선문파연합: 해동문이 묶어가는 신흥 연합.\n· 중원무림맹(강경파): 흡수·동화를 밀어붙이는 권력층.\n· 무림맹 감찰단: 현판령을 집행하는 첨병.\n· 조정 / 마교 / 흑립방: 각자의 셈을 가진 변수들.";
+                case 2: return "· 검법(윤서화): 월하반조검 — 반격에 능한 정공의 검로.\n· 빙공(백련): 설화심법 — 한기로 적을 늦추고 아군을 회복.\n· 암기(한비연): 비화독침 — 잠행과 원거리 견제.\n· 권법/창술/음공: 이후 동료와 함께 확장.";
+                default: return string.Empty;
+            }
+        }
+
         private void DrawSave(Rect r, float s)
         {
             GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "저장", UiTheme.Heading);
-            GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 60f * s),
-                "현재 진행 상황을 자동 저장 슬롯에 기록한다.", UiTheme.Body);
-            if (GUI.Button(new Rect(r.x, r.y + 120f * s, r.width * 0.6f, 56f * s), "지금 저장", UiTheme.ButtonPrimary))
+            GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 56f * s), "현재 진행 상황을 자동 저장 슬롯에 기록한다.", UiTheme.Body);
+            if (GUI.Button(new Rect(r.x, r.y + 116f * s, r.width * 0.6f, 56f * s), "지금 저장", UiTheme.ButtonPrimary))
             {
                 bool ok = root.Save.Save(root.Session);
                 ShowToast(ok ? "저장되었습니다." : "저장에 실패했습니다.");
                 AddLog(ok ? "진행 상황을 기록했다." : "저장에 실패했다.");
+            }
+        }
+
+        private void DrawSettings(Rect r, float s)
+        {
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "설정", UiTheme.Heading);
+            GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 90f * s),
+                "해상도/소리/텍스트 속도 옵션은 이후 버전에서 추가됩니다.\n지금은 타이틀 화면의 설정과 동일하게 자리만 잡아둔 상태입니다.", UiTheme.Body);
+            if (GUI.Button(new Rect(r.x, r.y + 150f * s, r.width * 0.6f, 52f * s), "타이틀로", UiTheme.Button))
+            {
+                root.Flow.GoToTitle();
             }
         }
 
@@ -269,23 +389,19 @@ namespace JoseonMurimTactics
                 CompanionInfo info = CompanionCatalog.Info(id);
                 if (info == null) continue;
                 GUI.Label(new Rect(rect.x + 18f * s, y, rect.width - 36f * s, 28f * s), info.name, UiTheme.Body);
-                GUI.Label(new Rect(rect.x + 18f * s, y + 28f * s, rect.width - 36f * s, 24f * s),
-                    $"{info.role}", UiTheme.SmallMuted);
-                // 승인도 바
+                GUI.Label(new Rect(rect.x + 18f * s, y + 28f * s, rect.width - 36f * s, 24f * s), info.role, UiTheme.SmallMuted);
                 Rect barBg = new Rect(rect.x + 18f * s, y + 54f * s, rect.width - 36f * s, 10f * s);
                 UiTheme.DrawFill(barBg, UiTheme.HanjiPanelAlt);
                 float frac = Mathf.Clamp01(root.Approval.Get(id) / 100f);
                 UiTheme.DrawFill(new Rect(barBg.x, barBg.y, barBg.width * frac, barBg.height), UiTheme.Teal);
-                GUI.Label(new Rect(rect.x + 18f * s, y + 64f * s, rect.width - 36f * s, 22f * s),
-                    root.Approval.GetStageLabel(id), UiTheme.SmallMuted);
+                GUI.Label(new Rect(rect.x + 18f * s, y + 64f * s, rect.width - 36f * s, 22f * s), root.Approval.GetStageLabel(id), UiTheme.SmallMuted);
                 y += 104f * s;
             }
         }
 
         private void DrawToast(float w, float h, float s)
         {
-            float tw = 360f * s;
-            float th = 56f * s;
+            float tw = 360f * s, th = 56f * s;
             Rect t = new Rect(w * 0.5f - tw * 0.5f, h * 0.16f, tw, th);
             UiTheme.DrawPanel(t);
             GUI.Label(t, toast, UiTheme.BodyCenter);
@@ -295,14 +411,10 @@ namespace JoseonMurimTactics
         {
             GUI.Label(new Rect(x, y, w * 0.4f, 30f * s), label, UiTheme.SmallMuted);
             GUI.Label(new Rect(x + w * 0.4f, y, w * 0.6f, 30f * s), value, UiTheme.Body);
-            y += 36f * s;
+            y += 34f * s;
         }
 
-        private void ShowToast(string text)
-        {
-            toast = text;
-            toastTimer = 2.0f;
-        }
+        private void ShowToast(string text) { toast = text; toastTimer = 2.0f; }
 
         private void AddLog(string text)
         {
@@ -318,8 +430,7 @@ namespace JoseonMurimTactics
 
             if (id == CompanionCatalog.YunSeohwa)
             {
-                d.Add(new DialogueNode("t0", name,
-                    "“문주. 깃발은 세웠으나, 검을 들 자들의 마음까지 세운 것은 아니오.”", "t1"));
+                d.Add(new DialogueNode("t0", name, "“문주. 깃발은 세웠으나, 검을 들 자들의 마음까지 세운 것은 아니오.”", "t1"));
                 DialogueNode c = new DialogueNode("t1", "박성준", "(어떻게 답할까?)");
                 c.choices.Add(new DialogueChoice("정중히 — 그대의 검에 기대겠소.", HeroDisposition.Chivalrous, "t2a").Approval(id, +3));
                 c.choices.Add(new DialogueChoice("농담으로 — 마음은 차차 열리는 법이지.", HeroDisposition.Romantic, "t2b").Approval(id, -3));
@@ -329,11 +440,10 @@ namespace JoseonMurimTactics
             }
             else if (id == CompanionCatalog.BaekRyeon)
             {
-                d.Add(new DialogueNode("t0", name,
-                    "“다친 제자들은 고비를 넘겼어요. 다만, 약재가 곧 동날 거예요.”", "t1"));
+                d.Add(new DialogueNode("t0", name, "“다친 제자들은 고비를 넘겼어요. 다만, 약재가 곧 동날 거예요.”", "t1"));
                 DialogueNode c = new DialogueNode("t1", "박성준", "(어떻게 답할까?)");
                 c.choices.Add(new DialogueChoice("제자들 안부부터 챙긴다.", HeroDisposition.Chivalrous, "t2a").Approval(id, +3));
-                c.choices.Add(new DialogueChoice("약재 걱정은 나중, 지금은 출격이 먼저요.", HeroDisposition.Conqueror, "t2b").Approval(id, -2));
+                c.choices.Add(new DialogueChoice("약재 걱정은 나중, 지금은 출정이 먼저요.", HeroDisposition.Conqueror, "t2b").Approval(id, -2));
                 d.Add(c);
                 d.Add(new DialogueNode("t2a", name, "백련이 옅게 웃는다. “…고마워요, 문주.”", null));
                 d.Add(new DialogueNode("t2b", name, "백련이 입술을 다문다. “사람이 먼저예요, 문주.”", null));
