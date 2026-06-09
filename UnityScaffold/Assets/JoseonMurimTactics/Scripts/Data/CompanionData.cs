@@ -12,6 +12,14 @@ public struct ApprovalRule
     public string note;
 }
 
+[Serializable]
+public struct ApprovalThresholdEvent
+{
+    public int threshold;
+    public string flagToSet;
+    public string unlockedDialogueId;
+}
+
 /// <summary>
 /// 동료 기본 설정 ScriptableObject(설계 §7-6). v0.8 런타임은 CompanionCatalog(코드)를 쓰며,
 /// 이 에셋은 이후 데이터 저작/교체용으로 둔다.
@@ -26,6 +34,8 @@ public sealed class CompanionData : ScriptableObject
     public string region;
     public string sectName;
     public int age;
+    public CompanionAgeGroup ageGroup = CompanionAgeGroup.Minor;
+    public bool romanceEligible;
     public string mbti;
     public string element;
     public string weapon;
@@ -35,6 +45,9 @@ public sealed class CompanionData : ScriptableObject
     public Sprite portraitPlaceholder;
     public List<string> startingSkillIds = new List<string>();
     public List<ApprovalRule> approvalRules = new List<ApprovalRule>();
+    public List<ApprovalThresholdEvent> approvalThresholdEvents = new List<ApprovalThresholdEvent>();
+    public List<string> personalQuestUnlocks = new List<string>();
+    public List<string> supportUnlocks = new List<string>();
     public string personalQuestId;
 }
 }

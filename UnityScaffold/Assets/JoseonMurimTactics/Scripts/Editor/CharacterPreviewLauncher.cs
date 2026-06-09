@@ -13,12 +13,12 @@ public static class CharacterPreviewLauncher
     private const string SpriteFolder = "Assets/JoseonMurimTactics/Art/Characters/Sprites/Individuals";
 
     private static readonly CharacterSpec[] Characters = {
-        new CharacterSpec("park_sungjun", "박성준", "park_sungjun_fullbody.png", -3.75f, 1.34f),
-        new CharacterSpec("yun_seohwa", "매화령", "yun_seohwa_fullbody.png", -2.25f, 1.22f),
-        new CharacterSpec("baek_ryeon", "백련", "baek_ryeon_fullbody.png", -0.75f, 1.18f),
-        new CharacterSpec("han_biyeon", "한비연", "han_biyeon_fullbody.png", 0.75f, 1.18f),
-        new CharacterSpec("do_arin", "도아린", "do_arin_fullbody.png", 2.25f, 1.22f),
-        new CharacterSpec("strategist", "서아", "strategist_fullbody.png", 3.75f, 1.22f)
+        new CharacterSpec("park_sungjun", "박성준", "park_sungjun_fullbody.png", -3.75f, 1.30f),
+        new CharacterSpec("baek_ryeon", "백련", "baek_ryeon_fullbody.png", -2.25f, 1.20f),
+        new CharacterSpec("do_arin", "도아린", "do_arin_fullbody.png", -0.75f, 1.22f),
+        new CharacterSpec("jin_seoyul", "진서율", "yun_seohwa_fullbody.png", 0.75f, 1.18f),
+        new CharacterSpec("seo_a", "신서아", "strategist_fullbody.png", 2.25f, 1.06f),
+        new CharacterSpec("han_biyeon", "한비연", "han_biyeon_fullbody.png", 3.75f, 1.18f)
     };
 
     [MenuItem("Joseon Murim Tactics/Open Character Asset Preview")]

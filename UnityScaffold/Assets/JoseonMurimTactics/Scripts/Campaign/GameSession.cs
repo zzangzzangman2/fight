@@ -11,18 +11,20 @@ namespace JoseonMurimTactics
 /// </summary>
 public sealed class GameSession
 {
-    public string sectName = "해동검문";
+    public string sectName = "백두천광검문";
     public HeroDisposition heroDisposition = HeroDisposition.Romantic;
     public GameDifficulty difficulty = GameDifficulty.Murim;
     public StartingArt startingArt = StartingArt.Sword;
 
-    public string currentChapterId = "CH00_PROLOGUE";
+    public string currentChapterId = "CHAPTER_01";
 
     public readonly List<string> recruitedCompanionIds = new List<string>();
     public readonly Dictionary<string, int> companionApproval = new Dictionary<string, int>();
     public readonly Dictionary<string, int> factionReputation = new Dictionary<string, int>();
+    public readonly Dictionary<string, int> inventory = new Dictionary<string, int>();
     public readonly HashSet<string> storyFlags = new HashSet<string>();
     public readonly Dictionary<string, int> intVars = new Dictionary<string, int>();
+    public readonly List<string> appliedBattleResultIds = new List<string>();
 
     // 마지막 전투 결과(허브/결과 화면 표시용 임시값, 저장 대상 아님).
     [NonSerialized]
@@ -63,8 +65,10 @@ public sealed class GameSession
                                     recruitedCompanionIds = new List<string>(recruitedCompanionIds),
                                     companionApproval = Pairs(companionApproval),
                                     factionReputation = Pairs(factionReputation),
+                                    inventory = Pairs(inventory),
                                     storyFlags = new List<string>(storyFlags),
                                     intVars = Pairs(intVars),
+                                    appliedBattleResultIds = new List<string>(appliedBattleResultIds),
                                     actionsTaken = actionsTaken,
                                     savedAtUnixSeconds = savedAtUnixSeconds,
                                     saveVersion = saveVersion,
@@ -101,7 +105,13 @@ public sealed class GameSession
 
         FillFromPairs(session.companionApproval, dto.companionApproval);
         FillFromPairs(session.factionReputation, dto.factionReputation);
+        FillFromPairs(session.inventory, dto.inventory);
         FillFromPairs(session.intVars, dto.intVars);
+
+        if (dto.appliedBattleResultIds != null)
+        {
+            session.appliedBattleResultIds.AddRange(dto.appliedBattleResultIds);
+        }
 
         if (dto.storyFlags != null)
         {
@@ -165,8 +175,10 @@ public sealed class GameSession
         public List<string> recruitedCompanionIds;
         public List<StringIntPair> companionApproval;
         public List<StringIntPair> factionReputation;
+        public List<StringIntPair> inventory;
         public List<string> storyFlags;
         public List<StringIntPair> intVars;
+        public List<string> appliedBattleResultIds;
         public int actionsTaken;
         public long savedAtUnixSeconds;
         public int saveVersion;

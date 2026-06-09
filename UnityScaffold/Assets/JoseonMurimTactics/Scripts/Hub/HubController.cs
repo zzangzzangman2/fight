@@ -4,7 +4,7 @@ using UnityEngine;
 namespace JoseonMurimTactics
 {
 /// <summary>
-/// 해동문 본산 허브(설계 v0.9 §2-4, §5). 메뉴형 허브가 이제 게임의 중심.
+/// 백두천광검문 거점 허브(설계 v0.9 §2-4, §5). 메뉴형 허브가 이제 게임의 중심.
 /// 출정 / 연무장 / 동료 / 문파 / 객잔 / 의원 / 장터 / 서고 / 저장 / 설정.
 /// </summary>
 [DisallowMultipleComponent]
@@ -47,7 +47,7 @@ public sealed class HubController : MonoBehaviour
         root = GameRoot.EnsureExists();
         EnsureActionPoints();
         settings = GameSettings.Load();
-        AddLog($"{root.Session.sectName}의 임시 거점, 폐사당에 도착했다.");
+        AddLog($"{root.Session.sectName}의 낡은 검각에 새벽빛이 들었다.");
         RefreshRumor("hub");
     }
 
@@ -103,12 +103,12 @@ public sealed class HubController : MonoBehaviour
         Rect bar = new Rect(margin, 20f * s, w - margin * 2f, 58f * s);
         UiTheme.DrawPanel(bar, true);
         GameSession ses = root.Session;
-        GUI.Label(new Rect(bar.x + 18f * s, bar.y + 12f * s, bar.width * 0.34f, 34f * s), "해동문 · 폐사당 거점",
+        GUI.Label(new Rect(bar.x + 18f * s, bar.y + 12f * s, bar.width * 0.34f, 34f * s), "백두천광검문 · 소백촌 거점",
                   UiTheme.Heading);
-        string mid = $"{ses.sectName}  ·  제0장  ·  기조 {StoryEnumLabels.Label(ses.heroDisposition)}";
+        string mid = $"{ses.sectName}  ·  제1장  ·  기조 {StoryEnumLabels.Label(ses.heroDisposition)}";
         GUI.Label(new Rect(bar.x + bar.width * 0.34f, bar.y + 15f * s, bar.width * 0.4f, 30f * s), mid, UiTheme.Body);
         string right =
-            $"행동력 {ActionsRemaining}/{MaxDailyActions}   위명 {root.Reputation.Get(FactionIds.JoseonSects)}   은전 {root.Flags.GetInt("silver")}";
+            $"제{DayIndex}일   기력 {ActionsRemaining}/{MaxDailyActions}   위명 {root.Reputation.Get(FactionIds.JoseonSects)}   은전 {root.Flags.GetInt("silver")}";
         GUI.Label(new Rect(bar.x + bar.width * 0.6f - 18f * s, bar.y + 15f * s, bar.width * 0.4f, 30f * s), right,
                   new GUIStyle(UiTheme.Body) { alignment = TextAnchor.MiddleRight });
     }
@@ -195,20 +195,20 @@ public sealed class HubController : MonoBehaviour
 
     private void DrawOverview(Rect r, float s)
     {
-        GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "폐사당 거점", UiTheme.Heading);
+        GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "백두산 검각", UiTheme.Heading);
         GUI.Label(new Rect(r.x, r.y + 38f * s, r.width, 44f * s),
-                  "비에 젖은 폐사당에 조선 문파의 첫 깃발이 섰다. 장소를 골라 오늘의 준비를 진행한다.", UiTheme.Body);
+                  "하루가 지나면 기력이 회복된다. 수련, 일감, 복구를 골라 오늘의 자유시간을 쓴다.",
+                  UiTheme.Body);
 
         Rect yard = new Rect(r.x, r.y + 92f * s, r.width, Mathf.Min(360f * s, r.height - 140f * s));
         UiTheme.DrawFill(yard, UiTheme.HanjiPanelAlt);
         GUI.Label(new Rect(yard.x + 18f * s, yard.y + 14f * s, yard.width - 36f * s, 30f * s),
-                  "폐사당 전경 placeholder: 본당 / 마루 / 객잔 천막 / 의원 / 장터 / 서고 / 출정 깃발",
-                  UiTheme.SmallMuted);
+                  "검각 전경: 본당 / 연무장 / 소백촌 장터 / 의원 / 약방 / 서고 / 출정 깃발", UiTheme.SmallMuted);
 
         Hotspot(yard, 0.44f, 0.13f, 0.22f, 0.13f, s, "출정 깃발", HubMenu.Sortie, "!");
         Hotspot(yard, 0.08f, 0.38f, 0.22f, 0.14f, s, "연무장", HubMenu.Training, ActionsRemaining > 0 ? "" : "!");
-        Hotspot(yard, 0.38f, 0.42f, 0.24f, 0.15f, s, "동료 마루", HubMenu.Companions, CompanionBadge());
-        Hotspot(yard, 0.40f, 0.68f, 0.22f, 0.14f, s, "현판 회의", HubMenu.Sect, "!");
+        Hotspot(yard, 0.38f, 0.42f, 0.24f, 0.15f, s, "검각 마루", HubMenu.Companions, CompanionBadge());
+        Hotspot(yard, 0.40f, 0.68f, 0.22f, 0.14f, s, "문파 재건", HubMenu.Sect, "!");
         Hotspot(yard, 0.68f, 0.30f, 0.22f, 0.14f, s, "객잔", HubMenu.Tavern, "!");
         Hotspot(yard, 0.68f, 0.56f, 0.22f, 0.14f, s, "의원", HubMenu.Infirmary, InjuredCount() > 0 ? "!" : "");
         Hotspot(yard, 0.09f, 0.64f, 0.20f, 0.13f, s, "장터", HubMenu.Market, "");
@@ -216,14 +216,14 @@ public sealed class HubController : MonoBehaviour
                 root.Flags.HasFlag(StoryFlags.FirstBattleWon) ? "!" : "");
 
         float y = yard.yMax + 14f * s;
-        GUI.Label(new Rect(r.x, y, r.width * 0.55f, 28f * s), $"오늘 행동력: {ActionsRemaining}/{MaxDailyActions}",
+        GUI.Label(new Rect(r.x, y, r.width * 0.55f, 28f * s), $"오늘 기력: {ActionsRemaining}/{MaxDailyActions}",
                   UiTheme.Body);
-        if (GUI.Button(new Rect(r.x + r.width - 160f * s, y - 6f * s, 160f * s, 42f * s), "하루 정리", UiTheme.Button))
+        GUI.Label(new Rect(r.x, y + 30f * s, r.width * 0.72f, 26f * s),
+                  $"수련도 {root.Flags.GetInt("growth:martial_xp")}   연구 {root.Flags.GetInt("growth:research_xp")}   문파 복구 {root.Flags.GetInt("sect:repair")}   마을 신뢰 {root.Flags.GetInt("sect:village_trust")}",
+                  UiTheme.SmallMuted);
+        if (GUI.Button(new Rect(r.x + r.width - 160f * s, y - 6f * s, 160f * s, 42f * s), "하루 보내기", UiTheme.Button))
         {
-            root.Flags.SetInt(ActionPointKey, MaxDailyActions);
-            root.Flags.SetFlag(ActionPointInitializedFlag);
-            ShowToast("새 하루를 시작했다.");
-            AddLog("폐사당의 등불을 정리하고 새 하루를 맞았다.");
+            BeginNextDay();
         }
     }
 
@@ -250,7 +250,7 @@ public sealed class HubController : MonoBehaviour
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "출정", UiTheme.Heading);
         GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 90f * s),
                   "임무 게시판에서 출정할 임무를 고른다.\n임무를 선택하면 적 정보·보상·승패 조건을 확인하고 출격 " +
-                  "준비로 넘어간다.",
+                      "준비로 넘어간다.",
                   UiTheme.Body);
         if (GUI.Button(new Rect(r.x, r.y + 150f * s, r.width * 0.7f, 60f * s), "임무 선택 →", UiTheme.ButtonPrimary))
         {
@@ -262,23 +262,28 @@ public sealed class HubController : MonoBehaviour
     {
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "연무장", UiTheme.Heading);
         GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 50f * s),
-                  "기초 조작과 무공을 점검하는 곳. (실전 성장·대련은 이후 버전)", UiTheme.Small);
+                  "기력을 써서 무공 숙련을 올린다. 일정 수치가 쌓이면 초식과 심법 단서가 열린다.", UiTheme.Small);
         float y = r.y + 100f * s;
-        string[] drills = { "박성준 — 백두광검 검로 점검", "백련 — 설악창 한기 운용", "도아린 — 화왕도 돌파 연습" };
-        foreach (string d in drills)
+        string[] drills = { "박성준 — 천광심법 호흡", "박성준 — 백야검결 검로", "동료 합련 — 속성 연계 대련" };
+        for (int i = 0; i < drills.Length; i++)
         {
+            string d = drills[i];
             if (GUI.Button(new Rect(r.x, r.y + (y - r.y), r.width * 0.78f, 46f * s), d, UiTheme.Button))
             {
-                TrySpendAction("연무장 수련");
-                AddLog($"{d} … 땀이 식기 전에 한 합 더.");
-                root.Session.actionsTaken++;
-                ShowToast("연무를 마쳤다.");
+                if (TrySpendAction("연무장 수련"))
+                {
+                    ApplyTraining(i);
+                }
             }
             y += 54f * s;
         }
+        GUI.Label(new Rect(r.x, y, r.width, 30f * s),
+                  $"천광심법 {root.Flags.GetInt("growth:inner_art_xp")}   백야검결 {root.Flags.GetInt("growth:sword_xp")}   합련 {root.Flags.GetInt("growth:teamwork_xp")}",
+                  UiTheme.SmallMuted);
+        y += 34f * s;
         GUI.Label(new Rect(r.x, y + 6f * s, r.width, 120f * s),
                   "전투 조작 순서: ①유닛 선택 ②파란 칸 이동 ③적 사거리 확인 ④공격/무공 ⑤예측 확인 ⑥주사위 ⑦반격 확인 " +
-                  "⑧대기 ⑨페이즈 종료.",
+                      "⑧대기 ⑨페이즈 종료.",
                   UiTheme.SmallMuted);
     }
 
@@ -308,15 +313,17 @@ public sealed class HubController : MonoBehaviour
             if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + card.height * 0.5f - 22f * s, 128f * s, 44f * s),
                            "대화", UiTheme.Button))
             {
-                TrySpendAction("동료 대화");
-                talk = new DialogueController(BuildCompanionTalk(id), root);
-                root.Session.actionsTaken++;
+                if (TrySpendAction("동료 대화"))
+                {
+                    talk = new DialogueController(BuildCompanionTalk(id), root);
+                    root.Session.actionsTaken++;
+                }
             }
             y += cardH + 12f * s;
         }
         GUI.Label(new Rect(r.x, y + 4f * s, r.width, 26f * s), "── 이후 합류 예정 ──", UiTheme.SmallMuted);
         y += 34f * s;
-        string[] locked = { CompanionCatalog.SeoA, CompanionCatalog.MaeHwaryeong, CompanionCatalog.HanBiyeon };
+        string[] locked = { CompanionCatalog.JinSeoyul, CompanionCatalog.SeoA, CompanionCatalog.HanBiyeon };
         foreach (string id in locked)
         {
             CompanionInfo info = CompanionCatalog.Info(id);
@@ -331,7 +338,7 @@ public sealed class HubController : MonoBehaviour
 
     private void DrawSect(Rect r, float s)
     {
-            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "문파 — " + root.Session.sectName, UiTheme.Heading);
+        GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "문파 — " + root.Session.sectName, UiTheme.Heading);
         float y = r.y + 46f * s;
         Line(r.x, ref y, r.width, s, "위명", root.Reputation.Get(FactionIds.JoseonSects).ToString());
         Line(r.x, ref y, r.width, s, "조선문파연합 결속", root.Reputation.Get(FactionIds.JoseonSects).ToString());
@@ -344,6 +351,33 @@ public sealed class HubController : MonoBehaviour
         Line(r.x, ref y, r.width, s, "보급",
              $"약재 {root.Flags.GetInt("supply:medicine")} · 무기 {root.Flags.GetInt("supply:weapons")}");
         y += 8f * s;
+
+        GUI.Label(new Rect(r.x, y, r.width, 30f * s), "자유행동", UiTheme.Heading);
+        y += 38f * s;
+        if (GUI.Button(new Rect(r.x, y, r.width * 0.46f, 44f * s), "검각 보수", UiTheme.Button))
+        {
+            if (TrySpendAction("검각 보수"))
+            {
+                root.Flags.AddInt("sect:repair", 2);
+                root.Reputation.Add(FactionIds.JoseonSects, +1);
+                root.Session.actionsTaken++;
+                ShowToast("문파 복구 +2");
+                AddLog("무너진 처마와 연무장 바닥을 손봤다. 문파 복구 +2, 조선문파연합 위명 +1.");
+            }
+        }
+
+        if (GUI.Button(new Rect(r.x + r.width * 0.50f, y, r.width * 0.46f, 44f * s), "소백촌 순찰", UiTheme.Button))
+        {
+            if (TrySpendAction("소백촌 순찰"))
+            {
+                root.Flags.AddInt("sect:village_trust", 2);
+                root.Flags.AddInt("silver", 10);
+                root.Session.actionsTaken++;
+                ShowToast("마을 신뢰 +2");
+                AddLog("소백촌 길목을 살피고 잡일을 도왔다. 마을 신뢰 +2, 은전 +10.");
+            }
+        }
+        y += 58f * s;
 
         GUI.Label(new Rect(r.x, y, r.width, 30f * s), "문파 기조 (정책)", UiTheme.Heading);
         y += 38f * s;
@@ -359,7 +393,7 @@ public sealed class HubController : MonoBehaviour
             {
                 root.Session.heroDisposition = all[i];
                 ShowToast($"문파 기조를 {StoryEnumLabels.Label(all[i])}(으)로 정했다.");
-                    AddLog($"{root.Session.sectName}의 기조가 {StoryEnumLabels.Label(all[i])}(으)로 바뀌었다.");
+                AddLog($"{root.Session.sectName}의 기조가 {StoryEnumLabels.Label(all[i])}(으)로 바뀌었다.");
             }
         }
         y += 52f * s;
@@ -375,7 +409,8 @@ public sealed class HubController : MonoBehaviour
         FactionMeter(r.x, ref y, r.width, s, FactionIds.RoyalCourt);
         FactionMeter(r.x, ref y, r.width, s, FactionIds.BlackHatGuild);
         GUI.Label(new Rect(r.x, y + 4f * s, r.width, 36f * s),
-                "최근 변화: 백두산 주변에서 검은 표식이 발견되고, 중원 하위 문파가 영맥을 엿본다는 소문이 돈다.", UiTheme.SmallMuted);
+                  "최근 변화: 백두산 주변에서 검은 표식이 발견되고, 중원 하위 문파가 영맥을 엿본다는 소문이 돈다.",
+                  UiTheme.SmallMuted);
     }
 
     private static string PolicyEffect(HeroDisposition d)
@@ -414,9 +449,25 @@ public sealed class HubController : MonoBehaviour
         }
         if (GUI.Button(new Rect(r.x, r.y + 208f * s, r.width * 0.5f, 46f * s), "소문 더 듣기", UiTheme.Button))
         {
-            TrySpendAction("객잔 소문");
-            root.Session.actionsTaken++;
-            RefreshRumor("tavern" + root.Session.actionsTaken);
+            if (TrySpendAction("객잔 소문"))
+            {
+                root.Session.actionsTaken++;
+                root.Flags.AddInt("rumor:clues", 1);
+                RefreshRumor("tavern" + root.Session.actionsTaken);
+                AddLog("객잔에서 중원 사신로와 동료 영입 단서를 들었다. 소문 단서 +1.");
+            }
+        }
+        if (GUI.Button(new Rect(r.x + r.width * 0.54f, r.y + 208f * s, r.width * 0.42f, 46f * s), "품팔이 찾기",
+                       UiTheme.Button))
+        {
+            if (TrySpendAction("객잔 품팔이"))
+            {
+                root.Session.actionsTaken++;
+                root.Flags.AddInt("silver", 35);
+                root.Flags.AddInt("sect:village_trust", 1);
+                ShowToast("은전 +35");
+                AddLog("객잔 주인의 일감을 받아 장작과 심부름을 처리했다. 은전 +35, 마을 신뢰 +1.");
+            }
         }
         GUI.Label(new Rect(r.x, r.y + 268f * s, r.width, 60f * s),
                   "· 서브 의뢰와 동료 영입 소문은 이후 버전에서 열립니다.", UiTheme.SmallMuted);
@@ -439,10 +490,13 @@ public sealed class HubController : MonoBehaviour
             }
             if (GUI.Button(new Rect(r.x, y + 8f * s, r.width * 0.6f, 48f * s), "치료하기", UiTheme.ButtonPrimary))
             {
-                TrySpendAction("의원 치료");
-                last.woundedCompanions.Clear();
-                ShowToast("동료의 상처를 다스렸다.");
-                AddLog("의원에서 동료들의 부상을 치료했다.");
+                if (TrySpendAction("의원 치료"))
+                {
+                    last.woundedCompanions.Clear();
+                    root.Flags.AddInt("supply:medicine", -Mathf.Min(1, Mathf.Max(0, root.Flags.GetInt("supply:medicine"))));
+                    ShowToast("동료의 상처를 다스렸다.");
+                    AddLog("의원에서 동료들의 부상을 치료했다. 다음 출정 준비가 가벼워졌다.");
+                }
             }
         }
         else
@@ -450,6 +504,16 @@ public sealed class HubController : MonoBehaviour
             GUI.Label(new Rect(r.x, y, r.width, 60f * s),
                       "지금은 치료가 필요한 동료가 없다.\n전투에서 다친 동료가 생기면 이곳에서 회복시킨다.",
                       UiTheme.Body);
+            if (GUI.Button(new Rect(r.x, y + 78f * s, r.width * 0.54f, 46f * s), "약초 달이기", UiTheme.Button))
+            {
+                if (TrySpendAction("약초 달이기"))
+                {
+                    root.Flags.AddInt("supply:medicine", 1);
+                    root.Session.actionsTaken++;
+                    ShowToast("약재 +1");
+                    AddLog("초희를 도와 약초를 달였다. 약재 보급 +1.");
+                }
+            }
         }
     }
 
@@ -459,14 +523,23 @@ public sealed class HubController : MonoBehaviour
         GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 26f * s), $"보유 은전: {root.Flags.GetInt("silver")}",
                   UiTheme.Body);
         float y = r.y + 84f * s;
-        BuyRow(r, ref y, s, "약재 꾸러미", 40, "전투 후 회복에 쓰인다.");
-        BuyRow(r, ref y, s, "내공단", 60, "내공 회복 소모품.");
-        BuyRow(r, ref y, s, "투척 비수 묶음", 30, "암기 보급.");
+        BuyRow(r, ref y, s, "medicine_bundle", "약재 꾸러미", 40, "전투 후 회복에 쓰인다.");
+        BuyRow(r, ref y, s, "inner_power_pill", "내공단", 60, "내공 회복 소모품.");
+        BuyRow(r, ref y, s, "throwing_dagger_bundle", "투척 비수 묶음", 30, "암기 보급.");
+        y += 8f * s;
+        GUI.Label(new Rect(r.x, y, r.width, 26f * s), "보유품", UiTheme.Heading);
+        y += 34f * s;
+        foreach (InventoryStack stack in root.Inventory.AllStacks())
+        {
+            GUI.Label(new Rect(r.x + 8f * s, y, r.width - 16f * s, 24f * s),
+                      $"· {InventoryService.Label(stack.itemId)} x{stack.count}", UiTheme.Small);
+            y += 26f * s;
+        }
         GUI.Label(new Rect(r.x, y + 6f * s, r.width, 40f * s), "· 장비/무공 상점은 이후 버전에서 확장됩니다.",
                   UiTheme.SmallMuted);
     }
 
-    private void BuyRow(Rect r, ref float y, float s, string item, int price, string desc)
+    private void BuyRow(Rect r, ref float y, float s, string itemId, string item, int price, string desc)
     {
         Rect row = new Rect(r.x, y, r.width, 54f * s);
         GUI.Label(new Rect(row.x, row.y + 4f * s, row.width * 0.5f, 26f * s), item, UiTheme.Body);
@@ -476,9 +549,11 @@ public sealed class HubController : MonoBehaviour
         if (GUI.Button(new Rect(row.xMax - 150f * s, row.y + 6f * s, 140f * s, 42f * s), $"구매 ({price})",
                        UiTheme.Button))
         {
-            root.Flags.AddInt("silver", -price);
-            ShowToast($"{item} 구매");
-            AddLog($"장터에서 {item}을(를) 샀다. (-{price}은전)");
+            if (root.Inventory.Purchase(root.Flags, itemId, 1, price))
+            {
+                ShowToast($"{item} 구매");
+                AddLog($"장터에서 {item}을(를) 샀다. (-{price}은전, 보유 {root.Inventory.GetCount(itemId)})");
+            }
         }
         GUI.enabled = true;
         y += 60f * s;
@@ -506,9 +581,18 @@ public sealed class HubController : MonoBehaviour
         if (GUI.Button(new Rect(body.xMax - 150f * s, body.yMax - 48f * s, 132f * s, 36f * s), "연구 기록",
                        UiTheme.Button))
         {
-            TrySpendAction("서고 연구");
-            ShowToast("서고 기록을 정리했다.");
-                AddLog("서고에서 백두산 영맥과 천광검문의 전승 기록을 대조했다.");
+            if (TrySpendAction("서고 연구"))
+            {
+                root.Flags.AddInt("growth:research_xp", 5);
+                if (root.Flags.GetInt("growth:research_xp") >= 10)
+                {
+                    root.Flags.SetFlag("skill_hint:cheongwang_breath");
+                }
+
+                root.Session.actionsTaken++;
+                ShowToast("무공 연구 +5");
+                AddLog("서고에서 백두산 영맥과 천광검문의 전승 기록을 대조했다. 무공 연구 +5.");
+            }
         }
     }
 
@@ -517,18 +601,18 @@ public sealed class HubController : MonoBehaviour
         switch (i)
         {
         case 0:
-            return "중원무림맹의 강경 정파가 조선 문파들을 ‘하위 분파’로 흡수하려 한다. 무공·예법·기록·언어를 " +
-                   "중원식으로 바꾸라 강요하는 가운데, 흩어진 조선 문파들이 해동문 박성준을 중심으로 연합하기 " +
-                   "시작한다.";
+            return "백두천광검문은 백두산 천지의 새벽빛을 검에 담는 정파였다. 지금은 문도 대부분이 흩어지고 낡은 " +
+                   "검각과 병든 문주, 외동아들 박성준만 남았다. 1장은 수련, 생계, 문파 복구, 마을 신뢰를 쌓으며 " +
+                   "꺼져가는 천광을 다시 살리는 이야기다.";
         case 1:
-            return "· 조선문파연합: 해동문이 묶어가는 신흥 연합.\n· 중원무림맹(강경파): 흡수·동화를 밀어붙이는 " +
-                   "권력층.\n· 무림맹 감찰단: 현판령을 집행하는 첨병.\n· 조정 / 마교 / 흑립방: 각자의 셈을 가진 " +
-                   "변수들.";
+            return "· 백두천광검문: 북방을 지키던 조선 정파. 백두산 영맥과 천광검문 비급을 품고 있다.\n· 철랑문: " +
+                   "백두산 주변을 괴롭히는 중원 하위 문파. 2장의 첫 적대 세력.\n· 모용세가: 더 큰 그림을 가진 " +
+                   "오대세가 중 하나. 3장에서 본격적으로 그림자를 드리운다.\n· 소백촌: 문파 아래 마을. 신뢰와 생계, " +
+                   "재건의 중심.";
         case 2:
-            return "· 백두광검(박성준): 빛과 검으로 파훼를 만든다.\n· 설악창(백련): 서리와 창으로 적을 묶는다.\n· " +
-                   "화왕도(도아린): 불과 도로 정면을 돌파한다.\n· 천뢰봉(서아): 전기와 봉으로 빠르게 흔든다.\n· " +
-                   "풍매선(매화령): 바람과 꽃, 부채로 지원한다.\n· 흑연암기(한비연): 어둠과 독, 단검·암기로 빈틈을 " +
-                   "찌른다.";
+            return "· 천광심법: 빛 속성 내공. 정화, 명중, 상태 저항과 연결된다.\n· 백야검결: 박성준의 주력 검법. " +
+                   "밤에도 꺼지지 않는 검기.\n· 새벽일섬: 초반 필살기. 어둠·독·공포 계열을 끊는 빛의 베기.\n· " +
+                   "광명호신기: 아군 보호와 방어를 돕는 천광검문의 호신기.";
         default:
             return string.Empty;
         }
@@ -574,6 +658,8 @@ public sealed class HubController : MonoBehaviour
         Slider(r.x, ref y, r.width, s, "BGM 볼륨", ref settings.bgmVolume);
         Slider(r.x, ref y, r.width, s, "효과음 볼륨", ref settings.sfxVolume);
         Slider(r.x, ref y, r.width, s, "텍스트 속도", ref settings.textSpeed);
+        Slider(r.x, ref y, r.width, s, "자동 텍스트 속도", ref settings.autoTextSpeed);
+        Slider(r.x, ref y, r.width, s, "주사위 애니메이션", ref settings.diceAnimationSpeed);
         Slider(r.x, ref y, r.width, s, "UI 크기", ref settings.uiScale, 0.8f, 1.4f);
 
         settings.fullscreen =
@@ -584,6 +670,12 @@ public sealed class HubController : MonoBehaviour
         y += 34f * s;
         settings.autoDialogue =
             GUI.Toggle(new Rect(r.x, y, r.width, 28f * s), settings.autoDialogue, "자동 대화", UiTheme.Body);
+        y += 34f * s;
+        settings.choiceEffectPreview = GUI.Toggle(new Rect(r.x, y, r.width, 28f * s), settings.choiceEffectPreview,
+                                                  "선택지 효과 미리보기", UiTheme.Body);
+        y += 34f * s;
+        settings.damageNumbers =
+            GUI.Toggle(new Rect(r.x, y, r.width, 28f * s), settings.damageNumbers, "피해 숫자 표시", UiTheme.Body);
         y += 34f * s;
         settings.detailedCombatMath = GUI.Toggle(new Rect(r.x, y, r.width, 28f * s), settings.detailedCombatMath,
                                                  "전투 상세 계산 표시", UiTheme.Body);
@@ -707,6 +799,17 @@ public sealed class HubController : MonoBehaviour
 
     private int ActionsRemaining => Mathf.Clamp(root.Flags.GetInt(ActionPointKey), 0, MaxDailyActions);
 
+    private int DayIndex => Mathf.Max(1, root.Flags.GetInt("calendar:day") + 1);
+
+    private void BeginNextDay()
+    {
+        root.Flags.AddInt("calendar:day", 1);
+        root.Flags.SetInt(ActionPointKey, MaxDailyActions);
+        root.Flags.SetFlag(ActionPointInitializedFlag);
+        ShowToast($"제{DayIndex}일 · 기력 회복");
+        AddLog("밤을 넘기고 새벽 수련종이 울렸다. 하루가 지나 기력이 모두 회복되었다.");
+    }
+
     private void EnsureActionPoints()
     {
         if (!root.Flags.HasFlag(ActionPointInitializedFlag))
@@ -716,17 +819,59 @@ public sealed class HubController : MonoBehaviour
         }
     }
 
-    private void TrySpendAction(string label)
+    private bool TrySpendAction(string label)
     {
         int remaining = ActionsRemaining;
         if (remaining <= 0)
         {
-            ShowToast("행동력이 부족합니다.");
-            AddLog($"{label}: 행동력이 부족하지만 v1.0에서는 경고만 표시한다.");
-            return;
+            ShowToast("기력이 부족합니다.");
+            AddLog($"{label}: 기력이 부족하다. 하루를 보내고 다시 행동할 수 있다.");
+            return false;
         }
 
         root.Flags.SetInt(ActionPointKey, remaining - 1);
+        return true;
+    }
+
+    private void ApplyTraining(int drillIndex)
+    {
+        root.Session.actionsTaken++;
+        root.Flags.AddInt("growth:martial_xp", 8);
+
+        switch (drillIndex)
+        {
+        case 0:
+            root.Flags.AddInt("growth:inner_art_xp", 8);
+            root.Reputation.Add(FactionIds.JoseonSects, +1);
+            if (root.Flags.GetInt("growth:inner_art_xp") >= 16)
+            {
+                root.Flags.SetFlag("skill_hint:cheongwang_breath");
+            }
+
+            ShowToast("천광심법 +8");
+            AddLog("천지의 빛을 호흡에 맞췄다. 천광심법 +8, 조선문파연합 위명 +1.");
+            break;
+        case 1:
+            root.Flags.AddInt("growth:sword_xp", 8);
+            if (root.Flags.GetInt("growth:sword_xp") >= 16)
+            {
+                root.Flags.SetFlag("skill_hint:baegya_first_form");
+            }
+
+            ShowToast("백야검결 +8");
+            AddLog("백야검결의 첫 검로를 몸에 새겼다. 검법 숙련 +8.");
+            break;
+        default:
+            root.Flags.AddInt("growth:teamwork_xp", 8);
+            foreach (string id in root.Session.recruitedCompanionIds)
+            {
+                root.Approval.Add(id, +1);
+            }
+
+            ShowToast("합련 +8");
+            AddLog("동료들과 속성 연계를 맞췄다. 합련 +8, 합류 동료 호감 +1.");
+            break;
+        }
     }
 
     private string CompanionBadge()
@@ -754,12 +899,12 @@ public sealed class HubController : MonoBehaviour
             return "부상자와 약재 부족";
         case "do_arin":
             return "정면승부로 문파 명예 회복";
+        case "jin_seoyul":
+            return "천뢰봉문 감전 사건의 진상";
         case "seo_a":
-            return "천뢰봉문 소식과 새 임무";
-        case "mae_hwaryeong":
-            return "풍매문 연락망 복구";
+            return "작은 자신도 문파를 지킬 수 있다는 증명";
         case "han_biyeon":
-            return "흑연문 배신자 단서";
+            return "흑련암문 독살 누명 단서";
         default:
             return "문주의 결정을 지켜보는 중";
         }
@@ -861,20 +1006,21 @@ public sealed class HubController : MonoBehaviour
                 new DialogueNode("t2a", name, "도아린이 도집을 툭 친다. “알았어. 한 발만 먼저 간다, 한 발만.”", null));
             d.Add(new DialogueNode("t2b", name, "도아린이 씩 웃는다. “그 말 기다렸어.”", null));
         }
+        else if (id == CompanionCatalog.JinSeoyul)
+        {
+            d.Add(new DialogueNode(
+                "t0", name, "“문주님, 방금 지붕 물받이 봤어요? 저기 전기 흘리면 감찰단 발이 딱 멈출걸요?”", null));
+        }
         else if (id == CompanionCatalog.SeoA)
         {
-            d.Add(new DialogueNode("t0", name, "“문주님! 저 방금 번개가 어디로 튀는지 봤어요. 아, 아니, 진짜로요!”",
-                                   null));
-        }
-        else if (id == CompanionCatalog.MaeHwaryeong)
-        {
-            d.Add(new DialogueNode("t0", name, "“바람은 억지로 잡으면 달아나요. 사람 마음도 비슷하답니다, 문주님.”",
-                                   null));
+            d.Add(new DialogueNode(
+                "t0", name, "“나도 할 수 있어요! 작다고 얕보면 안 된다구요. 꽃바람은 낮게 불 때 더 잘 스며들어요.”",
+                null));
         }
         else if (id == CompanionCatalog.HanBiyeon)
         {
-            d.Add(new DialogueNode("t0", name, "“정면으로 부딪히는 건 취향이 아니야. 대신, 등 뒤의 길은 내가 볼게.”",
-                                   null));
+            d.Add(new DialogueNode("t0", name,
+                                   "“정면으로 부딪히는 건 취향이 아니야. 대신, 구월산 그림자길은 내가 볼게.”", null));
         }
         else
         {

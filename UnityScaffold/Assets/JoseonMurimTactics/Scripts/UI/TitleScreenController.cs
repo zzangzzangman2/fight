@@ -31,11 +31,11 @@ public sealed class TitleScreenController : MonoBehaviour
         float h = Screen.height;
         float s = UiTheme.Scale;
 
-        UiTheme.LabelShadow(new Rect(0f, h * 0.13f, w, 104f * s), "海東劍門", UiTheme.Logo);
+        UiTheme.LabelShadow(new Rect(0f, h * 0.13f, w, 104f * s), "白頭天光", UiTheme.Logo);
         GUI.Label(new Rect(0f, h * 0.27f, w, 50f * s), "조선 무협 SRPG", UiTheme.Title);
         UiTheme.DrawDivider(w * 0.5f, h * 0.345f, 360f * s);
-        GUI.Label(new Rect(0f, h * 0.365f, w, 30f * s), "― 압록강의 현판령 ―", UiTheme.BodyCenter);
-        GUI.Label(new Rect(0f, h * 0.405f, w, 26f * s), "배경 시안: 압록강 안개 / 백두산 능선 / 한양 외곽",
+        GUI.Label(new Rect(0f, h * 0.365f, w, 30f * s), "― 꺼져가는 천광 ―", UiTheme.BodyCenter);
+        GUI.Label(new Rect(0f, h * 0.405f, w, 26f * s), "백두산 검각 / 소백촌 / 중원 문파의 검은 표식",
                   UiTheme.SmallMuted);
 
         float bw = 320f * s;

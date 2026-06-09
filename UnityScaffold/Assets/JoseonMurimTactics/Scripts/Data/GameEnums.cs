@@ -75,7 +75,24 @@ public enum SkillTag
     Stance,
     Stealth,
     Nonlethal,
-    Social
+    Social,
+    Light,
+    Fire,
+    Lightning,
+    Wind,
+    Flower,
+    Dark,
+    Spear,
+    Blade,
+    Staff,
+    Fan,
+    Dagger,
+    Throwing,
+    Support,
+    Debuff,
+    Counter,
+    FollowUp,
+    Terrain
 }
 
 public enum TimelineCue
@@ -97,7 +114,16 @@ public enum TimelineCue
     DoMountainPalm,
     DoIronBody,
     DoQinna,
-    TerrainCue
+    TerrainCue,
+    ParkLightSword,
+    FrostSpearSeal,
+    FireBladeRush,
+    LightningStaffDance,
+    FlowerWindFan,
+    ShadowPoisonDagger,
+    CompanionJoin,
+    ApprovalUp,
+    ApprovalDown
 }
 
 public enum InteractableEffectType
@@ -111,5 +137,29 @@ public enum InteractableEffectType
     CollapseBridge,
     ShatterAltar,
     BlockSight
+}
+
+public enum CompanionAgeGroup
+{
+    Minor,
+    Adult
+}
+
+public enum InventoryItemType
+{
+    Consumable,
+    Equipment,
+    Material,
+    KeyItem
+}
+
+public enum WorldMapNodeState
+{
+    Locked,
+    Available,
+    Completed,
+    Danger,
+    CompanionEvent,
+    Hub
 }
 }

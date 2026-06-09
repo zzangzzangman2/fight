@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Reflection;
 using UnityEngine;
@@ -196,12 +197,13 @@ public sealed class BattleReturnOverlay : MonoBehaviour
 
         BattleResultData result =
             new BattleResultData { battleId = def.id, outcome = victory ? BattleOutcome.Victory : BattleOutcome.Defeat,
-                                   defeatedBoss = def.bossName, turnCount = turns };
+                                   defeatedBoss = def.bossName, turnCount = turns,
+                                   runId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString() };
 
         if (victory)
         {
             // 일반 전투에서 자동 판정 가능한 것은 대장 제압(주 목표)뿐.
-            result.completedObjectives.Add("OBJ_DEFEAT_WIJIGANG");
+            result.completedObjectives.Add("OBJ_DEFEAT_SCOUTS");
             result.silver = def.silverReward;
             result.rewardItems.AddRange(def.rewardItems);
             foreach (IdDelta f in def.factionOnWin)
@@ -211,8 +213,7 @@ public sealed class BattleReturnOverlay : MonoBehaviour
         }
         else
         {
-            result.failedObjectives.Add("OBJ_DEFEAT_WIJIGANG");
-            result.woundedCompanions.Add(CompanionCatalog.BaekRyeon);
+            result.failedObjectives.Add("OBJ_DEFEAT_SCOUTS");
         }
 
         GameRoot.EnsureExists().Flow.GoToBattleResult(result);

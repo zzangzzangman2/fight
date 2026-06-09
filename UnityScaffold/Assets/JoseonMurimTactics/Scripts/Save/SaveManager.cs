@@ -11,11 +11,15 @@ public sealed class SaveSlotSummary
     public bool exists;
     public string sectName;
     public string chapterTitle;
+    public string location;
     public string playTimeText;
     public string savedAtText;
     public string difficulty;
     public string disposition;
     public string mainQuestSummary;
+    public int silver;
+    public int companionCount;
+    public string recentMissionId;
     public int saveVersion;
     public long savedAtUnixSeconds;
 }
@@ -187,6 +191,7 @@ public sealed class SaveManager
             s.exists = true;
             s.sectName = string.IsNullOrEmpty(dto.sectName) ? "해동검문" : dto.sectName;
             s.chapterTitle = ChapterTitle(dto.currentChapterId);
+            s.location = LocationTitle(dto.currentHubId);
             s.difficulty = StoryEnumLabels.Label((GameDifficulty)dto.difficulty);
             s.disposition = StoryEnumLabels.Label((HeroDisposition)dto.heroDisposition);
             s.saveVersion = dto.saveVersion;
@@ -194,6 +199,9 @@ public sealed class SaveManager
             s.playTimeText = FormatPlayTime(dto.playTimeSeconds);
             s.savedAtText = FormatSavedAt(dto.savedAtUnixSeconds);
             s.mainQuestSummary = MainQuestSummary(dto);
+            s.silver = GetPair(dto.intVars, "silver");
+            s.companionCount = dto.recruitedCompanionIds != null ? dto.recruitedCompanionIds.Count : 0;
+            s.recentMissionId = RecentMission(dto);
         }
         catch (Exception e)
         {
@@ -208,10 +216,11 @@ public sealed class SaveManager
     {
         switch (chapterId)
         {
-        case "CH00_PROLOGUE":
-            return "제0장 · 압록강의 현판령";
-        case "CH01_UIJU_TAVERN":
-            return "제1장 · 의주 객잔";
+        case "CHAPTER_01":
+        case "CH1_STARTED":
+            return "제1장 · 꺼져가는 천광";
+        case "CH2_IRON_WOLF_APPEARED":
+            return "제2장 · 철랑문의 발톱";
         default:
             return string.IsNullOrEmpty(chapterId) ? "제0장" : chapterId;
         }
@@ -221,10 +230,49 @@ public sealed class SaveManager
     {
         if (dto.storyFlags != null && dto.storyFlags.Contains(StoryFlags.FirstBattleWon))
         {
-            return "조선 문파 연합을 넓혀라";
+            return "철랑문의 배후와 검은 표식을 추적하라";
         }
 
-        return "현판령을 막아라";
+        return "백두천광검문을 다시 세워라";
+    }
+
+    private static string LocationTitle(string hubId)
+    {
+        switch (hubId)
+        {
+        case SceneNames.HubPyesadang:
+            return "백두산 검각";
+        default:
+            return string.IsNullOrEmpty(hubId) ? "미상" : hubId;
+        }
+    }
+
+    private static string RecentMission(GameSession.SaveDto dto)
+    {
+        if (dto.storyFlags != null && dto.storyFlags.Contains(StoryFlags.FirstBattleWon))
+        {
+            return "BATTLE_PYESADANG_DEFENSE";
+        }
+
+        return string.Empty;
+    }
+
+    private static int GetPair(System.Collections.Generic.List<GameSession.StringIntPair> pairs, string key)
+    {
+        if (pairs == null || string.IsNullOrEmpty(key))
+        {
+            return 0;
+        }
+
+        foreach (GameSession.StringIntPair pair in pairs)
+        {
+            if (pair.key == key)
+            {
+                return pair.value;
+            }
+        }
+
+        return 0;
     }
 
     private static string FormatPlayTime(double seconds)

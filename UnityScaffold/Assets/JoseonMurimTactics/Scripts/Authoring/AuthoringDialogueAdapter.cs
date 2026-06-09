@@ -32,6 +32,7 @@ public static class AuthoringDialogueAdapter
             {
                 DialogueChoice choice = new DialogueChoice(choiceSource.text, ToDisposition(choiceSource.disposition),
                                                            choiceSource.nextNodeId);
+                choice.romanticIntent = choiceSource.romanticIntent;
 
                 foreach (IdDelta delta in choiceSource.approvalChanges)
                     choice.approvalChanges.Add(delta);

@@ -14,6 +14,7 @@ public sealed class BattleResultController : MonoBehaviour
     private BattleDefinition def;
     private string grade;
     private string rumor;
+    private BattleResultApplyOutcome applyOutcome;
 
     private void Awake()
     {
@@ -23,43 +24,14 @@ public sealed class BattleResultController : MonoBehaviour
         {
             // 씬을 직접 열었을 때의 안전 기본값.
             result = new BattleResultData { battleId = HubController.FirstBattleId, outcome = BattleOutcome.Victory,
-                                            defeatedBoss = "감찰사 위지강", turnCount = 6 };
-            result.completedObjectives.Add("OBJ_DEFEAT_WIJIGANG");
+                                            defeatedBoss = "철랑문 정찰조장", turnCount = 6 };
+            result.completedObjectives.Add("OBJ_DEFEAT_SCOUTS");
         }
 
         def = BattleCatalog.Get(result.battleId);
         grade = ComputeGrade();
         rumor = root.Narration != null ? root.Narration.GenerateRumor(result) : string.Empty;
-        ApplyOnce();
-    }
-
-    private void ApplyOnce()
-    {
-        foreach (BattleResultData.StatDelta f in result.factionChanges)
-        {
-            root.Reputation.Add(f.id, f.delta);
-        }
-
-        foreach (BattleResultData.StatDelta a in result.approvalChanges)
-        {
-            root.Approval.Add(a.id, a.delta);
-        }
-
-        if (result.silver != 0)
-        {
-            root.Flags.AddInt("silver", result.silver);
-        }
-
-        root.Quests.ResolveBattle(result, def);
-        root.Session.lastBattleResult = result;
-        if (result.Won)
-        {
-            root.Flags.SetFlag(StoryFlags.FirstBattleWon);
-            root.Flags.SetFlag(StoryFlags.EnvoyDefeated);
-            root.Flags.SetFlag(StoryFlags.HubUnlocked);
-        }
-
-        root.Save.Save(root.Session);
+        applyOutcome = root.BattleResults.Apply(result, def);
     }
 
     private string ComputeGrade()
@@ -72,7 +44,7 @@ public sealed class BattleResultController : MonoBehaviour
         int optionalDone = 0;
         foreach (string objId in result.completedObjectives)
         {
-            if (objId != "OBJ_DEFEAT_WIJIGANG")
+            if (objId != "OBJ_DEFEAT_SCOUTS")
                 optionalDone++;
         }
 
@@ -119,6 +91,11 @@ public sealed class BattleResultController : MonoBehaviour
         {
             GUI.Label(new Rect(lx, y, lw, 32f * s), "보상", UiTheme.Heading);
             y += 38f * s;
+            if (applyOutcome != null && applyOutcome.duplicate)
+            {
+                GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), "이미 정산된 전투 결과입니다.", UiTheme.SmallMuted);
+                y += 32f * s;
+            }
             GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), $"은전 {result.silver}", UiTheme.Body);
             y += 32f * s;
             foreach (string item in result.rewardItems)
@@ -202,7 +179,7 @@ public sealed class BattleResultController : MonoBehaviour
         ry += 34f * s;
         GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 객잔 소문 기능 확장", UiTheme.Small);
         ry += 26f * s;
-        GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 서고: 현판령 항목 개방", UiTheme.Small);
+        GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 서고: 검은 표식 항목 개방", UiTheme.Small);
         ry += 26f * s;
         GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 24f * s), "· 임무 게시판 다음 장 예고", UiTheme.Small);
 
@@ -227,12 +204,12 @@ public sealed class BattleResultController : MonoBehaviour
     {
         switch (objId)
         {
-        case "OBJ_DEFEAT_WIJIGANG":
-            return "위지강 제압";
-        case "OBJ_SAVE_DISCIPLE":
-            return "다친 제자 구출";
-        case "OBJ_KEEP_ALTAR":
-            return "제단 보존";
+        case "OBJ_DEFEAT_SCOUTS":
+            return "철랑문 정찰조 격퇴";
+        case "OBJ_SAVE_PORTERS":
+            return "마을 짐꾼 생존";
+        case "OBJ_INSPECT_MARK":
+            return "검은 표식 조사";
         default:
             return objId;
         }

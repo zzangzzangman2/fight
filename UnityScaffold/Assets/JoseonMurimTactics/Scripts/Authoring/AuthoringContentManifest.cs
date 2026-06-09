@@ -120,6 +120,7 @@ public sealed class AuthoringDialogueChoice
     public List<IdDelta> approvalChanges = new List<IdDelta>();
     public List<IdDelta> factionChanges = new List<IdDelta>();
     public List<IdDelta> battleModifiers = new List<IdDelta>();
+    public bool romanticIntent;
     public string sceneCommand;
 }
 }

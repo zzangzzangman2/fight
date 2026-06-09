@@ -17,6 +17,8 @@ public enum BattleOutcome
 [Serializable]
 public sealed class BattleResultData
 {
+    public string resultId;
+    public string runId;
     public string battleId;
     public BattleOutcome outcome = BattleOutcome.Undecided;
     public string defeatedBoss;
@@ -40,6 +42,18 @@ public sealed class BattleResultData
     public List<string> specialFlags = new List<string>();
 
     public bool Won => outcome == BattleOutcome.Victory;
+
+    public string EnsureResultId()
+    {
+        if (string.IsNullOrEmpty(resultId))
+        {
+            string battle = string.IsNullOrEmpty(battleId) ? "battle" : battleId;
+            string run = string.IsNullOrEmpty(runId) ? $"{outcome}_{turnCount}_{defeatedBoss}" : runId;
+            resultId = $"{battle}:{run}";
+        }
+
+        return resultId;
+    }
 
     [Serializable]
     public struct StatDelta

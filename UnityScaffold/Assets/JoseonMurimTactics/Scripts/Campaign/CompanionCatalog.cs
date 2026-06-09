@@ -17,10 +17,13 @@ public sealed class CompanionInfo
     public string element;
     public string weapon;
     public string speechTone;
+    public CompanionAgeGroup ageGroup;
+    public bool romanceEligible;
 
     public CompanionInfo(string id, string name, string title, string role, string profile, string personalQuestId,
                          string region, string sectName, int age, string mbti, string element, string weapon,
-                         string speechTone)
+                         string speechTone, CompanionAgeGroup ageGroup = CompanionAgeGroup.Minor,
+                         bool romanceEligible = false)
     {
         this.id = id;
         this.name = name;
@@ -35,7 +38,11 @@ public sealed class CompanionInfo
         this.element = element;
         this.weapon = weapon;
         this.speechTone = speechTone;
+        this.ageGroup = ageGroup;
+        this.romanceEligible = romanceEligible && ageGroup == CompanionAgeGroup.Adult;
     }
+
+    public bool IsMinor => ageGroup == CompanionAgeGroup.Minor || age < 19;
 }
 
 /// <summary>
@@ -47,7 +54,7 @@ public static class CompanionCatalog
     public static readonly string BaekRyeon = "baek_ryeon";
     public static readonly string HanBiyeon = "han_biyeon";
     public static readonly string DoArin = "do_arin";
-    public static readonly string MaeHwaryeong = "mae_hwaryeong";
+    public static readonly string JinSeoyul = "jin_seoyul";
     public static readonly string SeoA = "seo_a";
     public static readonly string KangChohui = SeoA; // legacy alias
 
@@ -60,29 +67,32 @@ public static class CompanionCatalog
 
         Add(new CompanionInfo("baek_ryeon", "백련", "강원 설악창문의 장녀", "서리·창·제어",
                               "설악산 자락에서 이름난 창문 출신. 차분하고 신중하지만, 약한 이를 건드리는 순간 말수가 " +
-                              "줄고 창끝이 매서워진다.",
+                                  "줄고 창끝이 매서워진다.",
                               "PQ_BAEK_RYEON_FROST_SPEAR", "강원도", "설악창문", 17, "INFJ", "얼음/서리", "창",
-                              "낮고 조심스러운 존댓말. 화나면 짧게 끊어 말한다."));
+                              "낮고 조심스러운 존댓말. 화나면 짧게 끊어 말한다.", CompanionAgeGroup.Minor, false));
         Add(new CompanionInfo(
             "do_arin", "도아린", "경상 화왕도문의 외동딸", "불·도·돌파",
             "불같은 승부욕을 지닌 도문 유망주. 생각보다 먼저 몸이 나가지만, 한번 동료라 여긴 사람은 끝까지 지킨다.",
             "PQ_DO_ARIN_FIRE_BLADE", "경상도", "화왕도문", 16, "ESTP", "불", "도",
-            "거침없는 반말과 짧은 감탄사. 정면승부를 좋아한다."));
-        Add(new CompanionInfo("seo_a", "서아", "경성 천뢰봉문의 막내", "전기·봉·기동",
-                              "열세 살에 봉술과 뇌기를 동시에 깨친 천재. 키는 가장 작지만 기세는 누구보다 크고, " +
-                              "긴장한 사람을 웃게 만든다.",
-                              "PQ_SEO_A_THUNDER_STAFF", "경성", "천뢰봉문", 13, "ENFP", "전기", "봉",
-                              "밝고 빠른 말투. 호기심이 많아 질문을 연달아 던진다."));
-        Add(new CompanionInfo(
-            "mae_hwaryeong", "매화령", "전라 풍매문의 소문주", "바람·꽃·부채·지원",
-            "남원 풍매문의 딸. 웃는 얼굴로 분위기를 읽고, 바람결과 꽃잎으로 적의 균형을 흐트러뜨린다.",
-            "PQ_MAE_HWARYEONG_WIND_FAN", "전라도", "풍매문", 18, "ENFJ", "바람/꽃", "부채",
-            "부드럽고 사교적인 말투. 핵심을 찌를 때도 웃음을 잃지 않는다."));
-        Add(new CompanionInfo(
-            "han_biyeon", "한비연", "경성 흑연문의 그림자", "어둠·독·단검·암기",
-            "경성 뒷골목과 궁궐 담장을 모두 아는 흑연문 유망주. 장난처럼 말하지만 관찰은 차갑고 정확하다.",
-            "PQ_HAN_BIYEON_SHADOW_POISON", "경성", "흑연문", 17, "ISTP", "어둠/독", "단검·암기",
-            "비꼬는 듯한 짧은 말투. 믿는 사람에게만 속내를 보인다."));
+            "거침없는 반말과 짧은 감탄사. 정면승부를 좋아한다.", CompanionAgeGroup.Minor, false));
+        Add(new CompanionInfo("jin_seoyul", "진서율", "경성 천뢰봉문의 천재 봉술가", "전기·봉·기동",
+                              "열다섯에 봉술과 뇌기를 동시에 깨친 경성의 천재. 말이 빠르고 장난이 많지만, 전장에서는 " +
+                                  "피뢰침처럼 빈틈을 잡아낸다.",
+                              "PQ_JIN_SEOYUL_LIGHTNING_STAFF", "경성", "천뢰봉문", 15, "ENTP", "전기", "봉",
+                              "빠르고 장난기 있는 말투. 농담과 추리를 번개처럼 이어 간다.", CompanionAgeGroup.Minor,
+                              false));
+        Add(new CompanionInfo("seo_a", "신서아", "전라 남원 화접풍류문의 막내", "바람·꽃·부채·지원",
+                              "작은 키와 밝은 웃음으로 방심을 부르지만, 꽃바람과 부채술로 아군의 길을 열고 적의 " +
+                                  "균형을 흩뜨리는 막내 동료.",
+                              "PQ_SHIN_SEOA_FLOWER_WIND_FAN", "전라도 남원", "화접풍류문", 13, "ENFP", "바람/꽃",
+                              "부채", "밝고 씩씩한 막내 말투. 작다고 얕보면 바로 받아친다.", CompanionAgeGroup.Minor,
+                              false));
+        Add(new CompanionInfo("han_biyeon", "한비연", "황해도 구월산 흑련암문의 그림자", "어둠·독·단검·암기",
+                              "구월산 흑련암문 출신의 암기 고수. 장난처럼 말하지만 관찰은 차갑고 정확하며, 독과 " +
+                                  "그림자로 누명을 벗겨낼 단서를 찾는다.",
+                              "PQ_HAN_BIYEON_SHADOW_POISON", "황해도 구월산", "흑련암문", 17, "ISTP", "어둠/독",
+                              "단검·암기", "비꼬는 듯한 짧은 말투. 믿는 사람에게만 속내를 보인다.",
+                              CompanionAgeGroup.Minor, false));
         return map;
     }
 
@@ -100,6 +110,12 @@ public static class CompanionCatalog
     {
         CompanionInfo info = Info(id);
         return info != null ? info.name : id;
+    }
+
+    public static bool CanReceiveRomance(string id)
+    {
+        CompanionInfo info = Info(id);
+        return info != null && info.romanceEligible && !info.IsMinor;
     }
 
     public static IEnumerable<CompanionInfo> All => Map.Values;

@@ -23,6 +23,7 @@ public sealed class DialogueScriptAsset : ScriptableObject
             {
                 DialogueChoice choice =
                     new DialogueChoice(choiceAsset.text, choiceAsset.disposition, choiceAsset.nextNodeId);
+                choice.romanticIntent = choiceAsset.romanticIntent;
                 foreach (IdDelta delta in choiceAsset.approvalDeltas)
                     choice.approvalChanges.Add(delta);
                 foreach (IdDelta delta in choiceAsset.reputationDeltas)
@@ -69,6 +70,7 @@ public sealed class DialogueChoiceAsset
     public List<IdDelta> approvalDeltas = new List<IdDelta>();
     public List<IdDelta> reputationDeltas = new List<IdDelta>();
     public List<IdDelta> battleModifiers = new List<IdDelta>();
+    public bool romanticIntent;
     public string sceneCommand;
 }
 }

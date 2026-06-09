@@ -8,10 +8,10 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class NewGameSetupController : MonoBehaviour
 {
-    private static readonly string[] SectPresets = { "해동검문", "백두천문", "한양검계", "청해무관", "흑립방" };
+    private static readonly string[] SectPresets = { "천광검문", "백두검문", "한양검계", "청해무관", "흑립방" };
 
     private GameRoot root;
-    private string sectName = "해동검문";
+    private string sectName = "백두천광검문";
     private GameDifficulty difficulty = GameDifficulty.Murim;
     private HeroDisposition disposition = HeroDisposition.Romantic;
     private StartingArt art = StartingArt.Sword;
@@ -104,9 +104,10 @@ public sealed class NewGameSetupController : MonoBehaviour
         sy += 10f * s;
         GUI.Label(new Rect(sx, sy, sw, 110f * s), "예상 보너스\n" + BonusPreview(disposition, art), UiTheme.Body);
         sy += 120f * s;
-        GUI.Label(new Rect(sx, sy, sw, 118f * s),
-                  "박성준은 폐사당의 낡은 현판 앞에 섰다.\n문파의 이름은 곧 깃발이고,\n깃발은 곧 싸움의 이유였다.",
-                  UiTheme.Small);
+        GUI.Label(
+            new Rect(sx, sy, sw, 118f * s),
+            "박성준은 백두산의 낡은 검각 앞에 섰다.\n문파의 이름은 곧 집이고,\n집은 곧 지켜야 할 사람들의 얼굴이었다.",
+            UiTheme.Small);
 
         // ----- 하단 버튼 -----
         float bw = 220f * s;
@@ -132,7 +133,7 @@ public sealed class NewGameSetupController : MonoBehaviour
         session.difficulty = difficulty;
         session.heroDisposition = disposition;
         session.startingArt = art;
-        session.currentChapterId = "CH00_PROLOGUE";
+        session.currentChapterId = "CHAPTER_01";
         Debug.Log($"[NewGameSetup] sect={session.sectName} diff={difficulty} disp={disposition} art={art}");
     }
 

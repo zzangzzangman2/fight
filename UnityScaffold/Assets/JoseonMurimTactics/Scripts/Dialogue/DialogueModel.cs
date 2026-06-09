@@ -27,6 +27,7 @@ public sealed class DialogueChoice
     public List<string> flagsAdded = new List<string>();
     public List<IdDelta> battleModifiers = new List<IdDelta>(); // 전투 시작 보정(키→값)
     public string nextNodeId;                                   // null/empty면 대화 종료
+    public bool romanticIntent;                                 // romance/flirt 전용 안전 태그
 
     public DialogueChoice(string text, HeroDisposition? disposition = null, string nextNodeId = null)
     {
@@ -56,6 +57,12 @@ public sealed class DialogueChoice
     public DialogueChoice Battle(string key, int value)
     {
         battleModifiers.Add(new IdDelta(key, value));
+        return this;
+    }
+
+    public DialogueChoice RomanticIntent()
+    {
+        romanticIntent = true;
         return this;
     }
 }

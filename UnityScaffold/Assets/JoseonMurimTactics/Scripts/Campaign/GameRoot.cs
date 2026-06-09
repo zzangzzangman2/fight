@@ -20,6 +20,9 @@ public sealed class GameRoot : MonoBehaviour
     public CompanionApprovalService Approval { get; private set; }
     public FactionReputationService Reputation { get; private set; }
     public SaveManager Save { get; private set; }
+    public InventoryService Inventory { get; private set; }
+    public SettingsService Settings { get; private set; }
+    public BattleResultApplyService BattleResults { get; private set; }
     public IAINarrationService Narration { get; private set; }
     public QuestManager Quests { get; private set; }
 
@@ -123,6 +126,9 @@ public sealed class GameRoot : MonoBehaviour
         Approval = new CompanionApprovalService(Session);
         Reputation = new FactionReputationService(Session);
         Quests = new QuestManager(Flags);
+        Inventory = new InventoryService(Session);
+        Settings = Settings ?? new SettingsService();
+        BattleResults = new BattleResultApplyService(this);
         Save = Save ?? new SaveManager();
         Narration = Narration ?? new MockAINarrationService();
         Flow = Flow ?? new SceneFlowController(this);

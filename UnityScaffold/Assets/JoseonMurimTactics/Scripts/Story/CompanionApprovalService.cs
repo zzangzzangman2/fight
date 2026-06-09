@@ -11,6 +11,8 @@ public sealed class CompanionApprovalService
     public const int Min = 0;
     public const int Max = 100;
     public const int Default = 50;
+    private const string PendingPrefix = "pending_first_impression:";
+    private const string AppliedPrefix = "applied_first_impression:";
 
     private readonly GameSession session;
 
@@ -40,6 +42,52 @@ public sealed class CompanionApprovalService
         int next = Mathf.Clamp(Get(companionId) + delta, Min, Max);
         session.companionApproval[companionId] = next;
         return next;
+    }
+
+    public bool CanApplyRomanticEffect(string companionId)
+    {
+        return CompanionCatalog.CanReceiveRomance(companionId);
+    }
+
+    public int AddRomantic(string companionId, int delta)
+    {
+        if (!CanApplyRomanticEffect(companionId))
+        {
+            return Get(companionId);
+        }
+
+        return Add(companionId, delta);
+    }
+
+    public void QueuePendingFirstImpression(string companionId, int delta)
+    {
+        if (string.IsNullOrEmpty(companionId) || delta == 0)
+        {
+            return;
+        }
+
+        session.intVars[PendingPrefix + companionId] =
+            session.intVars.TryGetValue(PendingPrefix + companionId, out int old) ? old + delta : delta;
+    }
+
+    public int ApplyPendingFirstImpressions(string companionId)
+    {
+        if (string.IsNullOrEmpty(companionId))
+        {
+            return Get(companionId);
+        }
+
+        string pendingKey = PendingPrefix + companionId;
+        string appliedFlag = AppliedPrefix + companionId;
+        if (session.storyFlags.Contains(appliedFlag) || !session.intVars.TryGetValue(pendingKey, out int delta) ||
+            delta == 0)
+        {
+            return Get(companionId);
+        }
+
+        session.storyFlags.Add(appliedFlag);
+        session.intVars.Remove(pendingKey);
+        return Add(companionId, delta);
     }
 
     public ApprovalStage GetStage(string companionId)
