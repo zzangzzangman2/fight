@@ -91,7 +91,7 @@ namespace JoseonMurimTactics
 
             // 타입명으로 주입해 스토리 코어가 전투 씬 전용 오버레이에 컴파일 의존하지 않게 한다.
             System.Type overlayType = System.Type.GetType("JoseonMurimTactics.BattleReturnOverlay, Assembly-CSharp");
-            if (overlayType != null && FindObjectOfType(overlayType) == null)
+            if (overlayType != null && FindAnyObjectByType(overlayType) == null)
             {
                 new GameObject("BattleReturnOverlay").AddComponent(overlayType);
             }
