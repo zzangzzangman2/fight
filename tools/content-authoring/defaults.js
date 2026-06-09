@@ -48,7 +48,7 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "notes": "초반 생계와 약재 루프의 연결 인물.",
       "age": 0,
       "sectId": "sobaek_village",
-      "sectName": "소백촌"
+      "sectName": "소백약방"
     },
     {
       "id": "baek_ryeon",
