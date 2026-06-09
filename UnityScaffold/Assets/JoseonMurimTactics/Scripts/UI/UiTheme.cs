@@ -174,13 +174,8 @@ public static class UiTheme
         GUI.DrawTexture(r, texBrush, ScaleMode.StretchToFill);
         GUI.color = prev;
 
-        float d = 10f * s;
-        Rect diamond = new Rect(centerX - d * 0.5f, y - d * 0.5f, d, d);
-        Matrix4x4 m = GUI.matrix;
-        GUIUtility.RotateAroundPivot(45f, diamond.center);
-        Tint(diamond, Gold);
-        Tint(Inset(diamond, 2f * s), SealRed);
-        GUI.matrix = m;
+        Rect glow = new Rect(centerX - 18f * s, y - 1f * s, 36f * s, 2f * s);
+        Tint(glow, new Color(Gold.r, Gold.g, Gold.b, 0.62f));
     }
 
     /// <summary>붉은 인장(둥근 사각, 살짝 기울임) + 글자.</summary>
