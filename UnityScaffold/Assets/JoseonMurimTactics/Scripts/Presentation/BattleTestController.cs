@@ -1,7 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace JoseonMurimTactics
 {
@@ -17,6 +21,7 @@ namespace JoseonMurimTactics
         private const int SmokeCoverBonus = 2;
         private const int CoverInteractBonus = 2;
         private const int FireInteractDamage = 4;
+        private static readonly bool UseLegacyOnGui = false;
 
         private readonly List<BattleTestUnit> units = new List<BattleTestUnit>();
         private readonly List<string> battleLog = new List<string>();
@@ -30,6 +35,24 @@ namespace JoseonMurimTactics
         private GUIStyle titleStyle;
         private GUIStyle smallStyle;
         private GUIStyle logStyle;
+        private Canvas hudCanvas;
+        private TMP_Text hudPhaseText;
+        private TMP_Text hudActiveText;
+        private TMP_Text hudResourceText;
+        private TMP_Text hudObjectiveText;
+        private TMP_Text hudPhaseListText;
+        private TMP_Text hudLogText;
+        private TMP_Text hudInspectText;
+        private TMP_Text hudForecastText;
+        private TMP_Text hudRosterText;
+        private Button hudMoveButton;
+        private Button hudAttackButton;
+        private Button hudSkillButton;
+        private Button hudGuardButton;
+        private Button hudInteractButton;
+        private Button hudPhaseEndButton;
+        private Button hudResetButton;
+        private readonly List<Button> hudCommandButtons = new List<Button>();
         private BattleTestUnit activeUnit;
         private BattleTestUnit hoveredUnit;
         private BattleTestTile hoveredTile;
@@ -122,8 +145,18 @@ namespace JoseonMurimTactics
             }
         }
 
+        private void LateUpdate()
+        {
+            RefreshCanvasHud();
+        }
+
         private void OnGUI()
         {
+            if (!UseLegacyOnGui)
+            {
+                return;
+            }
+
             EnsureGuiStyles();
 
             DrawActivePanel();
@@ -352,6 +385,331 @@ namespace JoseonMurimTactics
             }
         }
 
+        private void EnsureCanvasHud()
+        {
+            if (hudCanvas != null)
+            {
+                return;
+            }
+
+            EnsureEventSystem();
+            hudCommandButtons.Clear();
+
+            GameObject canvasObject = new GameObject("BattleCanvasHud", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasObject.transform.SetParent(transform, false);
+            hudCanvas = canvasObject.GetComponent<Canvas>();
+            hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            hudCanvas.sortingOrder = 50;
+
+            CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280f, 720f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            RectTransform root = canvasObject.GetComponent<RectTransform>();
+            RectTransform active = CreatePanel(root, "현재 행동 패널", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -18f), new Vector2(340f, 326f));
+            hudPhaseText = CreateHudText(active, "페이즈", new Rect(16f, 12f, 308f, 30f), string.Empty, 22f, TextAlignmentOptions.Left, true);
+            hudActiveText = CreateHudText(active, "행동 유닛", new Rect(16f, 48f, 308f, 54f), string.Empty, 17f, TextAlignmentOptions.TopLeft, false);
+            hudResourceText = CreateHudText(active, "자원", new Rect(16f, 106f, 308f, 54f), string.Empty, 15f, TextAlignmentOptions.TopLeft, false);
+            hudMoveButton = CreateHudButton(active, "이동", new Rect(16f, 176f, 70f, 30f), "이동", () => SetCommandMode(BattleCommandMode.Move));
+            hudAttackButton = CreateHudButton(active, "공격", new Rect(94f, 176f, 70f, 30f), "공격", () => SetCommandMode(BattleCommandMode.Attack));
+            hudSkillButton = CreateHudButton(active, "무공", new Rect(172f, 176f, 70f, 30f), "무공", () => SetCommandMode(BattleCommandMode.Skill));
+            hudGuardButton = CreateHudButton(active, "방어", new Rect(250f, 176f, 70f, 30f), "방어", GuardActiveUnit);
+            hudInteractButton = CreateHudButton(active, "지형", new Rect(16f, 218f, 94f, 32f), "지형", () => SetCommandMode(BattleCommandMode.Interact));
+            hudPhaseEndButton = CreateHudButton(active, "페이즈 종료", new Rect(118f, 218f, 104f, 32f), "페이즈 종료", EndTurn);
+            hudResetButton = CreateHudButton(active, "재시작", new Rect(230f, 218f, 90f, 32f), "재시작", BuildBattle);
+            hudObjectiveText = CreateHudText(active, "전술 힌트", new Rect(16f, 264f, 308f, 50f), string.Empty, 14f, TextAlignmentOptions.TopLeft, false);
+
+            RectTransform objective = CreatePanel(root, "목표 패널", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(500f, 112f));
+            CreateHudText(objective, "목표 제목", new Rect(16f, 12f, 468f, 24f), "목표", 20f, TextAlignmentOptions.Left, true);
+            CreateHudText(objective, "목표 본문", new Rect(16f, 42f, 468f, 76f), "중원 사절 호위대를 제압\n추천: 대나무숲 엄폐, 지붕 고저 +2, 향로/등불 활용\n위험: 화염 칸 진입 시 피해", 15f, TextAlignmentOptions.TopLeft, false);
+
+            RectTransform phase = CreatePanel(root, "페이즈 패널", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -18f), new Vector2(368f, 194f));
+            CreateHudText(phase, "페이즈 제목", new Rect(16f, 12f, 336f, 24f), "행동 순서", 20f, TextAlignmentOptions.Left, true);
+            hudPhaseListText = CreateHudText(phase, "페이즈 목록", new Rect(16f, 42f, 336f, 144f), string.Empty, 14f, TextAlignmentOptions.TopLeft, false);
+
+            RectTransform log = CreatePanel(root, "전투 기록 패널", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -224f), new Vector2(368f, 244f));
+            CreateHudText(log, "전투 기록 제목", new Rect(16f, 12f, 336f, 24f), "전투 기록", 20f, TextAlignmentOptions.Left, true);
+            hudLogText = CreateHudText(log, "전투 기록", new Rect(16f, 42f, 336f, 200f), string.Empty, 14f, TextAlignmentOptions.TopLeft, false);
+
+            RectTransform inspect = CreatePanel(root, "정보 패널", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -356f), new Vector2(340f, 190f));
+            CreateHudText(inspect, "정보 제목", new Rect(16f, 12f, 308f, 24f), "정보", 20f, TextAlignmentOptions.Left, true);
+            hudInspectText = CreateHudText(inspect, "정보 본문", new Rect(16f, 42f, 308f, 144f), string.Empty, 14f, TextAlignmentOptions.TopLeft, false);
+
+            RectTransform forecast = CreatePanel(root, "전투 예측 패널", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -452f), new Vector2(368f, 224f));
+            CreateHudText(forecast, "전투 예측 제목", new Rect(16f, 12f, 336f, 24f), "전투 예측", 20f, TextAlignmentOptions.Left, true);
+            hudForecastText = CreateHudText(forecast, "전투 예측", new Rect(16f, 40f, 336f, 184f), string.Empty, 13f, TextAlignmentOptions.TopLeft, false);
+
+            RectTransform roster = CreatePanel(root, "부대 현황 패널", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(-36f, 100f));
+            CreateHudText(roster, "부대 현황 제목", new Rect(16f, 12f, 240f, 24f), "부대 현황", 20f, TextAlignmentOptions.Left, true);
+            hudRosterText = CreateHudText(roster, "부대 현황", new Rect(16f, 42f, 1220f, 54f), string.Empty, 14f, TextAlignmentOptions.TopLeft, false);
+
+            RefreshCanvasHud();
+        }
+
+        private void EnsureEventSystem()
+        {
+            if (EventSystem.current != null)
+            {
+                return;
+            }
+
+            GameObject eventSystemObject = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            DontDestroyOnLoad(eventSystemObject);
+        }
+
+        private RectTransform CreatePanel(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)
+        {
+            GameObject panel = new GameObject(name, typeof(RectTransform), typeof(Image));
+            RectTransform rect = panel.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = pivot;
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = sizeDelta;
+            Image image = panel.GetComponent<Image>();
+            image.color = new Color(0.09f, 0.085f, 0.075f, 0.86f);
+            return rect;
+        }
+
+        private TMP_Text CreateHudText(RectTransform parent, string name, Rect frame, string text, float size, TextAlignmentOptions alignment, bool bold)
+        {
+            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+            RectTransform rect = textObject.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            SetTopLeft(rect, frame);
+
+            TMP_Text tmp = textObject.GetComponent<TMP_Text>();
+            tmp.text = text;
+            tmp.fontSize = size;
+            tmp.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
+            tmp.alignment = alignment;
+            tmp.color = bold ? new Color(0.96f, 0.90f, 0.78f, 1f) : new Color(0.88f, 0.84f, 0.74f, 1f);
+            tmp.textWrappingMode = TextWrappingModes.Normal;
+            tmp.overflowMode = TextOverflowModes.Ellipsis;
+            return tmp;
+        }
+
+        private Button CreateHudButton(RectTransform parent, string name, Rect frame, string label, Action action)
+        {
+            GameObject buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            RectTransform rect = buttonObject.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            SetTopLeft(rect, frame);
+
+            Image image = buttonObject.GetComponent<Image>();
+            image.color = new Color(0.18f, 0.16f, 0.13f, 0.96f);
+
+            Button button = buttonObject.GetComponent<Button>();
+            button.targetGraphic = image;
+            button.transition = Selectable.Transition.ColorTint;
+            ColorBlock colors = button.colors;
+            colors.normalColor = new Color(0.18f, 0.16f, 0.13f, 0.96f);
+            colors.highlightedColor = new Color(0.33f, 0.28f, 0.20f, 1f);
+            colors.selectedColor = new Color(0.50f, 0.36f, 0.17f, 1f);
+            colors.pressedColor = new Color(0.62f, 0.42f, 0.18f, 1f);
+            colors.disabledColor = new Color(0.12f, 0.115f, 0.10f, 0.55f);
+            colors.fadeDuration = 0.08f;
+            button.colors = colors;
+            button.onClick.AddListener(() => action());
+
+            TMP_Text text = CreateHudText(rect, "라벨", new Rect(0f, 4f, frame.width, frame.height - 8f), label, 14f, TextAlignmentOptions.Center, true);
+            text.color = new Color(0.98f, 0.93f, 0.82f, 1f);
+
+            if (name == "이동" || name == "공격" || name == "무공" || name == "지형")
+            {
+                hudCommandButtons.Add(button);
+            }
+
+            return button;
+        }
+
+        private static void SetTopLeft(RectTransform rect, Rect frame)
+        {
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(frame.x, -frame.y);
+            rect.sizeDelta = new Vector2(frame.width, frame.height);
+        }
+
+        private void RefreshCanvasHud()
+        {
+            if (hudCanvas == null)
+            {
+                return;
+            }
+
+            string phaseText = battleOver ? "전투 종료" : $"제 {round}턴 · {PhaseLabel(phaseTurn.CurrentPhase)}";
+            string activeName = activeUnit == null ? "선택 없음" : activeUnit.definition.displayName;
+            string side = activeUnit == null ? "-" : FactionLabel(activeUnit.definition.faction);
+            string hp = activeUnit == null ? "-" : $"{activeUnit.hp}/{activeUnit.definition.maxHp}";
+            SetText(hudPhaseText, phaseText);
+            SetText(hudActiveText, $"현재 행동: {activeName}\n진영: {side}   체력: {hp}");
+
+            if (activeUnit == null)
+            {
+                SetText(hudResourceText, "아군을 선택하세요.\n페이즈 종료로 적 페이즈 진행");
+            }
+            else
+            {
+                SetText(hudResourceText, $"이동: {ActionText(activeUnit.moved)}   행동: {ActionText(activeUnit.acted)}\n내공: {activeUnit.inner}/{activeUnit.definition.maxInner}   명령: {CommandLabel(commandMode)}");
+            }
+
+            SetText(hudObjectiveText, "전술: 고지/대나무숲/지형지물을 먼저 확인");
+            SetText(hudPhaseListText, BuildPhaseListText());
+            SetText(hudLogText, BuildLogText());
+            SetText(hudInspectText, BuildInspectText());
+            SetText(hudForecastText, BuildHudForecastText());
+            SetText(hudRosterText, BuildRosterText());
+
+            bool playerTurn = phaseTurn.IsPlayerPhase && activeUnit != null && activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
+            SetButtonEnabled(hudMoveButton, playerTurn && !activeUnit.moved);
+            SetButtonEnabled(hudAttackButton, playerTurn && !activeUnit.acted);
+            SetButtonEnabled(hudSkillButton, playerTurn && CanUseSpecial(activeUnit));
+            SetButtonEnabled(hudGuardButton, playerTurn && !activeUnit.acted);
+            SetButtonEnabled(hudInteractButton, playerTurn && !activeUnit.acted && HasUsableInteractable(activeUnit));
+            SetButtonEnabled(hudPhaseEndButton, phaseTurn.IsPlayerPhase && !busy && !battleOver);
+            SetButtonEnabled(hudResetButton, true);
+            RefreshCommandButtonState(hudMoveButton, commandMode == BattleCommandMode.Move && playerTurn);
+            RefreshCommandButtonState(hudAttackButton, commandMode == BattleCommandMode.Attack && playerTurn);
+            RefreshCommandButtonState(hudSkillButton, commandMode == BattleCommandMode.Skill && playerTurn);
+            RefreshCommandButtonState(hudInteractButton, commandMode == BattleCommandMode.Interact && playerTurn);
+        }
+
+        private string BuildPhaseListText()
+        {
+            StringBuilder builder = new StringBuilder();
+            List<BattleTestUnit> queue = GetTurnQueuePreview(7);
+            for (int i = 0; i < queue.Count; i++)
+            {
+                BattleTestUnit unit = queue[i];
+                string marker = unit == activeUnit ? "현재" : (unit.acted ? "완료" : "대기");
+                builder.Append(marker).Append("  ")
+                    .Append(unit.definition.displayName).Append("  ")
+                    .Append(FactionLabel(unit.definition.faction)).Append("  ")
+                    .AppendLine(unit.defeated ? "전투불능" : UnitStatusText(unit));
+            }
+
+            return builder.ToString();
+        }
+
+        private string BuildLogText()
+        {
+            StringBuilder builder = new StringBuilder();
+            int start = Mathf.Max(0, battleLog.Count - 8);
+            for (int i = start; i < battleLog.Count; i++)
+            {
+                builder.AppendLine(battleLog[i]);
+            }
+
+            return builder.ToString();
+        }
+
+        private string BuildInspectText()
+        {
+            if (hoveredUnit != null)
+            {
+                return $"{hoveredUnit.definition.displayName} ({FactionLabel(hoveredUnit.definition.faction)})\n체력 {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   방어 {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}\n상태: {UnitStatusText(hoveredUnit)}\n무공: {hoveredUnit.definition.specialName}";
+            }
+
+            if (hoveredTile != null)
+            {
+                BattleTestInteractable prop = GetInteractableAt(hoveredTile.cell);
+                StringBuilder builder = new StringBuilder();
+                builder.Append(TerrainLabel(hoveredTile.terrain)).Append("  (").Append(hoveredTile.cell.x).Append(",").Append(hoveredTile.cell.y).AppendLine(")");
+                builder.Append("이동 비용 ").Append(hoveredTile.moveCost).Append("   엄폐 +").AppendLine(hoveredTile.coverBonus.ToString());
+                builder.Append("고저 ").Append(hoveredTile.elevation).Append("   진입 ").AppendLine(YesNo(hoveredTile.walkable));
+                if (prop != null)
+                {
+                    int distance = activeUnit == null ? -1 : GridDistance(activeUnit.cell, prop.cell);
+                    bool usable = activeUnit != null && !activeUnit.acted && distance <= 1;
+                    builder.Append("지형지물: ").AppendLine(prop.displayName);
+                    builder.Append("효과: ").Append(InteractableEffectText(prop.kind)).Append("   사용: ").Append(YesNo(usable));
+                }
+                else
+                {
+                    builder.Append("위험: ").Append(TileHazardText(hoveredTile));
+                }
+
+                return builder.ToString();
+            }
+
+            return "가리킨 대상 없음";
+        }
+
+        private string BuildHudForecastText()
+        {
+            BattleForecast forecast = BuildForecast(activeUnit, hoveredUnit);
+            if (!forecast.valid)
+            {
+                if (string.IsNullOrEmpty(forecast.actorName))
+                {
+                    return forecast.invalidReason;
+                }
+
+                return $"[{forecast.actorName}: {forecast.commandName}]\n대상: {forecast.targetName}\n불가: {forecast.invalidReason}\n거리 {forecast.distance} / 사거리 {forecast.range}\n{forecast.costText}";
+            }
+
+            return $"[{forecast.actorName}: {forecast.commandName}]\n대상: {forecast.targetName}\n명중 {forecast.neededRollText}\n{forecast.damageText}\n{forecast.hpAfterText}\n{forecast.counterText}\n{forecast.followUpText}\n{forecast.costText}";
+        }
+
+        private string BuildRosterText()
+        {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < units.Count; i++)
+            {
+                BattleTestUnit unit = units[i];
+                if (i > 0)
+                {
+                    builder.Append("   |   ");
+                }
+
+                if (unit == activeUnit)
+                {
+                    builder.Append("> ");
+                }
+
+                builder.Append(unit.definition.displayName).Append(" 체력 ")
+                    .Append(unit.hp).Append("/").Append(unit.definition.maxHp)
+                    .Append(" ").Append(UnitStatusText(unit));
+            }
+
+            return builder.ToString();
+        }
+
+        private static void SetText(TMP_Text text, string value)
+        {
+            if (text != null)
+            {
+                text.text = value;
+            }
+        }
+
+        private static void SetButtonEnabled(Button button, bool enabled)
+        {
+            if (button != null)
+            {
+                button.interactable = enabled;
+            }
+        }
+
+        private static void RefreshCommandButtonState(Button button, bool selected)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            Image image = button.GetComponent<Image>();
+            if (image != null && button.interactable)
+            {
+                image.color = selected ? new Color(0.56f, 0.39f, 0.18f, 1f) : new Color(0.18f, 0.16f, 0.13f, 0.96f);
+            }
+        }
+
         private void BuildBattle()
         {
             StopAllCoroutines();
@@ -375,6 +733,7 @@ namespace JoseonMurimTactics
             SpawnUnits();
             units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
             CenterCamera();
+            EnsureCanvasHud();
 
             AddLog("[체계] 전투 준비 완료.");
             BeginPlayerPhase();
@@ -392,6 +751,30 @@ namespace JoseonMurimTactics
             {
                 Destroy(child.gameObject);
             }
+
+            ClearCanvasHudReferences();
+        }
+
+        private void ClearCanvasHudReferences()
+        {
+            hudCanvas = null;
+            hudPhaseText = null;
+            hudActiveText = null;
+            hudResourceText = null;
+            hudObjectiveText = null;
+            hudPhaseListText = null;
+            hudLogText = null;
+            hudInspectText = null;
+            hudForecastText = null;
+            hudRosterText = null;
+            hudMoveButton = null;
+            hudAttackButton = null;
+            hudSkillButton = null;
+            hudGuardButton = null;
+            hudInteractButton = null;
+            hudPhaseEndButton = null;
+            hudResetButton = null;
+            hudCommandButtons.Clear();
         }
 
         private void CreateTerrain()
@@ -2294,6 +2677,11 @@ namespace JoseonMurimTactics
 
         private bool PointerOverHud(Vector3 screenPosition)
         {
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                return true;
+            }
+
             float guiY = Screen.height - screenPosition.y;
             Vector2 point = new Vector2(screenPosition.x, guiY);
             Rect leftPanel = new Rect(18f, 18f, 340f, 528f);
