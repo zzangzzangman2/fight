@@ -1097,8 +1097,12 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void CreateInteractables(Transform terrainRoot)
     {
+        Transform propParent = tilemapBattlefield == null || tilemapBattlefield.Binder == null ||
+                               tilemapBattlefield.Binder.PropsRoot == null
+                                   ? terrainRoot
+                                   : tilemapBattlefield.Binder.PropsRoot;
         Transform propRoot = new GameObject("Interactables").transform;
-        propRoot.SetParent(terrainRoot, false);
+        propRoot.SetParent(propParent, false);
 
         AddInteractable(propRoot, "signboard", "백두천광 현판", BattleTestInteractableKind.Objective,
                         new Vector2Int(7, 10), new Color(0.92f, 0.76f, 0.34f, 1f));
@@ -1154,11 +1158,156 @@ public sealed class BattleTestController : MonoBehaviour
             tilemapBattlefield.RegisterPropRenderer(renderer, cell, kind);
         }
 
+        AttachMapPropComponents(propObject, id, displayName, kind, cell);
         CreateInteractableAccent(propObject.transform, kind, renderer.sortingOrder + 1);
 
         TextMesh label = CreateWorldLabel(propObject.transform, InteractableGlyph(kind), 46, new Vector3(0f, 0.38f, -0.05f),
                                           new Color(1f, 0.92f, 0.66f, 1f), 2300 + ((cell.x + cell.y) * 2));
         interactable.label = label;
+    }
+
+    private void AttachMapPropComponents(GameObject propObject, string id, string displayName,
+                                         BattleTestInteractableKind kind, Vector2Int cell)
+    {
+        MapPropView view = GetOrAdd<MapPropView>(propObject);
+        view.Configure(id, displayName, cell, ResolvePropKind(id, kind), true);
+
+        InteractableProp interactableProp = GetOrAdd<InteractableProp>(propObject);
+        interactableProp.Configure(ActionSlot.Main, ResolvePropCheckStat(kind), ResolvePropDc(kind),
+                                   ResolvePropRadius(kind), ResolvePropEffect(kind), true);
+
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Smoke:
+            GetOrAdd<LineOfSightBlocker>(propObject).Configure(1, 1);
+            GetOrAdd<MapLightAnchor>(propObject).Configure(new Color(0.70f, 0.78f, 0.72f, 1f), 1.20f, 0.32f);
+            break;
+        case BattleTestInteractableKind.Fire:
+            GetOrAdd<DestructibleProp>(propObject).Configure(8, TerrainType.Fire, HazardType.Fire,
+                                                              InteractableEffectType.CreateFire);
+            GetOrAdd<MapLightAnchor>(propObject).Configure(new Color(1f, 0.46f, 0.18f, 1f), 1.45f, 0.92f);
+            break;
+        case BattleTestInteractableKind.Cover:
+            GetOrAdd<CoverProvider>(propObject).Configure(id == "fallen_wall" ? CoverType.Full : CoverType.Heavy,
+                                                          id == "fallen_wall" ? 4 : 2);
+            if (id == "fallen_wall")
+            {
+                GetOrAdd<LineOfSightBlocker>(propObject).Configure(1);
+            }
+            break;
+        case BattleTestInteractableKind.Objective:
+            GetOrAdd<MapLightAnchor>(propObject).Configure(new Color(1f, 0.74f, 0.34f, 1f), 1.70f, 0.62f);
+            break;
+        case BattleTestInteractableKind.CollapseBridge:
+            GetOrAdd<DestructibleProp>(propObject).Configure(10, TerrainType.Rubble, HazardType.Collapse,
+                                                              InteractableEffectType.CollapseBridge);
+            break;
+        case BattleTestInteractableKind.BambooFall:
+            GetOrAdd<CoverProvider>(propObject).Configure(CoverType.Heavy, 2);
+            GetOrAdd<LineOfSightBlocker>(propObject).Configure(2, 1);
+            GetOrAdd<DestructibleProp>(propObject).Configure(9, TerrainType.Rubble, HazardType.None,
+                                                              InteractableEffectType.BlockSight);
+            break;
+        case BattleTestInteractableKind.Rockfall:
+            GetOrAdd<CoverProvider>(propObject).Configure(CoverType.Full, 4);
+            GetOrAdd<LineOfSightBlocker>(propObject).Configure(2);
+            GetOrAdd<DestructibleProp>(propObject).Configure(14, TerrainType.Rubble, HazardType.Fall,
+                                                              InteractableEffectType.Push);
+            break;
+        }
+    }
+
+    private static T GetOrAdd<T>(GameObject target) where T : Component
+    {
+        T component = target.GetComponent<T>();
+        return component == null ? target.AddComponent<T>() : component;
+    }
+
+    private static InteractableKind ResolvePropKind(string id, BattleTestInteractableKind kind)
+    {
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Smoke:
+            return InteractableKind.IncenseBurner;
+        case BattleTestInteractableKind.Fire:
+            return id == "oil_jar" ? InteractableKind.OilJar : InteractableKind.Lantern;
+        case BattleTestInteractableKind.Cover:
+            return id == "fallen_wall" ? InteractableKind.FallenWall : InteractableKind.WineCart;
+        case BattleTestInteractableKind.Objective:
+            return InteractableKind.SectSignboard;
+        case BattleTestInteractableKind.CollapseBridge:
+            return InteractableKind.WoodenBridge;
+        case BattleTestInteractableKind.BambooFall:
+            return InteractableKind.BambooBundle;
+        case BattleTestInteractableKind.Rockfall:
+            return InteractableKind.RockLantern;
+        default:
+            return InteractableKind.WineCart;
+        }
+    }
+
+    private static StatType ResolvePropCheckStat(BattleTestInteractableKind kind)
+    {
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Smoke:
+        case BattleTestInteractableKind.Fire:
+            return StatType.InnerPower;
+        case BattleTestInteractableKind.BambooFall:
+        case BattleTestInteractableKind.Rockfall:
+        case BattleTestInteractableKind.CollapseBridge:
+            return StatType.Strength;
+        default:
+            return StatType.Agility;
+        }
+    }
+
+    private static int ResolvePropDc(BattleTestInteractableKind kind)
+    {
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Objective:
+            return 0;
+        case BattleTestInteractableKind.CollapseBridge:
+        case BattleTestInteractableKind.Rockfall:
+            return 14;
+        case BattleTestInteractableKind.BambooFall:
+            return 12;
+        default:
+            return 10;
+        }
+    }
+
+    private static int ResolvePropRadius(BattleTestInteractableKind kind)
+    {
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Smoke:
+        case BattleTestInteractableKind.Fire:
+        case BattleTestInteractableKind.Rockfall:
+            return 2;
+        default:
+            return 1;
+        }
+    }
+
+    private static InteractableEffectType ResolvePropEffect(BattleTestInteractableKind kind)
+    {
+        switch (kind)
+        {
+        case BattleTestInteractableKind.Smoke:
+            return InteractableEffectType.CreateSmoke;
+        case BattleTestInteractableKind.Fire:
+            return InteractableEffectType.CreateFire;
+        case BattleTestInteractableKind.CollapseBridge:
+            return InteractableEffectType.CollapseBridge;
+        case BattleTestInteractableKind.BambooFall:
+            return InteractableEffectType.BlockSight;
+        case BattleTestInteractableKind.Rockfall:
+            return InteractableEffectType.Push;
+        default:
+            return InteractableEffectType.CreateCover;
+        }
     }
 
     private void CreateInteractableAccent(Transform parent, BattleTestInteractableKind kind, int sortingOrder)

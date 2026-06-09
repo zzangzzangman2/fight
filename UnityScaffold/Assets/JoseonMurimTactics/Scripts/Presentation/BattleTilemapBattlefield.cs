@@ -21,14 +21,20 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
     private Sprite softDiamond;
     private Sprite detailSprite;
     private Sprite dotSprite;
+    private BattleMapTilemapBinder binder;
 
+    public BattleMapTilemapBinder Binder => binder;
     public Tilemap GroundTilemap { get; private set; }
     public Tilemap RoadTilemap { get; private set; }
     public Tilemap CliffTilemap { get; private set; }
     public Tilemap WaterTilemap { get; private set; }
+    public Tilemap DecorTilemap { get; private set; }
     public Tilemap PropsTilemap { get; private set; }
     public Tilemap OverlayTilemap { get; private set; }
-    public Tilemap HighlightTilemap { get; private set; }
+    public Tilemap HighlightTilemap => HighlightMoveTilemap;
+    public Tilemap HighlightMoveTilemap { get; private set; }
+    public Tilemap HighlightAttackTilemap { get; private set; }
+    public Tilemap HighlightDangerTilemap { get; private set; }
     public TacticalGridOverlay TacticalOverlay { get; private set; }
     public Transform CellColliderRoot { get; private set; }
 
@@ -40,22 +46,29 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         detailSprite = detail;
         dotSprite = dot;
 
-        grid = gameObject.AddComponent<Grid>();
-        grid.cellLayout = GridLayout.CellLayout.Isometric;
-        grid.cellSize = new Vector3(tileWidth, tileHeight, 1f);
+        binder = gameObject.GetComponent<BattleMapTilemapBinder>();
+        if (binder == null)
+        {
+            binder = gameObject.AddComponent<BattleMapTilemapBinder>();
+        }
 
-        GroundTilemap = CreateLayer("Tilemap_Ground", 0);
-        RoadTilemap = CreateLayer("Tilemap_Road", 20);
-        CliffTilemap = CreateLayer("Tilemap_Cliff", 40);
-        WaterTilemap = CreateLayer("Tilemap_Water", 10);
-        PropsTilemap = CreateLayer("Tilemap_Props", 80);
-        OverlayTilemap = CreateLayer("Tilemap_Overlay", 120);
-        HighlightTilemap = CreateLayer("Tilemap_Highlight", 160);
+        binder.ConfigureRuntime(Vector2Int.zero, new Vector2Int(width, height), tileWidth, tileHeight);
+        grid = binder.Grid;
+        GroundTilemap = binder.GroundTilemap;
+        RoadTilemap = binder.RoadTilemap;
+        CliffTilemap = binder.CliffTilemap;
+        WaterTilemap = binder.WaterTilemap;
+        DecorTilemap = binder.DecorTilemap;
+        PropsTilemap = binder.PropsTilemap;
+        OverlayTilemap = binder.OverlayTilemap;
+        HighlightMoveTilemap = binder.HighlightMoveTilemap;
+        HighlightAttackTilemap = binder.HighlightAttackTilemap;
+        HighlightDangerTilemap = binder.HighlightDangerTilemap;
 
         overlayTile = CreateUtilityTile("Runtime Tactical Overlay", softDiamond, Color.white);
         highlightTile = CreateUtilityTile("Runtime Highlight Tile", softDiamond, Color.white);
 
-        TacticalOverlay = gameObject.AddComponent<TacticalGridOverlay>();
+        TacticalOverlay = binder.TacticalOverlay;
         TacticalOverlay.Configure(Vector2Int.zero, new Vector2Int(width, height));
 
         CellColliderRoot = new GameObject("TacticalGridOverlay_Colliders").transform;
@@ -115,9 +128,10 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
         Tile propTile = CreateUtilityTile("Runtime Prop Tile", sprite, Color.white);
         Vector3Int tileCell = ToTilemapCell(cell);
-        PropsTilemap.SetTile(tileCell, propTile);
-        PropsTilemap.SetTileFlags(tileCell, TileFlags.None);
-        PropsTilemap.SetColor(tileCell, color);
+        Tilemap target = DecorTilemap == null ? PropsTilemap : DecorTilemap;
+        target.SetTile(tileCell, propTile);
+        target.SetTileFlags(tileCell, TileFlags.None);
+        target.SetColor(tileCell, color);
     }
 
     public void SetHighlight(Vector2Int cell, Color color)
@@ -125,20 +139,52 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         Vector3Int tileCell = ToTilemapCell(cell);
         if (color.a <= 0.01f)
         {
-            HighlightTilemap.SetTile(tileCell, null);
+            ClearHighlightCell(tileCell);
             return;
         }
 
         Color softened = color;
         softened.a *= HighlightAlphaScale;
-        HighlightTilemap.SetTile(tileCell, highlightTile);
-        HighlightTilemap.SetTileFlags(tileCell, TileFlags.None);
-        HighlightTilemap.SetColor(tileCell, softened);
+        Tilemap target = HighlightTilemapFor(color);
+        ClearHighlightCell(tileCell);
+        target.SetTile(tileCell, highlightTile);
+        target.SetTileFlags(tileCell, TileFlags.None);
+        target.SetColor(tileCell, softened);
     }
 
     public void ClearHighlights()
     {
-        HighlightTilemap.ClearAllTiles();
+        HighlightMoveTilemap.ClearAllTiles();
+        HighlightAttackTilemap.ClearAllTiles();
+        HighlightDangerTilemap.ClearAllTiles();
+    }
+
+    private void ClearHighlightCell(Vector3Int tileCell)
+    {
+        HighlightMoveTilemap.SetTile(tileCell, null);
+        HighlightAttackTilemap.SetTile(tileCell, null);
+        HighlightDangerTilemap.SetTile(tileCell, null);
+    }
+
+    private Tilemap HighlightTilemapFor(Color color)
+    {
+        BattleMapHighlightLayer layer = ClassifyHighlightLayer(color);
+        return binder == null ? HighlightMoveTilemap : binder.TilemapForHighlight(layer);
+    }
+
+    private static BattleMapHighlightLayer ClassifyHighlightLayer(Color color)
+    {
+        if (color.r > 0.64f && color.g < 0.34f)
+        {
+            return color.a <= 0.35f ? BattleMapHighlightLayer.Danger : BattleMapHighlightLayer.Attack;
+        }
+
+        if (color.b > color.r && color.b > color.g)
+        {
+            return BattleMapHighlightLayer.Move;
+        }
+
+        return color.r > 0.70f && color.g > 0.55f ? BattleMapHighlightLayer.Attack : BattleMapHighlightLayer.Move;
     }
 
     public void SetTerrainTint(Vector2Int cell, TerrainType terrainType, Color color)
@@ -266,8 +312,9 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
     private void CreateLightingRig(int width, int height)
     {
+        Transform lightRoot = binder == null || binder.LightsRoot == null ? transform : binder.LightsRoot;
         GameObject global = new GameObject("Global Light 2D - Dawn Mist");
-        global.transform.SetParent(transform, false);
+        global.transform.SetParent(lightRoot, false);
         Light2D globalLight = global.AddComponent<Light2D>();
         globalLight.lightType = Light2D.LightType.Global;
         globalLight.intensity = 0.72f;
@@ -283,8 +330,9 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
     private void CreateSceneLight(string name, Vector2Int cell, Color color, float radius, float intensity)
     {
+        Transform lightRoot = binder == null || binder.LightsRoot == null ? transform : binder.LightsRoot;
         GameObject lightObject = new GameObject(name);
-        lightObject.transform.SetParent(transform, false);
+        lightObject.transform.SetParent(lightRoot, false);
         lightObject.transform.position = CellToWorld(cell) + new Vector3(0f, 0.20f, -0.20f);
         CreatePointLight("Point Light 2D", lightObject.transform, color, radius, intensity);
     }

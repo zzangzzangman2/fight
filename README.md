@@ -59,11 +59,21 @@ Boot
 ## 아직 임시인 것
 
 - BattleTest 전투 HUD는 Canvas/TextMeshPro 전환 중입니다.
-- 전투 맵은 런타임 생성 diamond tile 기반이며, Tilemap 전환은 이후 단계입니다.
+- 전투 맵은 Unity 2D Tilemap 기반 전장으로 전환 중이며, diamond tile 렌더러는 디버그 fallback으로 유지합니다.
 - 직업별 모션, 무기별 애니메이션, Timeline 전투 연출은 아직 제외했습니다.
 - SkillData ScriptableObject와 BattleTest 전투 루프의 완전 연결은 이후 작업입니다.
 - 월드맵과 설정 화면은 자리만 잡힌 상태입니다.
 - 세이브 슬롯 UI, 사운드, 해상도 설정은 미구현입니다.
+
+## Battle Map Tilemap Pipeline
+
+- BattleTest now uses a Unity 2D Tilemap battlefield by default; the old per-cell diamond GameObject renderer is kept behind `useLegacyDiamondTerrain` for debug fallback.
+- Author production maps under `UnityScaffold/Assets/JoseonMurimTactics/Art/BattleMaps`.
+- Use `Joseon Murim Tactics > Battle Maps > Generate Tile Assets` to regenerate `TerrainTileData`, prop tiles, overlay tiles, and battle-map materials from `Resources/MapAssets`.
+- Scene maps should attach `BattleMapTilemapBinder` to `Grid_BattleMap` and keep visual layers separate: Ground, Road, Water, Cliff, Decor, Props, Overlay, Highlight_Move, Highlight_Attack, Highlight_Danger.
+- `TacticalGridOverlay` is the tactical source of truth for move cost, elevation, cover, line-of-sight blocking, fall, water, fire, smoke, objective, and lane data.
+- Interactive map props should use `MapPropView` plus the needed tactical component: `CoverProvider`, `LineOfSightBlocker`, `DestructibleProp`, `InteractableProp`, or `MapLightAnchor`.
+- Run `Joseon Murim Tactics > Validate Current Battle Map` before committing a map. The validator checks open-area ratio, lanes, chokepoints, elevation levels, interactables, high ground, line-of-sight blockers, destructible terrain, and start-to-objective pathing.
 
 ## 전투 방향
 

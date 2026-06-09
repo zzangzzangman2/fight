@@ -32,11 +32,19 @@ public static class BattleMapTilemapSmokeCheck
         Require(GameObject.Find("Tilemap_Road") != null, "Tilemap_Road was not created.");
         Require(GameObject.Find("Tilemap_Cliff") != null, "Tilemap_Cliff was not created.");
         Require(GameObject.Find("Tilemap_Water") != null, "Tilemap_Water was not created.");
+        Require(GameObject.Find("Tilemap_Decor") != null, "Tilemap_Decor was not created.");
         Require(GameObject.Find("Tilemap_Props") != null, "Tilemap_Props was not created.");
         Require(GameObject.Find("Tilemap_Overlay") != null, "Tilemap_Overlay was not created.");
-        Require(GameObject.Find("Tilemap_Highlight") != null, "Tilemap_Highlight was not created.");
+        Require(GameObject.Find("Tilemap_Highlight_Move") != null, "Tilemap_Highlight_Move was not created.");
+        Require(GameObject.Find("Tilemap_Highlight_Attack") != null, "Tilemap_Highlight_Attack was not created.");
+        Require(GameObject.Find("Tilemap_Highlight_Danger") != null, "Tilemap_Highlight_Danger was not created.");
+        Require(GameObject.Find("PropsRoot") != null, "PropsRoot was not created.");
+        Require(GameObject.Find("LightsRoot") != null, "LightsRoot was not created.");
 
-        TacticalGridOverlay overlay = battlefield.GetComponent<TacticalGridOverlay>();
+        BattleMapTilemapBinder binder = battlefield.GetComponent<BattleMapTilemapBinder>();
+        Require(binder != null, "BattleMapTilemapBinder was not created.");
+
+        TacticalGridOverlay overlay = battlefield.GetComponentInChildren<TacticalGridOverlay>();
         Require(overlay != null, "TacticalGridOverlay was not created.");
         Require(overlay.Cells.Count == controller.width * controller.height,
                 $"TacticalGridOverlay expected {controller.width * controller.height} cells, got {overlay.Cells.Count}.");
@@ -47,6 +55,8 @@ public static class BattleMapTilemapSmokeCheck
         Tilemap water = GameObject.Find("Tilemap_Water").GetComponent<Tilemap>();
         Require(ground.GetUsedTilesCount() + road.GetUsedTilesCount() + cliff.GetUsedTilesCount() +
                 water.GetUsedTilesCount() > 0, "No terrain tiles were assigned.");
+        Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
+                "Expected generated interactable props to carry MapPropView metadata.");
 
         CleanupGeneratedChildren(controller.transform);
         Debug.Log("[BattleMapTilemapSmokeCheck] BattleTest Tilemap battlefield smoke check passed.");
