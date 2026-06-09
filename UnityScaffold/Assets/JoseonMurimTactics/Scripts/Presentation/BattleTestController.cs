@@ -40,6 +40,8 @@ public sealed class BattleTestController : MonoBehaviour
     private Sprite softDiamondSprite;
     private Sprite detailSprite;
     private Sprite dotSprite;
+    private Sprite mountainRidgeSprite;
+    private Sprite pineSilhouetteSprite;
     private BattleTilemapBattlefield tilemapBattlefield;
     private Coroutine mapIntroCoroutine;
     private bool mapAssetSpritesLoaded;
@@ -1642,14 +1644,32 @@ public sealed class BattleTestController : MonoBehaviour
         Vector3 max = GridToWorld(new Vector2Int(width - 1, height - 1));
         Vector3 left = GridToWorld(new Vector2Int(0, height - 1));
         Vector3 right = GridToWorld(new Vector2Int(width - 1, 0));
-        backdrop.transform.position = (min + max + left + right) * 0.25f + new Vector3(0f, -0.18f, 0.08f);
+        Vector3 center = (min + max + left + right) * 0.25f;
+        backdrop.transform.position = center + new Vector3(0f, -0.18f, 0.08f);
         backdrop.transform.localScale = new Vector3(width * tileWidth * 2.40f, height * tileHeight * 2.80f, 1f);
         backdrop.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
 
         SpriteRenderer renderer = backdrop.AddComponent<SpriteRenderer>();
         renderer.sprite = detailSprite;
-        renderer.color = new Color(0.055f, 0.050f, 0.040f, 0.78f);
+        renderer.color = new Color(0.18f, 0.27f, 0.23f, 0.82f);
         renderer.sortingOrder = -80;
+
+        CreateAtmosphereSprite(terrainRoot, "Dawn Mountain Sky Wash", softDiamondSprite,
+                               center + new Vector3(0f, 1.35f, 0.10f),
+                               new Vector3(width * tileWidth * 2.85f, height * tileHeight * 3.15f, 1f), 45f,
+                               new Color(0.36f, 0.50f, 0.50f, 0.34f), -92);
+        CreateAtmosphereSprite(terrainRoot, "Far Baekdu Ridge", mountainRidgeSprite,
+                               center + new Vector3(-0.80f, 2.55f, 0.04f), new Vector3(3.35f, 1.35f, 1f), 0f,
+                               new Color(0.25f, 0.36f, 0.32f, 0.66f), -76);
+        CreateAtmosphereSprite(terrainRoot, "Near Pine Ridge", mountainRidgeSprite,
+                               center + new Vector3(0.55f, 1.50f, 0.03f), new Vector3(3.80f, 1.05f, 1f), 0f,
+                               new Color(0.10f, 0.23f, 0.16f, 0.58f), -72);
+        CreateAtmosphereSprite(terrainRoot, "Left Pine Silhouette", pineSilhouetteSprite,
+                               left + new Vector3(-1.45f, 0.78f, 0.02f), new Vector3(1.35f, 1.55f, 1f), -4f,
+                               new Color(0.07f, 0.18f, 0.12f, 0.54f), -68);
+        CreateAtmosphereSprite(terrainRoot, "Right Pine Silhouette", pineSilhouetteSprite,
+                               right + new Vector3(1.30f, 0.60f, 0.02f), new Vector3(-1.25f, 1.40f, 1f), 5f,
+                               new Color(0.07f, 0.18f, 0.12f, 0.48f), -68);
     }
 
     private void CreateMapAtmosphere(Transform terrainRoot)
@@ -4652,7 +4672,7 @@ public sealed class BattleTestController : MonoBehaviour
         camera.orthographic = true;
         camera.orthographicSize = Mathf.Max(4.15f, height * 0.48f);
         camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = new Color(0.08f, 0.075f, 0.065f, 1f);
+        camera.backgroundColor = new Color(0.20f, 0.30f, 0.27f, 1f);
     }
 
     private bool PointerOverHud(Vector3 screenPosition)
@@ -4676,6 +4696,8 @@ public sealed class BattleTestController : MonoBehaviour
         softDiamondSprite = softDiamondSprite == null ? CreateSoftDiamondSprite() : softDiamondSprite;
         detailSprite = detailSprite == null ? CreateDetailSprite() : detailSprite;
         dotSprite = dotSprite == null ? CreateDotSprite() : dotSprite;
+        mountainRidgeSprite = mountainRidgeSprite == null ? CreateMountainRidgeSprite() : mountainRidgeSprite;
+        pineSilhouetteSprite = pineSilhouetteSprite == null ? CreatePineSilhouetteSprite() : pineSilhouetteSprite;
         LoadMapAssetSprites();
     }
 
@@ -4860,6 +4882,93 @@ public sealed class BattleTestController : MonoBehaviour
 
         texture.Apply();
         return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 96f);
+    }
+
+    private Sprite CreateMountainRidgeSprite()
+    {
+        const int textureWidth = 512;
+        const int textureHeight = 160;
+        Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestMountainRidge";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < textureHeight; y++)
+        {
+            float fy = (y + 0.5f) / textureHeight;
+            for (int x = 0; x < textureWidth; x++)
+            {
+                float fx = (x + 0.5f) / textureWidth;
+                float farRidge = 0.54f + Mathf.Sin(fx * 9.1f + 0.6f) * 0.10f +
+                                 Mathf.Sin(fx * 22.0f) * 0.045f;
+                float nearRidge = 0.36f + Mathf.Sin(fx * 6.2f + 1.8f) * 0.13f +
+                                  Mathf.Sin(fx * 18.0f + 0.4f) * 0.040f;
+                Color color = Color.clear;
+
+                if (fy < nearRidge)
+                {
+                    float fade = Mathf.Clamp01(fy / Mathf.Max(0.01f, nearRidge));
+                    color = new Color(1f, 1f, 1f, Mathf.Lerp(0.82f, 0.30f, fade));
+                }
+                else if (fy < farRidge)
+                {
+                    float fade = Mathf.Clamp01(fy / Mathf.Max(0.01f, farRidge));
+                    color = new Color(1f, 1f, 1f, Mathf.Lerp(0.42f, 0.12f, fade));
+                }
+
+                float snowLine = nearRidge - 0.028f;
+                if (fy > snowLine && fy < nearRidge + 0.010f)
+                {
+                    color = Color.Lerp(color, new Color(1f, 1f, 1f, 0.62f), 0.45f);
+                }
+
+                texture.SetPixel(x, y, color);
+            }
+        }
+
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight), new Vector2(0.5f, 0.5f), 96f);
+    }
+
+    private Sprite CreatePineSilhouetteSprite()
+    {
+        const int textureWidth = 96;
+        const int textureHeight = 192;
+        Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestPineSilhouette";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < textureHeight; y++)
+        {
+            float fy = (y + 0.5f) / textureHeight;
+            for (int x = 0; x < textureWidth; x++)
+            {
+                float nx = (((x + 0.5f) / textureWidth) * 2f) - 1f;
+                bool trunk = Mathf.Abs(nx) < 0.055f && fy < 0.80f;
+                bool needles = false;
+
+                for (int tier = 0; tier < 5; tier++)
+                {
+                    float tip = 0.96f - (tier * 0.135f);
+                    float baseY = tip - 0.255f;
+                    if (fy < baseY || fy > tip)
+                    {
+                        continue;
+                    }
+
+                    float t = (tip - fy) / Mathf.Max(0.01f, tip - baseY);
+                    float halfWidth = (0.19f + tier * 0.085f) * Mathf.Clamp01(t);
+                    needles |= Mathf.Abs(nx) < halfWidth;
+                }
+
+                float alpha = trunk || needles ? Mathf.Clamp01(0.72f - fy * 0.18f) : 0f;
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight), new Vector2(0.5f, 0f), 96f);
     }
 
     private void EnsureGuiStyles()
@@ -5199,7 +5308,15 @@ public sealed class BattleTestTile : MonoBehaviour
 public sealed class BattleTestUnitView : MonoBehaviour
 {
     private TextMesh label;
+    private Transform turnMarkerRoot;
+    private TextMesh turnMarkerText;
+    private SpriteRenderer turnMarkerPlate;
+    private SpriteRenderer turnMarkerArrow;
+    private SpriteRenderer turnMarkerHalo;
     private CharacterVisualController visualController;
+    private Vector3 turnMarkerBasePosition;
+    private static Sprite turnMarkerPlateSprite;
+    private static Sprite turnMarkerArrowSprite;
 
     public BattleTestUnit Unit { get; private set; }
 
@@ -5208,7 +5325,27 @@ public sealed class BattleTestUnitView : MonoBehaviour
         Unit = unit;
         visualController = controller;
         label = CreateLabel();
+        CreateTurnMarker();
         Refresh(false);
+    }
+
+    private void LateUpdate()
+    {
+        if (turnMarkerRoot == null || !turnMarkerRoot.gameObject.activeSelf)
+        {
+            return;
+        }
+
+        float wave = Mathf.Sin(Time.time * 5.4f);
+        turnMarkerRoot.localPosition = turnMarkerBasePosition + new Vector3(0f, wave * 0.035f, 0f);
+        turnMarkerRoot.localScale = Vector3.one * (1f + wave * 0.035f);
+
+        if (turnMarkerHalo != null)
+        {
+            Color color = turnMarkerHalo.color;
+            color.a = 0.22f + Mathf.Abs(wave) * 0.20f;
+            turnMarkerHalo.color = color;
+        }
     }
 
     public void Refresh(bool selected)
@@ -5225,6 +5362,8 @@ public sealed class BattleTestUnitView : MonoBehaviour
                               ? new Color(0.80f, 0.90f, 1f, Unit.defeated ? 0.45f : 1f)
                               : new Color(1f, 0.72f, 0.68f, Unit.defeated ? 0.45f : 1f);
         }
+
+        RefreshTurnMarker(selected);
     }
 
     public void SetDefeated(bool defeated)
@@ -5238,6 +5377,86 @@ public sealed class BattleTestUnitView : MonoBehaviour
         Refresh(false);
     }
 
+    private void CreateTurnMarker()
+    {
+        GameObject root = new GameObject("Current Turn Marker");
+        root.transform.SetParent(transform, false);
+        turnMarkerRoot = root.transform;
+
+        turnMarkerHalo = CreateMarkerSprite("Turn Halo", GetTurnMarkerPlateSprite(), new Vector3(0f, -0.012f, 0.02f),
+                                            new Vector3(1.52f, 0.54f, 1f),
+                                            new Color(1f, 0.74f, 0.16f, 0.28f), 6098);
+        turnMarkerPlate =
+            CreateMarkerSprite("Turn Plate", GetTurnMarkerPlateSprite(), Vector3.zero, new Vector3(1.22f, 0.36f, 1f),
+                               new Color(0.95f, 0.72f, 0.16f, 0.96f), 6100);
+        turnMarkerArrow = CreateMarkerSprite("Turn Arrow", GetTurnMarkerArrowSprite(), new Vector3(0f, -0.20f, 0f),
+                                             new Vector3(0.34f, 0.25f, 1f),
+                                             new Color(0.95f, 0.72f, 0.16f, 0.96f), 6101);
+
+        GameObject textObject = new GameObject("Turn Marker Text");
+        textObject.transform.SetParent(turnMarkerRoot, false);
+        textObject.transform.localPosition = new Vector3(0f, -0.005f, -0.02f);
+        turnMarkerText = textObject.AddComponent<TextMesh>();
+        turnMarkerText.anchor = TextAnchor.MiddleCenter;
+        turnMarkerText.alignment = TextAlignment.Center;
+        turnMarkerText.fontSize = 42;
+        turnMarkerText.characterSize = 0.012f;
+        turnMarkerText.color = new Color(0.11f, 0.075f, 0.03f, 1f);
+        ApplyWorldTextFont(turnMarkerText);
+
+        MeshRenderer textRenderer = textObject.GetComponent<MeshRenderer>();
+        textRenderer.sortingLayerName = "Default";
+        textRenderer.sortingOrder = 6102;
+        turnMarkerRoot.gameObject.SetActive(false);
+    }
+
+    private SpriteRenderer CreateMarkerSprite(string name, Sprite sprite, Vector3 localPosition, Vector3 localScale,
+                                              Color color, int sortingOrder)
+    {
+        GameObject markerObject = new GameObject(name);
+        markerObject.transform.SetParent(turnMarkerRoot, false);
+        markerObject.transform.localPosition = localPosition;
+        markerObject.transform.localScale = localScale;
+
+        SpriteRenderer renderer = markerObject.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.color = color;
+        renderer.sortingLayerName = "Default";
+        renderer.sortingOrder = sortingOrder;
+        return renderer;
+    }
+
+    private void RefreshTurnMarker(bool selected)
+    {
+        if (turnMarkerRoot == null || Unit == null)
+        {
+            return;
+        }
+
+        bool visible = selected && !Unit.defeated;
+        turnMarkerRoot.gameObject.SetActive(visible);
+        if (!visible)
+        {
+            return;
+        }
+
+        CharacterVisualData visual = Unit.definition.visual;
+        float markerY = visual == null ? 1.50f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.38f;
+        turnMarkerBasePosition = new Vector3(0f, markerY, -0.09f);
+        turnMarkerRoot.localPosition = turnMarkerBasePosition;
+
+        bool enemy = Unit.definition.faction == Faction.Enemy;
+        Color plate = enemy ? new Color(0.95f, 0.27f, 0.19f, 0.96f) : new Color(0.97f, 0.73f, 0.16f, 0.96f);
+        Color halo = plate;
+        halo.a = enemy ? 0.28f : 0.32f;
+
+        turnMarkerPlate.color = plate;
+        turnMarkerArrow.color = plate;
+        turnMarkerHalo.color = halo;
+        turnMarkerText.text = enemy ? "적 턴" : "현재 턴";
+        turnMarkerText.color = enemy ? new Color(1f, 0.95f, 0.86f, 1f) : new Color(0.12f, 0.075f, 0.025f, 1f);
+    }
+
     private TextMesh CreateLabel()
     {
         GameObject labelObject = new GameObject("Unit Label");
@@ -5249,11 +5468,95 @@ public sealed class BattleTestUnitView : MonoBehaviour
         mesh.alignment = TextAlignment.Center;
         mesh.fontSize = 42;
         mesh.characterSize = 0.016f;
+        ApplyWorldTextFont(mesh);
 
         MeshRenderer renderer = labelObject.GetComponent<MeshRenderer>();
         renderer.sortingLayerName = "Default";
         renderer.sortingOrder = 5000;
         return mesh;
+    }
+
+    private static void ApplyWorldTextFont(TextMesh mesh)
+    {
+        UiTheme.EnsureStyles();
+        if (UiTheme.Font == null)
+        {
+            return;
+        }
+
+        mesh.font = UiTheme.Font;
+        MeshRenderer renderer = mesh.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.sharedMaterial = UiTheme.Font.material;
+        }
+    }
+
+    private static Sprite GetTurnMarkerPlateSprite()
+    {
+        if (turnMarkerPlateSprite != null)
+        {
+            return turnMarkerPlateSprite;
+        }
+
+        const int textureWidth = 128;
+        const int textureHeight = 40;
+        Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestTurnMarkerPlate";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        Vector2 center = new Vector2(textureWidth * 0.5f, textureHeight * 0.5f);
+        for (int y = 0; y < textureHeight; y++)
+        {
+            for (int x = 0; x < textureWidth; x++)
+            {
+                float nx = Mathf.Abs((x + 0.5f - center.x) / center.x);
+                float ny = Mathf.Abs((y + 0.5f - center.y) / center.y);
+                float rounded = Mathf.Pow(nx, 4.0f) + Mathf.Pow(ny, 4.0f);
+                float alpha = Mathf.Clamp01((1.08f - rounded) * 8f);
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        turnMarkerPlateSprite = Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight),
+                                              new Vector2(0.5f, 0.5f), 96f);
+        turnMarkerPlateSprite.name = "BattleTestTurnMarkerPlate";
+        return turnMarkerPlateSprite;
+    }
+
+    private static Sprite GetTurnMarkerArrowSprite()
+    {
+        if (turnMarkerArrowSprite != null)
+        {
+            return turnMarkerArrowSprite;
+        }
+
+        const int textureWidth = 48;
+        const int textureHeight = 32;
+        Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestTurnMarkerArrow";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < textureHeight; y++)
+        {
+            float fy = (y + 0.5f) / textureHeight;
+            for (int x = 0; x < textureWidth; x++)
+            {
+                float nx = Mathf.Abs((((x + 0.5f) / textureWidth) * 2f) - 1f);
+                float halfWidth = 1f - fy;
+                float alpha = nx <= halfWidth ? Mathf.Clamp01((halfWidth - nx) * 12f) : 0f;
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        turnMarkerArrowSprite = Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight),
+                                              new Vector2(0.5f, 1f), 96f);
+        turnMarkerArrowSprite.name = "BattleTestTurnMarkerArrow";
+        return turnMarkerArrowSprite;
     }
 }
 

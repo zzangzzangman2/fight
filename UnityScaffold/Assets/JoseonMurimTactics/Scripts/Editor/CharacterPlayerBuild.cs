@@ -39,6 +39,11 @@ public static class CharacterPlayerBuild
         BuildWindowsPlayer(BattleTestSceneLauncher.ScenePath, BattleBuildFolder, BattleExeName);
     }
 
+    public static void BuildWindowsBattleTestCurrentScene()
+    {
+        BuildWindowsPlayer(BattleTestSceneLauncher.ScenePath, BattleBuildFolder, BattleExeName);
+    }
+
     public static void BuildWindowsPreview()
     {
         EnsurePreviewScene();
