@@ -9,11 +9,14 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleHUDController : MonoBehaviour
 {
-    private static readonly Color Hanji = new Color(0.95f, 0.88f, 0.72f, 0.94f);
-    private static readonly Color Ink = new Color(0.11f, 0.22f, 0.24f, 1f);
-    private static readonly Color PaleJade = new Color(0.78f, 0.91f, 0.85f, 0.94f);
-    private static readonly Color Gold = new Color(0.88f, 0.68f, 0.22f, 1f);
-    private static readonly Color Disabled = new Color(0.45f, 0.44f, 0.38f, 0.62f);
+    private static readonly Color PanelBg = new Color(0.07f, 0.065f, 0.055f, 0.82f);
+    private static readonly Color PanelStrong = new Color(0.045f, 0.042f, 0.036f, 0.90f);
+    private static readonly Color PanelSoft = new Color(0.12f, 0.105f, 0.075f, 0.76f);
+    private static readonly Color Ink = new Color(0.94f, 0.89f, 0.76f, 1f);
+    private static readonly Color Muted = new Color(0.72f, 0.68f, 0.56f, 0.84f);
+    private static readonly Color Gold = new Color(0.86f, 0.63f, 0.18f, 0.96f);
+    private static readonly Color ButtonBg = new Color(0.22f, 0.18f, 0.10f, 0.90f);
+    private static readonly Color Disabled = new Color(0.18f, 0.17f, 0.14f, 0.58f);
 
     private BattleTestController owner;
     private Canvas canvas;
@@ -31,6 +34,7 @@ public sealed class BattleHUDController : MonoBehaviour
     private Text logText;
     private Text logCollapsedText;
     private Text legendText;
+    private RectTransform hoverPanel;
     private RectTransform commandPanel;
     private RectTransform rosterPanel;
     private RectTransform forecastPanel;
@@ -71,13 +75,16 @@ public sealed class BattleHUDController : MonoBehaviour
         unitInfoText.text = snapshot.unitInfoText;
         hoverTitle.text = snapshot.hoverTitle;
         hoverBody.text = snapshot.hoverBody;
+        bool hasHoverText = !string.IsNullOrWhiteSpace(snapshot.hoverTitle) ||
+                            !string.IsNullOrWhiteSpace(snapshot.hoverBody);
+        hoverPanel.gameObject.SetActive(hasHoverText);
         UpdateCommands(snapshot);
         UpdateForecast(snapshot);
         UpdateRoster(snapshot);
         UpdateLog(snapshot);
         UpdateDicePopup(snapshot);
         legendText.text =
-            $"이동  공격  무공  지형 활용   Tab 위협:{OnOff(snapshot.showThreatRange)}  H 고저:{OnOff(snapshot.showElevationOverlay)}  C 엄폐:{OnOff(snapshot.showCoverOverlay)}  V 시야:{OnOff(snapshot.showSightOverlay)}  O 목표:{OnOff(snapshot.showObjectiveOverlay)}";
+            $"Tab 위협 {OnOff(snapshot.showThreatRange)}   H 고저 {OnOff(snapshot.showElevationOverlay)}   C 엄폐 {OnOff(snapshot.showCoverOverlay)}   V 시야 {OnOff(snapshot.showSightOverlay)}   O 목표 {OnOff(snapshot.showObjectiveOverlay)}";
     }
 
     public bool PointerOverHud(Vector3 screenPosition)
@@ -112,78 +119,77 @@ public sealed class BattleHUDController : MonoBehaviour
         RectTransform root = canvasObject.GetComponent<RectTransform>();
 
         RectTransform phasePanel = Panel("상단 전황", root, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                                         new Vector2(620f, 86f), new Vector2(0f, -18f), PaleJade);
+                                         new Vector2(560f, 72f), new Vector2(0f, -16f), PanelStrong);
         phaseTitle = MakeText("phase title", phasePanel, new Vector2(0f, 1f), new Vector2(1f, 1f),
-                              new Vector2(18f, -40f), new Vector2(-18f, -8f), 24, FontStyle.Bold,
+                              new Vector2(16f, -34f), new Vector2(-16f, -6f), 22, FontStyle.Bold,
                               TextAnchor.MiddleLeft);
         phaseInstruction = MakeText("phase instruction", phasePanel, new Vector2(0f, 0f), new Vector2(1f, 0f),
-                                    new Vector2(18f, 10f), new Vector2(-18f, 38f), 15, FontStyle.Normal,
+                                    new Vector2(16f, 8f), new Vector2(-16f, 34f), 13, FontStyle.Normal,
                                     TextAnchor.MiddleLeft);
 
         RectTransform objectivePanel = Panel("목표", root, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                                             new Vector2(330f, 154f), new Vector2(18f, -18f), Hanji);
+                                             new Vector2(360f, 104f), new Vector2(16f, -16f), PanelBg);
         objectiveText = MakeText("objective text", objectivePanel, StretchMin(), StretchMax(), new Vector2(14f, 10f),
-                                 new Vector2(-14f, -10f), 15, FontStyle.Bold, TextAnchor.UpperLeft);
+                                 new Vector2(-14f, -10f), 13, FontStyle.Bold, TextAnchor.UpperLeft);
 
         RectTransform infoPanel = Panel("선택 유닛", root, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                                        new Vector2(330f, 150f), new Vector2(18f, -180f), Hanji);
+                                        new Vector2(320f, 122f), new Vector2(16f, -132f), PanelBg);
         unitInfoText = MakeText("unit info", infoPanel, StretchMin(), StretchMax(), new Vector2(14f, 10f),
-                                new Vector2(-14f, -10f), 15, FontStyle.Normal, TextAnchor.UpperLeft);
+                                new Vector2(-14f, -10f), 13, FontStyle.Normal, TextAnchor.UpperLeft);
 
-        RectTransform hoverPanel = Panel("전술 정보", root, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                                         new Vector2(330f, 150f), new Vector2(18f, 64f), Hanji);
+        hoverPanel = Panel("전술 정보", root, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                           new Vector2(310f, 106f), new Vector2(16f, 12f), PanelBg);
         hoverTitle = MakeText("hover title", hoverPanel, new Vector2(0f, 1f), new Vector2(1f, 1f),
-                              new Vector2(14f, -42f), new Vector2(-14f, -12f), 18, FontStyle.Bold,
+                              new Vector2(14f, -34f), new Vector2(-14f, -8f), 16, FontStyle.Bold,
                               TextAnchor.MiddleLeft);
         hoverBody = MakeText("hover body", hoverPanel, StretchMin(), StretchMax(), new Vector2(14f, 12f),
-                             new Vector2(-14f, -48f), 14, FontStyle.Normal, TextAnchor.UpperLeft);
+                             new Vector2(-14f, -40f), 12, FontStyle.Normal, TextAnchor.UpperLeft);
 
         commandPanel = Panel("명령", root, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                             new Vector2(256f, 416f), new Vector2(-18f, 0f), Hanji);
+                             new Vector2(226f, 318f), new Vector2(-16f, 0f), PanelBg);
         MakeText("command title", commandPanel, new Vector2(0f, 1f), new Vector2(1f, 1f),
-                 new Vector2(16f, -42f), new Vector2(-16f, -12f), 20, FontStyle.Bold,
+                 new Vector2(14f, -36f), new Vector2(-14f, -10f), 18, FontStyle.Bold,
                  TextAnchor.MiddleLeft).text = "명령";
         BuildCommandButtons();
 
-        forecastPanel = Panel("전투 예측", root, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                              new Vector2(560f, 230f), new Vector2(-286f, -296f), Hanji);
+        forecastPanel = Panel("전투 예측", root, new Vector2(1f, 0f), new Vector2(1f, 0f),
+                              new Vector2(430f, 134f), new Vector2(-16f, 166f), PanelStrong);
         forecastTitle = MakeText("forecast title", forecastPanel, new Vector2(0f, 1f), new Vector2(1f, 1f),
-                                 new Vector2(16f, -42f), new Vector2(-16f, -12f), 20, FontStyle.Bold,
+                                 new Vector2(14f, -34f), new Vector2(-14f, -8f), 17, FontStyle.Bold,
                                  TextAnchor.MiddleLeft);
         forecastLeft = MakeText("forecast left", forecastPanel, new Vector2(0f, 0f), new Vector2(0.34f, 1f),
-                                new Vector2(16f, 14f), new Vector2(-8f, -52f), 14, FontStyle.Normal,
+                                new Vector2(14f, 10f), new Vector2(-7f, -42f), 12, FontStyle.Normal,
                                 TextAnchor.UpperLeft);
         forecastCenter = MakeText("forecast center", forecastPanel, new Vector2(0.34f, 0f), new Vector2(0.68f, 1f),
-                                  new Vector2(8f, 14f), new Vector2(-8f, -52f), 14, FontStyle.Normal,
+                                  new Vector2(7f, 10f), new Vector2(-7f, -42f), 12, FontStyle.Normal,
                                   TextAnchor.UpperLeft);
         forecastRight = MakeText("forecast right", forecastPanel, new Vector2(0.68f, 0f), new Vector2(1f, 1f),
-                                 new Vector2(8f, 14f), new Vector2(-16f, -52f), 14, FontStyle.Normal,
+                                 new Vector2(7f, 10f), new Vector2(-14f, -42f), 12, FontStyle.Normal,
                                  TextAnchor.UpperLeft);
 
         rosterPanel = Panel("아군 로스터", root, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                            new Vector2(960f, 106f), new Vector2(0f, 18f), Hanji);
+                            new Vector2(890f, 78f), new Vector2(0f, 14f), PanelBg);
         MakeText("roster title", rosterPanel, new Vector2(0f, 1f), new Vector2(1f, 1f),
-                 new Vector2(14f, -34f), new Vector2(-14f, -8f), 18, FontStyle.Bold,
+                 new Vector2(14f, -28f), new Vector2(-14f, -6f), 15, FontStyle.Bold,
                  TextAnchor.MiddleLeft).text = "아군 배치 순서";
 
-        logPanel = Panel("전투 로그", root, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(332f, 190f),
-                         new Vector2(-18f, 18f), Hanji);
+        logPanel = Panel("전투 로그", root, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(300f, 132f),
+                         new Vector2(-16f, 14f), PanelBg);
         logText = MakeText("log text", logPanel, StretchMin(), StretchMax(), new Vector2(14f, 10f),
-                           new Vector2(-14f, -10f), 13, FontStyle.Normal, TextAnchor.UpperLeft);
+                           new Vector2(-14f, -10f), 12, FontStyle.Normal, TextAnchor.UpperLeft);
         logCollapsedPanel = Panel("로그 접힘", root, new Vector2(1f, 0f), new Vector2(1f, 0f),
-                                  new Vector2(170f, 36f), new Vector2(-18f, 18f), Hanji);
+                                  new Vector2(132f, 30f), new Vector2(-16f, 14f), PanelSoft);
         logCollapsedText = MakeText("log collapsed", logCollapsedPanel, StretchMin(), StretchMax(), Vector2.zero,
-                                    Vector2.zero, 13, FontStyle.Normal, TextAnchor.MiddleCenter);
+                                    Vector2.zero, 12, FontStyle.Normal, TextAnchor.MiddleCenter);
 
         RectTransform legendPanel = Panel("범례", root, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                                          new Vector2(760f, 34f), new Vector2(0f, -104f),
-                                          new Color(0.94f, 0.84f, 0.60f, 0.84f));
+                                          new Vector2(540f, 28f), new Vector2(0f, -92f), PanelSoft);
         legendText = MakeText("legend", legendPanel, StretchMin(), StretchMax(), new Vector2(14f, 0f),
-                              new Vector2(-14f, 0f), 13, FontStyle.Bold, TextAnchor.MiddleCenter);
+                              new Vector2(-14f, 0f), 12, FontStyle.Bold, TextAnchor.MiddleCenter);
 
         dicePopupPanel = Panel("전술 알림", root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                                new Vector2(420f, 104f), new Vector2(0f, 122f),
-                               new Color(0.98f, 0.86f, 0.44f, 0.94f));
+                               new Color(0.72f, 0.48f, 0.12f, 0.92f));
         dicePopupText = MakeText("dice popup text", dicePopupPanel, StretchMin(), StretchMax(), new Vector2(14f, 8f),
                                  new Vector2(-14f, -8f), 22, FontStyle.Bold, TextAnchor.MiddleCenter);
         dicePopupPanel.gameObject.SetActive(false);
@@ -208,8 +214,8 @@ public sealed class BattleHUDController : MonoBehaviour
         int column = index % 2;
         int row = index / 2;
         RectTransform buttonRect = MakeButton("command " + index, commandPanel,
-                                              new Vector2(16f + (column * 118f), -54f - (row * 66f)),
-                                              new Vector2(102f, 50f), action, out Text text);
+                                              new Vector2(14f + (column * 106f), -48f - (row * 50f)),
+                                              new Vector2(92f, 40f), action, out Text text);
         text.text = label;
         commandButtons.Add(buttonRect.GetComponent<Button>());
         commandLabels.Add(text);
@@ -240,9 +246,9 @@ public sealed class BattleHUDController : MonoBehaviour
         Button button = commandButtons[index];
         Image image = button.GetComponent<Image>();
         button.interactable = enabled;
-        image.color = active ? Gold : enabled ? new Color(0.92f, 0.78f, 0.42f, 0.96f) : Disabled;
+        image.color = active ? Gold : enabled ? ButtonBg : Disabled;
         commandLabels[index].text = label;
-        commandLabels[index].color = enabled ? Ink : new Color(0.22f, 0.22f, 0.20f, 0.65f);
+        commandLabels[index].color = enabled ? active ? new Color(0.09f, 0.075f, 0.045f, 1f) : Ink : Muted;
     }
 
     private void UpdateForecast(BattleHudSnapshot snapshot)
@@ -265,8 +271,9 @@ public sealed class BattleHUDController : MonoBehaviour
         {
             int index = rosterButtons.Count;
             RectTransform buttonRect = MakeButton("roster " + index, rosterPanel,
-                                                  new Vector2(14f + (index * 186f), -44f),
-                                                  new Vector2(174f, 58f), null, out Text text);
+                                                  new Vector2(18f + (index * 142f), -32f),
+                                                  new Vector2(134f, 42f), null, out Text text);
+            text.fontSize = 12;
             rosterButtons.Add(buttonRect.GetComponent<Button>());
             rosterLabels.Add(text);
         }
@@ -284,15 +291,16 @@ public sealed class BattleHUDController : MonoBehaviour
             Button button = rosterButtons[i];
             Text label = rosterLabels[i];
             string status = snapshot.unitStatuses.TryGetValue(unit, out string value) ? value : string.Empty;
-            label.text = unit.definition.displayName + "\nHP " + unit.hp + "/" + unit.definition.maxHp +
-                         "  내공 " + unit.inner + "/" + unit.definition.maxInner + "\n" + status;
-            label.color = unit.defeated ? new Color(0.28f, 0.28f, 0.25f, 0.75f) : Ink;
+            label.text = unit.definition.displayName + "  HP " + unit.hp + "/" + unit.definition.maxHp +
+                         "\n내공 " + unit.inner + "/" + unit.definition.maxInner + "  " + status;
+            bool isActiveUnit = unit == snapshot.activeUnit;
+            label.color = unit.defeated ? Muted : isActiveUnit ? new Color(0.09f, 0.075f, 0.045f, 1f) : Ink;
             button.interactable = snapshot.selectableUnits.Contains(unit);
-            button.GetComponent<Image>().color = unit == snapshot.activeUnit
-                                                     ? Gold
-                                                     : unit.acted
-                                                         ? new Color(0.62f, 0.60f, 0.50f, 0.76f)
-                                                         : new Color(0.84f, 0.90f, 0.72f, 0.96f);
+            button.GetComponent<Image>().color = isActiveUnit
+                                                      ? Gold
+                                                      : unit.acted
+                                                          ? new Color(0.16f, 0.15f, 0.12f, 0.82f)
+                                                          : ButtonBg;
             BattleTestUnit captured = unit;
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => owner.HudSelectUnit(captured));
@@ -303,13 +311,13 @@ public sealed class BattleHUDController : MonoBehaviour
     {
         logPanel.gameObject.SetActive(snapshot.showLog);
         logCollapsedPanel.gameObject.SetActive(!snapshot.showLog);
-        logCollapsedText.text = "전투 로그 접힘 (L)";
+        logCollapsedText.text = "로그 (L)";
         if (!snapshot.showLog)
         {
             return;
         }
 
-        int start = Mathf.Max(0, snapshot.logs.Count - 8);
+        int start = Mathf.Max(0, snapshot.logs.Count - 5);
         List<string> lines = new List<string>();
         for (int i = start; i < snapshot.logs.Count; i++)
         {
@@ -350,7 +358,7 @@ public sealed class BattleHUDController : MonoBehaviour
         image.raycastTarget = true;
 
         Outline outline = panelObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.16f, 0.13f, 0.10f, 0.42f);
+        outline.effectColor = new Color(0.60f, 0.44f, 0.16f, 0.34f);
         outline.effectDistance = new Vector2(1f, -1f);
         return rect;
     }
@@ -392,14 +400,14 @@ public sealed class BattleHUDController : MonoBehaviour
         rect.anchoredPosition = anchoredPosition;
 
         Image image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.92f, 0.78f, 0.42f, 0.96f);
+        image.color = ButtonBg;
         Button button = buttonObject.AddComponent<Button>();
         if (action != null)
         {
             button.onClick.AddListener(() => action());
         }
 
-        label = MakeText(name + " label", rect, StretchMin(), StretchMax(), Vector2.zero, Vector2.zero, 13,
+        label = MakeText(name + " label", rect, StretchMin(), StretchMax(), Vector2.zero, Vector2.zero, 12,
                          FontStyle.Bold, TextAnchor.MiddleCenter);
         return rect;
     }
