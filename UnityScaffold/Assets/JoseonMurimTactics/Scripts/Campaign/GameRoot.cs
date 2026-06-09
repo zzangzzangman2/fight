@@ -72,6 +72,14 @@ namespace JoseonMurimTactics
             SceneManager.sceneLoaded -= HandleSceneLoaded;
         }
 
+        private void Update()
+        {
+            if (Session != null)
+            {
+                Session.playTimeSeconds += Time.unscaledDeltaTime;
+            }
+        }
+
         /// <summary>
         /// 스토리 흐름으로 전투 씬에 들어오면, 기존 BattleTest 씬/컨트롤러를 건드리지 않고
         /// 결과 복귀용 오버레이를 런타임에 주입한다(설계 §5: BattleEntryAdapter 방식).

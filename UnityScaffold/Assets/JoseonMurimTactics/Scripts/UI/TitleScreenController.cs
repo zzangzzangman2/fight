@@ -15,7 +15,7 @@ namespace JoseonMurimTactics
         private void Awake()
         {
             root = GameRoot.EnsureExists();
-            hasSave = root.Save != null && root.Save.HasSave();
+            hasSave = root.Save != null && root.Save.HasAnySave();
         }
 
         private void OnGUI()

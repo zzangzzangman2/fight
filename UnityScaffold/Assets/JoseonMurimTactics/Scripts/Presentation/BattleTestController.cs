@@ -21,6 +21,7 @@ namespace JoseonMurimTactics
         private readonly List<BattleTestUnit> units = new List<BattleTestUnit>();
         private readonly List<string> battleLog = new List<string>();
         private readonly List<BattleTestInteractable> interactables = new List<BattleTestInteractable>();
+        private readonly PhaseTurnController phaseTurn = new PhaseTurnController();
         private readonly System.Random random = new System.Random(20260608);
         private BattleTestTile[,] tiles;
         private Sprite diamondSprite;
@@ -32,7 +33,6 @@ namespace JoseonMurimTactics
         private BattleTestUnit activeUnit;
         private BattleTestUnit hoveredUnit;
         private BattleTestTile hoveredTile;
-        private int activeIndex;
         private int round = 1;
         private bool busy;
         private bool aiQueued;
@@ -64,17 +64,17 @@ namespace JoseonMurimTactics
 
             UpdateHover();
 
-            if (busy || activeUnit == null)
+            if (busy)
             {
                 return;
             }
 
-            if (activeUnit.definition.faction == Faction.Enemy)
+            if (phaseTurn.IsEnemyPhase)
             {
                 if (!aiQueued)
                 {
                     aiQueued = true;
-                    StartCoroutine(RunEnemyTurn());
+                    StartCoroutine(RunEnemyPhase());
                 }
 
                 return;
@@ -86,27 +86,27 @@ namespace JoseonMurimTactics
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (activeUnit != null && Input.GetKeyDown(KeyCode.Escape))
             {
                 SetCommandMode(BattleCommandMode.Move);
             }
-            else if (Input.GetKeyDown(KeyCode.Alpha1))
+            else if (activeUnit != null && Input.GetKeyDown(KeyCode.Alpha1))
             {
                 SetCommandMode(BattleCommandMode.Move);
             }
-            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            else if (activeUnit != null && Input.GetKeyDown(KeyCode.Alpha2))
             {
                 SetCommandMode(BattleCommandMode.Attack);
             }
-            else if (Input.GetKeyDown(KeyCode.Alpha3))
+            else if (activeUnit != null && Input.GetKeyDown(KeyCode.Alpha3))
             {
                 SetCommandMode(BattleCommandMode.Skill);
             }
-            else if (Input.GetKeyDown(KeyCode.Alpha4))
+            else if (activeUnit != null && Input.GetKeyDown(KeyCode.Alpha4))
             {
                 GuardActiveUnit();
             }
-            else if (Input.GetKeyDown(KeyCode.Alpha5))
+            else if (activeUnit != null && Input.GetKeyDown(KeyCode.Alpha5))
             {
                 SetCommandMode(BattleCommandMode.Interact);
             }
@@ -127,6 +127,7 @@ namespace JoseonMurimTactics
             EnsureGuiStyles();
 
             DrawActivePanel();
+            DrawObjectivePanel();
             DrawTurnQueuePanel();
             DrawLogPanel();
             DrawInspectPanel();
@@ -139,66 +140,66 @@ namespace JoseonMurimTactics
             }
 
             GUI.Box(new Rect((Screen.width * 0.5f) - 180f, 24f, 360f, 76f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect((Screen.width * 0.5f) - 146f, 42f, 310f, 28f), "Battle Finished", titleStyle);
+            GUI.Label(new Rect((Screen.width * 0.5f) - 146f, 42f, 310f, 28f), "전투 종료", titleStyle);
         }
 
         private void DrawActivePanel()
         {
             GUI.Box(new Rect(18f, 18f, 340f, 326f), GUIContent.none, panelStyle);
-            string activeName = activeUnit == null ? "None" : activeUnit.definition.displayName;
+            string activeName = activeUnit == null ? "선택 없음" : activeUnit.definition.displayName;
             string hp = activeUnit == null ? string.Empty : $"{activeUnit.hp}/{activeUnit.definition.maxHp}";
-            string side = activeUnit == null ? string.Empty : activeUnit.definition.faction.ToString();
+            string side = activeUnit == null ? string.Empty : FactionLabel(activeUnit.definition.faction);
 
-            GUI.Label(new Rect(34f, 30f, 300f, 28f), $"Round {round}", titleStyle);
-            GUI.Label(new Rect(34f, 62f, 300f, 24f), $"Now: {activeName}", labelStyle);
-            GUI.Label(new Rect(34f, 88f, 300f, 22f), $"Side: {side}   HP: {hp}", smallStyle);
+            GUI.Label(new Rect(34f, 30f, 300f, 28f), $"제 {round}턴 · {PhaseLabel(phaseTurn.CurrentPhase)}", titleStyle);
+            GUI.Label(new Rect(34f, 62f, 300f, 24f), $"현재 행동: {activeName}", labelStyle);
+            GUI.Label(new Rect(34f, 88f, 300f, 22f), $"진영: {side}   체력: {hp}", smallStyle);
 
             if (activeUnit != null)
             {
-                GUI.Label(new Rect(34f, 112f, 300f, 22f), $"Move: {ActionText(activeUnit.moved)}   Action: {ActionText(activeUnit.acted)}", smallStyle);
-                GUI.Label(new Rect(34f, 136f, 300f, 22f), $"Inner: {activeUnit.inner}/{activeUnit.definition.maxInner}   Guard: {YesNo(activeUnit.guarded)}", smallStyle);
-                GUI.Label(new Rect(34f, 160f, 300f, 22f), $"Mode: {commandMode}", labelStyle);
+                GUI.Label(new Rect(34f, 112f, 300f, 22f), $"이동: {ActionText(activeUnit.moved)}   행동: {ActionText(activeUnit.acted)}", smallStyle);
+                GUI.Label(new Rect(34f, 136f, 300f, 22f), $"내공: {activeUnit.inner}/{activeUnit.definition.maxInner}   방어: {YesNo(activeUnit.guarded)}", smallStyle);
+                GUI.Label(new Rect(34f, 160f, 300f, 22f), $"명령: {CommandLabel(commandMode)}", labelStyle);
             }
 
-            bool playerTurn = activeUnit != null && activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
+            bool playerTurn = phaseTurn.IsPlayerPhase && activeUnit != null && activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
             GUI.enabled = playerTurn;
 
-            if (GUI.Button(new Rect(34f, 192f, 70f, 28f), "Move"))
+            if (GUI.Button(new Rect(34f, 192f, 70f, 28f), "이동"))
             {
                 SetCommandMode(BattleCommandMode.Move);
             }
 
             GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
-            if (GUI.Button(new Rect(112f, 192f, 70f, 28f), "Attack"))
+            if (GUI.Button(new Rect(112f, 192f, 70f, 28f), "공격"))
             {
                 SetCommandMode(BattleCommandMode.Attack);
             }
 
             GUI.enabled = playerTurn && activeUnit != null && CanUseSpecial(activeUnit);
-            if (GUI.Button(new Rect(190f, 192f, 70f, 28f), "Skill"))
+            if (GUI.Button(new Rect(190f, 192f, 70f, 28f), "무공"))
             {
                 SetCommandMode(BattleCommandMode.Skill);
             }
 
             GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
-            if (GUI.Button(new Rect(268f, 192f, 70f, 28f), "Guard"))
+            if (GUI.Button(new Rect(268f, 192f, 70f, 28f), "방어"))
             {
                 GuardActiveUnit();
             }
 
             GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted && HasUsableInteractable(activeUnit);
-            if (GUI.Button(new Rect(34f, 230f, 92f, 30f), "Interact"))
+            if (GUI.Button(new Rect(34f, 230f, 92f, 30f), "지형"))
             {
                 SetCommandMode(BattleCommandMode.Interact);
             }
 
             GUI.enabled = playerTurn;
-            if (GUI.Button(new Rect(134f, 230f, 92f, 30f), "행동 끝"))
+            if (GUI.Button(new Rect(134f, 230f, 92f, 30f), "페이즈 종료"))
             {
                 EndTurn();
             }
 
-            if (GUI.Button(new Rect(234f, 230f, 104f, 30f), "Reset"))
+            if (GUI.Button(new Rect(234f, 230f, 104f, 30f), "재시작"))
             {
                 BuildBattle();
             }
@@ -208,9 +209,9 @@ namespace JoseonMurimTactics
             if (activeUnit != null)
             {
                 string skillLine = activeUnit.definition.specialName;
-                string cooldown = activeUnit.specialCooldownLeft > 0 ? $"CD {activeUnit.specialCooldownLeft}" : "Ready";
-                GUI.Label(new Rect(34f, 266f, 304f, 22f), $"Skill: {skillLine} ({cooldown})", smallStyle);
-                GUI.Label(new Rect(34f, 290f, 304f, 22f), $"Agi: {AgilityValue(activeUnit)}   Counter: {CounterSummary(activeUnit)}", smallStyle);
+                string cooldown = activeUnit.specialCooldownLeft > 0 ? $"대기 {activeUnit.specialCooldownLeft}턴" : "준비됨";
+                GUI.Label(new Rect(34f, 266f, 304f, 22f), $"무공: {skillLine} ({cooldown})", smallStyle);
+                GUI.Label(new Rect(34f, 290f, 304f, 22f), $"민첩: {AgilityValue(activeUnit)}   반격: {CounterSummary(activeUnit)}", smallStyle);
             }
         }
 
@@ -218,24 +219,40 @@ namespace JoseonMurimTactics
         {
             float x = Screen.width - 386f;
             GUI.Box(new Rect(x, 18f, 368f, 194f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(x + 16f, 30f, 336f, 26f), "Turn Order", titleStyle);
+            GUI.Label(new Rect(x + 16f, 30f, 336f, 26f), "페이즈", titleStyle);
 
             List<BattleTestUnit> queue = GetTurnQueuePreview(7);
             for (int i = 0; i < queue.Count; i++)
             {
                 BattleTestUnit unit = queue[i];
-                string marker = i == 0 ? "NOW" : $"#{i + 1}";
-                string state = unit.defeated ? "Down" : UnitStatusText(unit);
-                string line = $"{marker}  {unit.definition.displayName}  {unit.definition.faction}  {state}";
+                string marker = unit == activeUnit ? "현재" : (unit.acted ? "완료" : "대기");
+                string state = unit.defeated ? "전투불능" : UnitStatusText(unit);
+                string line = $"{marker}  {unit.definition.displayName}  {FactionLabel(unit.definition.faction)}  {state}";
                 GUI.Label(new Rect(x + 16f, 60f + (i * 18f), 336f, 18f), line, i == 0 ? labelStyle : smallStyle);
             }
+        }
+
+        private void DrawObjectivePanel()
+        {
+            float widthPx = Mathf.Min(500f, Screen.width - 780f);
+            if (widthPx < 300f)
+            {
+                return;
+            }
+
+            float x = (Screen.width * 0.5f) - (widthPx * 0.5f);
+            GUI.Box(new Rect(x, 18f, widthPx, 112f), GUIContent.none, panelStyle);
+            GUI.Label(new Rect(x + 16f, 30f, widthPx - 32f, 24f), "목표", titleStyle);
+            GUI.Label(new Rect(x + 16f, 58f, widthPx - 32f, 20f), "중원 사절 호위대를 제압", labelStyle);
+            GUI.Label(new Rect(x + 16f, 80f, widthPx - 32f, 18f), "추천: 대나무숲 엄폐, 지붕 고저 +2, 향로/등불 활용", smallStyle);
+            GUI.Label(new Rect(x + 16f, 98f, widthPx - 32f, 18f), "위험: 화염 칸 진입 시 피해", smallStyle);
         }
 
         private void DrawLogPanel()
         {
             float x = Screen.width - 386f;
             GUI.Box(new Rect(x, 224f, 368f, 244f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(x + 16f, 236f, 336f, 26f), "Combat Log", titleStyle);
+            GUI.Label(new Rect(x + 16f, 236f, 336f, 26f), "전투 기록", titleStyle);
 
             int start = Mathf.Max(0, battleLog.Count - 9);
             for (int i = start; i < battleLog.Count; i++)
@@ -247,45 +264,45 @@ namespace JoseonMurimTactics
         private void DrawInspectPanel()
         {
             GUI.Box(new Rect(18f, 356f, 340f, 190f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(34f, 368f, 300f, 26f), "Inspect", titleStyle);
+            GUI.Label(new Rect(34f, 368f, 300f, 26f), "정보", titleStyle);
 
             if (hoveredUnit != null)
             {
-                GUI.Label(new Rect(34f, 398f, 300f, 22f), $"{hoveredUnit.definition.displayName} ({hoveredUnit.definition.faction})", labelStyle);
-                GUI.Label(new Rect(34f, 422f, 300f, 22f), $"HP {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   DEF {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}", smallStyle);
-                GUI.Label(new Rect(34f, 446f, 300f, 22f), $"Status: {UnitStatusText(hoveredUnit)}", smallStyle);
-                GUI.Label(new Rect(34f, 470f, 300f, 22f), $"Skill: {hoveredUnit.definition.specialName}", smallStyle);
+                GUI.Label(new Rect(34f, 398f, 300f, 22f), $"{hoveredUnit.definition.displayName} ({FactionLabel(hoveredUnit.definition.faction)})", labelStyle);
+                GUI.Label(new Rect(34f, 422f, 300f, 22f), $"체력 {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   방어 {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}", smallStyle);
+                GUI.Label(new Rect(34f, 446f, 300f, 22f), $"상태: {UnitStatusText(hoveredUnit)}", smallStyle);
+                GUI.Label(new Rect(34f, 470f, 300f, 22f), $"무공: {hoveredUnit.definition.specialName}", smallStyle);
                 return;
             }
 
             if (hoveredTile != null)
             {
                 BattleTestInteractable prop = GetInteractableAt(hoveredTile.cell);
-                GUI.Label(new Rect(34f, 398f, 300f, 22f), $"{hoveredTile.terrain}  ({hoveredTile.cell.x},{hoveredTile.cell.y})", labelStyle);
-                GUI.Label(new Rect(34f, 422f, 300f, 22f), $"Move Cost {hoveredTile.moveCost}   Cover +{hoveredTile.coverBonus}", smallStyle);
-                GUI.Label(new Rect(34f, 446f, 300f, 22f), $"Elevation {hoveredTile.elevation}   Walkable {YesNo(hoveredTile.walkable)}", smallStyle);
+                GUI.Label(new Rect(34f, 398f, 300f, 22f), $"{TerrainLabel(hoveredTile.terrain)}  ({hoveredTile.cell.x},{hoveredTile.cell.y})", labelStyle);
+                GUI.Label(new Rect(34f, 422f, 300f, 22f), $"이동 비용 {hoveredTile.moveCost}   엄폐 +{hoveredTile.coverBonus}", smallStyle);
+                GUI.Label(new Rect(34f, 446f, 300f, 22f), $"고저 {hoveredTile.elevation}   진입 {YesNo(hoveredTile.walkable)}", smallStyle);
                 if (prop != null)
                 {
                     int distance = activeUnit == null ? -1 : GridDistance(activeUnit.cell, prop.cell);
                     bool usable = activeUnit != null && !activeUnit.acted && distance <= 1;
-                    GUI.Label(new Rect(34f, 470f, 300f, 22f), $"Object: {prop.displayName}", smallStyle);
-                    GUI.Label(new Rect(34f, 494f, 300f, 22f), $"Effect: {InteractableEffectText(prop.kind)}   Usable: {YesNo(usable)}", smallStyle);
+                    GUI.Label(new Rect(34f, 470f, 300f, 22f), $"지형지물: {prop.displayName}", smallStyle);
+                    GUI.Label(new Rect(34f, 494f, 300f, 22f), $"효과: {InteractableEffectText(prop.kind)}   사용: {YesNo(usable)}", smallStyle);
                 }
                 else
                 {
-                    GUI.Label(new Rect(34f, 470f, 300f, 22f), $"Hazard: {TileHazardText(hoveredTile)}", smallStyle);
+                    GUI.Label(new Rect(34f, 470f, 300f, 22f), $"위험: {TileHazardText(hoveredTile)}", smallStyle);
                 }
                 return;
             }
 
-            GUI.Label(new Rect(34f, 398f, 300f, 22f), "No target", smallStyle);
+            GUI.Label(new Rect(34f, 398f, 300f, 22f), "가리킨 대상 없음", smallStyle);
         }
 
         private void DrawForecastPanel()
         {
             float x = Screen.width - 386f;
             GUI.Box(new Rect(x, 452f, 368f, 224f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(x + 16f, 464f, 336f, 26f), "Battle Forecast", titleStyle);
+            GUI.Label(new Rect(x + 16f, 464f, 336f, 26f), "전투 예측", titleStyle);
 
             BattleForecast forecast = BuildForecast(activeUnit, hoveredUnit);
             if (!forecast.valid)
@@ -293,8 +310,8 @@ namespace JoseonMurimTactics
                 if (!string.IsNullOrEmpty(forecast.actorName))
                 {
                     GUI.Label(new Rect(x + 16f, 494f, 336f, 22f), $"{forecast.actorName} -> {forecast.targetName}  [{forecast.commandName}]", labelStyle);
-                    GUI.Label(new Rect(x + 16f, 520f, 336f, 20f), $"Invalid: {forecast.invalidReason}", smallStyle);
-                    GUI.Label(new Rect(x + 16f, 542f, 336f, 20f), $"Distance {forecast.distance} / Range {forecast.range}", smallStyle);
+                    GUI.Label(new Rect(x + 16f, 520f, 336f, 20f), $"불가: {forecast.invalidReason}", smallStyle);
+                    GUI.Label(new Rect(x + 16f, 542f, 336f, 20f), $"거리 {forecast.distance} / 사거리 {forecast.range}", smallStyle);
                     GUI.Label(new Rect(x + 16f, 564f, 336f, 20f), forecast.costText, smallStyle);
                 }
                 else
@@ -306,12 +323,12 @@ namespace JoseonMurimTactics
             }
 
             GUI.Label(new Rect(x + 16f, 494f, 336f, 22f), $"{forecast.actorName} -> {forecast.targetName}  [{forecast.commandName}]", labelStyle);
-            GUI.Label(new Rect(x + 16f, 520f, 336f, 20f), $"Distance {forecast.distance} / Range {forecast.range}: {forecast.rangeText}", smallStyle);
-            string hitText = forecast.neededRollText == "No attack roll"
-                ? "Hit: No attack roll"
-                : $"Hit: d20 + {forecast.attackBonus} + height {forecast.heightBonus} + terrain {forecast.terrainBonus} vs DEF {forecast.defense}";
+            GUI.Label(new Rect(x + 16f, 520f, 336f, 20f), $"거리 {forecast.distance} / 사거리 {forecast.range}: {forecast.rangeText}", smallStyle);
+            string hitText = forecast.neededRollText == "판정 없음"
+                ? "명중: 판정 없음"
+                : $"명중: d20 + {forecast.attackBonus} + 고저 {forecast.heightBonus} + 지형 {forecast.terrainBonus} vs 방어 {forecast.defense}";
             GUI.Label(new Rect(x + 16f, 542f, 336f, 20f), hitText, smallStyle);
-            GUI.Label(new Rect(x + 16f, 564f, 336f, 20f), $"Need: {forecast.neededRollText}", smallStyle);
+            GUI.Label(new Rect(x + 16f, 564f, 336f, 20f), $"필요값: {forecast.neededRollText}", smallStyle);
             GUI.Label(new Rect(x + 16f, 586f, 336f, 20f), forecast.damageText, smallStyle);
             GUI.Label(new Rect(x + 16f, 608f, 336f, 20f), forecast.hpAfterText, smallStyle);
             GUI.Label(new Rect(x + 16f, 630f, 336f, 20f), $"{forecast.counterText}   {forecast.followUpText}", smallStyle);
@@ -322,7 +339,7 @@ namespace JoseonMurimTactics
         {
             float y = Screen.height - 118f;
             GUI.Box(new Rect(18f, y, Screen.width - 36f, 100f), GUIContent.none, panelStyle);
-            GUI.Label(new Rect(34f, y + 12f, 280f, 26f), "Unit Status", titleStyle);
+            GUI.Label(new Rect(34f, y + 12f, 280f, 26f), "부대 현황", titleStyle);
 
             float cardWidth = Mathf.Min(220f, (Screen.width - 80f) / Mathf.Max(1, units.Count));
             for (int i = 0; i < units.Count; i++)
@@ -331,7 +348,7 @@ namespace JoseonMurimTactics
                 float x = 34f + (i * cardWidth);
                 string prefix = unit == activeUnit ? "> " : string.Empty;
                 GUI.Label(new Rect(x, y + 42f, cardWidth - 8f, 22f), $"{prefix}{unit.definition.displayName}", unit == activeUnit ? labelStyle : smallStyle);
-                GUI.Label(new Rect(x, y + 64f, cardWidth - 8f, 22f), $"HP {unit.hp}/{unit.definition.maxHp}  {UnitStatusText(unit)}", smallStyle);
+                GUI.Label(new Rect(x, y + 64f, cardWidth - 8f, 22f), $"체력 {unit.hp}/{unit.definition.maxHp}  {UnitStatusText(unit)}", smallStyle);
             }
         }
 
@@ -344,12 +361,12 @@ namespace JoseonMurimTactics
             battleLog.Clear();
             interactables.Clear();
             activeUnit = null;
-            activeIndex = 0;
             round = 1;
             busy = false;
             aiQueued = false;
             battleOver = false;
             commandMode = BattleCommandMode.Move;
+            phaseTurn.Reset();
             hoveredTile = null;
             hoveredUnit = null;
 
@@ -359,8 +376,8 @@ namespace JoseonMurimTactics
             units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
             CenterCamera();
 
-            AddLog("[System] Battle test ready.");
-            BeginTurn();
+            AddLog("[체계] 전투 준비 완료.");
+            BeginPlayerPhase();
         }
 
         private void ClearGeneratedObjects()
@@ -500,57 +517,107 @@ namespace JoseonMurimTactics
             }
         }
 
-        private void BeginTurn()
+        private void BeginPlayerPhase()
         {
             if (CheckBattleEnd())
             {
                 return;
             }
 
-            for (int guard = 0; guard < units.Count; guard++)
+            phaseTurn.BeginPlayerPhase();
+            round = phaseTurn.Round;
+            aiQueued = false;
+            commandMode = BattleCommandMode.Move;
+            PrepareFactionForPhase(Faction.Ally);
+            if (CheckBattleEnd())
             {
-                if (activeIndex >= units.Count)
-                {
-                    activeIndex = 0;
-                    round++;
-                    TickRoundEffects();
-                }
-
-                BattleTestUnit candidate = units[activeIndex];
-                if (!candidate.defeated)
-                {
-                    activeUnit = candidate;
-                    ApplyStartOfTurn(activeUnit);
-                    if (activeUnit.defeated)
-                    {
-                        activeIndex++;
-                        continue;
-                    }
-
-                    activeUnit.moved = false;
-                    activeUnit.acted = false;
-                    aiQueued = false;
-                    commandMode = BattleCommandMode.Move;
-                    AddLog($"[Turn] {activeUnit.definition.displayName}");
-                    RefreshHighlights();
-                    RefreshUnits();
-                    return;
-                }
-
-                activeIndex++;
+                return;
             }
+
+            activeUnit = FindNextReadyUnit(Faction.Ally);
+            AddLog($"[페이즈] 제 {round}턴 아군 페이즈");
+            RefreshHighlights();
+            RefreshUnits();
         }
 
-        private void EndTurn()
+        private void BeginEnemyPhase()
         {
-            if (battleOver)
+            if (CheckBattleEnd())
+            {
+                return;
+            }
+
+            phaseTurn.BeginEnemyPhase();
+            aiQueued = false;
+            activeUnit = null;
+            commandMode = BattleCommandMode.Move;
+            PrepareFactionForPhase(Faction.Enemy);
+            if (CheckBattleEnd())
             {
                 return;
             }
 
             ClearHighlights();
-            activeIndex++;
-            BeginTurn();
+            AddLog($"[페이즈] 제 {round}턴 적 페이즈");
+            RefreshUnits();
+        }
+
+        private void EndTurn()
+        {
+            if (battleOver || !phaseTurn.IsPlayerPhase)
+            {
+                return;
+            }
+
+            EndPlayerPhase();
+        }
+
+        private void EndPlayerPhase()
+        {
+            activeUnit = null;
+            ClearHighlights();
+            BeginEnemyPhase();
+        }
+
+        private void EndEnemyPhase()
+        {
+            phaseTurn.CompleteEnemyPhase();
+            round = phaseTurn.Round;
+            TickRoundEffects();
+            BeginPlayerPhase();
+        }
+
+        private void PrepareFactionForPhase(Faction faction)
+        {
+            foreach (BattleTestUnit unit in units)
+            {
+                if (unit.defeated || unit.definition.faction != faction)
+                {
+                    continue;
+                }
+
+                ApplyStartOfTurn(unit);
+                if (unit.defeated)
+                {
+                    continue;
+                }
+
+                unit.moved = false;
+                unit.acted = false;
+            }
+        }
+
+        private BattleTestUnit FindNextReadyUnit(Faction faction)
+        {
+            foreach (BattleTestUnit unit in units)
+            {
+                if (!unit.defeated && unit.definition.faction == faction && !unit.acted)
+                {
+                    return unit;
+                }
+            }
+
+            return null;
         }
 
         private void HandlePointer(Vector3 screenPosition)
@@ -582,6 +649,18 @@ namespace JoseonMurimTactics
                 }
             }
 
+            if (phaseTurn.IsPlayerPhase && clickedUnit != null && clickedUnit.definition.faction == Faction.Ally)
+            {
+                SelectPlayerUnit(clickedUnit);
+                return;
+            }
+
+            if (activeUnit == null)
+            {
+                AddLog("[UI] 행동할 아군을 선택하세요.");
+                return;
+            }
+
             if (commandMode == BattleCommandMode.Attack)
             {
                 if (clickedUnit != null && clickedUnit.definition.faction != activeUnit.definition.faction)
@@ -590,7 +669,7 @@ namespace JoseonMurimTactics
                 }
                 else
                 {
-                    AddLog("[UI] No enemy target.");
+                    AddLog("[UI] 공격할 적을 선택하세요.");
                 }
 
                 return;
@@ -604,7 +683,7 @@ namespace JoseonMurimTactics
                 }
                 else
                 {
-                    AddLog("[UI] No skill target.");
+                    AddLog("[UI] 무공 대상을 선택하세요.");
                 }
 
                 return;
@@ -618,7 +697,7 @@ namespace JoseonMurimTactics
                 }
                 else
                 {
-                    AddLog("[UI] No object target.");
+                    AddLog("[UI] 사용할 지형지물을 선택하세요.");
                 }
 
                 return;
@@ -636,24 +715,39 @@ namespace JoseonMurimTactics
             }
         }
 
+        private void SelectPlayerUnit(BattleTestUnit unit)
+        {
+            if (!phaseTurn.CanPlayerControl(unit))
+            {
+                AddLog("[UI] 이미 행동한 아군입니다.");
+                return;
+            }
+
+            activeUnit = unit;
+            commandMode = BattleCommandMode.Move;
+            AddLog($"[선택] {unit.definition.displayName}");
+            RefreshHighlights();
+            RefreshUnits();
+        }
+
         private void TryMove(BattleTestUnit unit, BattleTestTile destination)
         {
             if (unit.moved)
             {
-                AddLog("[Move] Move already spent.");
+                AddLog("[이동] 이미 이동했습니다.");
                 return;
             }
 
             if (!destination.walkable || UnitAt(destination.cell) != null)
             {
-                AddLog("[Move] Blocked tile.");
+                AddLog("[이동] 진입할 수 없는 칸입니다.");
                 return;
             }
 
             Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
             if (!reachable.ContainsKey(destination.cell))
             {
-                AddLog("[Move] Out of movement range.");
+                AddLog("[이동] 이동 범위를 벗어났습니다.");
                 return;
             }
 
@@ -661,14 +755,14 @@ namespace JoseonMurimTactics
             unit.moved = true;
             ApplyTileEntry(unit, destination);
             StartCoroutine(AnimateMove(unit, UnitWorldPosition(destination.cell)));
-            AddLog($"[Move] {unit.definition.displayName} moved.");
+            AddLog($"[이동] {unit.definition.displayName} 이동.");
         }
 
         private bool TryAttack(BattleTestUnit attacker, BattleTestUnit target, bool endAfterAttack)
         {
             if (attacker.acted)
             {
-                AddLog("[Action] Action already spent.");
+                AddLog("[행동] 이미 행동했습니다.");
                 return false;
             }
 
@@ -680,7 +774,7 @@ namespace JoseonMurimTactics
             int distance = GridDistance(attacker.cell, target.cell);
             if (distance > attacker.definition.attackRange)
             {
-                AddLog("[Attack] Target out of range.");
+                AddLog("[공격] 대상이 사거리 밖입니다.");
                 return false;
             }
 
@@ -690,6 +784,11 @@ namespace JoseonMurimTactics
             RefreshUnits();
 
             if (CheckBattleEnd())
+            {
+                return true;
+            }
+
+            if (AdvanceAfterAction(attacker))
             {
                 return true;
             }
@@ -710,6 +809,7 @@ namespace JoseonMurimTactics
         {
             BattleTestTile from = TileAt(attacker.cell);
             BattleTestTile to = TileAt(target.cell);
+            string moveName = special ? attacker.definition.specialName : "공격";
             int d20 = random.Next(1, 21);
             int heightBonus = from != null && to != null && from.elevation > to.elevation ? 2 : 0;
             int attackBonus = attacker.definition.attackBonus + (special ? attacker.definition.specialAttackBonus : 0);
@@ -720,7 +820,7 @@ namespace JoseonMurimTactics
 
             if (!hit)
             {
-                AddLog($"[Miss] {attacker.definition.displayName} missed {target.definition.displayName}. d20 {d20}+{attackBonus}+{heightBonus} vs DEF {defense}");
+                AddLog($"[빗나감] {attacker.definition.displayName}의 {moveName} 실패.");
                 return false;
             }
 
@@ -742,14 +842,13 @@ namespace JoseonMurimTactics
             }
 
             target.hp = Mathf.Max(0, target.hp - damage);
-            AddLog($"[Hit] {attacker.definition.displayName} rolls {d20}+{attackBonus}+{heightBonus} vs DEF {defense}.");
-            AddLog($"[Damage] {target.definition.displayName} takes {damage}.");
+            AddLog($"[명중] {attacker.definition.displayName}: {moveName}! 피해 {damage}.");
 
             if (target.hp == 0)
             {
                 target.defeated = true;
                 target.view.SetDefeated(true);
-                AddLog($"[Damage] {target.definition.displayName} defeated.");
+                AddLog($"[전투불능] {target.definition.displayName} 쓰러짐.");
             }
 
             return true;
@@ -759,20 +858,20 @@ namespace JoseonMurimTactics
         {
             if (!CanUseSpecial(actor))
             {
-                AddLog("[Skill] Skill unavailable.");
+                AddLog("[무공] 사용할 수 없습니다.");
                 return false;
             }
 
             if (!IsValidSpecialTarget(actor, target))
             {
-                AddLog("[Skill] Invalid skill target.");
+                AddLog("[무공] 대상이 맞지 않습니다.");
                 return false;
             }
 
             int distance = GridDistance(actor.cell, target.cell);
             if (distance > actor.definition.specialRange)
             {
-                AddLog("[Skill] Skill target out of range.");
+                AddLog("[무공] 대상이 사거리 밖입니다.");
                 return false;
             }
 
@@ -788,7 +887,12 @@ namespace JoseonMurimTactics
 
             RefreshHighlights();
             RefreshUnits();
-            CheckBattleEnd();
+            if (CheckBattleEnd())
+            {
+                return true;
+            }
+
+            AdvanceAfterAction(actor);
             return true;
         }
 
@@ -801,14 +905,14 @@ namespace JoseonMurimTactics
                     target.hp += Mathf.Max(0, healed);
                     target.poisoned = false;
                     target.chilled = false;
-                    AddLog($"[Skill] {actor.definition.displayName} used {actor.definition.specialName}. {target.definition.displayName} healed {healed}.");
+                    AddLog($"[무공] {actor.definition.displayName}: {actor.definition.specialName}. {target.definition.displayName} 회복 {healed}.");
                     return false;
                 case BattleSpecialEffect.Poison:
                     bool poisonHit = ResolveAttack(actor, target, true);
                     if (allowStatus && poisonHit && !target.defeated)
                     {
                         target.poisoned = true;
-                        AddLog($"[Status] {target.definition.displayName} poisoned.");
+                        AddLog($"[상태] {target.definition.displayName} 중독.");
                     }
                     return true;
                 case BattleSpecialEffect.Freeze:
@@ -816,12 +920,12 @@ namespace JoseonMurimTactics
                     if (allowStatus && freezeHit && !target.defeated)
                     {
                         target.chilled = true;
-                        AddLog($"[Status] {target.definition.displayName} slowed.");
+                        AddLog($"[상태] {target.definition.displayName} 둔화.");
                     }
                     return true;
                 case BattleSpecialEffect.Mark:
                     target.marked = true;
-                    AddLog($"[Status] {actor.definition.displayName} marked {target.definition.displayName}.");
+                    AddLog($"[파훼] {actor.definition.displayName}가 {target.definition.displayName}의 검로를 읽었다.");
                     return false;
                 case BattleSpecialEffect.BreakGuard:
                     target.guarded = false;
@@ -844,7 +948,7 @@ namespace JoseonMurimTactics
             BattleTestCounterMove counter = FindCounterMove(target, attacker);
             if (counter.valid)
             {
-                AddLog($"[Counter] {target.definition.displayName} uses {counter.label}.");
+                AddLog($"[반격] {target.definition.displayName}: {counter.label}.");
                 if (counter.special)
                 {
                     target.inner = Mathf.Max(0, target.inner - target.definition.specialCost);
@@ -858,12 +962,12 @@ namespace JoseonMurimTactics
             }
             else
             {
-                AddLog($"[Counter] {target.definition.displayName} cannot counter.");
+                AddLog($"[반격] {target.definition.displayName} 반격 불가.");
             }
 
             if (!attacker.defeated && !target.defeated && CanFollowUp(attacker, target, special))
             {
-                AddLog($"[Follow-up] {attacker.definition.displayName} attacks again.");
+                AddLog($"[추격] {attacker.definition.displayName}가 빈틈을 찔렀다.");
                 ResolveAttack(attacker, target, special);
             }
         }
@@ -876,9 +980,14 @@ namespace JoseonMurimTactics
             }
 
             int distance = GridDistance(defender.cell, attacker.cell);
+            if (defender.marked)
+            {
+                return BattleTestCounterMove.None;
+            }
+
             if (distance <= defender.definition.attackRange)
             {
-                return new BattleTestCounterMove(false, "Attack");
+                return new BattleTestCounterMove(false, "기본 공격");
             }
 
             if (CanUseCounterSpecial(defender) && distance <= defender.definition.specialRange)
@@ -929,14 +1038,14 @@ namespace JoseonMurimTactics
         {
             if (actor == null || actor.acted)
             {
-                AddLog("[Action] Action already spent.");
+                AddLog("[행동] 이미 행동했습니다.");
                 return false;
             }
 
             BattleTestInteractable interactable = FindUsableInteractable(actor, clickedTile.cell);
             if (interactable == null)
             {
-                AddLog("[Terrain] No usable terrain object in reach.");
+                AddLog("[지형] 닿는 곳에 사용할 지형지물이 없습니다.");
                 return false;
             }
 
@@ -956,7 +1065,7 @@ namespace JoseonMurimTactics
                         tile.coverBonus = tile.baseCoverBonus + (tile.extraCover ? CoverInteractBonus : 0) + SmokeCoverBonus;
                         RefreshTerrainTint(tile);
                     }
-                    AddLog($"[Terrain] {actor.definition.displayName} used {interactable.displayName}: cover +{SmokeCoverBonus}.");
+                    AddLog($"[지형] {actor.definition.displayName}가 {interactable.displayName}를 흔들었다. 연기 엄폐 +{SmokeCoverBonus}.");
                     break;
                 case BattleTestInteractableKind.Fire:
                     if (tile != null)
@@ -964,8 +1073,8 @@ namespace JoseonMurimTactics
                         tile.fireTurns = 2;
                         RefreshTerrainTint(tile);
                     }
-                    DamageUnitsAround(actor, interactable.cell, 1, FireInteractDamage, "flame");
-                    AddLog($"[Terrain] {actor.definition.displayName} used {interactable.displayName}: flame damage {FireInteractDamage}.");
+                    DamageUnitsAround(actor, interactable.cell, 1, FireInteractDamage, "화염");
+                    AddLog($"[지형] {actor.definition.displayName}가 {interactable.displayName}를 터뜨렸다. 화염 피해 {FireInteractDamage}.");
                     break;
                 case BattleTestInteractableKind.Cover:
                     if (tile != null)
@@ -978,14 +1087,19 @@ namespace JoseonMurimTactics
 
                         RefreshTerrainTint(tile);
                     }
-                    AddLog($"[Terrain] {actor.definition.displayName} shoved {interactable.displayName}: cover +{CoverInteractBonus}.");
+                    AddLog($"[지형] {actor.definition.displayName}가 {interactable.displayName}를 밀었다. 엄폐 +{CoverInteractBonus}.");
                     break;
             }
 
             actor.acted = true;
             RefreshHighlights();
             RefreshUnits();
-            CheckBattleEnd();
+            if (CheckBattleEnd())
+            {
+                return true;
+            }
+
+            AdvanceAfterAction(actor);
             return true;
         }
 
@@ -998,9 +1112,31 @@ namespace JoseonMurimTactics
 
             activeUnit.guarded = true;
             activeUnit.acted = true;
-            AddLog($"[Guard] {activeUnit.definition.displayName} guards.");
+            AddLog($"[방어] {activeUnit.definition.displayName} 방어 태세.");
             RefreshHighlights();
             RefreshUnits();
+            AdvanceAfterAction(activeUnit);
+        }
+
+        private bool AdvanceAfterAction(BattleTestUnit actor)
+        {
+            if (actor == null || actor.definition.faction != Faction.Ally || !phaseTurn.IsPlayerPhase)
+            {
+                return false;
+            }
+
+            if (phaseTurn.AllFactionUnitsActed(units, Faction.Ally))
+            {
+                AddLog("[페이즈] 모든 아군 행동 완료");
+                EndPlayerPhase();
+                return true;
+            }
+
+            activeUnit = FindNextReadyUnit(Faction.Ally);
+            commandMode = BattleCommandMode.Move;
+            RefreshHighlights();
+            RefreshUnits();
+            return false;
         }
 
         private IEnumerator AnimateMove(BattleTestUnit unit, Vector3 target)
@@ -1024,51 +1160,67 @@ namespace JoseonMurimTactics
             RefreshUnits();
         }
 
-        private IEnumerator RunEnemyTurn()
+        private IEnumerator RunEnemyPhase()
         {
             busy = true;
             yield return new WaitForSeconds(0.3f);
 
-            BattleTestUnit target = FindNearestEnemy(activeUnit);
-            if (target == null)
+            foreach (BattleTestUnit enemy in units)
             {
-                busy = false;
-                EndTurn();
-                yield break;
-            }
-
-            int desiredRange = CanUseSpecial(activeUnit) ? activeUnit.definition.specialRange : activeUnit.definition.attackRange;
-            if (GridDistance(activeUnit.cell, target.cell) > desiredRange && !activeUnit.moved)
-            {
-                BattleTestTile best = FindBestMoveToward(activeUnit, target.cell);
-                if (best != null)
+                if (enemy.defeated || enemy.definition.faction != Faction.Enemy || enemy.acted)
                 {
-                    activeUnit.cell = best.cell;
-                    activeUnit.moved = true;
-                    ApplyTileEntry(activeUnit, best);
-                    yield return AnimateMove(activeUnit, UnitWorldPosition(best.cell));
-                    yield return new WaitForSeconds(0.15f);
+                    continue;
                 }
+
+                activeUnit = enemy;
+                commandMode = BattleCommandMode.Move;
+                RefreshHighlights();
+                RefreshUnits();
+                yield return new WaitForSeconds(0.25f);
+
+                BattleTestUnit target = FindNearestEnemy(activeUnit);
+                if (target == null)
+                {
+                    activeUnit.acted = true;
+                    continue;
+                }
+
+                int desiredRange = CanUseSpecial(activeUnit) ? activeUnit.definition.specialRange : activeUnit.definition.attackRange;
+                if (GridDistance(activeUnit.cell, target.cell) > desiredRange && !activeUnit.moved)
+                {
+                    BattleTestTile best = FindBestMoveToward(activeUnit, target.cell);
+                    if (best != null)
+                    {
+                        activeUnit.cell = best.cell;
+                        activeUnit.moved = true;
+                        ApplyTileEntry(activeUnit, best);
+                        yield return AnimateMove(activeUnit, UnitWorldPosition(best.cell));
+                        yield return new WaitForSeconds(0.15f);
+                    }
+                }
+
+                if (CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) && GridDistance(activeUnit.cell, target.cell) <= activeUnit.definition.specialRange)
+                {
+                    TrySpecial(activeUnit, target);
+                }
+                else
+                {
+                    TryAttack(activeUnit, target, false);
+                }
+
+                if (battleOver)
+                {
+                    busy = false;
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(0.3f);
             }
 
-            if (CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) && GridDistance(activeUnit.cell, target.cell) <= activeUnit.definition.specialRange)
-            {
-                TrySpecial(activeUnit, target);
-            }
-            else
-            {
-                TryAttack(activeUnit, target, false);
-            }
-
-            if (battleOver)
-            {
-                busy = false;
-                yield break;
-            }
-
-            yield return new WaitForSeconds(0.3f);
             busy = false;
-            EndTurn();
+            activeUnit = null;
+            aiQueued = false;
+            EndEnemyPhase();
         }
 
         private BattleTestTile FindBestMoveToward(BattleTestUnit unit, Vector2Int targetCell)
@@ -1130,7 +1282,7 @@ namespace JoseonMurimTactics
             if (unit.poisoned)
             {
                 unit.hp = Mathf.Max(0, unit.hp - 3);
-                AddLog($"[Status] Poison deals 3 to {unit.definition.displayName}.");
+                AddLog($"[상태] {unit.definition.displayName} 중독 피해 3.");
                 if (unit.hp == 0)
                 {
                     unit.defeated = true;
@@ -1178,7 +1330,7 @@ namespace JoseonMurimTactics
 
             if (faded)
             {
-                AddLog("[Terrain] Terrain effects faded.");
+                AddLog("[지형] 연기와 화염이 잦아들었다.");
             }
         }
 
@@ -1221,31 +1373,31 @@ namespace JoseonMurimTactics
         {
             if (actor == null || actor.defeated)
             {
-                return BattleForecast.Invalid("No active attacker.");
+                return BattleForecast.Invalid("행동할 아군을 선택하세요.");
             }
 
             bool attack = commandMode == BattleCommandMode.Attack;
             bool special = commandMode == BattleCommandMode.Skill;
             if (!attack && !special)
             {
-                return BattleForecast.Invalid("Select Attack or Skill, then hover a target.");
+                return BattleForecast.Invalid("공격 또는 무공을 선택한 뒤 대상을 가리키세요.");
             }
 
             if (target == null)
             {
-                return BattleForecast.Invalid("Hover a target in Attack or Skill mode.");
+                return BattleForecast.Invalid("대상을 가리키면 전투 예측이 표시됩니다.");
             }
 
-            string commandName = special ? actor.definition.specialName : "Attack";
+            string commandName = special ? actor.definition.specialName : "공격";
             int range = special ? actor.definition.specialRange : actor.definition.attackRange;
             int distance = GridDistance(actor.cell, target.cell);
             string costText = special
-                ? $"Cost: {actor.definition.specialCost} inner, CD {actor.definition.specialCooldown}"
-                : "Cost: action";
+                ? $"소모: 내공 {actor.definition.specialCost} / 재사용 {actor.definition.specialCooldown}턴"
+                : "소모: 행동 1회";
 
             if (target.defeated)
             {
-                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "Target already defeated.", distance, range, costText);
+                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "이미 전투불능인 대상입니다.", distance, range, costText);
             }
 
             if (special)
@@ -1258,17 +1410,17 @@ namespace JoseonMurimTactics
 
                 if (!IsValidSpecialTarget(actor, target))
                 {
-                    return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "No valid skill target.", distance, range, costText);
+                    return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "무공 대상 조건이 맞지 않습니다.", distance, range, costText);
                 }
             }
             else if (target.definition.faction == actor.definition.faction)
             {
-                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "No valid hostile target.", distance, range, costText);
+                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "아군은 공격 대상이 아닙니다.", distance, range, costText);
             }
 
             if (distance > range)
             {
-                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "Out of range.", distance, range, costText);
+                return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName, "사거리 밖입니다.", distance, range, costText);
             }
 
             BattleTestTile from = TileAt(actor.cell);
@@ -1280,7 +1432,7 @@ namespace JoseonMurimTactics
             bool attackLike = !special || IsHostileAttackSpecial(actor.definition.specialEffect);
             BattleTestCounterMove counter = attackLike ? FindCounterMove(target, actor) : BattleTestCounterMove.None;
             bool followUp = attackLike && CanFollowUp(actor, target, special);
-            string neededRollText = attackLike ? NeededRollText(defense, attackBonus, heightBonus, terrainBonus) : "No attack roll";
+            string neededRollText = attackLike ? NeededRollText(defense, attackBonus, heightBonus, terrainBonus) : "판정 없음";
             if (!attackLike)
             {
                 attackBonus = 0;
@@ -1291,8 +1443,8 @@ namespace JoseonMurimTactics
 
             int damageMin = 0;
             int damageMax = 0;
-            string damageText = "Damage: none";
-            string hpAfterText = $"Target HP after: {target.hp}-{target.hp}";
+            string damageText = "피해: 없음 | 파훼 +0";
+            string hpAfterText = $"예상 전투 후 체력: {target.hp}-{target.hp}";
             if (attackLike)
             {
                 damageMin = actor.definition.damageMin + (special ? actor.definition.specialPower : 0) + heightBonus;
@@ -1305,8 +1457,9 @@ namespace JoseonMurimTactics
 
                 damageMin = Mathf.Max(1, damageMin);
                 damageMax = Mathf.Max(1, damageMax);
-                damageText = $"Damage: {damageMin}-{damageMax} (crit x2 on nat 20)";
-                hpAfterText = $"Target HP after: {Mathf.Max(0, target.hp - damageMax)}-{Mathf.Max(0, target.hp - damageMin)}";
+                int breakGain = special ? 18 : 12;
+                damageText = $"피해 {damageMin}-{damageMax} | 치명 5% | 파훼 +{breakGain}";
+                hpAfterText = $"예상 전투 후 체력: {Mathf.Max(0, target.hp - damageMax)}-{Mathf.Max(0, target.hp - damageMin)}";
             }
 
             return new BattleForecast(
@@ -1317,7 +1470,7 @@ namespace JoseonMurimTactics
                 commandName,
                 distance,
                 range,
-                distance <= range ? "in range" : "out of range",
+                distance <= range ? "사거리 안" : "사거리 밖",
                 attackBonus,
                 heightBonus,
                 terrainBonus,
@@ -1325,8 +1478,8 @@ namespace JoseonMurimTactics
                 neededRollText,
                 damageText,
                 hpAfterText,
-                counter.valid ? $"Counter: {counter.label}" : "Counter: none",
-                followUp ? $"Follow-up: yes (AGI {AgilityValue(actor)} vs {AgilityValue(target)})" : "Follow-up: no",
+                CounterForecastText(target, actor, counter, attackLike),
+                followUp ? $"추격: 가능 (민첩 {AgilityValue(actor)} vs {AgilityValue(target)})" : "추격: 불가",
                 costText);
         }
 
@@ -1337,34 +1490,84 @@ namespace JoseonMurimTactics
                 return "-";
             }
 
-            return CanUseCounterSpecial(unit) ? unit.definition.specialName : $"Attack R{unit.definition.attackRange}";
+            return CanUseCounterSpecial(unit) ? unit.definition.specialName : $"공격 R{unit.definition.attackRange}";
+        }
+
+        private string CounterForecastText(BattleTestUnit defender, BattleTestUnit attacker, BattleTestCounterMove counter, bool attackLike)
+        {
+            if (!attackLike)
+            {
+                return "상대 반격: 없음";
+            }
+
+            if (defender == null || attacker == null || defender.defeated)
+            {
+                return "상대 반격: 없음";
+            }
+
+            if (defender.marked)
+            {
+                return "상대 반격: 파훼 - 반격 봉쇄";
+            }
+
+            int distance = GridDistance(defender.cell, attacker.cell);
+            if (!counter.valid)
+            {
+                if (distance > defender.definition.attackRange && distance > defender.definition.specialRange)
+                {
+                    return "상대 반격: 불가 - 사거리 밖";
+                }
+
+                if (defender.inner < defender.definition.specialCost)
+                {
+                    return "상대 반격: 불가 - 내공 부족";
+                }
+
+                if (defender.specialCooldownLeft > 0)
+                {
+                    return $"상대 반격: 불가 - 재사용 대기 {defender.specialCooldownLeft}턴";
+                }
+
+                return "상대 반격: 불가";
+            }
+
+            BattleTestTile from = TileAt(defender.cell);
+            BattleTestTile to = TileAt(attacker.cell);
+            int heightBonus = from != null && to != null && from.elevation > to.elevation ? 2 : 0;
+            int attackBonus = defender.definition.attackBonus + (counter.special ? defender.definition.specialAttackBonus : 0);
+            int defense = DefenseValue(attacker, to);
+            int damageMin = defender.definition.damageMin + (counter.special ? defender.definition.specialPower : 0) + heightBonus;
+            int damageMax = defender.definition.damageMax + (counter.special ? defender.definition.specialPower : 0) + heightBonus;
+            damageMin = Mathf.Max(1, damageMin);
+            damageMax = Mathf.Max(1, damageMax);
+            return $"상대 반격: {counter.label} / 명중 {HitChancePercent(defense, attackBonus, heightBonus, 0)}% / 피해 {damageMin}-{damageMax}";
         }
 
         private string SpecialUnavailableReason(BattleTestUnit unit)
         {
             if (unit == null)
             {
-                return "No active unit.";
+                return "행동할 유닛이 없습니다.";
             }
 
             if (unit.acted)
             {
-                return "Already acted.";
+                return "이미 행동했습니다.";
             }
 
             if (unit.definition.specialEffect == BattleSpecialEffect.None)
             {
-                return "No skill equipped.";
+                return "장착된 무공이 없습니다.";
             }
 
             if (unit.inner < unit.definition.specialCost)
             {
-                return $"Not enough inner ({unit.inner}/{unit.definition.specialCost}).";
+                return $"내공 부족 ({unit.inner}/{unit.definition.specialCost}).";
             }
 
             if (unit.specialCooldownLeft > 0)
             {
-                return $"Cooldown {unit.specialCooldownLeft} turn(s).";
+                return $"재사용 대기 {unit.specialCooldownLeft}턴.";
             }
 
             return string.Empty;
@@ -1383,15 +1586,31 @@ namespace JoseonMurimTactics
             int needed = defense - attackBonus - heightBonus - terrainBonus;
             if (needed <= 2)
             {
-                return "2+ on d20 (natural 1 misses)";
+                return $"{HitChancePercent(defense, attackBonus, heightBonus, terrainBonus)}% / d20 2+ 필요";
             }
 
             if (needed > 20)
             {
-                return "20 only (natural 20 crits)";
+                return "5% / d20 20 필요";
             }
 
-            return $"{needed}+ on d20";
+            return $"{HitChancePercent(defense, attackBonus, heightBonus, terrainBonus)}% / d20 {needed}+ 필요";
+        }
+
+        private int HitChancePercent(int defense, int attackBonus, int heightBonus, int terrainBonus)
+        {
+            int needed = defense - attackBonus - heightBonus - terrainBonus;
+            if (needed <= 2)
+            {
+                return 95;
+            }
+
+            if (needed > 20)
+            {
+                return 5;
+            }
+
+            return Mathf.Clamp((21 - needed) * 5, 5, 95);
         }
 
         private int DefenseValue(BattleTestUnit unit, BattleTestTile tile)
@@ -1426,12 +1645,12 @@ namespace JoseonMurimTactics
             {
                 int damage = random.Next(2, 6);
                 unit.hp = Mathf.Max(0, unit.hp - damage);
-                AddLog($"[Terrain] {unit.definition.displayName} entered flame: {damage} damage.");
+                AddLog($"[지형] {unit.definition.displayName} 화염 진입. 피해 {damage}.");
                 if (unit.hp == 0)
                 {
                     unit.defeated = true;
                     unit.view.SetDefeated(true);
-                    AddLog($"[Damage] {unit.definition.displayName} defeated.");
+                    AddLog($"[전투불능] {unit.definition.displayName} 쓰러짐.");
                 }
             }
         }
@@ -1451,12 +1670,12 @@ namespace JoseonMurimTactics
                 }
 
                 unit.hp = Mathf.Max(0, unit.hp - damage);
-                AddLog($"[Terrain] {unit.definition.displayName} takes {damage} {reason} damage.");
+                AddLog($"[지형] {unit.definition.displayName} {reason} 피해 {damage}.");
                 if (unit.hp == 0)
                 {
                     unit.defeated = true;
                     unit.view.SetDefeated(true);
-                    AddLog($"[Damage] {unit.definition.displayName} defeated.");
+                    AddLog($"[전투불능] {unit.definition.displayName} 쓰러짐.");
                 }
             }
         }
@@ -1520,20 +1739,20 @@ namespace JoseonMurimTactics
             List<string> states = new List<string>();
             if (tile.smokeTurns > 0)
             {
-                states.Add("Smoke");
+                states.Add("연기");
             }
 
             if (tile.fireTurns > 0)
             {
-                states.Add("Fire");
+                states.Add("화염");
             }
 
             if (tile.extraCover)
             {
-                states.Add("Heavy Cover");
+                states.Add("중엄폐");
             }
 
-            return states.Count == 0 ? "None" : string.Join(", ", states);
+            return states.Count == 0 ? "없음" : string.Join(", ", states);
         }
 
         private string InteractableEffectText(BattleTestInteractableKind kind)
@@ -1541,11 +1760,11 @@ namespace JoseonMurimTactics
             switch (kind)
             {
                 case BattleTestInteractableKind.Smoke:
-                    return $"Smoke cover +{SmokeCoverBonus}";
+                    return $"연기 엄폐 +{SmokeCoverBonus}";
                 case BattleTestInteractableKind.Fire:
-                    return $"Fire damage {FireInteractDamage}";
+                    return $"화염 피해 {FireInteractDamage}";
                 case BattleTestInteractableKind.Cover:
-                    return $"Cover +{CoverInteractBonus}";
+                    return $"엄폐 +{CoverInteractBonus}";
                 default:
                     return "-";
             }
@@ -1578,49 +1797,121 @@ namespace JoseonMurimTactics
         {
             if (unit.defeated)
             {
-                return "Down";
+                return "전투불능";
             }
 
             List<string> states = new List<string>();
             if (unit.guarded)
             {
-                states.Add("Guard");
+                states.Add("방어");
             }
 
             if (unit.poisoned)
             {
-                states.Add("Poison");
+                states.Add("독");
             }
 
             if (unit.chilled)
             {
-                states.Add("Slow");
+                states.Add("둔화");
             }
 
             if (unit.marked)
             {
-                states.Add("Marked");
+                states.Add("파훼");
             }
 
             if (unit.moved && unit.acted)
             {
-                states.Add("Done");
+                states.Add("완료");
             }
             else if (unit.moved)
             {
-                states.Add("Moved");
+                states.Add("이동함");
             }
             else if (unit.acted)
             {
-                states.Add("Action Done");
+                states.Add("행동함");
             }
 
-            return states.Count == 0 ? "Ready" : string.Join(", ", states);
+            return states.Count == 0 ? "대기" : string.Join(", ", states);
         }
 
         private string ActionText(bool spent)
         {
-            return spent ? "Done" : "Ready";
+            return spent ? "완료" : "가능";
+        }
+
+        private string PhaseLabel(BattlePhase phase)
+        {
+            switch (phase)
+            {
+                case BattlePhase.PlayerPhase:
+                    return "아군 페이즈";
+                case BattlePhase.EnemyPhase:
+                    return "적 페이즈";
+                case BattlePhase.NeutralPhase:
+                    return "중립 페이즈";
+                default:
+                    return phase.ToString();
+            }
+        }
+
+        private string FactionLabel(Faction faction)
+        {
+            switch (faction)
+            {
+                case Faction.Ally:
+                    return "아군";
+                case Faction.Enemy:
+                    return "적";
+                case Faction.Neutral:
+                    return "중립";
+                default:
+                    return faction.ToString();
+            }
+        }
+
+        private string CommandLabel(BattleCommandMode mode)
+        {
+            switch (mode)
+            {
+                case BattleCommandMode.Move:
+                    return "이동";
+                case BattleCommandMode.Attack:
+                    return "공격";
+                case BattleCommandMode.Skill:
+                    return "무공";
+                case BattleCommandMode.Interact:
+                    return "지형";
+                default:
+                    return mode.ToString();
+            }
+        }
+
+        private string TerrainLabel(TerrainType terrain)
+        {
+            switch (terrain)
+            {
+                case TerrainType.Stone:
+                    return "석로";
+                case TerrainType.Wood:
+                    return "목재";
+                case TerrainType.Water:
+                    return "물가";
+                case TerrainType.Bamboo:
+                    return "대나무숲";
+                case TerrainType.Bridge:
+                    return "다리";
+                case TerrainType.Roof:
+                    return "지붕";
+                case TerrainType.Cliff:
+                    return "절벽";
+                case TerrainType.Wall:
+                    return "담장";
+                default:
+                    return terrain.ToString();
+            }
         }
 
         private void SetCommandMode(BattleCommandMode mode)
@@ -1632,7 +1923,7 @@ namespace JoseonMurimTactics
 
             if (mode == BattleCommandMode.Interact && (activeUnit.acted || !HasUsableInteractable(activeUnit)))
             {
-                AddLog("[UI] No usable terrain object in reach.");
+                AddLog("[UI] 사용할 수 있는 지형지물이 없습니다.");
                 return;
             }
 
@@ -1648,26 +1939,27 @@ namespace JoseonMurimTactics
                 return queue;
             }
 
-            int index = activeIndex;
-            int guard = 0;
-            while (queue.Count < count && guard < units.Count * 2)
+            Faction primary = phaseTurn.IsEnemyPhase ? Faction.Enemy : Faction.Ally;
+            Faction secondary = phaseTurn.IsEnemyPhase ? Faction.Ally : Faction.Enemy;
+            AppendFactionPreview(queue, primary, count);
+            AppendFactionPreview(queue, secondary, count);
+            return queue;
+        }
+
+        private void AppendFactionPreview(List<BattleTestUnit> queue, Faction faction, int count)
+        {
+            foreach (BattleTestUnit unit in units)
             {
-                if (index >= units.Count)
+                if (queue.Count >= count)
                 {
-                    index = 0;
+                    return;
                 }
 
-                BattleTestUnit unit = units[index];
-                if (!unit.defeated)
+                if (!unit.defeated && unit.definition.faction == faction)
                 {
                     queue.Add(unit);
                 }
-
-                index++;
-                guard++;
             }
-
-            return queue;
         }
 
         private void UpdateHover()
@@ -1901,7 +2193,7 @@ namespace JoseonMurimTactics
 
             battleOver = true;
             ClearHighlights();
-            AddLog(alliesAlive ? "[System] Victory." : "[System] Defeat.");
+            AddLog(alliesAlive ? "[전투 종료] 승리." : "[전투 종료] 패배.");
             return true;
         }
 
@@ -2314,7 +2606,7 @@ namespace JoseonMurimTactics
 
             if (label != null && Unit != null)
             {
-                label.text = $"{Unit.definition.displayName}\nHP {Unit.hp}/{Unit.definition.maxHp}";
+                label.text = $"{Unit.definition.displayName}\n체력 {Unit.hp}/{Unit.definition.maxHp}";
                 label.color = Unit.definition.faction == Faction.Ally
                     ? new Color(0.80f, 0.90f, 1f, Unit.defeated ? 0.45f : 1f)
                     : new Color(1f, 0.72f, 0.68f, Unit.defeated ? 0.45f : 1f);

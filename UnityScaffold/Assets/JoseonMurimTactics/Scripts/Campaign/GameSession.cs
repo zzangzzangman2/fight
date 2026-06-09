@@ -29,6 +29,9 @@ namespace JoseonMurimTactics
 
         public int actionsTaken;
         public long savedAtUnixSeconds;
+        public int saveVersion;
+        public double playTimeSeconds;
+        public string currentHubId = "Hub_Pyesadang";
 
         public GameSession() { }
 
@@ -62,7 +65,10 @@ namespace JoseonMurimTactics
                 storyFlags = new List<string>(storyFlags),
                 intVars = Pairs(intVars),
                 actionsTaken = actionsTaken,
-                savedAtUnixSeconds = savedAtUnixSeconds
+                savedAtUnixSeconds = savedAtUnixSeconds,
+                saveVersion = saveVersion,
+                playTimeSeconds = playTimeSeconds,
+                currentHubId = currentHubId
             };
             return JsonUtility.ToJson(dto, true);
         }
@@ -83,6 +89,9 @@ namespace JoseonMurimTactics
             session.currentChapterId = string.IsNullOrEmpty(dto.currentChapterId) ? session.currentChapterId : dto.currentChapterId;
             session.actionsTaken = dto.actionsTaken;
             session.savedAtUnixSeconds = dto.savedAtUnixSeconds;
+            session.saveVersion = dto.saveVersion;
+            session.playTimeSeconds = dto.playTimeSeconds;
+            session.currentHubId = string.IsNullOrEmpty(dto.currentHubId) ? session.currentHubId : dto.currentHubId;
 
             if (dto.recruitedCompanionIds != null)
             {
@@ -102,6 +111,12 @@ namespace JoseonMurimTactics
             }
 
             return session;
+        }
+
+        /// <summary>전체 세션을 만들지 않고 세이브 슬롯 요약만 빠르게 읽기 위한 DTO 파싱.</summary>
+        public static SaveDto ParseDto(string json)
+        {
+            return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<SaveDto>(json);
         }
 
         private static List<StringIntPair> Pairs(Dictionary<string, int> source)
@@ -153,6 +168,9 @@ namespace JoseonMurimTactics
             public List<StringIntPair> intVars;
             public int actionsTaken;
             public long savedAtUnixSeconds;
+            public int saveVersion;
+            public double playTimeSeconds;
+            public string currentHubId;
         }
     }
 }
