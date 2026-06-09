@@ -225,6 +225,10 @@ public sealed class BattleMapTilemapBinder : MonoBehaviour
         {
             Transform child = transform.Find(layerName);
             existing = child == null ? null : child.GetComponent<Tilemap>();
+            if (existing == null && child != null)
+            {
+                existing = child.gameObject.AddComponent<Tilemap>();
+            }
         }
 
         if (existing == null)

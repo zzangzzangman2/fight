@@ -38,6 +38,7 @@ public static class BattleMapDioramaSceneBuilder
         PaintMap(binder, tiles, visualTiles, variants);
         CreateBackdrop(binder);
         CreateProps(binder);
+        StripSerializedTilemaps(binder);
         CreateBattleController();
 
         EditorSceneManager.MarkSceneDirty(scene);
@@ -66,6 +67,21 @@ public static class BattleMapDioramaSceneBuilder
         return binder;
     }
 
+    private static void StripSerializedTilemaps(BattleMapTilemapBinder binder)
+    {
+        Tilemap[] tilemaps = binder.GetComponentsInChildren<Tilemap>(true);
+        foreach (Tilemap tilemap in tilemaps)
+        {
+            TilemapRenderer renderer = tilemap.GetComponent<TilemapRenderer>();
+            if (renderer != null)
+            {
+                UnityEngine.Object.DestroyImmediate(renderer);
+            }
+
+            UnityEngine.Object.DestroyImmediate(tilemap);
+        }
+    }
+
     private static void CreateCamera()
     {
         GameObject cameraObject = new GameObject("Battle Camera");
@@ -83,7 +99,6 @@ public static class BattleMapDioramaSceneBuilder
                                  Dictionary<string, Tile> visualTiles,
                                  Dictionary<string, TerrainVariantSet> variants)
     {
-        binder.TacticalOverlay.Configure(Vector2Int.zero, new Vector2Int(Width, Height));
         for (int y = 0; y < Height; y++)
         {
             for (int x = 0; x < Width; x++)
@@ -96,7 +111,6 @@ public static class BattleMapDioramaSceneBuilder
                 TerrainTileData tacticalTile = ResolveTacticalTile(spec, cell, tiles, variants);
                 PaintTile(PrimaryLayerFor(binder, spec), cell, VisualTileFor(tacticalTile, visualTiles),
                           Vary(Color.white, cell, 0.025f));
-                binder.TacticalOverlay.SetCell(CreateOverlayCell(cell, spec));
                 PaintTransitions(binder, cell, spec, tiles, visualTiles, variants);
                 PaintAtmosphere(binder, cell, spec, tiles, visualTiles);
             }

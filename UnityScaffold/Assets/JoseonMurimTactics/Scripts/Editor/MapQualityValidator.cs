@@ -28,6 +28,13 @@ public static class MapQualityValidator
     private static string BuildCurrentBattleMapReport(bool verbose)
     {
         BattleMapTilemapBinder binder = UnityEngine.Object.FindAnyObjectByType<BattleMapTilemapBinder>();
+        BattleMapSceneController sceneController = UnityEngine.Object.FindAnyObjectByType<BattleMapSceneController>();
+        if (sceneController != null)
+        {
+            sceneController.InitializeRuntime();
+            binder = sceneController.Binder == null ? binder : sceneController.Binder;
+        }
+
         if (binder != null && (binder.TacticalOverlay == null || binder.TacticalOverlay.Cells.Count == 0))
         {
             binder.SyncTacticalOverlayFromVisualTilemaps();
