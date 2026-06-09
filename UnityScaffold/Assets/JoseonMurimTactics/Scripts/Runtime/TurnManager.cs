@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace JoseonMurimTactics
 {
     public sealed class TurnManager : MonoBehaviour
     {
         public BattleMapData battleMap;
+        public Tilemap terrainTilemap;
         public List<CombatantData> combatants = new List<CombatantData>();
-        public List<string> startNodes = new List<string>();
+        public List<Vector2Int> startCells = new List<Vector2Int>();
         public int seed = 20260607;
         public CombatLog combatLog;
 
@@ -43,7 +45,7 @@ namespace JoseonMurimTactics
         public void StartBattle()
         {
             dice = new DiceRoller(seed);
-            movementResolver = new MovementResolver(battleMap);
+            movementResolver = new MovementResolver(battleMap, terrainTilemap);
             lineOfSightResolver = new LineOfSightResolver(movementResolver);
             skillResolver = new SkillResolver(dice, movementResolver, lineOfSightResolver, combatLog);
             terrainResolver = new TerrainResolver(battleMap, dice, movementResolver, combatLog);
@@ -52,8 +54,8 @@ namespace JoseonMurimTactics
             for (int i = 0; i < combatants.Count; i++)
             {
                 CombatantData data = combatants[i];
-                string node = i < startNodes.Count ? startNodes[i] : string.Empty;
-                CombatantRuntime runtime = new CombatantRuntime(data, node);
+                Vector2Int cell = i < startCells.Count ? startCells[i] : Vector2Int.zero;
+                CombatantRuntime runtime = new CombatantRuntime(data, cell);
                 DiceRoll initiative = dice.RollD20();
                 int initiativeScore = initiative.total + data.stats.Modifier(StatType.Agility);
                 runtime.cooldowns["_initiative"] = initiativeScore;

@@ -7,21 +7,24 @@ namespace JoseonMurimTactics
     [CreateAssetMenu(menuName = "Joseon Murim Tactics/Battle Map Data")]
     public sealed class BattleMapData : ScriptableObject
     {
-        public List<BattleNodeData> nodes = new List<BattleNodeData>();
+        public Vector2Int origin;
+        public Vector2Int size = new Vector2Int(8, 8);
+        public List<BattleCellData> cells = new List<BattleCellData>();
         public List<InteractableObjectData> objects = new List<InteractableObjectData>();
     }
 
     [Serializable]
-    public sealed class BattleNodeData
+    public sealed class BattleCellData
     {
-        public string id;
+        public Vector2Int cell;
         public string displayName;
         public Vector3 worldPosition;
-        public TerrainType terrainType;
+        public TerrainType terrainType = TerrainType.Stone;
+        public int moveCost = 1;
+        public bool walkable = true;
         public int elevation;
         public CoverType coverType;
         public HazardType hazardType;
-        public List<string> neighbors = new List<string>();
     }
 
     [Serializable]
@@ -29,7 +32,7 @@ namespace JoseonMurimTactics
     {
         public string id;
         public string displayName;
-        public string nodeId;
+        public Vector2Int cell;
         public ActionSlot requiredActionSlot = ActionSlot.Main;
         public StatType stat = StatType.Strength;
         public int dc = 12;

@@ -6,7 +6,7 @@ namespace JoseonMurimTactics
     public sealed class CombatantRuntime
     {
         public CombatantData data;
-        public string currentNodeId;
+        public Vector2Int currentCell;
         public int hp;
         public int inner;
         public int morale;
@@ -23,10 +23,10 @@ namespace JoseonMurimTactics
         public Faction Faction { get { return data.faction; } }
         public int Proficiency { get { return data.maxHp >= 36 ? 2 : 1; } }
 
-        public CombatantRuntime(CombatantData source, string startNodeId)
+        public CombatantRuntime(CombatantData source, Vector2Int startCell)
         {
             data = source;
-            currentNodeId = startNodeId;
+            currentCell = startCell;
             hp = source.maxHp;
             inner = source.maxInner;
             morale = 60;

@@ -24,7 +24,7 @@ namespace JoseonMurimTactics
                 return false;
             }
 
-            if (movement.Distance(actor.currentNodeId, interactable.nodeId) > 1)
+            if (movement.GridDistance(actor.currentCell, interactable.cell) > 1)
             {
                 log.Add("Terrain", actor.DisplayName + " 상호작용 실패: 거리 밖.");
                 return false;
@@ -48,8 +48,8 @@ namespace JoseonMurimTactics
 
         private void ApplyEffect(InteractableObjectData interactable)
         {
-            BattleNodeData node = map.nodes.Find(item => item.id == interactable.nodeId);
-            if (node == null)
+            BattleCellData cell = movement.FindCell(interactable.cell);
+            if (cell == null)
             {
                 return;
             }
@@ -57,27 +57,29 @@ namespace JoseonMurimTactics
             switch (interactable.effectType)
             {
                 case InteractableEffectType.CreateCover:
-                    node.coverType = CoverType.Heavy;
+                    cell.coverType = CoverType.Heavy;
                     break;
                 case InteractableEffectType.CreateSmoke:
-                    node.coverType = CoverType.Heavy;
-                    node.hazardType = HazardType.Smoke;
+                    cell.coverType = CoverType.Heavy;
+                    cell.hazardType = HazardType.Smoke;
                     break;
                 case InteractableEffectType.CreateFire:
-                    node.hazardType = HazardType.Fire;
+                    cell.hazardType = HazardType.Fire;
                     break;
                 case InteractableEffectType.CreateIce:
-                    node.hazardType = HazardType.Ice;
+                    cell.hazardType = HazardType.Ice;
                     break;
                 case InteractableEffectType.CollapseBridge:
-                    node.hazardType = HazardType.Fall;
-                    node.coverType = CoverType.None;
+                    cell.hazardType = HazardType.Fall;
+                    cell.coverType = CoverType.None;
+                    cell.walkable = false;
                     break;
                 case InteractableEffectType.ShatterAltar:
-                    node.hazardType = HazardType.Fall;
+                    cell.hazardType = HazardType.Fall;
+                    cell.walkable = false;
                     break;
                 case InteractableEffectType.BlockSight:
-                    node.coverType = CoverType.Heavy;
+                    cell.coverType = CoverType.Heavy;
                     break;
             }
 
