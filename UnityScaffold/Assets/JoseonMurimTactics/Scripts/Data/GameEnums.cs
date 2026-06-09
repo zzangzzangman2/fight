@@ -139,12 +139,6 @@ public enum InteractableEffectType
     BlockSight
 }
 
-public enum CompanionAgeGroup
-{
-    Minor,
-    Adult
-}
-
 public enum InventoryItemType
 {
     Consumable,

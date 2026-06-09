@@ -251,8 +251,7 @@ function renderLines(scene) {
         text: "",
         disposition: -1,
         targetEntryId: "",
-        flagAdded: "",
-        romanticIntent: false
+        flagAdded: ""
       });
       renderScenes();
     });
@@ -270,7 +269,6 @@ function renderChoices(scene, entry, list) {
     node.querySelector(".choice-disposition").value = String(choice.disposition ?? -1);
     fillChoiceTarget(node.querySelector(".choice-target"), scene, choice.targetEntryId);
     node.querySelector(".choice-flag").value = choice.flagAdded || "";
-    node.querySelector(".choice-romantic").checked = Boolean(choice.romanticIntent);
     node.querySelector(".choice-text").addEventListener("input", event => {
       choice.text = event.target.value;
     });
@@ -282,9 +280,6 @@ function renderChoices(scene, entry, list) {
     });
     node.querySelector(".choice-flag").addEventListener("input", event => {
       choice.flagAdded = event.target.value.trim();
-    });
-    node.querySelector(".choice-romantic").addEventListener("change", event => {
-      choice.romanticIntent = event.target.checked;
     });
     node.querySelector(".delete-choice").addEventListener("click", () => {
       entry.choices.splice(index, 1);
@@ -510,7 +505,6 @@ function prepareForSave() {
           approvalChanges: [],
           factionChanges: [],
           battleModifiers: [],
-          romanticIntent: Boolean(choice.romanticIntent),
           sceneCommand: ""
         }))
       };

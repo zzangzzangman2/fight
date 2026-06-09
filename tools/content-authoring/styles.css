@@ -114,18 +114,6 @@ label {
 
 .sidebar label { color: rgba(255, 248, 236, .72); }
 
-.checkbox-line {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  min-height: 40px;
-}
-
-.checkbox-line input {
-  min-height: 18px;
-  width: 18px;
-}
-
 input,
 select,
 textarea {

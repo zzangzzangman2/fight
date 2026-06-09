@@ -44,9 +44,10 @@ public sealed class CompanionApprovalService
         return next;
     }
 
+    // 연령/로맨스 안전장치 제거됨(추후 나이 설정 시 재도입 예정). 현재는 게이팅하지 않는다.
     public bool CanApplyRomanticEffect(string companionId)
     {
-        return CompanionCatalog.CanReceiveRomance(companionId);
+        return !string.IsNullOrEmpty(companionId);
     }
 
     public int AddRomantic(string companionId, int delta)

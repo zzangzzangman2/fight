@@ -34,8 +34,6 @@ public sealed class CompanionData : ScriptableObject
     public string region;
     public string sectName;
     public int age;
-    public CompanionAgeGroup ageGroup = CompanionAgeGroup.Minor;
-    public bool romanceEligible;
     public string mbti;
     public string element;
     public string weapon;
