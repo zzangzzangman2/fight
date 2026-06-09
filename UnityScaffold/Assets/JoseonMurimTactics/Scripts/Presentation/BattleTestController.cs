@@ -17,6 +17,7 @@ public sealed class BattleTestController : MonoBehaviour
     public float tileHeight = 0.62f;
     public bool useTilemapBattlefield = true;
     public bool useLegacyDiamondTerrain;
+    public bool useCanvasHud = true;
     public BattleTestUnitDefinition[] unitDefinitions = new BattleTestUnitDefinition[0];
 
     private const int SmokeCoverBonus = 2;
@@ -67,6 +68,7 @@ public sealed class BattleTestController : MonoBehaviour
     private Button hudPhaseEndButton;
     private Button hudResetButton;
     private readonly List<Button> hudCommandButtons = new List<Button>();
+    private BattleHUDController battleHud;
     private BattleTestUnit activeUnit;
     private BattleTestUnit hoveredUnit;
     private BattleTestTile hoveredTile;
@@ -80,6 +82,9 @@ public sealed class BattleTestController : MonoBehaviour
     private bool showSightOverlay;
     private bool showObjectiveOverlay = true;
     private bool showTerrainNames;
+    private bool showHudLog = true;
+    private string hudNotice;
+    private float hudNoticeUntil;
     private BattleCommandMode commandMode = BattleCommandMode.Move;
 
     private void Start()
@@ -205,7 +210,7 @@ public sealed class BattleTestController : MonoBehaviour
     private void LateUpdate()
     {
         RefreshTileNameVisibility();
-        RefreshCanvasHud();
+        RefreshBattleHud();
     }
 
     private void OnGUI()
@@ -905,7 +910,7 @@ public sealed class BattleTestController : MonoBehaviour
         SpawnUnits();
         units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
         CenterCamera();
-        EnsureCanvasHud();
+        EnsureBattleHud();
 
         AddLog("[체계] 전투 준비 완료.");
         BeginPlayerPhase();
@@ -953,6 +958,268 @@ public sealed class BattleTestController : MonoBehaviour
         hudPhaseEndButton = null;
         hudResetButton = null;
         hudCommandButtons.Clear();
+        battleHud = null;
+        hudNotice = string.Empty;
+        hudNoticeUntil = 0f;
+    }
+
+    private void EnsureBattleHud()
+    {
+        if (!useCanvasHud)
+        {
+            return;
+        }
+
+        if (battleHud != null)
+        {
+            return;
+        }
+
+        GameObject hudObject = new GameObject("Battle HUD");
+        hudObject.transform.SetParent(transform, false);
+        battleHud = hudObject.AddComponent<BattleHUDController>();
+        battleHud.Initialize(this);
+    }
+
+    private void RefreshBattleHud()
+    {
+        if (!useCanvasHud)
+        {
+            return;
+        }
+
+        EnsureBattleHud();
+        if (battleHud != null)
+        {
+            battleHud.Refresh(CreateHudSnapshot());
+        }
+    }
+
+    private BattleHudSnapshot CreateHudSnapshot()
+    {
+        BattleHudSnapshot snapshot = new BattleHudSnapshot
+        {
+            phase = phaseTurn.CurrentPhase,
+            round = round,
+            battleOver = battleOver,
+            instruction = BuildHudInstructionText(),
+            objectiveText = $"{MapDisplayName}\n주 목표: 관문 정찰조장 제압\n보조: 협로 엄폐, 고저차, 지형 상호작용 활용\n단축: Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표 / Alt 지형명",
+            unitInfoText = BuildHudUnitInfo(),
+            hoverTitle = BuildHudHoverTitle(),
+            hoverBody = BuildHudHoverBody(),
+            showLog = showHudLog,
+            showThreatRange = showThreatOverlay,
+            showElevationOverlay = showElevationOverlay,
+            showCoverOverlay = showCoverOverlay,
+            showSightOverlay = showSightOverlay,
+            showObjectiveOverlay = showObjectiveOverlay,
+            commandMode = commandMode,
+            activeUnit = activeUnit,
+            noticeText = Time.time < hudNoticeUntil ? hudNotice : string.Empty
+        };
+
+        bool playerTurn = phaseTurn.IsPlayerPhase && activeUnit != null &&
+                          activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
+        snapshot.canMove = playerTurn && activeUnit.CanMove;
+        snapshot.canAttack = playerTurn && activeUnit.CanUseMainAction;
+        snapshot.canSkill = playerTurn && CanUseSpecial(activeUnit);
+        snapshot.canGuard = playerTurn && activeUnit.CanUseMainAction;
+        snapshot.canTerrain = playerTurn && activeUnit.CanUseMainAction && HasUsableInteractable(activeUnit);
+        snapshot.canWait = phaseTurn.IsPlayerPhase && !busy && !battleOver;
+
+        BuildHudForecast(snapshot);
+
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit.definition.faction != Faction.Ally)
+            {
+                continue;
+            }
+
+            snapshot.allies.Add(unit);
+            snapshot.unitStatuses[unit] = UnitStatusText(unit);
+            if (!busy && !battleOver && phaseTurn.CanPlayerControl(unit))
+            {
+                snapshot.selectableUnits.Add(unit);
+            }
+        }
+
+        snapshot.logs.AddRange(battleLog);
+        return snapshot;
+    }
+
+    private string BuildHudInstructionText()
+    {
+        if (battleOver)
+        {
+            return "R 키 또는 전투 재시작 버튼으로 다시 시작합니다.";
+        }
+
+        if (phaseTurn.IsEnemyPhase)
+        {
+            return "적군이 행동 중입니다. 위험 범위와 반격 결과를 확인하세요.";
+        }
+
+        if (activeUnit == null)
+        {
+            return "행동 가능한 아군을 지도나 하단 로스터에서 선택하세요.";
+        }
+
+        switch (commandMode)
+        {
+        case BattleCommandMode.Attack:
+            return "붉은 대상은 공격 범위입니다. 적에게 마우스를 올리면 전투 예측이 표시됩니다.";
+        case BattleCommandMode.Skill:
+            return "무공 범위를 확인한 뒤 대상을 클릭하세요. 내공과 재사용 대기시간을 확인하세요.";
+        case BattleCommandMode.Interact:
+            return "금색 지형 오브젝트를 활용하세요. 향로, 등불, 밧줄, 바위를 전술에 이용할 수 있습니다.";
+        default:
+            return "파란 칸은 이동 가능 범위입니다. 이동 후 공격, 무공, 방어, 지형 활용으로 행동을 마무리하세요.";
+        }
+    }
+
+    private string BuildHudUnitInfo()
+    {
+        if (activeUnit == null)
+        {
+            return "선택 유닛: 없음\n아군을 선택하세요.";
+        }
+
+        return "선택: " + activeUnit.definition.displayName +
+               "\n문파: " + activeUnit.definition.sectName +
+               "\nHP " + activeUnit.hp + "/" + activeUnit.definition.maxHp +
+               "   내공 " + activeUnit.inner + "/" + activeUnit.definition.maxInner +
+               "\n이동 " + activeUnit.actions.movementLeft + "/" + EffectiveMoveRange(activeUnit) +
+               "   민첩 " + AgilityValue(activeUnit) +
+               "\n명령: " + CommandLabel(commandMode) +
+               "   상태: " + UnitStatusText(activeUnit);
+    }
+
+    private string BuildHudHoverTitle()
+    {
+        if (hoveredUnit != null)
+        {
+            return hoveredUnit.definition.displayName + " / " + FactionLabel(hoveredUnit.definition.faction);
+        }
+
+        if (hoveredTile != null)
+        {
+            return TerrainLabel(hoveredTile.terrain) + "  (" + hoveredTile.cell.x + "," + hoveredTile.cell.y + ")";
+        }
+
+        return "전술 정보";
+    }
+
+    private string BuildHudHoverBody()
+    {
+        if (hoveredUnit != null)
+        {
+            return "HP " + hoveredUnit.hp + "/" + hoveredUnit.definition.maxHp +
+                   "   방어 " + DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell)) +
+                   "\n" + hoveredUnit.definition.elementName + "/" + hoveredUnit.definition.weaponName +
+                   "   " + hoveredUnit.definition.mbti +
+                   "\n무공: " + hoveredUnit.definition.specialName +
+                   "\n상태: " + UnitStatusText(hoveredUnit);
+        }
+
+        if (hoveredTile != null)
+        {
+            BattleTestInteractable prop = GetInteractableAt(hoveredTile.cell);
+            string propLine = prop == null
+                                  ? "위험: " + TileHazardText(hoveredTile)
+                                  : "지형 오브젝트: " + prop.displayName + " / " + InteractableEffectText(prop.kind);
+            return "이동 비용 " + hoveredTile.moveCost +
+                   "   엄폐 +" + hoveredTile.coverBonus +
+                   "\n고저차 " + hoveredTile.elevation +
+                   "   시야 " + (hoveredTile.blocksLineOfSight ? "차단" : "개방") +
+                   "\n" + propLine +
+                   (string.IsNullOrEmpty(hoveredTile.tacticalNote) ? string.Empty : "\n" + hoveredTile.tacticalNote);
+        }
+
+        return "유닛이나 지형에 마우스를 올리면 이동 비용, 엄폐, 고저차, 위험도를 보여줍니다.";
+    }
+
+    private void BuildHudForecast(BattleHudSnapshot snapshot)
+    {
+        BattleForecast forecast = BuildForecast(activeUnit, hoveredUnit);
+        snapshot.hasForecast = activeUnit != null;
+        snapshot.forecastTitle = "전투 예측";
+
+        if (!forecast.valid)
+        {
+            snapshot.forecastLeft = string.IsNullOrEmpty(forecast.actorName)
+                                        ? string.Empty
+                                        : forecast.actorName + "\n" + forecast.commandName;
+            snapshot.forecastCenter = string.IsNullOrEmpty(forecast.invalidReason)
+                                          ? "공격 또는 무공을 선택한 뒤 대상을 가리키세요."
+                                          : forecast.invalidReason;
+            snapshot.forecastRight = string.IsNullOrEmpty(forecast.targetName)
+                                         ? string.Empty
+                                         : forecast.targetName + "\n거리 " + forecast.distance + "/" + forecast.range +
+                                           "\n" + forecast.costText;
+            return;
+        }
+
+        snapshot.forecastLeft = forecast.actorName + "\n" + forecast.commandName + "\n" + forecast.damageText +
+                                "\n" + forecast.costText;
+        snapshot.forecastCenter = "명중 " + forecast.neededRollText +
+                                  "\n거리 " + forecast.distance + "/" + forecast.range + ": " + forecast.rangeText +
+                                  "\n보정 공격 " + forecast.attackBonus + " / 고저 " + forecast.heightBonus +
+                                  " / 지형 " + forecast.terrainBonus +
+                                  "\n대상 방어 " + forecast.defense;
+        snapshot.forecastRight = forecast.targetName + "\n" + forecast.hpAfterText + "\n" + forecast.counterText +
+                                 "\n" + forecast.followUpText;
+    }
+
+    public void HudSetCommand(BattleCommandMode mode)
+    {
+        SetCommandMode(mode);
+        ShowHudNotice(CommandLabel(mode));
+    }
+
+    public void HudGuard()
+    {
+        GuardActiveUnit();
+    }
+
+    public void HudWait()
+    {
+        EndTurn();
+    }
+
+    public void HudToggleThreat()
+    {
+        showThreatOverlay = !showThreatOverlay;
+        ShowHudNotice(showThreatOverlay ? "위협 범위 표시" : "위협 범위 숨김");
+        RefreshHighlights();
+    }
+
+    public void HudToggleCover()
+    {
+        showCoverOverlay = !showCoverOverlay;
+        ShowHudNotice(showCoverOverlay ? "엄폐 표시" : "엄폐 숨김");
+        RefreshHighlights();
+    }
+
+    public void HudToggleLog()
+    {
+        showHudLog = !showHudLog;
+    }
+
+    public void HudResetBattle()
+    {
+        BuildBattle();
+    }
+
+    public void HudSelectUnit(BattleTestUnit unit)
+    {
+        SelectPlayerUnit(unit);
+    }
+
+    private void ShowHudNotice(string message)
+    {
+        hudNotice = message;
+        hudNoticeUntil = Time.time + 1.2f;
     }
 
     private void CreateTerrain()
@@ -4390,17 +4657,17 @@ public sealed class BattleTestController : MonoBehaviour
 
     private bool PointerOverHud(Vector3 screenPosition)
     {
+        if (battleHud != null && battleHud.PointerOverHud(screenPosition))
+        {
+            return true;
+        }
+
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
             return true;
         }
 
-        float guiY = Screen.height - screenPosition.y;
-        Vector2 point = new Vector2(screenPosition.x, guiY);
-        Rect leftPanel = new Rect(18f, 18f, 340f, 528f);
-        Rect rightPanel = new Rect(Screen.width - 386f, 18f, 368f, 700f);
-        Rect bottomPanel = new Rect(18f, Screen.height - 118f, Screen.width - 36f, 100f);
-        return leftPanel.Contains(point) || rightPanel.Contains(point) || bottomPanel.Contains(point);
+        return false;
     }
 
     private void EnsureMapVisualSprites()
