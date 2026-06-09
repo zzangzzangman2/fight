@@ -1,0 +1,158 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace JoseonMurimTactics
+{
+    /// <summary>
+    /// 현재 플레이 중인 게임의 모든 진행 상태. 씬을 넘어 GameRoot가 보관하며
+    /// SaveManager가 JSON으로 직렬화한다. 런타임은 Dictionary/HashSet을 쓰고,
+    /// 저장 시에는 JsonUtility가 다룰 수 있는 SaveDto로 변환한다.
+    /// </summary>
+    public sealed class GameSession
+    {
+        public string sectName = "해동검문";
+        public HeroDisposition heroDisposition = HeroDisposition.Romantic;
+        public GameDifficulty difficulty = GameDifficulty.Murim;
+        public StartingArt startingArt = StartingArt.Sword;
+
+        public string currentChapterId = "CH00_PROLOGUE";
+
+        public readonly List<string> recruitedCompanionIds = new List<string>();
+        public readonly Dictionary<string, int> companionApproval = new Dictionary<string, int>();
+        public readonly Dictionary<string, int> factionReputation = new Dictionary<string, int>();
+        public readonly HashSet<string> storyFlags = new HashSet<string>();
+        public readonly Dictionary<string, int> intVars = new Dictionary<string, int>();
+
+        // 마지막 전투 결과(허브/결과 화면 표시용 임시값, 저장 대상 아님).
+        [NonSerialized] public BattleResultData lastBattleResult;
+
+        public int actionsTaken;
+        public long savedAtUnixSeconds;
+
+        public GameSession() { }
+
+        public bool HasCompanion(string companionId)
+        {
+            return recruitedCompanionIds.Contains(companionId);
+        }
+
+        public void RecruitCompanion(string companionId)
+        {
+            if (!string.IsNullOrEmpty(companionId) && !recruitedCompanionIds.Contains(companionId))
+            {
+                recruitedCompanionIds.Add(companionId);
+            }
+        }
+
+        // ----- 직렬화 -----
+
+        public string ToJson()
+        {
+            SaveDto dto = new SaveDto
+            {
+                sectName = sectName,
+                heroDisposition = (int)heroDisposition,
+                difficulty = (int)difficulty,
+                startingArt = (int)startingArt,
+                currentChapterId = currentChapterId,
+                recruitedCompanionIds = new List<string>(recruitedCompanionIds),
+                companionApproval = Pairs(companionApproval),
+                factionReputation = Pairs(factionReputation),
+                storyFlags = new List<string>(storyFlags),
+                intVars = Pairs(intVars),
+                actionsTaken = actionsTaken,
+                savedAtUnixSeconds = savedAtUnixSeconds
+            };
+            return JsonUtility.ToJson(dto, true);
+        }
+
+        public static GameSession FromJson(string json)
+        {
+            SaveDto dto = JsonUtility.FromJson<SaveDto>(json);
+            GameSession session = new GameSession();
+            if (dto == null)
+            {
+                return session;
+            }
+
+            session.sectName = string.IsNullOrEmpty(dto.sectName) ? session.sectName : dto.sectName;
+            session.heroDisposition = (HeroDisposition)dto.heroDisposition;
+            session.difficulty = (GameDifficulty)dto.difficulty;
+            session.startingArt = (StartingArt)dto.startingArt;
+            session.currentChapterId = string.IsNullOrEmpty(dto.currentChapterId) ? session.currentChapterId : dto.currentChapterId;
+            session.actionsTaken = dto.actionsTaken;
+            session.savedAtUnixSeconds = dto.savedAtUnixSeconds;
+
+            if (dto.recruitedCompanionIds != null)
+            {
+                session.recruitedCompanionIds.AddRange(dto.recruitedCompanionIds);
+            }
+
+            FillFromPairs(session.companionApproval, dto.companionApproval);
+            FillFromPairs(session.factionReputation, dto.factionReputation);
+            FillFromPairs(session.intVars, dto.intVars);
+
+            if (dto.storyFlags != null)
+            {
+                foreach (string flag in dto.storyFlags)
+                {
+                    session.storyFlags.Add(flag);
+                }
+            }
+
+            return session;
+        }
+
+        private static List<StringIntPair> Pairs(Dictionary<string, int> source)
+        {
+            List<StringIntPair> list = new List<StringIntPair>(source.Count);
+            foreach (KeyValuePair<string, int> kvp in source)
+            {
+                list.Add(new StringIntPair { key = kvp.Key, value = kvp.Value });
+            }
+
+            return list;
+        }
+
+        private static void FillFromPairs(Dictionary<string, int> target, List<StringIntPair> pairs)
+        {
+            if (pairs == null)
+            {
+                return;
+            }
+
+            foreach (StringIntPair pair in pairs)
+            {
+                if (!string.IsNullOrEmpty(pair.key))
+                {
+                    target[pair.key] = pair.value;
+                }
+            }
+        }
+
+        [Serializable]
+        public struct StringIntPair
+        {
+            public string key;
+            public int value;
+        }
+
+        [Serializable]
+        public sealed class SaveDto
+        {
+            public string sectName;
+            public int heroDisposition;
+            public int difficulty;
+            public int startingArt;
+            public string currentChapterId;
+            public List<string> recruitedCompanionIds;
+            public List<StringIntPair> companionApproval;
+            public List<StringIntPair> factionReputation;
+            public List<string> storyFlags;
+            public List<StringIntPair> intVars;
+            public int actionsTaken;
+            public long savedAtUnixSeconds;
+        }
+    }
+}
