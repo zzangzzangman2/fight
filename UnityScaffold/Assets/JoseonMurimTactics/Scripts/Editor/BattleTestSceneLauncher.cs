@@ -56,12 +56,12 @@ namespace JoseonMurimTactics.Editor
             controller.tileHeight = 0.62f;
             controller.unitDefinitions = new[]
             {
-                Unit("yeon_sowol", "Yeon Sowol", Faction.Ally, "park_sungjun_visual.asset", new Vector2Int(1, 1), 34, 4, 14, 4, 1, 6, 15, 6, 10, "Moonlit Sword", 1, 1, 2, 5, 2, BattleSpecialEffect.Strike),
-                Unit("seo_arin", "Seo Arin", Faction.Ally, "yun_seohwa_visual.asset", new Vector2Int(1, 3), 28, 4, 11, 5, 1, 5, 13, 4, 7, "Pure Remedy", 3, 1, 2, 10, 0, BattleSpecialEffect.Heal),
-                Unit("nam_soyu", "Nam Soyu", Faction.Ally, "baek_ryeon_visual.asset", new Vector2Int(2, 5), 26, 3, 17, 5, 1, 7, 13, 5, 9, "Bright Rush", 1, 1, 2, 4, 3, BattleSpecialEffect.BreakGuard),
-                Unit("mok_hyang", "Mok Hyang", Faction.Enemy, "han_biyeon_visual.asset", new Vector2Int(9, 1), 28, 4, 16, 5, 3, 6, 14, 4, 8, "Silent Needle", 3, 1, 2, 3, 2, BattleSpecialEffect.Poison),
-                Unit("han_jiyu", "Han Jiyu", Faction.Enemy, "strategist_visual.asset", new Vector2Int(9, 6), 24, 4, 13, 4, 4, 5, 13, 4, 7, "Cold Reading", 4, 1, 2, 0, 0, BattleSpecialEffect.Mark),
-                Unit("kang_hana", "Kang Hana", Faction.Enemy, "do_arin_visual.asset", new Vector2Int(10, 4), 36, 3, 12, 4, 1, 6, 16, 6, 11, "Iron Fist", 1, 1, 2, 6, 2, BattleSpecialEffect.BreakGuard)
+                Unit("yeon_sowol", "Yeon Sowol", Faction.Ally, "SchoolCombat/school_combat_01_visual.asset", new Vector2Int(1, 1), 34, 4, 14, 16, 4, 1, 6, 15, 6, 10, "Moonlit Sword", 1, 1, 2, 5, 2, BattleSpecialEffect.Strike),
+                Unit("seo_arin", "Seo Arin", Faction.Ally, "SchoolCombat/school_combat_02_visual.asset", new Vector2Int(1, 3), 28, 4, 11, 13, 5, 1, 5, 13, 4, 7, "Pure Remedy", 3, 1, 2, 10, 0, BattleSpecialEffect.Heal),
+                Unit("nam_soyu", "Nam Soyu", Faction.Ally, "SchoolCombat/school_combat_03_visual.asset", new Vector2Int(2, 5), 26, 3, 17, 18, 5, 1, 7, 13, 5, 9, "Bright Rush", 1, 1, 2, 4, 3, BattleSpecialEffect.BreakGuard),
+                Unit("mok_hyang", "Mok Hyang", Faction.Enemy, "SchoolCombat/school_combat_04_visual.asset", new Vector2Int(9, 1), 28, 4, 16, 15, 5, 3, 6, 14, 4, 8, "Silent Needle", 3, 1, 2, 3, 2, BattleSpecialEffect.Poison),
+                Unit("han_jiyu", "Han Jiyu", Faction.Enemy, "SchoolCombat/school_combat_05_visual.asset", new Vector2Int(9, 6), 24, 4, 13, 14, 4, 4, 5, 13, 4, 7, "Cold Reading", 4, 1, 2, 0, 0, BattleSpecialEffect.Mark),
+                Unit("kang_hana", "Kang Hana", Faction.Enemy, "SchoolCombat/school_combat_06_visual.asset", new Vector2Int(10, 4), 36, 3, 12, 17, 4, 1, 6, 16, 6, 11, "Iron Fist", 1, 1, 2, 6, 2, BattleSpecialEffect.BreakGuard)
             };
         }
 
@@ -74,6 +74,7 @@ namespace JoseonMurimTactics.Editor
             int maxHp,
             int maxInner,
             int initiative,
+            int agility,
             int moveRange,
             int attackRange,
             int attackBonus,
@@ -98,6 +99,7 @@ namespace JoseonMurimTactics.Editor
                 maxHp = maxHp,
                 maxInner = maxInner,
                 initiative = initiative,
+                agility = agility,
                 moveRange = moveRange,
                 attackRange = attackRange,
                 attackBonus = attackBonus,
