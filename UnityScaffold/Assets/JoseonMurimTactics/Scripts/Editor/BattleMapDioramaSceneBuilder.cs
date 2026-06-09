@@ -15,10 +15,10 @@ namespace JoseonMurimTactics.Editor
 public static class BattleMapDioramaSceneBuilder
 {
     public const string ScenePath = "Assets/JoseonMurimTactics/Scenes/BattleMap_Baekdu_SnowGate_v1.unity";
-    public const int Width = 20;
-    public const int Height = 14;
-    private const float TileWidth = 1.16f;
-    private const float TileHeight = 0.62f;
+    public const int Width = BaekduSnowGateLayout.Width;
+    public const int Height = BaekduSnowGateLayout.Height;
+    private const float TileWidth = BaekduSnowGateLayout.TileWidth;
+    private const float TileHeight = BaekduSnowGateLayout.TileHeight;
     private const string TileAssetFolder = "Assets/JoseonMurimTactics/Art/BattleMaps/Tilesets/DioramaGenerated";
 
     [MenuItem("Joseon Murim Tactics/Rebuild Baekdu SnowGate v1.7 Diorama")]
@@ -294,213 +294,30 @@ public static class BattleMapDioramaSceneBuilder
 
     private static CellSpec ResolveCell(int x, int y)
     {
-        CellSpec spec = new CellSpec
+        BaekduCellSpec layout = BaekduSnowGateLayout.Resolve(new Vector2Int(x, y));
+        return new CellSpec
         {
-            terrain = TerrainType.Snow,
-            tileKey = "snow_e0",
-            variantKey = "snow_base",
-            variantSalt = 3,
-            elevation = y >= 8 ? 1 : 0,
-            moveCost = 1,
-            walkable = true,
-            capacity = 2,
-            laneId = "canyon_floor",
-            note = "Open snow courtyard."
+            terrain = layout.terrain,
+            tileKey = layout.tileKey,
+            variantKey = string.Empty,
+            variantSalt = 0,
+            elevation = layout.elevation,
+            moveCost = layout.moveCost,
+            walkable = layout.walkable,
+            blocksMovement = layout.blocksMovement,
+            blocksLineOfSight = layout.blocksLineOfSight,
+            isChokePoint = layout.isChokePoint,
+            capacity = layout.capacity,
+            coverType = layout.coverType,
+            hazardType = layout.hazardType,
+            northEdge = layout.northEdge,
+            eastEdge = layout.eastEdge,
+            southEdge = layout.southEdge,
+            westEdge = layout.westEdge,
+            zoneId = layout.zoneId,
+            laneId = layout.laneId,
+            note = layout.note
         };
-
-        if (x <= 4 && y >= 3 && y <= 11)
-        {
-            spec.terrain = x <= 2 || y >= 8 ? TerrainType.Forest : TerrainType.Bamboo;
-            spec.elevation = y >= 8 ? 1 : 0;
-            spec.tileKey = spec.terrain == TerrainType.Forest ? "forest_e" + spec.elevation : "bamboo_e" + spec.elevation;
-            spec.variantKey = spec.tileKey;
-            spec.moveCost = 2;
-            spec.coverType = x <= 2 ? CoverType.Light : CoverType.Heavy;
-            spec.blocksLineOfSight = true;
-            spec.isChokePoint = (x == 3 && (y == 6 || y == 7)) || (x == 2 && y == 9);
-            spec.laneId = "left_forest_flank";
-            spec.note = "Left forest flank: slow cover and sight breaks.";
-            return spec;
-        }
-
-        if (y == 5)
-        {
-            spec.terrain = TerrainType.DeepWater;
-            spec.tileKey = "deep_water";
-            spec.variantKey = "dark_water";
-            spec.moveCost = 99;
-            spec.walkable = false;
-            spec.blocksMovement = true;
-            spec.hazardType = HazardType.DeepWater;
-            spec.laneId = "frozen_stream";
-            spec.note = "Deep frozen stream blocks direct movement.";
-
-            if (x >= 8 && x <= 10)
-            {
-                spec.terrain = TerrainType.Bridge;
-                spec.tileKey = "bridge_e1";
-                spec.variantKey = string.Empty;
-                spec.elevation = 1;
-                spec.moveCost = 1;
-                spec.walkable = true;
-                spec.blocksMovement = false;
-                spec.hazardType = HazardType.Collapse;
-                spec.isChokePoint = true;
-                spec.northEdge = EdgeType.BridgeRail;
-                spec.southEdge = EdgeType.BridgeRail;
-                spec.laneId = "central_bridge_choke";
-                spec.note = "Central bridge bottleneck.";
-            }
-            else if ((x >= 2 && x <= 3) || (x >= 15 && x <= 16))
-            {
-                spec.terrain = TerrainType.ShallowWater;
-                spec.tileKey = "shallow_water";
-                spec.variantKey = "ice_surface";
-                spec.moveCost = 3;
-                spec.walkable = true;
-                spec.blocksMovement = false;
-                spec.hazardType = HazardType.Slippery;
-                spec.laneId = x < 10 ? "left_ford" : "right_ford";
-                spec.note = "Frozen ford: slow exposed crossing.";
-            }
-
-            return spec;
-        }
-
-        if (x >= 7 && x <= 11 && y <= 4)
-        {
-            spec.terrain = TerrainType.Road;
-            spec.tileKey = "road_e0";
-            spec.variantKey = "road_e0";
-            spec.elevation = 0;
-            spec.moveCost = 1;
-            spec.isChokePoint = x == 9 && y >= 3;
-            spec.laneId = "south_approach";
-            spec.note = "Southern approach road into the pass.";
-            return spec;
-        }
-
-        if (x >= 7 && x <= 11 && y >= 6 && y <= 10)
-        {
-            spec.terrain = y >= 9 ? TerrainType.ShrineFloor : TerrainType.Road;
-            spec.tileKey = y >= 9 ? "shrine_e2" : "road_e" + Mathf.Min(2, y - 5);
-            spec.variantKey = y >= 9 ? "shrine_e2" : "road_e" + Mathf.Min(2, y - 5);
-            spec.elevation = Mathf.Min(2, y - 5);
-            spec.moveCost = 1;
-            spec.coverType = y >= 9 ? CoverType.Light : CoverType.None;
-            spec.isChokePoint = y <= 8 && x >= 8 && x <= 10;
-            spec.laneId = "central_stair_choke";
-            spec.note = "Raised stair path through the Snow Gate.";
-            return spec;
-        }
-
-        if (x >= 7 && x <= 12 && y >= 11)
-        {
-            spec.terrain = y >= 12 ? TerrainType.Gate : TerrainType.ShrineFloor;
-            spec.tileKey = y >= 12 ? "gate_e2" : "shrine_e2";
-            spec.variantKey = y >= 12 ? string.Empty : "shrine_e2";
-            spec.elevation = 2;
-            spec.moveCost = 1;
-            spec.coverType = CoverType.Light;
-            spec.zoneId = x >= 9 && x <= 10 && y >= 12 ? "objective" : string.Empty;
-            spec.laneId = "north_gate_shrine";
-            spec.note = "Gate shrine objective plateau.";
-            return spec;
-        }
-
-        if ((x == 6 || x == 12) && y >= 6 && y <= 10)
-        {
-            spec.terrain = TerrainType.Cliff;
-            spec.tileKey = "cliff_face";
-            spec.variantKey = string.Empty;
-            spec.elevation = 2;
-            spec.moveCost = 99;
-            spec.walkable = false;
-            spec.blocksMovement = true;
-            spec.blocksLineOfSight = true;
-            spec.hazardType = HazardType.Fall;
-            spec.northEdge = EdgeType.CliffDrop;
-            spec.southEdge = EdgeType.CliffDrop;
-            spec.laneId = "central_cliff_face";
-            spec.note = "Basalt cliff face divides the central pass.";
-            return spec;
-        }
-
-        if (x >= 13 && y >= 6 && y <= 12)
-        {
-            spec.terrain = y >= 10 ? TerrainType.Hill : TerrainType.Cliff;
-            spec.tileKey = y >= 10 ? "ridge_e3" : "ridge_e2";
-            spec.variantKey = y >= 10 ? "ridge_e3" : "ridge_e2";
-            spec.elevation = y >= 10 ? 3 : 2;
-            spec.moveCost = 2;
-            spec.coverType = CoverType.Light;
-            spec.laneId = "right_cliff_highground";
-            spec.note = "Right cliff high ground with fall edges.";
-            if (x == 13 || y == 6 || (x >= 17 && y <= 8))
-            {
-                spec.westEdge = EdgeType.CliffDrop;
-                spec.southEdge = EdgeType.CliffDrop;
-                spec.hazardType = HazardType.Fall;
-                spec.isChokePoint = x == 13 && y >= 7 && y <= 8;
-            }
-            return spec;
-        }
-
-        if (x >= 15 && y <= 4)
-        {
-            spec.terrain = x >= 17 && y <= 2 ? TerrainType.Ice : TerrainType.ShallowWater;
-            spec.tileKey = spec.terrain == TerrainType.Ice ? "ice_slick" : "shallow_water";
-            spec.variantKey = "ice_surface";
-            spec.moveCost = spec.terrain == TerrainType.Ice ? 2 : 3;
-            spec.hazardType = HazardType.Slippery;
-            spec.laneId = "right_icy_shoal";
-            spec.note = "Right icy shoal under the cliff.";
-            return spec;
-        }
-
-        if (x <= 5 && y <= 2)
-        {
-            spec.terrain = TerrainType.Forest;
-            spec.tileKey = "forest_e0";
-            spec.variantKey = "forest_e0";
-            spec.coverType = CoverType.Light;
-            spec.blocksLineOfSight = x <= 2;
-            spec.moveCost = 2;
-            spec.laneId = "southwest_pines";
-            spec.note = "Pine cover on the southern approach.";
-            return spec;
-        }
-
-        if (x >= 5 && x <= 13 && y >= 6 && y <= 9)
-        {
-            spec.terrain = TerrainType.Rubble;
-            spec.tileKey = "rubble_e1";
-            spec.variantKey = "rubble_e1";
-            spec.elevation = 1;
-            spec.moveCost = 2;
-            spec.coverType = (x + y) % 2 == 0 ? CoverType.Heavy : CoverType.Light;
-            spec.blocksLineOfSight = x == 11 && y >= 8;
-            spec.laneId = "broken_courtyard";
-            spec.note = "Broken courtyard cover near the gate.";
-            return spec;
-        }
-
-        if (y >= 12 && (x <= 6 || x >= 13))
-        {
-            spec.terrain = TerrainType.Wall;
-            spec.tileKey = "wall_e2";
-            spec.variantKey = string.Empty;
-            spec.elevation = 2;
-            spec.walkable = false;
-            spec.blocksMovement = true;
-            spec.blocksLineOfSight = true;
-            spec.hazardType = HazardType.Fall;
-            spec.laneId = "north_wall";
-            spec.note = "Snow-covered gate wall.";
-            return spec;
-        }
-
-        return spec;
     }
 
     private static Dictionary<string, TerrainTileData> BuildTileLibrary()
@@ -1031,9 +848,7 @@ public static class BattleMapDioramaSceneBuilder
 
     private static Vector3 CellToWorld(Vector2Int cell)
     {
-        float x = (cell.x - cell.y) * TileWidth * 0.5f;
-        float y = (cell.x + cell.y) * TileHeight * 0.5f;
-        return new Vector3(x, y, 0f);
+        return BaekduSnowGateLayout.CellToWorld(cell);
     }
 
     private static bool Inside(Vector2Int cell)
