@@ -46,6 +46,11 @@ public static class BaekduSnowGateLayout
             return spec;
         }
 
+        if (IsOuterCanyon(cell))
+        {
+            return CanyonEdge(cell);
+        }
+
         if (x <= 5 && y >= 2 && y <= 11)
         {
             spec = LeftFlank(cell);
@@ -123,6 +128,45 @@ public static class BaekduSnowGateLayout
             laneId = lane,
             note = note
         };
+    }
+
+    private static bool IsOuterCanyon(Vector2Int cell)
+    {
+        int x = cell.x;
+        int y = cell.y;
+        if (y == 0 && (x <= 3 || x >= 16))
+        {
+            return true;
+        }
+
+        if (y == 1 && (x <= 1 || x >= 18))
+        {
+            return true;
+        }
+
+        if (x == 0 && (y <= 3 || y >= 10))
+        {
+            return true;
+        }
+
+        if (x == 19 && (y <= 4 || y >= 9))
+        {
+            return true;
+        }
+
+        if (y == 13 && (x <= 2 || x >= 18))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static BaekduCellSpec CanyonEdge(Vector2Int cell)
+    {
+        int elevation = cell.y <= 3 ? 0 : cell.y <= 7 ? 1 : cell.y <= 11 ? 2 : 3;
+        return CliffFace(cell, elevation, "outer_canyon_depth",
+                         "Outer canyon edge: fog and rock walls keep the battlefield from reading as a flat board.");
     }
 
     private static BaekduCellSpec Road(Vector2Int cell, int elevation, string lane, string note)

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96c36d6a613d0ec2b27c3310af50fee, type: 3}
   m_Name: bridge_e1
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.TerrainTileData
-  m_Sprite: {fileID: 21300000, guid: 31c75053f777cc749a5ba2d7966e6f68, type: 3}
+  m_Sprite: {fileID: 21300000, guid: bc20110a6c2f8c74684243a062df7fbe, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1

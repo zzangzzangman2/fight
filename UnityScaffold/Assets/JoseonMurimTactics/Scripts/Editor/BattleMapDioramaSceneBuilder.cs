@@ -21,7 +21,7 @@ public static class BattleMapDioramaSceneBuilder
     private const float TileHeight = BaekduSnowGateLayout.TileHeight;
     private const string TileAssetFolder = "Assets/JoseonMurimTactics/Art/BattleMaps/Tilesets/DioramaGenerated";
 
-    [MenuItem("Joseon Murim Tactics/Rebuild Baekdu SnowGate v1.8 Diorama")]
+    [MenuItem("Joseon Murim Tactics/Rebuild Baekdu SnowGate v1.9 Diorama")]
     public static void RebuildBaekduSnowGateScene()
     {
         EnsureFolder("Assets/JoseonMurimTactics/Scenes");
@@ -116,7 +116,7 @@ public static class BattleMapDioramaSceneBuilder
         camera.orthographic = true;
         camera.orthographicSize = 7.25f;
         camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = new Color(0.22f, 0.34f, 0.32f, 1f);
+        camera.backgroundColor = new Color(0.52f, 0.62f, 0.58f, 1f);
         cameraObject.transform.position = new Vector3(2.40f, 5.95f, -10f);
         cameraObject.tag = "MainCamera";
         cameraObject.AddComponent<AudioListener>();
@@ -133,13 +133,15 @@ public static class BattleMapDioramaSceneBuilder
                 Vector2Int cell = new Vector2Int(x, y);
                 CellSpec spec = ResolveCell(x, y);
                 TerrainTileData snowBase = PickPattern(variants["snow_base"], cell, 1);
-                PaintTile(binder.GroundBaseTilemap, cell, VisualTileFor(snowBase, visualTiles), Vary(Color.white, cell, 0.035f));
+                PaintTile(binder.GroundBaseTilemap, cell, VisualTileFor(snowBase, visualTiles),
+                          Vary(BaseGroundTint(spec), cell, 0.010f));
 
                 TerrainTileData tacticalTile = ResolveTacticalTile(spec, cell, tiles, variants);
                 PaintTile(PrimaryLayerFor(binder, spec), cell, VisualTileFor(tacticalTile, visualTiles),
-                          Vary(Color.white, cell, 0.025f));
+                          Vary(TacticalTint(spec), cell, 0.012f));
                 PaintTransitions(binder, cell, spec, tiles, visualTiles, variants);
                 PaintAtmosphere(binder, cell, spec, tiles, visualTiles);
+                PaintComfortWash(binder, cell, spec, tiles, visualTiles);
             }
         }
     }
@@ -234,7 +236,7 @@ public static class BattleMapDioramaSceneBuilder
             spec.terrain == TerrainType.ShrineFloor || spec.terrain == TerrainType.Gate)
         {
             PaintTile(binder.RoadEdgeTilemap, cell, VisualTileFor(PickPattern(variants["snow_edge"], cell, 5), visualTiles),
-                      new Color(1f, 1f, 1f, 0.82f));
+                      new Color(0.92f, 0.94f, 0.88f, 0.48f));
         }
 
         if (spec.terrain == TerrainType.ShallowWater || spec.terrain == TerrainType.DeepWater ||
@@ -242,7 +244,7 @@ public static class BattleMapDioramaSceneBuilder
         {
             PaintTile(binder.WaterSurfaceTilemap, cell,
                       VisualTileFor(PickPattern(variants["ice_surface"], cell, 7), visualTiles),
-                      new Color(0.86f, 0.96f, 1f, 0.72f));
+                      new Color(0.76f, 0.90f, 0.96f, 0.58f));
             foreach (Vector2Int next in Neighbors(cell))
             {
                 if (!Inside(next))
@@ -255,7 +257,7 @@ public static class BattleMapDioramaSceneBuilder
                     neighbor.terrain != TerrainType.Ice)
                 {
                     PaintTile(binder.DecorGroundTilemap, next, VisualTileFor(tiles["water_bank"], visualTiles),
-                              new Color(1f, 1f, 1f, 0.62f));
+                              new Color(0.90f, 0.95f, 0.92f, 0.40f));
                 }
             }
         }
@@ -263,9 +265,9 @@ public static class BattleMapDioramaSceneBuilder
         if (HasCliffDrop(spec))
         {
             PaintTile(binder.CliffEdgeTilemap, cell, VisualTileFor(tiles["cliff_edge"], visualTiles),
-                      new Color(1f, 1f, 1f, 0.95f));
+                      new Color(0.82f, 0.86f, 0.80f, 0.74f));
             PaintTile(binder.ShadowAoTilemap, cell, VisualTileFor(tiles["shadow_ao"], visualTiles),
-                      new Color(0.12f, 0.10f, 0.08f, 0.24f));
+                      new Color(0.10f, 0.09f, 0.08f, 0.18f));
             PaintCliffSkirt(binder, cell, spec, tiles);
         }
 
@@ -273,7 +275,7 @@ public static class BattleMapDioramaSceneBuilder
         {
             PaintTile(binder.DecorGrassRockSnowTilemap, cell,
                       VisualTileFor(PickPattern(variants["snow_decor"], cell, 11), visualTiles),
-                      new Color(0.92f, 1f, 0.90f, 0.72f));
+                      new Color(0.76f, 0.86f, 0.72f, 0.34f));
         }
     }
 
@@ -283,14 +285,48 @@ public static class BattleMapDioramaSceneBuilder
         if (cell.y <= 1 || spec.terrain == TerrainType.ShallowWater || spec.terrain == TerrainType.DeepWater)
         {
             PaintTile(binder.FogMistTilemap, cell, VisualTileFor(tiles["fog_mist"], visualTiles),
-                      new Color(0.78f, 0.90f, 0.90f, 0.16f));
+                      new Color(0.78f, 0.90f, 0.88f, 0.20f));
         }
 
-        if ((cell.x + (cell.y * 2)) % 7 == 0)
+        if ((cell.x + (cell.y * 2)) % 11 == 0)
         {
             PaintTile(binder.GridSubtleTilemap, cell, VisualTileFor(tiles["grid_subtle"], visualTiles),
-                      new Color(0.86f, 0.96f, 0.92f, 0.012f));
+                      new Color(0.86f, 0.96f, 0.92f, 0.004f));
         }
+    }
+
+    private static void PaintComfortWash(BattleMapTilemapBinder binder, Vector2Int cell, CellSpec spec,
+                                         Dictionary<string, TerrainTileData> tiles, Dictionary<string, Tile> visualTiles)
+    {
+        if (!tiles.TryGetValue("soft_wash", out TerrainTileData wash))
+        {
+            return;
+        }
+
+        Color color = new Color(0.94f, 0.99f, 0.95f, spec.walkable ? 0.075f : 0.035f);
+        if (spec.terrain == TerrainType.Road || spec.terrain == TerrainType.Bridge)
+        {
+            color = new Color(0.98f, 0.92f, 0.78f, 0.090f);
+        }
+        else if (spec.terrain == TerrainType.Forest || spec.terrain == TerrainType.Bamboo)
+        {
+            color = new Color(0.78f, 0.94f, 0.72f, 0.070f);
+        }
+        else if (spec.terrain == TerrainType.ShallowWater || spec.terrain == TerrainType.DeepWater ||
+                 spec.terrain == TerrainType.Ice)
+        {
+            color = new Color(0.78f, 0.94f, 1f, 0.085f);
+        }
+        else if (spec.zoneId == "objective" || spec.terrain == TerrainType.Gate)
+        {
+            color = new Color(1f, 0.84f, 0.44f, 0.080f);
+        }
+        else if (spec.elevation >= 3)
+        {
+            color = new Color(0.90f, 0.96f, 0.88f, 0.060f);
+        }
+
+        PaintTile(binder.FogMistTilemap, cell, VisualTileFor(wash, visualTiles), Vary(color, cell, 0.003f));
     }
 
     private static void PaintCliffSkirt(BattleMapTilemapBinder binder, Vector2Int cell, CellSpec spec,
@@ -312,9 +348,43 @@ public static class BattleMapDioramaSceneBuilder
 
             SpriteRenderer renderer = spriteObject.AddComponent<SpriteRenderer>();
             renderer.sprite = face.sprite;
-            renderer.color = new Color(0.48f - (i * 0.035f), 0.55f - (i * 0.030f), 0.55f - (i * 0.025f), 0.88f);
+            renderer.color = new Color(0.50f - (i * 0.030f), 0.56f - (i * 0.025f), 0.55f - (i * 0.020f), 0.78f);
             renderer.sortingLayerName = "Default";
             renderer.sortingOrder = 90 + ((cell.x + cell.y) * 2) - i;
+        }
+    }
+
+    private static Color BaseGroundTint(CellSpec spec)
+    {
+        float lift = spec.elevation * 0.012f;
+        return new Color(0.94f + lift, 0.98f + lift, 0.95f + lift, 0.18f);
+    }
+
+    private static Color TacticalTint(CellSpec spec)
+    {
+        switch (spec.terrain)
+        {
+        case TerrainType.Road:
+            return new Color(0.98f, 0.95f, 0.84f, 0.82f);
+        case TerrainType.Bridge:
+            return new Color(0.94f, 0.80f, 0.60f, 0.84f);
+        case TerrainType.Forest:
+        case TerrainType.Bamboo:
+            return new Color(0.84f, 0.96f, 0.78f, 0.80f);
+        case TerrainType.ShallowWater:
+        case TerrainType.DeepWater:
+        case TerrainType.Ice:
+            return new Color(0.84f, 0.98f, 1f, 0.82f);
+        case TerrainType.ShrineFloor:
+        case TerrainType.Gate:
+            return new Color(0.96f, 0.92f, 0.78f, 0.84f);
+        case TerrainType.Cliff:
+        case TerrainType.Hill:
+        case TerrainType.Wall:
+        case TerrainType.Rubble:
+            return new Color(0.88f, 0.92f, 0.86f, 0.80f);
+        default:
+            return new Color(0.96f, 1f, 0.96f, 0.78f);
         }
     }
 
@@ -449,6 +519,10 @@ public static class BattleMapDioramaSceneBuilder
                 HazardType.Smoke);
         AddTile(tiles, "grid_subtle", TerrainType.Stone, "Tiles/baekdu_snow_plain", 1, true, false, false, 0,
                 CoverType.None, HazardType.None);
+        AddTile(tiles, "soft_wash", TerrainType.Snow, "Tiles/baekdu_snow_plain", 1, true, false, false, 0,
+                CoverType.None, HazardType.None);
+        tiles["soft_wash"].sprite = LoadOrCreateComfortWashSprite();
+        EditorUtility.SetDirty(tiles["soft_wash"]);
         AddTile(tiles, "snow_e0_d", TerrainType.Snow, "Tiles/snow_edge", 1, true, false, false, 0, CoverType.None,
                 HazardType.None);
         AddTile(tiles, "snow_e0_e", TerrainType.Snow, "Tiles/baekdu_volcanic_snow_rock", 1, true, false, false, 0,
@@ -610,7 +684,223 @@ public static class BattleMapDioramaSceneBuilder
                 EdgeType.WaterBank, EdgeType.WaterBank, string.Empty, "frozen_stream");
         AddTile(tiles, "dark_water_b", TerrainType.DeepWater, "Tiles/deep_water", 99, false, false, false, 0,
                 CoverType.None, HazardType.DeepWater);
+        ApplyEyeComfortFloorSprites(tiles);
         return tiles;
+    }
+
+    private static void ApplyEyeComfortFloorSprites(Dictionary<string, TerrainTileData> tiles)
+    {
+        foreach (KeyValuePair<string, TerrainTileData> entry in tiles)
+        {
+            TerrainTileData tile = entry.Value;
+            if (tile == null || !ShouldUseEyeComfortSprite(entry.Key, tile))
+            {
+                continue;
+            }
+
+            tile.sprite = LoadOrCreateEyeComfortTerrainSprite(entry.Key, tile.terrainType, tile.elevation);
+            EditorUtility.SetDirty(tile);
+        }
+    }
+
+    private static bool ShouldUseEyeComfortSprite(string key, TerrainTileData tile)
+    {
+        if (key.StartsWith("cliff_face", StringComparison.OrdinalIgnoreCase) ||
+            key == "cliff_edge" || key == "shadow_ao" || key == "fog_mist" || key == "grid_subtle" ||
+            key == "soft_wash")
+        {
+            return false;
+        }
+
+        if (tile.terrainType == TerrainType.Wall)
+        {
+            return false;
+        }
+
+        return tile.terrainType == TerrainType.Snow || tile.terrainType == TerrainType.Road ||
+               tile.terrainType == TerrainType.Bridge || tile.terrainType == TerrainType.Forest ||
+               tile.terrainType == TerrainType.Bamboo || tile.terrainType == TerrainType.ShallowWater ||
+               tile.terrainType == TerrainType.DeepWater || tile.terrainType == TerrainType.Ice ||
+               tile.terrainType == TerrainType.ShrineFloor || tile.terrainType == TerrainType.Gate ||
+               tile.terrainType == TerrainType.Cliff || tile.terrainType == TerrainType.Hill ||
+               tile.terrainType == TerrainType.Rubble;
+    }
+
+    private static Sprite LoadOrCreateEyeComfortTerrainSprite(string key, TerrainType terrain, int elevation)
+    {
+        string group = EyeComfortGroup(terrain);
+        int variant = StableKeyHash(key) % 4;
+        string folder = TileAssetFolder + "/ComfortV2";
+        EnsureFolder(folder);
+        string assetPath = folder + "/" + group + "_" + variant + ".png";
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+        if (sprite != null)
+        {
+            return sprite;
+        }
+
+        CreateEyeComfortTerrainTexture(assetPath, terrain, elevation, variant);
+        return AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+    }
+
+    private static void CreateEyeComfortTerrainTexture(string assetPath, TerrainType terrain, int elevation, int variant)
+    {
+        const int size = 512;
+        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        texture.name = Path.GetFileNameWithoutExtension(assetPath);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        Color baseColor = EyeComfortBaseColor(terrain, elevation, variant);
+        Color coolLight = Color.Lerp(baseColor, Color.white, 0.22f);
+        Color coolShade = Color.Lerp(baseColor, new Color(0.30f, 0.36f, 0.34f, 1f), 0.16f);
+        Vector2 center = new Vector2(size * 0.5f, size * 0.5f);
+        int salt = StableKeyHash(assetPath) + variant * 97;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float nx = Mathf.Abs((x + 0.5f - center.x) / center.x);
+                float ny = Mathf.Abs((y + 0.5f - center.y) / center.y);
+                float diamond = nx + ny;
+                if (diamond > 1.015f)
+                {
+                    texture.SetPixel(x, y, Color.clear);
+                    continue;
+                }
+
+                float edgeAlpha = diamond <= 0.992f ? 1f : Mathf.Clamp01((1.006f - diamond) * 82f);
+                float edgeShade = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((diamond - 0.62f) * 2.6f));
+                float noise = Hash01(x / 13, y / 13, salt);
+                float grain = Hash01(x / 37, y / 19, salt + 23);
+                Color color = Color.Lerp(coolLight, coolShade, edgeShade * 0.20f + noise * 0.10f);
+                color = ApplyTerrainFlecks(color, terrain, grain, noise);
+                color.a = edgeAlpha * 0.96f;
+                texture.SetPixel(x, y, color);
+            }
+        }
+
+        texture.Apply();
+        File.WriteAllBytes(assetPath, texture.EncodeToPNG());
+        UnityEngine.Object.DestroyImmediate(texture);
+        AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+
+        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+        if (importer != null)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 512f;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.SaveAndReimport();
+        }
+    }
+
+    private static Color ApplyTerrainFlecks(Color color, TerrainType terrain, float grain, float noise)
+    {
+        if (terrain == TerrainType.ShallowWater || terrain == TerrainType.DeepWater || terrain == TerrainType.Ice)
+        {
+            return grain > 0.86f ? Color.Lerp(color, new Color(0.88f, 1f, 1f, 1f), 0.24f) : color;
+        }
+
+        if (terrain == TerrainType.Forest || terrain == TerrainType.Bamboo)
+        {
+            return grain > 0.80f ? Color.Lerp(color, new Color(0.46f, 0.66f, 0.42f, 1f), 0.18f) : color;
+        }
+
+        if (terrain == TerrainType.Road || terrain == TerrainType.ShrineFloor || terrain == TerrainType.Gate)
+        {
+            return grain > 0.82f ? Color.Lerp(color, new Color(0.74f, 0.68f, 0.56f, 1f), 0.16f) : color;
+        }
+
+        if (terrain == TerrainType.Cliff || terrain == TerrainType.Hill || terrain == TerrainType.Rubble)
+        {
+            return grain > 0.78f ? Color.Lerp(color, new Color(0.58f, 0.62f, 0.58f, 1f), 0.18f) : color;
+        }
+
+        return noise > 0.82f ? Color.Lerp(color, Color.white, 0.18f) : color;
+    }
+
+    private static string EyeComfortGroup(TerrainType terrain)
+    {
+        switch (terrain)
+        {
+        case TerrainType.Road:
+        case TerrainType.Bridge:
+            return "road";
+        case TerrainType.Forest:
+        case TerrainType.Bamboo:
+            return "forest";
+        case TerrainType.ShallowWater:
+        case TerrainType.DeepWater:
+        case TerrainType.Ice:
+            return "ice";
+        case TerrainType.ShrineFloor:
+        case TerrainType.Gate:
+            return "shrine";
+        case TerrainType.Cliff:
+        case TerrainType.Hill:
+        case TerrainType.Rubble:
+            return "ridge";
+        default:
+            return "snow";
+        }
+    }
+
+    private static Color EyeComfortBaseColor(TerrainType terrain, int elevation, int variant)
+    {
+        float lift = elevation * 0.018f + variant * 0.010f;
+        switch (terrain)
+        {
+        case TerrainType.Road:
+        case TerrainType.Bridge:
+            return new Color(0.74f + lift, 0.70f + lift, 0.58f + lift, 1f);
+        case TerrainType.Forest:
+        case TerrainType.Bamboo:
+            return new Color(0.58f + lift, 0.70f + lift, 0.54f + lift, 1f);
+        case TerrainType.ShallowWater:
+        case TerrainType.DeepWater:
+        case TerrainType.Ice:
+            return new Color(0.48f + lift, 0.72f + lift, 0.78f + lift, 1f);
+        case TerrainType.ShrineFloor:
+        case TerrainType.Gate:
+            return new Color(0.76f + lift, 0.72f + lift, 0.60f + lift, 1f);
+        case TerrainType.Cliff:
+        case TerrainType.Hill:
+        case TerrainType.Rubble:
+            return new Color(0.58f + lift, 0.62f + lift, 0.58f + lift, 1f);
+        default:
+            return new Color(0.72f + lift, 0.80f + lift, 0.74f + lift, 1f);
+        }
+    }
+
+    private static int StableKeyHash(string key)
+    {
+        unchecked
+        {
+            int hash = 17;
+            for (int i = 0; i < key.Length; i++)
+            {
+                hash = hash * 31 + key[i];
+            }
+
+            return Mathf.Abs(hash);
+        }
+    }
+
+    private static float Hash01(int x, int y, int salt)
+    {
+        unchecked
+        {
+            int hash = x * 73856093 ^ y * 19349663 ^ salt * 83492791;
+            hash ^= hash << 13;
+            hash ^= hash >> 17;
+            hash ^= hash << 5;
+            return (hash & 0x7fffffff) / (float)int.MaxValue;
+        }
     }
 
     private static Dictionary<string, TerrainVariantSet> BuildVariantSets(Dictionary<string, TerrainTileData> tiles)
@@ -779,18 +1069,30 @@ public static class BattleMapDioramaSceneBuilder
     {
         Transform root = binder.transform;
         Vector3 center = CellToWorld(new Vector2Int(9, 7));
+        CreateBackdropSprite(root, "Backdrop_Canyon_Depth_Shadow", LoadSprite("Tiles/baekdu_snow_mountain_pass"),
+                             center + new Vector3(0f, -0.40f, 0.22f), new Vector3(17.0f, 10.2f, 1f), 45f,
+                             new Color(0.16f, 0.23f, 0.22f, 0.34f), -235);
         CreateBackdropSprite(root, "Backdrop_Snow_Sky_Wash", LoadSprite("Tiles/baekdu_snow_mountain_pass"),
-                             center + new Vector3(0f, 1.4f, 0.20f), new Vector3(13.8f, 8.2f, 1f), 45f,
-                             new Color(0.34f, 0.52f, 0.54f, 0.42f), -220);
+                             center + new Vector3(0f, 1.2f, 0.20f), new Vector3(16.8f, 9.4f, 1f), 45f,
+                             new Color(0.62f, 0.74f, 0.70f, 0.42f), -225);
+        CreateBackdropSprite(root, "Backdrop_Valley_Fog_Floor", LoadSprite("Tiles/smoke_veil"),
+                             center + new Vector3(0.2f, -1.25f, 0.12f), new Vector3(11.8f, 3.4f, 1f), -8f,
+                             new Color(0.78f, 0.86f, 0.82f, 0.44f), -218);
         CreateBackdropSprite(root, "Backdrop_Distant_Baekdu_Ridge", LoadSprite("Tiles/baekdu_wind_snow_ridge"),
-                             center + new Vector3(-1.4f, 4.1f, 0.16f), new Vector3(5.8f, 2.0f, 1f), 0f,
-                             new Color(0.56f, 0.68f, 0.64f, 0.70f), -210);
+                             center + new Vector3(-1.7f, 4.1f, 0.16f), new Vector3(6.4f, 2.2f, 1f), 0f,
+                             new Color(0.44f, 0.56f, 0.54f, 0.62f), -210);
+        CreateBackdropSprite(root, "Backdrop_Far_Right_Ridge", LoadSprite("Tiles/baekdu_snow_basalt_cliff"),
+                             center + new Vector3(3.9f, 3.3f, 0.15f), new Vector3(5.8f, 1.7f, 1f), -7f,
+                             new Color(0.32f, 0.44f, 0.42f, 0.42f), -208);
+        CreateBackdropSprite(root, "Backdrop_Map_EyeComfort_Wash", LoadOrCreateComfortWashSprite(),
+                             center + new Vector3(0.05f, 0.10f, -0.06f), new Vector3(13.8f, 8.8f, 1f), 0f,
+                             new Color(0.90f, 0.96f, 0.91f, 0.07f), 119);
         CreateBackdropSprite(root, "Backdrop_Pine_Left", LoadSprite("Objects/baekdu_snow_pine"),
                              CellToWorld(new Vector2Int(0, 10)) + new Vector3(-1.4f, 0.45f, 0.10f),
-                             new Vector3(1.25f, 1.25f, 1f), -4f, new Color(0.70f, 0.84f, 0.76f, 0.78f), -120);
+                             new Vector3(1.45f, 1.45f, 1f), -4f, new Color(0.50f, 0.66f, 0.58f, 0.72f), -120);
         CreateBackdropSprite(root, "Backdrop_Pine_Right", LoadSprite("Objects/baekdu_snow_pine"),
                              CellToWorld(new Vector2Int(19, 6)) + new Vector3(1.1f, 0.35f, 0.10f),
-                             new Vector3(-1.05f, 1.05f, 1f), 5f, new Color(0.62f, 0.78f, 0.70f, 0.68f), -118);
+                             new Vector3(-1.30f, 1.30f, 1f), 5f, new Color(0.46f, 0.62f, 0.54f, 0.64f), -118);
     }
 
     private static void CreateProps(BattleMapTilemapBinder binder)
@@ -828,6 +1130,18 @@ public static class BattleMapDioramaSceneBuilder
                    "Objects/baekdu_frozen_rope_posts", true, CoverType.Light, false, true, false);
         CreateProp(binder, "fallen_wall", "Fallen shrine wall", InteractableKind.FallenWall, new Vector2Int(11, 8),
                    "Objects/fallen_wall", true, CoverType.Heavy, true, true, false);
+        CreateProp(binder, "gate_rope_posts_left", "Broken gate posts", InteractableKind.Ladder, new Vector2Int(8, 12),
+                   "Objects/baekdu_frozen_rope_posts", false, CoverType.Light, true, false, false);
+        CreateProp(binder, "gate_rope_posts_right", "Broken gate posts", InteractableKind.Ladder, new Vector2Int(11, 12),
+                   "Objects/baekdu_frozen_rope_posts", false, CoverType.Light, true, false, false);
+        CreateProp(binder, "left_snow_pine_b", "Snow pine", InteractableKind.BambooBundle, new Vector2Int(1, 6),
+                   "Objects/baekdu_snow_pine", false, CoverType.Heavy, true, false, false);
+        CreateProp(binder, "right_ridge_warning_posts", "Cliff warning posts", InteractableKind.Ladder,
+                   new Vector2Int(13, 9), "Objects/baekdu_frozen_rope_posts", true, CoverType.Light, false, true,
+                   false);
+        CreateProp(binder, "allied_snowdrift_cover", "Allied snowdrift cover", InteractableKind.FallenWall,
+                   new Vector2Int(5, 1), "Objects/baekdu_snowdrift_cover", false, CoverType.Heavy, false, false,
+                   false);
     }
 
     private static void CreateProp(BattleMapTilemapBinder binder, string id, string displayName, InteractableKind kind,
@@ -1067,6 +1381,56 @@ public static class BattleMapDioramaSceneBuilder
         }
 
         return sprite;
+    }
+
+    private static Sprite LoadOrCreateComfortWashSprite()
+    {
+        const string assetPath = TileAssetFolder + "/soft_wash_sprite.png";
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+        if (sprite != null)
+        {
+            return sprite;
+        }
+
+        const int size = 512;
+        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        texture.name = "BaekduSoftWashSprite";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        Vector2 center = new Vector2(size * 0.5f, size * 0.5f);
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float nx = Mathf.Abs((x + 0.5f - center.x) / center.x);
+                float ny = Mathf.Abs((y + 0.5f - center.y) / center.y);
+                float diamond = nx + ny;
+                float edge = Mathf.Clamp01((1.02f - diamond) * 16f);
+                float centerGlow = Mathf.Clamp01(1f - diamond * 0.72f);
+                float alpha = edge * (0.66f + centerGlow * 0.24f);
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        File.WriteAllBytes(assetPath, texture.EncodeToPNG());
+        UnityEngine.Object.DestroyImmediate(texture);
+        AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+
+        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+        if (importer != null)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 512f;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.SaveAndReimport();
+        }
+
+        return AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
     }
 
     private static Vector3 CellToWorld(Vector2Int cell)

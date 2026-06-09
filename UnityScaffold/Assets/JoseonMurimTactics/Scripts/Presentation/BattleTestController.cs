@@ -2229,7 +2229,7 @@ public sealed class BattleTestController : MonoBehaviour
 
     private Color VaryTerrainColor(Color color, Vector2Int cell)
     {
-        float amount = -0.055f + Stable01(cell, 99) * 0.11f;
+        float amount = -0.028f + Stable01(cell, 99) * 0.056f;
         Color target = amount >= 0f ? Color.white : Color.black;
         return Color.Lerp(color, target, Mathf.Abs(amount));
     }
@@ -4614,7 +4614,7 @@ public sealed class BattleTestController : MonoBehaviour
         BattleTestTile activeTile = TileAt(activeUnit.cell);
         if (activeTile != null)
         {
-            activeTile.SetHighlight(new Color(1f, 0.76f, 0.18f, 0.62f));
+            activeTile.SetHighlight(new Color(1f, 0.72f, 0.16f, 0.44f));
         }
 
         DrawMapOverlays();
@@ -4637,7 +4637,7 @@ public sealed class BattleTestController : MonoBehaviour
                 BattleTestTile tile = TileAt(cell);
                 if (tile != null)
                 {
-                    tile.SetHighlight(new Color(0.25f, 0.58f, 1f, 0.38f));
+                    tile.SetHighlight(new Color(0.24f, 0.56f, 0.92f, 0.28f));
                 }
             }
         }
@@ -4658,7 +4658,7 @@ public sealed class BattleTestController : MonoBehaviour
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
                     {
-                        tile.SetHighlight(new Color(1f, 0.18f, 0.16f, 0.52f));
+                        tile.SetHighlight(new Color(0.95f, 0.18f, 0.14f, 0.36f));
                     }
                 }
             }
@@ -4682,8 +4682,8 @@ public sealed class BattleTestController : MonoBehaviour
                     if (tile != null)
                     {
                         Color color = activeUnit.definition.specialEffect == BattleSpecialEffect.Heal
-                                          ? new Color(0.18f, 1f, 0.62f, 0.48f)
-                                          : new Color(0.72f, 0.28f, 1f, 0.50f);
+                                          ? new Color(0.18f, 0.88f, 0.58f, 0.32f)
+                                          : new Color(0.62f, 0.30f, 0.90f, 0.34f);
                         tile.SetHighlight(color);
                     }
                 }
@@ -4702,7 +4702,7 @@ public sealed class BattleTestController : MonoBehaviour
                 BattleTestTile tile = TileAt(interactable.cell);
                 if (tile != null)
                 {
-                    tile.SetHighlight(new Color(1f, 0.62f, 0.16f, 0.58f));
+                    tile.SetHighlight(new Color(1f, 0.62f, 0.16f, 0.36f));
                 }
             }
         }
@@ -4719,7 +4719,7 @@ public sealed class BattleTestController : MonoBehaviour
         {
             if (tile != null && IsDeploymentCell(tile.cell) && tile.walkable && UnitAt(tile.cell) == null)
             {
-                tile.SetHighlight(new Color(0.15f, 0.72f, 1f, 0.42f));
+                tile.SetHighlight(new Color(0.16f, 0.66f, 0.94f, 0.30f));
             }
         }
     }
@@ -4740,33 +4740,33 @@ public sealed class BattleTestController : MonoBehaviour
 
             if (showThreatOverlay && IsInEnemyThreat(tile.cell))
             {
-                tile.SetHighlight(new Color(0.70f, 0.08f, 0.08f, 0.26f));
+                tile.SetHighlight(new Color(0.70f, 0.08f, 0.08f, 0.20f));
             }
 
             if (showElevationOverlay && tile.elevation > 0)
             {
-                float alpha = Mathf.Clamp01(0.18f + tile.elevation * 0.12f);
+                float alpha = Mathf.Clamp01(0.12f + tile.elevation * 0.065f);
                 tile.SetHighlight(new Color(1f, 0.80f, 0.20f, alpha));
             }
 
             if (showCoverOverlay && tile.coverBonus > 0)
             {
-                tile.SetHighlight(new Color(0.24f, 0.62f, 0.46f, 0.34f));
+                tile.SetHighlight(new Color(0.24f, 0.62f, 0.46f, 0.24f));
             }
 
             if (showSightOverlay && tile.blocksLineOfSight)
             {
-                tile.SetHighlight(new Color(0.42f, 0.36f, 0.28f, 0.42f));
+                tile.SetHighlight(new Color(0.42f, 0.36f, 0.28f, 0.28f));
             }
 
             if (showObjectiveOverlay && tile.objective)
             {
-                tile.SetHighlight(new Color(1f, 0.82f, 0.10f, 0.56f));
+                tile.SetHighlight(new Color(1f, 0.80f, 0.14f, 0.34f));
             }
 
             if (tile.danger && !showObjectiveOverlay)
             {
-                tile.SetHighlight(new Color(0.86f, 0.16f, 0.08f, 0.30f));
+                tile.SetHighlight(new Color(0.86f, 0.16f, 0.08f, 0.20f));
             }
         }
     }
@@ -5956,8 +5956,10 @@ public sealed class BattleTestUnitView : MonoBehaviour
     private SpriteRenderer turnMarkerPlate;
     private SpriteRenderer turnMarkerArrow;
     private SpriteRenderer turnMarkerHalo;
+    private SpriteRenderer turnGroundRing;
     private CharacterVisualController visualController;
     private Vector3 turnMarkerBasePosition;
+    private readonly Vector3 groundRingBaseScale = new Vector3(1.56f, 0.46f, 1f);
     private static Sprite turnMarkerPlateSprite;
     private static Sprite turnMarkerArrowSprite;
 
@@ -5986,8 +5988,16 @@ public sealed class BattleTestUnitView : MonoBehaviour
         if (turnMarkerHalo != null)
         {
             Color color = turnMarkerHalo.color;
-            color.a = 0.22f + Mathf.Abs(wave) * 0.20f;
+            color.a = 0.24f + Mathf.Abs(wave) * 0.18f;
             turnMarkerHalo.color = color;
+        }
+
+        if (turnGroundRing != null && turnGroundRing.gameObject.activeSelf)
+        {
+            turnGroundRing.transform.localScale = groundRingBaseScale * (1f + Mathf.Abs(wave) * 0.055f);
+            Color color = turnGroundRing.color;
+            color.a = 0.18f + Mathf.Abs(wave) * 0.16f;
+            turnGroundRing.color = color;
         }
     }
 
@@ -6027,14 +6037,25 @@ public sealed class BattleTestUnitView : MonoBehaviour
         turnMarkerRoot = root.transform;
 
         turnMarkerHalo = CreateMarkerSprite("Turn Halo", GetTurnMarkerPlateSprite(), new Vector3(0f, -0.012f, 0.02f),
-                                            new Vector3(1.52f, 0.54f, 1f),
-                                            new Color(1f, 0.74f, 0.16f, 0.28f), 6098);
+                                            new Vector3(1.92f, 0.68f, 1f),
+                                            new Color(1f, 0.74f, 0.16f, 0.32f), 6098);
         turnMarkerPlate =
-            CreateMarkerSprite("Turn Plate", GetTurnMarkerPlateSprite(), Vector3.zero, new Vector3(1.22f, 0.36f, 1f),
+            CreateMarkerSprite("Turn Plate", GetTurnMarkerPlateSprite(), Vector3.zero, new Vector3(1.56f, 0.46f, 1f),
                                new Color(0.95f, 0.72f, 0.16f, 0.96f), 6100);
         turnMarkerArrow = CreateMarkerSprite("Turn Arrow", GetTurnMarkerArrowSprite(), new Vector3(0f, -0.20f, 0f),
-                                             new Vector3(0.34f, 0.25f, 1f),
+                                             new Vector3(0.48f, 0.34f, 1f),
                                              new Color(0.95f, 0.72f, 0.16f, 0.96f), 6101);
+
+        GameObject ringObject = new GameObject("Current Turn Ground Ring");
+        ringObject.transform.SetParent(transform, false);
+        ringObject.transform.localPosition = new Vector3(0f, -0.30f, 0.03f);
+        ringObject.transform.localScale = groundRingBaseScale;
+        turnGroundRing = ringObject.AddComponent<SpriteRenderer>();
+        turnGroundRing.sprite = GetTurnMarkerPlateSprite();
+        turnGroundRing.color = new Color(1f, 0.72f, 0.16f, 0.24f);
+        turnGroundRing.sortingLayerName = "Default";
+        turnGroundRing.sortingOrder = 4098;
+        turnGroundRing.gameObject.SetActive(false);
 
         GameObject textObject = new GameObject("Turn Marker Text");
         textObject.transform.SetParent(turnMarkerRoot, false);
@@ -6042,8 +6063,8 @@ public sealed class BattleTestUnitView : MonoBehaviour
         turnMarkerText = textObject.AddComponent<TextMesh>();
         turnMarkerText.anchor = TextAnchor.MiddleCenter;
         turnMarkerText.alignment = TextAlignment.Center;
-        turnMarkerText.fontSize = 42;
-        turnMarkerText.characterSize = 0.012f;
+        turnMarkerText.fontSize = 44;
+        turnMarkerText.characterSize = 0.014f;
         turnMarkerText.color = new Color(0.11f, 0.075f, 0.03f, 1f);
         ApplyWorldTextFont(turnMarkerText);
 
@@ -6078,24 +6099,36 @@ public sealed class BattleTestUnitView : MonoBehaviour
 
         bool visible = selected && !Unit.defeated;
         turnMarkerRoot.gameObject.SetActive(visible);
+        if (turnGroundRing != null)
+        {
+            turnGroundRing.gameObject.SetActive(visible);
+        }
+
         if (!visible)
         {
             return;
         }
 
         CharacterVisualData visual = Unit.definition.visual;
-        float markerY = visual == null ? 1.50f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.38f;
+        float markerY = visual == null ? 1.74f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.58f;
         turnMarkerBasePosition = new Vector3(0f, markerY, -0.09f);
         turnMarkerRoot.localPosition = turnMarkerBasePosition;
 
         bool enemy = Unit.definition.faction == Faction.Enemy;
-        Color plate = enemy ? new Color(0.95f, 0.27f, 0.19f, 0.96f) : new Color(0.97f, 0.73f, 0.16f, 0.96f);
+        Color plate = enemy ? new Color(0.92f, 0.20f, 0.16f, 0.98f) : new Color(0.98f, 0.68f, 0.12f, 0.98f);
         Color halo = plate;
-        halo.a = enemy ? 0.28f : 0.32f;
+        halo.a = enemy ? 0.30f : 0.34f;
 
         turnMarkerPlate.color = plate;
         turnMarkerArrow.color = plate;
         turnMarkerHalo.color = halo;
+        if (turnGroundRing != null)
+        {
+            Color ring = plate;
+            ring.a = enemy ? 0.24f : 0.28f;
+            turnGroundRing.color = ring;
+        }
+
         turnMarkerText.text = enemy ? "적 턴" : "현재 턴";
         turnMarkerText.color = enemy ? new Color(1f, 0.95f, 0.86f, 1f) : new Color(0.12f, 0.075f, 0.025f, 1f);
     }

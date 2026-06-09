@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96c36d6a613d0ec2b27c3310af50fee, type: 3}
   m_Name: snow_edge
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.TerrainTileData
-  m_Sprite: {fileID: 21300000, guid: bbbeddb66258c85419629c9f23c13dd6, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 152568696b1bd85488b72058db3c804e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1

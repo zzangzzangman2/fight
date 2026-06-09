@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96c36d6a613d0ec2b27c3310af50fee, type: 3}
   m_Name: bamboo_e1_d
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.TerrainTileData
-  m_Sprite: {fileID: 21300000, guid: bbbeddb66258c85419629c9f23c13dd6, type: 3}
+  m_Sprite: {fileID: 21300000, guid: ce71e0523812c5942b523c1da9a0c295, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1

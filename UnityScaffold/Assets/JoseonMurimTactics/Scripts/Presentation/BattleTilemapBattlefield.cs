@@ -9,7 +9,7 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleTilemapBattlefield : MonoBehaviour
 {
-    private const float HighlightAlphaScale = 0.28f;
+    private const float HighlightAlphaScale = 0.22f;
 
     private readonly Dictionary<string, TerrainTileData> terrainTiles = new Dictionary<string, TerrainTileData>();
     private readonly Dictionary<TerrainType, Tilemap> terrainLayerLookup = new Dictionary<TerrainType, Tilemap>();
@@ -356,19 +356,19 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         Color color = Color.clear;
         if (objective)
         {
-            color = new Color(1f, 0.78f, 0.28f, 0.18f);
+            color = new Color(1f, 0.78f, 0.28f, 0.13f);
         }
         else if (danger || terrainType == TerrainType.Cliff || terrainType == TerrainType.DeepWater)
         {
-            color = new Color(0.72f, 0.16f, 0.10f, 0.10f);
+            color = new Color(0.72f, 0.16f, 0.10f, 0.07f);
         }
         else if (coverBonus >= 2)
         {
-            color = new Color(0.18f, 0.48f, 0.26f, 0.08f);
+            color = new Color(0.18f, 0.48f, 0.26f, 0.06f);
         }
         else if (elevation > 0)
         {
-            color = new Color(0.95f, 0.76f, 0.34f, Mathf.Clamp01(0.055f + elevation * 0.025f));
+            color = new Color(0.95f, 0.76f, 0.34f, Mathf.Clamp01(0.035f + elevation * 0.018f));
         }
 
         if (color.a <= 0.01f)

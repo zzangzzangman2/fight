@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96c36d6a613d0ec2b27c3310af50fee, type: 3}
   m_Name: shallow_water_b
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.TerrainTileData
-  m_Sprite: {fileID: 21300000, guid: aa408ee8f4318f144a83cad1b2e2556f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 85b6a6f3b19e97b4d9e71e1c1478d5ab, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1
