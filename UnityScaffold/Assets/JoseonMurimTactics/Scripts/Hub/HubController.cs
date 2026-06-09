@@ -109,7 +109,7 @@ namespace JoseonMurimTactics
             MenuButton(ref y, x, bw, bh, gap, "수련", HubMenu.Training);
             MenuButton(ref y, x, bw, bh, gap, "정찰", HubMenu.Scout);
             y += gap;
-            MenuButton(ref y, x, bw, bh, gap, "출격", HubMenu.Sortie);
+            MenuButton(ref y, x, bw, bh, gap, "출정", HubMenu.Sortie);
             MenuButton(ref y, x, bw, bh, gap, "저장", HubMenu.Save);
         }
 
@@ -237,12 +237,12 @@ namespace JoseonMurimTactics
 
         private void DrawSortie(Rect r, float s)
         {
-            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "출격", UiTheme.Heading);
+            GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "출정", UiTheme.Heading);
             GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 90f * s),
-                "준비가 끝났다면 압록강 폐사당 방어전에 출격한다.\n출격 인원과 승리/패배 조건은 출격 준비 화면에서 확인한다.", UiTheme.Body);
-            if (GUI.Button(new Rect(r.x, r.y + 150f * s, r.width * 0.7f, 60f * s), "출격 준비로 →", UiTheme.ButtonPrimary))
+                "임무 게시판에서 출정할 임무를 고른다.\n임무를 선택하면 적 정보·보상·승패 조건을 확인하고 출격 준비로 넘어간다.", UiTheme.Body);
+            if (GUI.Button(new Rect(r.x, r.y + 150f * s, r.width * 0.7f, 60f * s), "임무 선택 →", UiTheme.ButtonPrimary))
             {
-                root.Flow.GoToBattlePrep(FirstBattleId);
+                root.Flow.GoToMissionBoard();
             }
         }
 

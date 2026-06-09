@@ -50,7 +50,10 @@ namespace JoseonMurimTactics
             // 동료 합류 (CH00 availableCompanionIds)
             root.Session.RecruitCompanion(CompanionCatalog.YunSeohwa);
             root.Session.RecruitCompanion(CompanionCatalog.BaekRyeon);
-            root.Flags.SetFlag("FLAG_PROLOGUE_DONE");
+            root.Flags.SetFlag(StoryFlags.PrologueCompleted);
+            root.Flags.SetFlag(StoryFlags.JoseonAllianceStarted);
+            root.Flags.SetFlag(StoryFlags.HubUnlocked);
+            root.Flags.SetFlag(StoryFlags.BaekRyeonRecruited);
             root.Save.Save(root.Session); // 첫 자동 저장
             root.Flow.GoToHub(SceneNames.HubPyesadang);
         }

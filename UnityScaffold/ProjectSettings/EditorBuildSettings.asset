@@ -21,6 +21,9 @@ EditorBuildSettings:
     path: Assets/JoseonMurimTactics/Scenes/Hub_Pyesadang.unity
     guid: fe62e4dc46404fdeabd0a8741ef2b961
   - enabled: 1
+    path: Assets/JoseonMurimTactics/Scenes/MissionBoard.unity
+    guid: a9d955de2db543338773f57a95f9c580
+  - enabled: 1
     path: Assets/JoseonMurimTactics/Scenes/BattlePrep.unity
     guid: 087a196d96bb4dc2bbc0d4f63b9fd82e
   - enabled: 1

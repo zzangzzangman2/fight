@@ -53,7 +53,8 @@ namespace JoseonMurimTactics
             root.Session.lastBattleResult = result;
             if (result.Won)
             {
-                root.Flags.SetFlag("FLAG_CH00_BATTLE_WON");
+                root.Flags.SetFlag(StoryFlags.FirstBattleWon);
+                root.Flags.SetFlag(StoryFlags.EnvoyDefeated);
             }
 
             root.Save.Save(root.Session);

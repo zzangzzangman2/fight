@@ -8,6 +8,7 @@ namespace JoseonMurimTactics
         public const string NewGameSetup = "NewGameSetup";
         public const string Prologue = "Prologue";
         public const string HubPyesadang = "Hub_Pyesadang";
+        public const string MissionBoard = "MissionBoard";
         public const string BattlePrep = "BattlePrep";
         public const string Battle = "BattleTest"; // 기존 전투 씬 재사용
         public const string BattleResult = "BattleResult";
@@ -48,6 +49,11 @@ namespace JoseonMurimTactics
         {
             string scene = string.IsNullOrEmpty(hubId) ? SceneNames.HubPyesadang : hubId;
             root.LoadSceneWithFade(scene);
+        }
+
+        public void GoToMissionBoard()
+        {
+            root.LoadSceneWithFade(SceneNames.MissionBoard);
         }
 
         public void GoToBattlePrep(string battleId)
