@@ -200,82 +200,82 @@ function gameDefaultScenes() {
       backgroundId: map,
       startNodeId: "",
       entries: [
-        entry("c1_000", "", "백두산 중턱, 낡은 검각. 눈은 아직 처마 끝에 걸려 있고, 찢어진 백두천광검문의 깃발은 새벽바람에 힘없이 흔들린다.", { backgroundId: map, mood: "서술" }),
-        entry("c1_010", "", "예전에는 북방의 명문이라 불렸던 문파. 이제 남은 것은 병든 문주 박무겸, 엄격한 사범 연옥, 그리고 오늘도 수련을 빼먹은 외동아들 박성준뿐이다.", { backgroundId: map, mood: "서술" }),
-        entry("c1_020", "yeon_ok", "박성준. 검각 지붕 위가 연무장이더냐?", { mood: "엄격" }),
-        entry("c1_030", "park_sungjun", "사범님, 오해십니다. 저는 지금 고도의 심상 수련 중이었습니다. 꿈속의 저는 이미 천광검문을 세 번이나 부흥시켰고요.", { mood: "능청" }),
-        entry("c1_040", "yeon_ok", "그럼 네 꿈속의 박성준을 불러오너라. 현실의 박성준은 오늘 장작 패기와 목인 삼십 합이다.", { mood: "차갑게" }),
+        entry("c1_000", "", "백두산 중턱. 눈은 쌓였고, 검각은 기울었고, 백두천광검문의 깃발은 바람에 ‘나 아직 안 죽었다’는 듯 겨우 펄럭인다.", { backgroundId: map, mood: "서술" }),
+        entry("c1_010", "", "한때는 북방의 명문. 지금은 병든 문주, 무서운 사범, 그리고 지붕 위에서 낮잠 자는 소문주 하나가 전 재산이다.", { backgroundId: map, mood: "서술" }),
+        entry("c1_020", "yeon_ok", "박성준. 내려와라. 지붕은 연무장이 아니고, 네 이불도 아니다.", { mood: "엄격" }),
+        entry("c1_030", "park_sungjun", "사범님, 낮잠이 아닙니다. 하늘의 기운을 받아 천광심법을... 음, 누워서 받는 중이었습니다.", { mood: "능청" }),
+        entry("c1_040", "yeon_ok", "좋다. 그럼 누운 채로 장작도 패고, 목인도 서른 번 치거라.", { mood: "차갑게" }),
         entry("c1_050", "park_sungjun", "(어떻게 둘러댈까?)", {
           mood: "선택",
           choices: [
-            choice("수련 중이었습니다. 꿈속에서.", 3, "c1_060", { flagAdded: "CH1_JOKED_DREAM" }),
-            choice("검도 쉬어야 날이 섭니다.", 1, "c1_060", { flagAdded: "CH1_JOKED_BLADE_REST" }),
-            choice("사범님이 찾으실 줄 알고 기다렸죠.", 0, "c1_060", { flagAdded: "CH1_JOKED_WAITING" })
+            choice("하늘 기운이 아직 덜 내려왔습니다.", 3, "c1_060", { flagAdded: "CH1_JOKED_DREAM" }),
+            choice("검도 사람도 휴식이 있어야 빛납니다.", 1, "c1_060", { flagAdded: "CH1_JOKED_BLADE_REST" }),
+            choice("사범님 발소리 듣고 이미 마음은 내려갔습니다.", 0, "c1_060", { flagAdded: "CH1_JOKED_WAITING" })
           ]
         }),
-        entry("c1_060", "yeon_ok", "말은 늘었고, 검은 줄었구나. 내려와라. 네 아버지께서 부르신다.", { mood: "단호" }),
-        entry("c1_070", "", "박성준이 지붕에서 뛰어내리자 낡은 기와 몇 장이 와르르 미끄러진다. 연옥의 눈썹이 올라가고, 성준은 아무 일 없었다는 듯 먼 산을 본다.", { mood: "서술" }),
-        entry("c1_080", "park_sungjun", "역시 우리 검각은 바람도 잘 통하고, 지붕도 잘 내려오는군요.", { mood: "농담" }),
-        entry("c1_090", "yeon_ok", "그 입이 지붕보다 먼저 무너지기 전에 가라.", { mood: "꾸짖음" }),
-        entry("c1_100", "park_mugyeom", "성준아. 검은 재주로 드는 것이 아니다. 짊어질 것이 있어야 드는 것이다.", { mood: "조용함" }),
-        entry("c1_110", "park_sungjun", "아버지, 검은 무겁고 밥값은 더 무겁고 잔소리는 제일 무겁습니다. 셋 다 들라 하시면 아들이 좀 휘청입니다.", { mood: "능청" }),
-        entry("c1_120", "park_mugyeom", "네가 웃는 건 좋다. 다만 웃음 뒤에 숨지는 마라. 중원 문파들이 백두산 영맥을 노린다는 소문이 돈다.", { mood: "걱정" }),
-        entry("c1_130", "park_mugyeom", "천광심법과 백야검결은 이제 네가 이어야 한다. 문파가 작아졌다고, 네 어깨까지 작아지는 것은 아니다.", { mood: "당부" }),
-        entry("c1_140", "park_sungjun", "제가 좀 가볍게 보여도 말이죠. 우리 문파 이름까지 가볍게 넘기진 않습니다.", { mood: "다짐" }),
-        entry("c1_150", "", "그날 낮, 성준은 소백촌으로 내려간다. 마을 사람들은 그를 아직도 사고뭉치 도련님이라 부르지만, 문파를 믿는 눈빛만은 완전히 꺼지지 않았다.", { mood: "서술" }),
-        entry("c1_160", "cho_hui", "또 수련 빼먹고 내려왔어? 약방 앞에서 폼 잡을 시간 있으면 장작이나 패.", { mood: "핀잔" }),
-        entry("c1_170", "park_sungjun", "초희야, 오늘따라 약초보다 네가 더 향기롭다? 백두산에도 봄이 오긴 오는구나.", { mood: "풍류" }),
-        entry("c1_180", "cho_hui", "그 입에 붙일 약초는 없으니 그냥 가서 일이나 해. 마을도, 너희 검각도, 지금 농담만 먹고 살 수는 없어.", { mood: "현실적" }),
-        entry("c1_190", "", "소백촌의 일감은 작다. 장작을 패고, 약초를 캐고, 길목을 살피고, 무너진 검각을 고친다. 하지만 그 작은 일들이 백두천광검문을 다시 세우는 첫 돌이 된다.", { mood: "서술" }),
-        entry("c1_200", "park_sungjun", "(오늘은 무엇부터 시작할까?)", {
+        entry("c1_060", "yeon_ok", "입공만 보면 벌써 천하제일이다. 몸도 내려와라. 문주님이 찾으신다.", { mood: "단호" }),
+        entry("c1_070", "", "성준이 뛰어내리자 기와 세 장이 먼저 하산했다. 연옥의 눈썹도 같이 올라갔다.", { mood: "서술" }),
+        entry("c1_080", "park_sungjun", "보셨죠? 제 경공이 아니라 검각이 먼저 움직였습니다. 건물이 아주 적극적이에요.", { mood: "농담" }),
+        entry("c1_090", "yeon_ok", "다음엔 네 용돈이 먼저 하산할 것이다.", { mood: "꾸짖음" }),
+        entry("c1_100", "park_mugyeom", "성준아. 검은 폼으로 드는 게 아니다. 지켜야 할 것이 있을 때 비로소 손에 붙는다.", { mood: "조용함" }),
+        entry("c1_110", "park_sungjun", "아버지, 저는 폼도 지키고 문파도 지키고 밥상도 지키고 싶은데요. 셋 중 밥상이 제일 위태롭습니다.", { mood: "능청" }),
+        entry("c1_120", "park_mugyeom", "그래서 부른 것이다. 중원 문파들이 백두산 영맥을 눈독 들인다는 말이 돈다.", { mood: "걱정" }),
+        entry("c1_130", "park_mugyeom", "천광심법과 백야검결, 이제 네 차례다. 문파가 작아졌다고 이름까지 작게 부르지는 마라.", { mood: "당부" }),
+        entry("c1_140", "park_sungjun", "걱정 마세요. 제가 가벼운 건 말투뿐입니다. 건드리면, 꽤 무겁게 받아칠 겁니다.", { mood: "다짐" }),
+        entry("c1_150", "", "낮이 되자 성준은 소백촌으로 내려갔다. 마을 사람들은 그를 ‘사고뭉치 도련님’이라 부르면서도, 은근히 길을 터준다.", { mood: "서술" }),
+        entry("c1_160", "cho_hui", "왔네, 백두산 대표 한량. 오늘은 지붕 말고 땅 밟고 다니네?", { mood: "핀잔" }),
+        entry("c1_170", "park_sungjun", "초희야, 그 말투... 나를 기다린 사람의 향기가 난다.", { mood: "풍류" }),
+        entry("c1_180", "cho_hui", "기다렸지. 장작더미가. 약초 바구니도. 그리고 네가 미룬 외상 장부도.", { mood: "현실적" }),
+        entry("c1_190", "", "문파 부흥은 거창한 비급에서 시작되지 않았다. 장작, 약초, 지붕 수리. 듣기엔 초라해도 은전은 거짓말을 하지 않는다.", { mood: "서술" }),
+        entry("c1_200", "park_sungjun", "(오늘은 뭘 해야 덜 혼나고 더 벌까?)", {
           mood: "선택",
           choices: [
-            choice("장작부터 패자. 은전이 있어야 밥도 먹고 지붕도 고친다.", 1, "c1_210", { flagAdded: "CH1_VILLAGE_WORK_STARTED", factionId: "JOSEON_SECTS", factionDelta: 1 }),
-            choice("약초를 캐서 약방을 돕자. 다친 사람부터 챙겨야지.", 0, "c1_220", { flagAdded: "CH1_VILLAGE_WORK_STARTED", factionId: "JOSEON_SECTS", factionDelta: 2 }),
-            choice("검각 수리부터다. 집이 무너지면 이름도 무너진다.", 2, "c1_230", { flagAdded: "CH1_VILLAGE_WORK_STARTED", factionId: "JOSEON_SECTS", factionDelta: 1 })
+            choice("장작부터 패자. 백야검결로 나무도 감동시켜보자.", 1, "c1_210", { flagAdded: "CH1_VILLAGE_WORK_STARTED", factionId: "JOSEON_SECTS", factionDelta: 1 }),
+            choice("약초를 캐자. 초희 잔소리도 조금은 줄겠지.", 0, "c1_220", { flagAdded: "CH1_VILLAGE_WORK_STARTED", factionId: "JOSEON_SECTS", factionDelta: 2 }),
+            choice("검각부터 고치자. 적보다 비가 먼저 쳐들어온다.", 2, "c1_230", { flagAdded: "CH1_VILLAGE_WORK_STARTED", factionId: "JOSEON_SECTS", factionDelta: 1 })
           ]
         }),
-        entry("c1_210", "park_sungjun", "좋아. 오늘의 백야검결 첫 초식은 장작더미 상대다. 나무야, 영광으로 알아라.", { mood: "농담" }),
-        entry("c1_220", "park_sungjun", "산길은 내가 좀 안다. 길 잃은 척하며 놀던 세월이 여기서 빛을 보는구만.", { mood: "능청" }),
-        entry("c1_230", "park_sungjun", "검각이 집 같아야 제자도 돌아오지. 일단 비 새는 곳부터 막아보자.", { mood: "현실적" }),
-        entry("c1_240", "", "그날 밤, 성준은 무너진 검각 앞에 다시 선다. 찢어진 깃발 아래로 새벽빛이 아주 얇게 스며든다.", { mood: "서술" }),
-        entry("c1_250", "park_sungjun", "네놈들이 건드릴 건 낡은 문파가 아니야. 내 집이고, 내 사람들이다.", { mood: "다짐" }),
-        entry("c1_260", "", "꺼져가던 천광이 아직 완전히 사라지지 않았다. 백두천광검문의 하루가, 이제 플레이어의 손에서 시작된다.", { mood: "서술" })
+        entry("c1_210", "park_sungjun", "좋아. 백야검결 제일식, 장작분광. 나무야 미안하다, 우리 집이 가난하다.", { mood: "농담" }),
+        entry("c1_220", "park_sungjun", "산길? 내가 전문이지. 어릴 때 길 잃은 경험이 이렇게 경력이 될 줄이야.", { mood: "능청" }),
+        entry("c1_230", "park_sungjun", "비 새는 검각에서 천하제일을 꿈꾸면 감기부터 천하제일이 된다. 지붕부터 살리자.", { mood: "현실적" }),
+        entry("c1_240", "", "밤이 되자, 성준은 다시 찢어진 깃발 아래 섰다. 낮엔 웃었고, 손에는 물집이 잡혔다.", { mood: "서술" }),
+        entry("c1_250", "park_sungjun", "좋아. 중원인지 뭔지, 우리 집 앞마당까지 들어오면 손님 대접은 못 하지.", { mood: "다짐" }),
+        entry("c1_260", "", "꺼져가던 천광은 아직 남아 있었다. 조금 시끄럽고, 조금 가난하고, 이상하게 포기할 마음은 안 드는 빛이었다.", { mood: "서술" })
       ],
       nodes: []
     },
     companionScene("companion_baek_ryeon_talk", "백련 첫 대화", "baek_ryeon", [
-      entry("t0", "baek_ryeon", "“창끝은 차갑게 두겠습니다. 다만, 사람을 살릴 길까지 얼리지는 말아 주세요.”", { mood: "차분" }),
+      entry("t0", "baek_ryeon", "“창끝은 차갑게 둘게요. 대신 사람 마음까지 얼리라는 명령은... 조금 곤란합니다.”", { mood: "차분" }),
       entry("t1", "park_sungjun", "(어떻게 답할까?)", {
         mood: "선택",
         choices: [
-          choice("다친 제자들부터 살피자.", 0, "t2a", { approvalId: "baek_ryeon", approvalDelta: 3 }),
-          choice("냉정하게 — 지금은 전열이 먼저다.", 2, "t2b", { approvalId: "baek_ryeon", approvalDelta: -2 })
+          choice("좋아. 먼저 사람부터 살리자.", 0, "t2a", { approvalId: "baek_ryeon", approvalDelta: 3 }),
+          choice("전열부터 잡자. 그래도 사람은 버리지 않는다.", 2, "t2b", { approvalId: "baek_ryeon", approvalDelta: -2 })
         ]
       }),
-      entry("t2a", "baek_ryeon", "백련이 조용히 고개를 숙인다. “…네. 그 말이면 충분합니다.”", { mood: "안도" }),
-      entry("t2b", "baek_ryeon", "백련의 눈빛이 잠시 얼어붙는다. “그 냉정함이 사람을 버리지 않길 바랍니다.”", { mood: "서늘" })
+      entry("t2a", "baek_ryeon", "백련이 아주 작게 웃는다. “그 순서라면, 제 창도 덜 차가워질 것 같네요.”", { mood: "안도" }),
+      entry("t2b", "baek_ryeon", "백련이 눈을 내리깐다. “말씀은 차갑지만... 버리지 않겠다는 쪽을 믿겠습니다.”", { mood: "서늘" })
     ]),
     companionScene("companion_do_arin_talk", "도아린 첫 대화", "do_arin", [
-      entry("t0", "do_arin", "“문주, 복잡하게 재지 말자. 저놈들이 밀고 오면, 내가 먼저 불길 열게.”", { mood: "호쾌" }),
+      entry("t0", "do_arin", "“문주, 길게 말하면 불 꺼져. 저놈들 오면 내가 앞에서 확 열어버릴게.”", { mood: "호쾌" }),
       entry("t1", "park_sungjun", "(어떻게 답할까?)", {
         mood: "선택",
         choices: [
-          choice("좋다. 단, 혼자 앞서지 마라.", 1, "t2a", { approvalId: "do_arin", approvalDelta: 2 }),
-          choice("앞장서라. 길은 힘으로 연다.", 2, "t2b", { approvalId: "do_arin", approvalDelta: 4 })
+          choice("좋다. 대신 한 발만 앞서라.", 1, "t2a", { approvalId: "do_arin", approvalDelta: 2 }),
+          choice("가라. 오늘 길은 네 불로 낸다.", 2, "t2b", { approvalId: "do_arin", approvalDelta: 4 })
         ]
       }),
-      entry("t2a", "do_arin", "도아린이 도집을 툭 친다. “알았어. 한 발만 먼저 간다, 한 발만.”", { mood: "씩씩" }),
-      entry("t2b", "do_arin", "도아린이 씩 웃는다. “그 말 기다렸어.”", { mood: "전의" })
+      entry("t2a", "do_arin", "도아린이 히죽 웃고 도집을 친다. “한 발. 음... 큰 한 발은 괜찮지?”", { mood: "씩씩" }),
+      entry("t2b", "do_arin", "도아린의 눈이 반짝인다. “그 말, 내가 제일 좋아하는 종류야.”", { mood: "전의" })
     ]),
     companionScene("companion_jin_seoyul_talk", "진서율 첫 대화", "jin_seoyul", [
-      entry("t0", "jin_seoyul", "“문주님, 방금 지붕 물받이 봤어요? 저기 전기 흘리면 감찰단 발이 딱 멈출걸요?”", { mood: "흥분" })
+      entry("t0", "jin_seoyul", "“문주님, 저 물받이 보이죠? 저기에 번개 한 줄만 흘리면 감찰단이 춤추듯 넘어질걸요. 물론... 이론상요!”", { mood: "흥분" })
     ]),
     companionScene("companion_seo_a_talk", "신서아 첫 대화", "seo_a", [
-      entry("t0", "seo_a", "“나도 할 수 있어요! 작다고 얕보면 안 된다구요. 꽃바람은 낮게 불 때 더 잘 스며들어요.”", { mood: "밝음" })
+      entry("t0", "seo_a", "“나도 할 수 있어요! 작다고 얕보면 안 돼요. 꽃바람은 원래 빈틈으로 쏙 들어가는 법이라구요!”", { mood: "밝음" })
     ]),
     companionScene("companion_han_biyeon_talk", "한비연 첫 대화", "han_biyeon", [
-      entry("t0", "han_biyeon", "“정면으로 부딪히는 건 취향이 아니야. 대신, 구월산 그림자길은 내가 볼게.”", { mood: "낮게" })
+      entry("t0", "han_biyeon", "“정면승부? 멋은 있지. 내 취향은 아니고. 나는 그림자길로 돌아가서, 저쪽 허리부터 톡 건드릴게.”", { mood: "낮게" })
     ])
   ];
 }
