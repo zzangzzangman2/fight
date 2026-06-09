@@ -555,7 +555,7 @@ namespace JoseonMurimTactics
             }
             else
             {
-                SetText(hudResourceText, $"이동: {ActionText(activeUnit.moved)}   행동: {ActionText(activeUnit.acted)}\n내공: {activeUnit.inner}/{activeUnit.definition.maxInner}   명령: {CommandLabel(commandMode)}");
+                SetText(hudResourceText, $"이동: {ActionText(activeUnit.moved)} ({activeUnit.actions.movementLeft})   행동: {ActionText(activeUnit.acted)}\n내공: {activeUnit.inner}/{activeUnit.definition.maxInner}   반응: {ActionText(!activeUnit.CanReact)}   명령: {CommandLabel(commandMode)}");
             }
 
             SetText(hudObjectiveText, "전술: 고지/대나무숲/지형지물을 먼저 확인");
@@ -566,11 +566,11 @@ namespace JoseonMurimTactics
             SetText(hudRosterText, BuildRosterText());
 
             bool playerTurn = phaseTurn.IsPlayerPhase && activeUnit != null && activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
-            SetButtonEnabled(hudMoveButton, playerTurn && !activeUnit.moved);
-            SetButtonEnabled(hudAttackButton, playerTurn && !activeUnit.acted);
+            SetButtonEnabled(hudMoveButton, playerTurn && activeUnit.CanMove);
+            SetButtonEnabled(hudAttackButton, playerTurn && activeUnit.CanUseMainAction);
             SetButtonEnabled(hudSkillButton, playerTurn && CanUseSpecial(activeUnit));
-            SetButtonEnabled(hudGuardButton, playerTurn && !activeUnit.acted);
-            SetButtonEnabled(hudInteractButton, playerTurn && !activeUnit.acted && HasUsableInteractable(activeUnit));
+            SetButtonEnabled(hudGuardButton, playerTurn && activeUnit.CanUseMainAction);
+            SetButtonEnabled(hudInteractButton, playerTurn && activeUnit.CanUseMainAction && HasUsableInteractable(activeUnit));
             SetButtonEnabled(hudPhaseEndButton, phaseTurn.IsPlayerPhase && !busy && !battleOver);
             SetButtonEnabled(hudResetButton, true);
             RefreshCommandButtonState(hudMoveButton, commandMode == BattleCommandMode.Move && playerTurn);
@@ -985,8 +985,7 @@ namespace JoseonMurimTactics
                     continue;
                 }
 
-                unit.moved = false;
-                unit.acted = false;
+                unit.ResetActions(EffectiveMoveRange(unit));
             }
         }
 
@@ -1115,7 +1114,7 @@ namespace JoseonMurimTactics
 
         private void TryMove(BattleTestUnit unit, BattleTestTile destination)
         {
-            if (unit.moved)
+            if (!unit.CanMove)
             {
                 AddLog("[이동] 이미 이동했습니다.");
                 return;
@@ -1135,7 +1134,7 @@ namespace JoseonMurimTactics
             }
 
             unit.cell = destination.cell;
-            unit.moved = true;
+            unit.SpendMovement(reachable[destination.cell]);
             ApplyTileEntry(unit, destination);
             StartCoroutine(AnimateMove(unit, UnitWorldPosition(destination.cell)));
             AddLog($"[이동] {unit.definition.displayName} 이동.");
@@ -1143,7 +1142,7 @@ namespace JoseonMurimTactics
 
         private bool TryAttack(BattleTestUnit attacker, BattleTestUnit target, bool endAfterAttack)
         {
-            if (attacker.acted)
+            if (!attacker.CanUseMainAction)
             {
                 AddLog("[행동] 이미 행동했습니다.");
                 return false;
@@ -1163,7 +1162,7 @@ namespace JoseonMurimTactics
 
             ResolveAttack(attacker, target, false);
             ResolvePostAttack(attacker, target, false);
-            attacker.acted = true;
+            attacker.SpendMainAction();
             RefreshUnits();
 
             if (CheckBattleEnd())
@@ -1260,7 +1259,7 @@ namespace JoseonMurimTactics
 
             actor.inner -= actor.definition.specialCost;
             actor.specialCooldownLeft = actor.definition.specialCooldown;
-            actor.acted = true;
+            actor.SpendMainAction();
 
             bool attackLike = ApplySpecialEffect(actor, target, true);
             if (attackLike)
@@ -1331,6 +1330,7 @@ namespace JoseonMurimTactics
             BattleTestCounterMove counter = FindCounterMove(target, attacker);
             if (counter.valid)
             {
+                target.SpendReaction();
                 AddLog($"[반격] {target.definition.displayName}: {counter.label}.");
                 if (counter.special)
                 {
@@ -1368,6 +1368,11 @@ namespace JoseonMurimTactics
                 return BattleTestCounterMove.None;
             }
 
+            if (!defender.CanReact)
+            {
+                return BattleTestCounterMove.None;
+            }
+
             if (distance <= defender.definition.attackRange)
             {
                 return new BattleTestCounterMove(false, "기본 공격");
@@ -1383,7 +1388,7 @@ namespace JoseonMurimTactics
 
         private bool CanUseCounterSpecial(BattleTestUnit unit)
         {
-            if (unit == null || unit.defeated || unit.inner < unit.definition.specialCost || unit.specialCooldownLeft > 0)
+            if (unit == null || unit.defeated || !unit.CanReact || unit.inner < unit.definition.specialCost || unit.specialCooldownLeft > 0)
             {
                 return false;
             }
@@ -1419,7 +1424,7 @@ namespace JoseonMurimTactics
 
         private bool TryInteract(BattleTestUnit actor, BattleTestTile clickedTile)
         {
-            if (actor == null || actor.acted)
+            if (actor == null || !actor.CanUseMainAction)
             {
                 AddLog("[행동] 이미 행동했습니다.");
                 return false;
@@ -1474,7 +1479,7 @@ namespace JoseonMurimTactics
                     break;
             }
 
-            actor.acted = true;
+            actor.SpendMainAction();
             RefreshHighlights();
             RefreshUnits();
             if (CheckBattleEnd())
@@ -1488,13 +1493,13 @@ namespace JoseonMurimTactics
 
         private void GuardActiveUnit()
         {
-            if (activeUnit == null || activeUnit.acted || activeUnit.definition.faction != Faction.Ally)
+            if (activeUnit == null || !activeUnit.CanUseMainAction || activeUnit.definition.faction != Faction.Ally)
             {
                 return;
             }
 
             activeUnit.guarded = true;
-            activeUnit.acted = true;
+            activeUnit.SpendMainAction();
             AddLog($"[방어] {activeUnit.definition.displayName} 방어 태세.");
             RefreshHighlights();
             RefreshUnits();
@@ -1564,7 +1569,7 @@ namespace JoseonMurimTactics
                 BattleTestUnit target = FindNearestEnemy(activeUnit);
                 if (target == null)
                 {
-                    activeUnit.acted = true;
+                    activeUnit.SpendMainAction();
                     continue;
                 }
 
@@ -1574,8 +1579,11 @@ namespace JoseonMurimTactics
                     BattleTestTile best = FindBestMoveToward(activeUnit, target.cell);
                     if (best != null)
                     {
+                        int moveCost = 0;
+                        Dictionary<Vector2Int, int> reachable = GetReachableCells(activeUnit);
+                        reachable.TryGetValue(best.cell, out moveCost);
                         activeUnit.cell = best.cell;
-                        activeUnit.moved = true;
+                        activeUnit.SpendMovement(moveCost);
                         ApplyTileEntry(activeUnit, best);
                         yield return AnimateMove(activeUnit, UnitWorldPosition(best.cell));
                         yield return new WaitForSeconds(0.15f);
@@ -1731,7 +1739,7 @@ namespace JoseonMurimTactics
         private bool CanUseSpecial(BattleTestUnit unit)
         {
             return unit != null
-                && !unit.acted
+                && unit.CanUseMainAction
                 && unit.inner >= unit.definition.specialCost
                 && unit.specialCooldownLeft <= 0
                 && unit.definition.specialEffect != BattleSpecialEffect.None;
@@ -1893,6 +1901,11 @@ namespace JoseonMurimTactics
                 return "상대 반격: 파훼 - 반격 봉쇄";
             }
 
+            if (!defender.CanReact)
+            {
+                return "상대 반격: 불가 - 반응 소모";
+            }
+
             int distance = GridDistance(defender.cell, attacker.cell);
             if (!counter.valid)
             {
@@ -1933,7 +1946,7 @@ namespace JoseonMurimTactics
                 return "행동할 유닛이 없습니다.";
             }
 
-            if (unit.acted)
+            if (!unit.CanUseMainAction)
             {
                 return "이미 행동했습니다.";
             }
@@ -3035,6 +3048,7 @@ namespace JoseonMurimTactics
     {
         public readonly BattleTestUnitDefinition definition;
         public readonly BattleTestUnitView view;
+        public readonly ActionEconomy actions = new ActionEconomy();
         public Vector2Int cell;
         public int hp;
         public int inner;
@@ -3055,6 +3069,35 @@ namespace JoseonMurimTactics
             cell = definition.startCell;
             hp = definition.maxHp;
             inner = definition.maxInner;
+            ResetActions(definition.moveRange);
+        }
+
+        public bool CanMove => !moved && actions.movementLeft > 0;
+        public bool CanUseMainAction => !acted && actions.CanSpend(ActionSlot.Main);
+        public bool CanReact => actions.CanSpend(ActionSlot.Reaction);
+
+        public void ResetActions(int movement)
+        {
+            actions.ResetForTurn(Mathf.Max(0, movement));
+            moved = false;
+            acted = false;
+        }
+
+        public void SpendMovement(int cost)
+        {
+            moved = true;
+            actions.movementLeft = Mathf.Max(0, actions.movementLeft - Mathf.Max(0, cost));
+        }
+
+        public void SpendMainAction()
+        {
+            acted = true;
+            actions.Spend(ActionSlot.Main);
+        }
+
+        public void SpendReaction()
+        {
+            actions.Spend(ActionSlot.Reaction);
         }
     }
 }
