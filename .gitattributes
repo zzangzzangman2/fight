@@ -1,0 +1,28 @@
+* text=auto
+
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+*.cs text eol=lf
+*.asmdef text eol=lf
+*.asmref text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+
+*.asset text eol=lf
+*.meta text eol=lf
+*.prefab text eol=lf
+*.unity text eol=lf
+*.mat text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.psd binary
+*.fbx binary
+*.wav binary
+*.mp3 binary
