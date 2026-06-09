@@ -11,19 +11,20 @@ namespace JoseonMurimTactics
 public static class UiTheme
 {
     // ----- 팔레트 -----
-    public static readonly Color Hanji = new Color(0.949f, 0.918f, 0.843f, 1f);
-    public static readonly Color HanjiTop = new Color(0.972f, 0.949f, 0.886f, 1f);
-    public static readonly Color HanjiBottom = new Color(0.901f, 0.855f, 0.749f, 1f);
-    public static readonly Color HanjiPanel = new Color(0.984f, 0.965f, 0.918f, 1f);
-    public static readonly Color HanjiPanelAlt = new Color(0.925f, 0.882f, 0.792f, 1f);
-    public static readonly Color Ink = new Color(0.137f, 0.118f, 0.102f, 1f);
-    public static readonly Color InkSoft = new Color(0.337f, 0.298f, 0.259f, 1f);
-    public static readonly Color Navy = new Color(0.110f, 0.200f, 0.330f, 1f);
-    public static readonly Color NavyLight = new Color(0.169f, 0.286f, 0.439f, 1f);
-    public static readonly Color Teal = new Color(0.157f, 0.451f, 0.420f, 1f);
-    public static readonly Color SealRed = new Color(0.706f, 0.220f, 0.169f, 1f);
-    public static readonly Color Gold = new Color(0.804f, 0.651f, 0.325f, 1f);
-    public static readonly Color GoldBright = new Color(0.902f, 0.769f, 0.451f, 1f);
+    public static readonly Color Hanji = new Color(0.070f, 0.082f, 0.078f, 1f);
+    public static readonly Color HanjiTop = new Color(0.036f, 0.052f, 0.056f, 1f);
+    public static readonly Color HanjiBottom = new Color(0.010f, 0.014f, 0.016f, 1f);
+    public static readonly Color HanjiPanel = new Color(0.090f, 0.102f, 0.098f, 0.96f);
+    public static readonly Color HanjiPanelAlt = new Color(0.060f, 0.072f, 0.070f, 0.92f);
+    public static readonly Color Ink = new Color(0.925f, 0.890f, 0.760f, 1f);
+    public static readonly Color InkSoft = new Color(0.650f, 0.690f, 0.650f, 1f);
+    public static readonly Color Navy = new Color(0.045f, 0.105f, 0.135f, 1f);
+    public static readonly Color NavyLight = new Color(0.075f, 0.205f, 0.230f, 1f);
+    public static readonly Color Teal = new Color(0.185f, 0.630f, 0.555f, 1f);
+    public static readonly Color SealRed = new Color(0.760f, 0.205f, 0.145f, 1f);
+    public static readonly Color Gold = new Color(0.835f, 0.625f, 0.250f, 1f);
+    public static readonly Color GoldBright = new Color(0.960f, 0.780f, 0.360f, 1f);
+    private static readonly Color DeepInk = new Color(0.006f, 0.010f, 0.012f, 1f);
 
     private static bool built;
     private static int builtForHeight;
@@ -45,6 +46,7 @@ public static class UiTheme
     private static Texture2D texBtnPrimaryHover;
     private static Texture2D texBtnPrimaryActive;
     private static Texture2D texField;
+    private static Texture2D titleBackdrop;
 
     public static GUIStyle Logo { get; private set; }
     public static GUIStyle Title { get; private set; }
@@ -74,14 +76,12 @@ public static class UiTheme
         Rect full = new Rect(0f, 0f, Screen.width, Screen.height);
         GUI.DrawTexture(full, texBg, ScaleMode.StretchToFill);
 
-        // 종이결 (아주 옅게 타일)
         float tile = 220f * Scale;
         Color prev = GUI.color;
-        GUI.color = new Color(1f, 1f, 1f, 0.5f);
+        GUI.color = new Color(1f, 1f, 1f, 0.08f);
         GUI.DrawTextureWithTexCoords(full, texPaper, new Rect(0f, 0f, Screen.width / tile, Screen.height / tile));
         GUI.color = prev;
 
-        // 가장자리 비네트 (모든 화면 공통)
         GUI.DrawTexture(full, texVignette, ScaleMode.StretchToFill);
     }
 
@@ -91,6 +91,29 @@ public static class UiTheme
         EnsureStyles();
         float h = Mathf.Min(Screen.height * 0.42f, 360f * Scale);
         GUI.DrawTexture(new Rect(0f, Screen.height - h, Screen.width, h), texMountain, ScaleMode.StretchToFill);
+    }
+
+    public static void DrawTitleBackdrop()
+    {
+        EnsureStyles();
+        Rect full = new Rect(0f, 0f, Screen.width, Screen.height);
+        if (titleBackdrop == null)
+        {
+            titleBackdrop = Resources.Load<Texture2D>("UI/title_baekdu_murim");
+        }
+
+        if (titleBackdrop != null)
+        {
+            GUI.DrawTexture(full, titleBackdrop, ScaleMode.ScaleAndCrop);
+        }
+        else
+        {
+            GUI.DrawTexture(full, texBg, ScaleMode.StretchToFill);
+            DrawMountains();
+        }
+
+        DrawFill(full, new Color(0.000f, 0.010f, 0.014f, 0.34f));
+        GUI.DrawTexture(full, texVignette, ScaleMode.StretchToFill);
     }
 
     /// <summary>화면 가장자리를 살짝 어둡게(비네트). Begin 직후 또는 마지막에 호출 가능.</summary>
@@ -108,12 +131,10 @@ public static class UiTheme
         EnsureStyles();
         float s = Mathf.Max(1f, Scale);
 
-        // 그림자
         GUI.DrawTexture(new Rect(rect.x + 5f * s, rect.y + 7f * s, rect.width, rect.height), texShadow,
                         ScaleMode.StretchToFill);
 
-        // 먹테
-        Tint(rect, Ink);
+        Tint(rect, new Color(0.015f, 0.020f, 0.020f, 0.92f));
         float b = Mathf.Max(2f, 2.5f * s);
         Rect fill = Inset(rect, b);
         GUI.DrawTexture(fill, soft ? texWhite : texPanelFill, ScaleMode.StretchToFill);
@@ -171,7 +192,7 @@ public static class UiTheme
         GUI.DrawTexture(rect, texSeal, ScaleMode.StretchToFill);
         GUIStyle sealText =
             new GUIStyle(BodyCenter) { fontSize = Mathf.RoundToInt(rect.height * 0.46f), fontStyle = FontStyle.Bold };
-        sealText.normal.textColor = HanjiPanel;
+        sealText.normal.textColor = Ink;
         GUI.Label(rect, glyph, sealText);
         GUI.matrix = m;
     }
@@ -181,9 +202,8 @@ public static class UiTheme
     {
         EnsureStyles();
         float off = Mathf.Max(1f, 2f * Scale);
-        Color baseColor = style.normal.textColor;
         GUIStyle shadow = new GUIStyle(style);
-        shadow.normal.textColor = new Color(Ink.r, Ink.g, Ink.b, 0.28f);
+        shadow.normal.textColor = new Color(DeepInk.r, DeepInk.g, DeepInk.b, 0.72f);
         GUI.Label(new Rect(rect.x + off, rect.y + off, rect.width, rect.height), text, shadow);
         GUI.Label(rect, text, style);
     }
@@ -242,23 +262,23 @@ public static class UiTheme
         texWhite = Solid(Color.white);
         texBg = VerticalGradient(HanjiTop, HanjiBottom, 256);
         texPaper = PaperGrain(128, 0.06f);
-        texVignette = Vignette(256, new Color(Ink.r, Ink.g, Ink.b, 1f), 0.20f);
+        texVignette = Vignette(256, DeepInk, 0.46f);
         texMountain = Mountains(800, 300);
         texBrush = BrushStroke(256, 24);
         texSeal = SealTex(72);
-        texPanelFill = VerticalGradient(HanjiPanel, new Color(0.961f, 0.933f, 0.871f, 1f), 64);
-        texShadow = Solid(new Color(Ink.r, Ink.g, Ink.b, 0.18f));
+        texPanelFill = VerticalGradient(new Color(0.100f, 0.122f, 0.116f, 0.98f), HanjiPanel, 64);
+        texShadow = Solid(new Color(0f, 0f, 0f, 0.42f));
 
-        texBtn = Bordered(new Color(0.972f, 0.949f, 0.886f, 1f), Ink, 12, 2);
-        texBtnHover = Bordered(new Color(0.949f, 0.910f, 0.812f, 1f), Gold, 12, 2);
-        texBtnActive = Bordered(new Color(0.886f, 0.831f, 0.706f, 1f), InkSoft, 12, 2);
+        texBtn = Bordered(new Color(0.075f, 0.092f, 0.088f, 0.96f), new Color(0.300f, 0.240f, 0.130f, 1f), 12, 2);
+        texBtnHover = Bordered(new Color(0.100f, 0.160f, 0.148f, 0.98f), Gold, 12, 2);
+        texBtnActive = Bordered(new Color(0.035f, 0.050f, 0.052f, 1f), GoldBright, 12, 2);
         texBtnPrimary = Bordered(Navy, Gold, 12, 2);
         texBtnPrimaryHover = Bordered(NavyLight, GoldBright, 12, 2);
-        texBtnPrimaryActive = Bordered(new Color(0.078f, 0.149f, 0.255f, 1f), Gold, 12, 2);
-        texField = Bordered(new Color(1f, 0.992f, 0.965f, 1f), InkSoft, 10, 2);
+        texBtnPrimaryActive = Bordered(new Color(0.024f, 0.060f, 0.072f, 1f), Gold, 12, 2);
+        texField = Bordered(new Color(0.035f, 0.045f, 0.044f, 0.96f), new Color(0.350f, 0.295f, 0.165f, 1f), 10, 2);
 
         Logo = Label(Mathf.RoundToInt(66 * Scale), FontStyle.Bold, Ink, TextAnchor.MiddleCenter);
-        Title = Label(Mathf.RoundToInt(40 * Scale), FontStyle.Bold, Navy, TextAnchor.MiddleCenter);
+        Title = Label(Mathf.RoundToInt(40 * Scale), FontStyle.Bold, Ink, TextAnchor.MiddleCenter);
         Heading = Label(Mathf.RoundToInt(25 * Scale), FontStyle.Bold, Teal, TextAnchor.MiddleLeft);
         Body = Label(Mathf.RoundToInt(20 * Scale), FontStyle.Normal, Ink, TextAnchor.UpperLeft);
         Body.wordWrap = true;
@@ -266,7 +286,7 @@ public static class UiTheme
         BodyCenter.wordWrap = true;
         Small = Label(Mathf.RoundToInt(16 * Scale), FontStyle.Normal, InkSoft, TextAnchor.UpperLeft);
         Small.wordWrap = true;
-        SmallMuted = Label(Mathf.RoundToInt(15 * Scale), FontStyle.Normal, new Color(0.44f, 0.40f, 0.35f, 1f),
+        SmallMuted = Label(Mathf.RoundToInt(15 * Scale), FontStyle.Normal, new Color(0.610f, 0.650f, 0.600f, 1f),
                            TextAnchor.MiddleLeft);
         Speaker = Label(Mathf.RoundToInt(24 * Scale), FontStyle.Bold, SealRed, TextAnchor.MiddleLeft);
 
@@ -274,7 +294,7 @@ public static class UiTheme
         ButtonPrimary = Btn(texBtnPrimary, texBtnPrimaryHover, texBtnPrimaryActive, new Color(0.98f, 0.96f, 0.91f, 1f));
 
         Panel = Box(texPanelFill, Ink);
-        PanelSoft = Box(texWhite, InkSoft);
+        PanelSoft = Box(texPanelFill, InkSoft);
 
         TextField = new GUIStyle();
         TextField.font = font;
@@ -389,7 +409,7 @@ public static class UiTheme
                 float n = Frac(Mathf.Sin((x * 12.9898f + y * 78.233f)) * 43758.5453f);
                 float v = (n - 0.5f) * contrast;
                 float a = Mathf.Abs(v);
-                Color c = v >= 0f ? new Color(1f, 1f, 1f, a * 0.6f) : new Color(Ink.r, Ink.g, Ink.b, a);
+                Color c = v >= 0f ? new Color(1f, 1f, 1f, a * 0.18f) : new Color(DeepInk.r, DeepInk.g, DeepInk.b, a);
                 t.SetPixel(x, y, c);
             }
         }
@@ -435,9 +455,9 @@ public static class UiTheme
             {
                 Color c = clear;
                 if (y < frontY)
-                    c = new Color(0.176f, 0.224f, 0.255f, 0.50f);
+                    c = new Color(0.040f, 0.078f, 0.088f, 0.58f);
                 else if (y < backY)
-                    c = new Color(0.286f, 0.345f, 0.376f, 0.34f);
+                    c = new Color(0.075f, 0.125f, 0.132f, 0.42f);
                 // 위로 갈수록 더 옅게 (안개)
                 if (c.a > 0f)
                 {
@@ -467,7 +487,7 @@ public static class UiTheme
             {
                 float fy = Mathf.Abs((y / (float)(h - 1)) - 0.5f) * 2f;
                 float a = fy <= (thickness - jitter) ? Mathf.Lerp(1f, 0.35f, fy / Mathf.Max(0.01f, thickness)) : 0f;
-                t.SetPixel(x, y, new Color(Ink.r, Ink.g, Ink.b, a * 0.9f));
+                t.SetPixel(x, y, new Color(DeepInk.r, DeepInk.g, DeepInk.b, a * 0.9f));
             }
         }
         t.Apply();

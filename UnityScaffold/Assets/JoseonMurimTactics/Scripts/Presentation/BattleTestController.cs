@@ -15,6 +15,7 @@ public sealed class BattleTestController : MonoBehaviour
     public int height = 12;
     public float tileWidth = 1.16f;
     public float tileHeight = 0.62f;
+    public bool useAuthoredSceneMap = true;
     public bool useTilemapBattlefield = true;
     public bool useLegacyDiamondTerrain;
     public bool useCanvasHud = true;
@@ -1226,6 +1227,11 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void CreateTerrain()
     {
+        if (useAuthoredSceneMap && TryCreateAuthoredSceneTerrain())
+        {
+            return;
+        }
+
         if (useTilemapBattlefield && !useLegacyDiamondTerrain)
         {
             CreateTilemapTerrain();
@@ -1233,6 +1239,120 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         CreateLegacyDebugTerrain();
+    }
+
+    private bool TryCreateAuthoredSceneTerrain()
+    {
+        BattleMapSceneController mapController = FindAnyObjectByType<BattleMapSceneController>();
+        if (mapController == null || !mapController.AuthoredProductionMap)
+        {
+            return false;
+        }
+
+        mapController.InitializeRuntime();
+        BattleMapTilemapBinder binder = mapController.Binder;
+        if (binder == null || binder.TacticalOverlay == null || binder.TacticalOverlay.Cells.Count == 0)
+        {
+            return false;
+        }
+
+        tileWidth = mapController.TileWidth;
+        tileHeight = mapController.TileHeight;
+        width = Mathf.Max(16, mapController.Size.x);
+        height = Mathf.Max(12, mapController.Size.y);
+        tiles = new BattleTestTile[width, height];
+
+        BattleTilemapBattlefield authoredBattlefield = binder.GetComponent<BattleTilemapBattlefield>();
+        if (authoredBattlefield == null)
+        {
+            authoredBattlefield = binder.gameObject.AddComponent<BattleTilemapBattlefield>();
+        }
+
+        authoredBattlefield.BindAuthored(binder, tileWidth, tileHeight, diamondSprite, softDiamondSprite, detailSprite,
+                                         dotSprite);
+        tilemapBattlefield = authoredBattlefield;
+
+        Transform terrainRoot = new GameObject("Battlefield_Authored_TacticalOverlay").transform;
+        terrainRoot.SetParent(transform, false);
+
+        foreach (TacticalGridCellData cellData in binder.TacticalOverlay.Cells)
+        {
+            if (cellData == null || !IsInside(cellData.cell))
+            {
+                continue;
+            }
+
+            TerrainProfile profile = TerrainProfileFromAuthoredCell(cellData);
+            CreateAuthoredTacticalCellCollider(terrainRoot, cellData.cell, profile, mapController.CellToWorld(cellData.cell));
+        }
+
+        RegisterAuthoredInteractables(mapController);
+        return true;
+    }
+
+    private TerrainProfile TerrainProfileFromAuthoredCell(TacticalGridCellData data)
+    {
+        bool objective = string.Equals(data.zoneId, "objective", StringComparison.OrdinalIgnoreCase);
+        bool danger = data.hazardType != HazardType.None || data.northEdge == EdgeType.CliffDrop ||
+                      data.eastEdge == EdgeType.CliffDrop || data.southEdge == EdgeType.CliffDrop ||
+                      data.westEdge == EdgeType.CliffDrop;
+        return new TerrainProfile(data.terrainType, Color.white, data.elevation, CoverBonusFromCoverType(data.coverType),
+                                  Mathf.Max(1, data.moveCost), data.walkable && !data.blocksMovement,
+                                  data.blocksLineOfSight, data.isChokePoint, objective, danger,
+                                  string.IsNullOrEmpty(data.laneId) ? "authored" : data.laneId,
+                                  string.IsNullOrEmpty(data.decorSetKey) ? data.displayName : data.decorSetKey);
+    }
+
+    private void CreateAuthoredTacticalCellCollider(Transform parent, Vector2Int cell, TerrainProfile profile,
+                                                    Vector3 worldPosition)
+    {
+        GameObject tileObject = new GameObject($"AuthoredTacticalCell_{cell.x}_{cell.y}_{profile.terrain}");
+        tileObject.transform.SetParent(parent, false);
+        tileObject.transform.position = worldPosition;
+        tileObject.transform.localScale = new Vector3(tileWidth, tileWidth, 1f);
+
+        PolygonCollider2D collider = tileObject.AddComponent<PolygonCollider2D>();
+        collider.points = new[] { new Vector2(0f, 0.25f), new Vector2(0.5f, 0f), new Vector2(0f, -0.25f),
+                                  new Vector2(-0.5f, 0f) };
+
+        BattleTestTile tile = tileObject.AddComponent<BattleTestTile>();
+        tile.cell = cell;
+        tile.terrain = profile.terrain;
+        tile.elevation = profile.elevation;
+        tile.walkable = profile.walkable;
+        tile.moveCost = profile.moveCost;
+        tile.coverBonus = profile.coverBonus;
+        tile.baseCoverBonus = profile.coverBonus;
+        tile.baseColor = Color.white;
+        tile.blocksLineOfSight = profile.blocksLineOfSight;
+        tile.isChokePoint = profile.isChokePoint;
+        tile.objective = profile.objective;
+        tile.danger = profile.danger;
+        tile.laneId = profile.laneId;
+        tile.tacticalNote = profile.tacticalNote;
+        tile.tilemapBattlefield = tilemapBattlefield;
+        tile.nameLabel = CreateTileNameLabel(tileObject.transform, profile);
+        tiles[cell.x, cell.y] = tile;
+    }
+
+    private void RegisterAuthoredInteractables(BattleMapSceneController mapController)
+    {
+        foreach (MapPropView prop in mapController.InteractiveProps())
+        {
+            if (prop == null || !IsInside(prop.cell))
+            {
+                continue;
+            }
+
+            BattleTestInteractableKind kind = BattleTestKindFromInteractableKind(prop.kind);
+            string id = string.IsNullOrEmpty(prop.propId) ? prop.name : prop.propId;
+            string displayName = string.IsNullOrEmpty(prop.displayName) ? prop.name : prop.displayName;
+            BattleTestInteractable interactable = new BattleTestInteractable(id, displayName, kind, prop.cell)
+            {
+                renderer = FindPrimaryPropRenderer(prop.transform)
+            };
+            interactables.Add(interactable);
+        }
     }
 
     private void CreateTilemapTerrain()
@@ -1498,6 +1618,70 @@ public sealed class BattleTestController : MonoBehaviour
     {
         T component = target.GetComponent<T>();
         return component == null ? target.AddComponent<T>() : component;
+    }
+
+    private static SpriteRenderer FindPrimaryPropRenderer(Transform prop)
+    {
+        if (prop == null)
+        {
+            return null;
+        }
+
+        SpriteRenderer direct = prop.GetComponent<SpriteRenderer>();
+        if (direct != null)
+        {
+            return direct;
+        }
+
+        SpriteRenderer[] renderers = prop.GetComponentsInChildren<SpriteRenderer>(true);
+        foreach (SpriteRenderer renderer in renderers)
+        {
+            if (renderer != null && renderer.gameObject.name != "Grounding Shadow")
+            {
+                return renderer;
+            }
+        }
+
+        return renderers.Length == 0 ? null : renderers[0];
+    }
+
+    private static int CoverBonusFromCoverType(CoverType coverType)
+    {
+        switch (coverType)
+        {
+        case CoverType.Full:
+            return 4;
+        case CoverType.Heavy:
+            return 2;
+        case CoverType.Light:
+            return 1;
+        default:
+            return 0;
+        }
+    }
+
+    private static BattleTestInteractableKind BattleTestKindFromInteractableKind(InteractableKind kind)
+    {
+        switch (kind)
+        {
+        case InteractableKind.IncenseBurner:
+            return BattleTestInteractableKind.Smoke;
+        case InteractableKind.Lantern:
+        case InteractableKind.OilJar:
+        case InteractableKind.Beacon:
+            return BattleTestInteractableKind.Fire;
+        case InteractableKind.WoodenBridge:
+            return BattleTestInteractableKind.CollapseBridge;
+        case InteractableKind.BambooBundle:
+            return BattleTestInteractableKind.BambooFall;
+        case InteractableKind.RockLantern:
+            return BattleTestInteractableKind.Rockfall;
+        case InteractableKind.SectSignboard:
+        case InteractableKind.Gate:
+            return BattleTestInteractableKind.Objective;
+        default:
+            return BattleTestInteractableKind.Cover;
+        }
     }
 
     private static InteractableKind ResolvePropKind(string id, BattleTestInteractableKind kind)
@@ -2039,6 +2223,9 @@ public sealed class BattleTestController : MonoBehaviour
             CircleCollider2D collider = unitObject.AddComponent<CircleCollider2D>();
             collider.radius = 0.26f;
             collider.offset = new Vector2(0f, 0.28f);
+
+            ShadowBlob shadow = unitObject.AddComponent<ShadowBlob>();
+            shadow.Configure(new Vector2(0.92f, 0.26f), new Color(0.025f, 0.022f, 0.018f, 0.32f), 2940);
 
             BattleTestUnitView view = unitObject.AddComponent<BattleTestUnitView>();
             BattleTestUnit unit = new BattleTestUnit(definition, view);

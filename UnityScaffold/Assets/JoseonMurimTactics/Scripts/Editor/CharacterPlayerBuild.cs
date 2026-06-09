@@ -39,9 +39,18 @@ public static class CharacterPlayerBuild
         BuildWindowsPlayer(BattleTestSceneLauncher.ScenePath, BattleBuildFolder, BattleExeName);
     }
 
+    public static void BuildWindowsBattleMapDiorama()
+    {
+        BattleMapDioramaSceneBuilder.RebuildBaekduSnowGateScene();
+        BuildWindowsPlayer(BattleMapDioramaSceneBuilder.ScenePath, BattleBuildFolder, BattleExeName);
+    }
+
     public static void BuildWindowsBattleTestCurrentScene()
     {
-        BuildWindowsPlayer(BattleTestSceneLauncher.ScenePath, BattleBuildFolder, BattleExeName);
+        string scenePath = AssetDatabase.LoadAssetAtPath<SceneAsset>(BattleMapDioramaSceneBuilder.ScenePath) == null
+                               ? BattleTestSceneLauncher.ScenePath
+                               : BattleMapDioramaSceneBuilder.ScenePath;
+        BuildWindowsPlayer(scenePath, BattleBuildFolder, BattleExeName);
     }
 
     public static void BuildWindowsPreview()

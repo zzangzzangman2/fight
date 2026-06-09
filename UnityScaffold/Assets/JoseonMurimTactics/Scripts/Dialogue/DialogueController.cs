@@ -71,7 +71,10 @@ public sealed class DialogueController
         }
 
         float margin = Mathf.Clamp(38f * s, 22f, 58f * s);
-        float boxH = Mathf.Clamp(hasChoices ? 410f * s : 292f * s, screenH * 0.30f, screenH * 0.52f);
+        float wantedH = hasChoices ? 360f * s : 230f * s;
+        float minH = hasChoices ? screenH * 0.34f : screenH * 0.22f;
+        float maxH = hasChoices ? screenH * 0.50f : screenH * 0.32f;
+        float boxH = Mathf.Clamp(wantedH, minH, maxH);
         Rect box = new Rect(margin, screenH - boxH - margin, screenW - margin * 2f, boxH);
         Rect inner = new Rect(box.x + 42f * s, box.y + 58f * s, box.width - 84f * s, box.height - 104f * s);
 
@@ -248,8 +251,8 @@ public sealed class DialogueController
         UiTheme.DrawPanel(box);
 
         Rect topBand = new Rect(box.x + 8f * s, box.y + 8f * s, box.width - 16f * s, 34f * s);
-        UiTheme.DrawFill(topBand, new Color(0.120f, 0.086f, 0.082f, 0.94f));
-        UiTheme.DrawFill(new Rect(topBand.x, topBand.yMax - 4f * s, topBand.width, 4f * s), UiTheme.SealRed);
+        UiTheme.DrawFill(topBand, new Color(0.025f, 0.060f, 0.064f, 0.94f));
+        UiTheme.DrawFill(new Rect(topBand.x, topBand.yMax - 3f * s, topBand.width, 3f * s), UiTheme.Gold);
         UiTheme.DrawFill(new Rect(box.x + 18f * s, box.yMax - 18f * s, box.width - 36f * s, 2f * s), UiTheme.Gold);
 
         for (int i = 0; i < 9; i++)
@@ -266,8 +269,10 @@ public sealed class DialogueController
         float plateW = Mathf.Clamp(118f * s + name.Length * 24f * s, 150f * s, 320f * s);
         Rect plate = new Rect(box.x + 42f * s, box.y - 20f * s, plateW, 46f * s);
 
-        UiTheme.DrawFill(new Rect(plate.x - 12f * s, plate.y + 8f * s, 18f * s, 30f * s), UiTheme.Ink);
-        UiTheme.DrawFill(new Rect(plate.x + plate.width - 6f * s, plate.y + 8f * s, 18f * s, 30f * s), UiTheme.Ink);
+        UiTheme.DrawFill(new Rect(plate.x - 12f * s, plate.y + 8f * s, 18f * s, 30f * s),
+                         new Color(0.010f, 0.016f, 0.018f, 0.95f));
+        UiTheme.DrawFill(new Rect(plate.x + plate.width - 6f * s, plate.y + 8f * s, 18f * s, 30f * s),
+                         new Color(0.010f, 0.016f, 0.018f, 0.95f));
         UiTheme.DrawFill(plate, UiTheme.Navy);
         UiTheme.DrawFill(new Rect(plate.x + 4f * s, plate.y + 4f * s, plate.width - 8f * s, plate.height - 8f * s),
                          new Color(0.196f, 0.111f, 0.180f, 0.92f));
@@ -276,7 +281,7 @@ public sealed class DialogueController
 
         GUIStyle nameStyle =
             new GUIStyle(UiTheme.Speaker) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(23f * s) };
-        nameStyle.normal.textColor = UiTheme.HanjiPanel;
+        nameStyle.normal.textColor = UiTheme.Ink;
         GUI.Label(plate, name, nameStyle);
     }
 
@@ -286,8 +291,8 @@ public sealed class DialogueController
         UiTheme.DrawPanel(frame, true);
 
         Rect inner = new Rect(frame.x + 14f * s, frame.y + 14f * s, frame.width - 28f * s, frame.height - 28f * s);
-        UiTheme.DrawFill(inner, new Color(0.905f, 0.879f, 0.812f, 0.94f));
-        UiTheme.DrawFill(new Rect(inner.x, inner.y, inner.width, 24f * s), new Color(0.120f, 0.086f, 0.082f, 0.82f));
+        UiTheme.DrawFill(inner, new Color(0.055f, 0.070f, 0.068f, 0.94f));
+        UiTheme.DrawFill(new Rect(inner.x, inner.y, inner.width, 24f * s), new Color(0.020f, 0.050f, 0.054f, 0.82f));
 
         float seal = Mathf.Min(inner.width, inner.height) * 0.58f;
         Rect sealRect = new Rect(inner.center.x - seal * 0.5f, inner.center.y - seal * 0.55f, seal, seal);
@@ -295,7 +300,7 @@ public sealed class DialogueController
 
         GUIStyle caption =
             new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-        caption.normal.textColor = UiTheme.Ink;
+        caption.normal.textColor = UiTheme.GoldBright;
         GUI.Label(new Rect(inner.x + 6f * s, inner.yMax - 36f * s, inner.width - 12f * s, 28f * s), current.speakerName,
                   caption);
     }
@@ -605,7 +610,7 @@ public sealed class DialogueController
         Rect toast = new Rect(box.xMax - w - 40f * s, box.y - 64f * s, w, 38f * s);
         UiTheme.DrawFill(toast, new Color(UiTheme.Ink.r, UiTheme.Ink.g, UiTheme.Ink.b, 0.72f));
         GUIStyle style = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-        style.normal.textColor = UiTheme.HanjiPanel;
+        style.normal.textColor = UiTheme.Ink;
         GUI.Label(toast, quickMessage, style);
     }
 
@@ -703,10 +708,7 @@ public sealed class DialogueController
 
     private static void DrawCinematicShade(float screenW, float screenH, float s)
     {
-        Color ink = new Color(UiTheme.Ink.r, UiTheme.Ink.g, UiTheme.Ink.b, 0.30f);
-        UiTheme.DrawFill(new Rect(0f, 0f, screenW, 52f * s), ink);
-        UiTheme.DrawFill(new Rect(0f, screenH - 18f * s, screenW, 18f * s), ink);
-        UiTheme.DrawFill(new Rect(0f, 52f * s, screenW, 3f * s), UiTheme.SealRed);
+        UiTheme.DrawFill(new Rect(0f, screenH - 16f * s, screenW, 16f * s), new Color(0f, 0f, 0f, 0.38f));
     }
 
     private static GUIStyle DialogueBodyStyle(float s)
