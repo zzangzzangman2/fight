@@ -6,58 +6,50 @@ using UnityEngine;
 
 namespace JoseonMurimTactics.EditorTools
 {
-    public static class SceneBuildValidator
+public static class SceneBuildValidator
+{
+    private static readonly string[] RequiredScenes = { SceneNames.Boot,         SceneNames.Title,
+                                                        SceneNames.NewGameSetup, SceneNames.Prologue,
+                                                        SceneNames.BattlePrep,   SceneNames.Battle,
+                                                        SceneNames.BattleResult, SceneNames.HubPyesadang,
+                                                        SceneNames.MissionBoard, SceneNames.WorldMap };
+
+    [MenuItem("Joseon Murim/Validate Scenes")]
+    public static void ValidateScenes()
     {
-        private static readonly string[] RequiredScenes =
+        HashSet<string> enabledSceneNames = new HashSet<string>();
+        foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
         {
-            SceneNames.Boot,
-            SceneNames.Title,
-            SceneNames.NewGameSetup,
-            SceneNames.Prologue,
-            SceneNames.BattlePrep,
-            SceneNames.Battle,
-            SceneNames.BattleResult,
-            SceneNames.HubPyesadang,
-            SceneNames.MissionBoard,
-            SceneNames.WorldMap
-        };
-
-        [MenuItem("Joseon Murim/Validate Scenes")]
-        public static void ValidateScenes()
-        {
-            HashSet<string> enabledSceneNames = new HashSet<string>();
-            foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
+            if (!scene.enabled)
             {
-                if (!scene.enabled)
-                {
-                    continue;
-                }
-
-                string sceneName = System.IO.Path.GetFileNameWithoutExtension(scene.path);
-                enabledSceneNames.Add(sceneName);
+                continue;
             }
 
-            int missing = 0;
-            foreach (string required in RequiredScenes)
-            {
-                if (!enabledSceneNames.Contains(required))
-                {
-                    missing++;
-                    Debug.LogWarning($"[SceneBuildValidator] Missing scene in Build Settings: {required}");
-                }
-            }
+            string sceneName = System.IO.Path.GetFileNameWithoutExtension(scene.path);
+            enabledSceneNames.Add(sceneName);
+        }
 
-            if (missing == 0)
+        int missing = 0;
+        foreach (string required in RequiredScenes)
+        {
+            if (!enabledSceneNames.Contains(required))
             {
-                Debug.Log("[SceneBuildValidator] All required Joseon Murim scenes are enabled in Build Settings.");
+                missing++;
+                Debug.LogWarning($"[SceneBuildValidator] Missing scene in Build Settings: {required}");
             }
         }
 
-        [MenuItem("Joseon Murim/Open Startup Scene")]
-        public static void OpenStartupScene()
+        if (missing == 0)
         {
-            EditorSceneManager.OpenScene("Assets/JoseonMurimTactics/Scenes/Boot.unity");
+            Debug.Log("[SceneBuildValidator] All required Joseon Murim scenes are enabled in Build Settings.");
         }
     }
+
+    [MenuItem("Joseon Murim/Open Startup Scene")]
+    public static void OpenStartupScene()
+    {
+        EditorSceneManager.OpenScene("Assets/JoseonMurimTactics/Scenes/Boot.unity");
+    }
+}
 }
 #endif

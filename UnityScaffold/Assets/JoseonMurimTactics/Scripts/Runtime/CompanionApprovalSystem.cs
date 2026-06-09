@@ -3,33 +3,33 @@ using UnityEngine;
 
 namespace JoseonMurimTactics
 {
-    public sealed class CompanionApprovalSystem : MonoBehaviour
+public sealed class CompanionApprovalSystem : MonoBehaviour
+{
+    private readonly Dictionary<string, int> approval = new Dictionary<string, int>();
+
+    public int GetApproval(string companionId)
     {
-        private readonly Dictionary<string, int> approval = new Dictionary<string, int>();
+        return approval.ContainsKey(companionId) ? approval[companionId] : 50;
+    }
 
-        public int GetApproval(string companionId)
+    public void AddApproval(string companionId, int delta)
+    {
+        int current = GetApproval(companionId);
+        approval[companionId] = Mathf.Clamp(current + delta, 0, 100);
+    }
+
+    public void ResolveParkCharmRisk(bool failedPsychologicalMove)
+    {
+        if (!failedPsychologicalMove)
         {
-            return approval.ContainsKey(companionId) ? approval[companionId] : 50;
+            return;
         }
 
-        public void AddApproval(string companionId, int delta)
+        List<string> keys = new List<string>(approval.Keys);
+        foreach (string key in keys)
         {
-            int current = GetApproval(companionId);
-            approval[companionId] = Mathf.Clamp(current + delta, 0, 100);
-        }
-
-        public void ResolveParkCharmRisk(bool failedPsychologicalMove)
-        {
-            if (!failedPsychologicalMove)
-            {
-                return;
-            }
-
-            List<string> keys = new List<string>(approval.Keys);
-            foreach (string key in keys)
-            {
-                AddApproval(key, -3);
-            }
+            AddApproval(key, -3);
         }
     }
+}
 }

@@ -3,23 +3,23 @@ using UnityEngine.Playables;
 
 namespace JoseonMurimTactics
 {
-    public sealed class TimelineCuePlayer : MonoBehaviour
+public sealed class TimelineCuePlayer : MonoBehaviour
+{
+    public PlayableDirector defaultDirector;
+
+    public void Play(TimelineCue cue)
     {
-        public PlayableDirector defaultDirector;
-
-        public void Play(TimelineCue cue)
+        if (cue == TimelineCue.None)
         {
-            if (cue == TimelineCue.None)
-            {
-                return;
-            }
+            return;
+        }
 
-            Debug.Log("[TimelineCue] " + cue);
-            if (defaultDirector != null)
-            {
-                defaultDirector.Stop();
-                defaultDirector.Play();
-            }
+        Debug.Log("[TimelineCue] " + cue);
+        if (defaultDirector != null)
+        {
+            defaultDirector.Stop();
+            defaultDirector.Play();
         }
     }
+}
 }
