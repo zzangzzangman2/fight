@@ -48,5 +48,5 @@ MonoBehaviour:
   eastEdge: 9
   southEdge: 9
   westEdge: 9
-  zoneId:
+  zoneId: 
   laneId: central_bridge_choke

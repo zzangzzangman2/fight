@@ -57,6 +57,10 @@ public static class MapQualityValidator
               "less than 6 cliff drop edges", pass, fail);
         Check(metrics.Repeated3x3TileCount == 0, "no 3x3 repeated tactical tile block",
               $"{metrics.Repeated3x3TileCount} repeated 3x3 tile blocks", pass, fail);
+        Check(metrics.Repeated2x2VisualTileCount == 0, "no 2x2 repeated visual tile block",
+              $"{metrics.Repeated2x2VisualTileCount} repeated 2x2 visual tile blocks", pass, fail);
+        Check(metrics.CliffFaceVisualCount >= 18, $"{metrics.CliffFaceVisualCount} cliff face / skirt visuals",
+              "less than 18 cliff face / skirt visuals", pass, fail);
         Check(metrics.HasBackdrop, "non-black backdrop / mountain field present",
               "no backdrop layer or backdrop sprite found", pass, fail);
         Check(!metrics.CameraBackgroundLooksBlack, "camera background is not black",
@@ -82,13 +86,17 @@ public static class MapQualityValidator
               "no 1-2 cell bottleneck found", pass, fail);
         Check(metrics.ChokePointCount >= Mathf.Max(2, target.minChokePoints), $"{metrics.ChokePointCount} choke cells",
               $"less than {Mathf.Max(2, target.minChokePoints)} choke cells", pass, fail);
-        Check(metrics.ElevationDelta >= 2, $"elevation delta {metrics.ElevationDelta}",
-              "less than 2-step elevation difference", pass, fail);
-        Check(metrics.ElevationLevelCount >= Mathf.Max(3, target.minElevationLevels),
+        Check(metrics.ElevationDelta >= 4, $"elevation delta {metrics.ElevationDelta}",
+              "less than 4-step elevation difference", pass, fail);
+        Check(metrics.MaxElevation >= 4, $"max elevation {metrics.MaxElevation}",
+              "max elevation below 4", pass, fail);
+        Check(metrics.ElevationLevelCount >= Mathf.Max(5, target.minElevationLevels),
               $"{metrics.ElevationLevelCount} elevation levels",
-              $"less than {Mathf.Max(3, target.minElevationLevels)} elevation levels", pass, fail);
+              $"less than {Mathf.Max(5, target.minElevationLevels)} elevation levels", pass, fail);
         Check(metrics.InteractableCount >= 3, $"{metrics.InteractableCount} interactive props",
               "less than 3 interactive props", pass, fail);
+        Check(metrics.InteractableCount >= 8, $"{metrics.InteractableCount} handcrafted interactable props",
+              "less than 8 handcrafted interactable props", pass, fail);
         Check(metrics.InteractableCount >= target.minInteractables, $"{metrics.InteractableCount} interactables",
               $"less than {target.minInteractables} interactables", pass, fail);
         Check(metrics.ObjectiveCellCount >= target.minObjectiveCells, $"{metrics.ObjectiveCellCount} objective cells",
@@ -144,7 +152,7 @@ public static class MapQualityValidator
             builder.AppendLine("Metrics:");
             builder.AppendLine($"- cells: {metrics.TotalCells}, walkable: {metrics.WalkableCellCount}, open: {metrics.OpenAreaCellCount}");
             builder.AppendLine($"- elevation: min {metrics.MinElevation}, max {metrics.MaxElevation}, delta {metrics.ElevationDelta}");
-            builder.AppendLine($"- v1.7: terrainTypes {metrics.TerrainTypeCount}, coverCells {metrics.CoverCellCount}, cliffDrops {metrics.CliffDropEdgeCount}, 3x3 repeats {metrics.Repeated3x3TileCount}");
+            builder.AppendLine($"- v1.8: terrainTypes {metrics.TerrainTypeCount}, coverCells {metrics.CoverCellCount}, cliffDrops {metrics.CliffDropEdgeCount}, 2x2 repeats {metrics.Repeated2x2VisualTileCount}, 3x3 repeats {metrics.Repeated3x3TileCount}, cliffFaceVisuals {metrics.CliffFaceVisualCount}");
             builder.AppendLine($"- visuals: backdrop {metrics.HasBackdrop}, maxHighlightAlpha {metrics.MaxHighlightAlpha:0.00}, missingPropShadows {metrics.MissingPropShadowCount}, missingUnitShadows {metrics.MissingUnitShadowCount}");
             builder.AppendLine($"- hazards: fall {metrics.FallHazardCount}, water {metrics.WaterHazardCount}, fire {metrics.FireHazardCount}, smoke {metrics.SmokeHazardCount}, ice {metrics.IceHazardCount}");
             builder.AppendLine($"- lanes: {string.Join(", ", metrics.LaneIds)}");
@@ -281,6 +289,8 @@ public static class MapQualityValidator
         metrics.CameraBackgroundLooksBlack = CameraBackgroundLooksBlack();
         metrics.MaxHighlightAlpha = MaxHighlightAlpha(binder);
         metrics.Repeated3x3TileCount = CountRepeated3x3Tiles(binder);
+        metrics.Repeated2x2VisualTileCount = CountRepeated2x2VisualTiles(lookup);
+        metrics.CliffFaceVisualCount = CountNamedSpriteRenderers("CliffFace") + CountNamedSpriteRenderers("cliff_face");
         metrics.OpenAreaRatio = metrics.TotalCells == 0 ? 1f : metrics.OpenAreaCellCount / (float)metrics.TotalCells;
         metrics.HasSouthStartToObjectivePath = HasEdgeToObjectivePath(lookup, minY, maxY, objectiveCells, true);
         metrics.HasNorthStartToObjectivePath = HasEdgeToObjectivePath(lookup, minY, maxY, objectiveCells, false);
@@ -310,6 +320,9 @@ public static class MapQualityValidator
                 CoverType = data.coverType,
                 HazardType = data.hazardType,
                 LaneId = data.laneId,
+                VisualKey = string.IsNullOrEmpty(data.visualTileKey)
+                                ? data.terrainType + "_" + data.elevation
+                                : data.visualTileKey,
                 Objective = data.zoneId == "objective",
                 NorthEdge = data.northEdge,
                 EastEdge = data.eastEdge,
@@ -336,8 +349,11 @@ public static class MapQualityValidator
                 IsChokePoint = tile.isChokePoint,
                 Elevation = tile.elevation,
                 CoverType = CoverFromBonus(tile.coverBonus),
-                HazardType = HazardForTile(tile.terrain, tile.danger, tile.walkable),
+                HazardType = tile.hazardType == HazardType.None
+                                 ? HazardForTile(tile.terrain, tile.danger, tile.walkable)
+                                 : tile.hazardType,
                 LaneId = tile.laneId,
+                VisualKey = tile.terrain + "_" + tile.elevation,
                 Objective = tile.objective,
             });
         }
@@ -381,6 +397,7 @@ public static class MapQualityValidator
                     CoverType = CoverFromBonus(coverBonus),
                     HazardType = HazardForTile(terrain, danger, walkable),
                     LaneId = Field<string>(profile, "laneId"),
+                    VisualKey = terrain + "_" + Field<int>(profile, "elevation"),
                     Objective = Field<bool>(profile, "objective"),
                 });
             }
@@ -593,6 +610,54 @@ public static class MapQualityValidator
         }
 
         return repeats;
+    }
+
+    private static int CountRepeated2x2VisualTiles(Dictionary<Vector2Int, CellMetric> lookup)
+    {
+        int repeats = 0;
+        foreach (KeyValuePair<Vector2Int, CellMetric> entry in lookup)
+        {
+            Vector2Int cell = entry.Key;
+            if (!lookup.TryGetValue(cell + Vector2Int.right, out CellMetric east) ||
+                !lookup.TryGetValue(cell + Vector2Int.up, out CellMetric north) ||
+                !lookup.TryGetValue(cell + Vector2Int.right + Vector2Int.up, out CellMetric northeast))
+            {
+                continue;
+            }
+
+            string key = entry.Value.VisualKey;
+            if (string.IsNullOrEmpty(key))
+            {
+                continue;
+            }
+
+            if (key == east.VisualKey && key == north.VisualKey && key == northeast.VisualKey)
+            {
+                if (repeats < 8)
+                {
+                    Debug.Log($"[MapQualityValidator] 2x2 visual repeat at ({cell.x},{cell.y}) key {key}");
+                }
+
+                repeats++;
+            }
+        }
+
+        return repeats;
+    }
+
+    private static int CountNamedSpriteRenderers(string pattern)
+    {
+        int count = 0;
+        SpriteRenderer[] renderers = UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None);
+        foreach (SpriteRenderer renderer in renderers)
+        {
+            if (renderer != null && renderer.gameObject.name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static int CountRepeated3x3Tiles(Tilemap tilemap)
@@ -811,6 +876,7 @@ public static class MapQualityValidator
         public CoverType CoverType;
         public HazardType HazardType;
         public string LaneId;
+        public string VisualKey;
         public bool Objective;
         public EdgeType NorthEdge;
         public EdgeType EastEdge;
@@ -846,6 +912,8 @@ public static class MapQualityValidator
         public int SmokeHazardCount;
         public int IceHazardCount;
         public int Repeated3x3TileCount;
+        public int Repeated2x2VisualTileCount;
+        public int CliffFaceVisualCount;
         public bool HasBackdrop;
         public bool CameraBackgroundLooksBlack;
         public float MaxHighlightAlpha;

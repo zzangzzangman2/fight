@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2a71814bd8647f4c91e6d2b7cc22b7d, type: 3}
+  m_Name: bamboo_e2_variants
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.TerrainVariantSet
+  setId: bamboo_e2
+  variants:
+  - tile: {fileID: 11400000, guid: 67c5cf6eafebd8e48b4dfc6437a17f37, type: 2}
+    weight: 5
+  - tile: {fileID: 11400000, guid: f0cdba40ac4c80040bb4a909c503728b, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: 871161e57437e094bbb8cbcf05d3fc3e, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: 662ca5ef800fa3949a8ba414a8af44a5, type: 2}
+    weight: 2

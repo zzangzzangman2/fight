@@ -20,3 +20,9 @@ MonoBehaviour:
     weight: 2
   - tile: {fileID: 11400000, guid: c0bb4cee564c81d4f8e2b06f8e7edcff, type: 2}
     weight: 2
+  - tile: {fileID: 11400000, guid: 01ccfe1828dfaef4e89d36c65f9bcfcd, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: ea15cacbe66f6134a866c275d59e6bdf, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: 2fc20e239737d8f4cb16ca0fe256a19b, type: 2}
+    weight: 2

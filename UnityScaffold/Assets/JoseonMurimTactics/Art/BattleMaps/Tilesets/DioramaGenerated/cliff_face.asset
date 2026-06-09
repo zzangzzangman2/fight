@@ -48,5 +48,5 @@ MonoBehaviour:
   eastEdge: 5
   southEdge: 5
   westEdge: 5
-  zoneId:
+  zoneId: 
   laneId: central_cliff_face

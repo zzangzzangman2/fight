@@ -21,7 +21,7 @@ public static class BattleMapDioramaSceneBuilder
     private const float TileHeight = BaekduSnowGateLayout.TileHeight;
     private const string TileAssetFolder = "Assets/JoseonMurimTactics/Art/BattleMaps/Tilesets/DioramaGenerated";
 
-    [MenuItem("Joseon Murim Tactics/Rebuild Baekdu SnowGate v1.7 Diorama")]
+    [MenuItem("Joseon Murim Tactics/Rebuild Baekdu SnowGate v1.8 Diorama")]
     public static void RebuildBaekduSnowGateScene()
     {
         EnsureFolder("Assets/JoseonMurimTactics/Scenes");
@@ -266,6 +266,7 @@ public static class BattleMapDioramaSceneBuilder
                       new Color(1f, 1f, 1f, 0.95f));
             PaintTile(binder.ShadowAoTilemap, cell, VisualTileFor(tiles["shadow_ao"], visualTiles),
                       new Color(0.12f, 0.10f, 0.08f, 0.24f));
+            PaintCliffSkirt(binder, cell, spec, tiles);
         }
 
         if (spec.coverType != CoverType.None || spec.blocksLineOfSight)
@@ -285,10 +286,35 @@ public static class BattleMapDioramaSceneBuilder
                       new Color(0.78f, 0.90f, 0.90f, 0.16f));
         }
 
-        if ((cell.x + cell.y) % 3 == 0)
+        if ((cell.x + (cell.y * 2)) % 7 == 0)
         {
             PaintTile(binder.GridSubtleTilemap, cell, VisualTileFor(tiles["grid_subtle"], visualTiles),
-                      new Color(0.86f, 0.96f, 0.92f, 0.055f));
+                      new Color(0.86f, 0.96f, 0.92f, 0.012f));
+        }
+    }
+
+    private static void PaintCliffSkirt(BattleMapTilemapBinder binder, Vector2Int cell, CellSpec spec,
+                                        Dictionary<string, TerrainTileData> tiles)
+    {
+        if (binder == null || binder.CliffFaceTilemap == null || !tiles.TryGetValue("cliff_face_b", out TerrainTileData face) ||
+            face == null || face.sprite == null)
+        {
+            return;
+        }
+
+        int layers = Mathf.Clamp(spec.elevation, 1, 4);
+        for (int i = 0; i < layers; i++)
+        {
+            GameObject spriteObject = new GameObject($"CliffFaceSkirt_{cell.x}_{cell.y}_{i}");
+            spriteObject.transform.SetParent(binder.CliffFaceTilemap.transform, false);
+            spriteObject.transform.position = CellToWorld(cell) + new Vector3(0f, -0.20f - (i * 0.17f), 0.04f);
+            spriteObject.transform.localScale = new Vector3(1.08f - (i * 0.03f), 0.72f, 1f);
+
+            SpriteRenderer renderer = spriteObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = face.sprite;
+            renderer.color = new Color(0.48f - (i * 0.035f), 0.55f - (i * 0.030f), 0.55f - (i * 0.025f), 0.88f);
+            renderer.sortingLayerName = "Default";
+            renderer.sortingOrder = 90 + ((cell.x + cell.y) * 2) - i;
         }
     }
 
@@ -423,28 +449,216 @@ public static class BattleMapDioramaSceneBuilder
                 HazardType.Smoke);
         AddTile(tiles, "grid_subtle", TerrainType.Stone, "Tiles/baekdu_snow_plain", 1, true, false, false, 0,
                 CoverType.None, HazardType.None);
+        AddTile(tiles, "snow_e0_d", TerrainType.Snow, "Tiles/snow_edge", 1, true, false, false, 0, CoverType.None,
+                HazardType.None);
+        AddTile(tiles, "snow_e0_e", TerrainType.Snow, "Tiles/baekdu_volcanic_snow_rock", 1, true, false, false, 0,
+                CoverType.None, HazardType.None);
+        AddTile(tiles, "snow_e0_f", TerrainType.Snow, "Tiles/baekdu_snow_plain", 1, true, false, false, 0,
+                CoverType.None, HazardType.None);
+
+        AddTile(tiles, "forest_e0_c", TerrainType.Forest, "Tiles/snow_edge", 2, true, true, false, 0,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "forest_e0_d", TerrainType.Forest, "Tiles/baekdu_snow_mountain_pass", 2, true, true, false, 0,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "forest_e1_c", TerrainType.Forest, "Tiles/snow_edge", 2, true, true, false, 1,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "forest_e1_d", TerrainType.Forest, "Tiles/baekdu_snow_mountain_pass", 2, true, true, false, 1,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "forest_e2", TerrainType.Forest, "Tiles/baekdu_snow_pine_floor", 2, true, true, false, 2,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "forest_e2_b", TerrainType.Forest, "Tiles/forest_floor", 2, true, true, false, 2,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "forest_e2_c", TerrainType.Forest, "Tiles/snow_edge", 2, true, true, false, 2,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "forest_e2_d", TerrainType.Forest, "Tiles/baekdu_snow_mountain_pass", 2, true, true, false, 2,
+                CoverType.Light, HazardType.None);
+
+        AddTile(tiles, "bamboo_e0_c", TerrainType.Bamboo, "Tiles/forest_floor", 3, true, true, false, 0,
+                CoverType.Heavy, HazardType.None);
+        AddTile(tiles, "bamboo_e0_d", TerrainType.Bamboo, "Tiles/snow_edge", 3, true, true, false, 0,
+                CoverType.Heavy, HazardType.None);
+        AddTile(tiles, "bamboo_e1_c", TerrainType.Bamboo, "Tiles/forest_floor", 3, true, true, false, 1,
+                CoverType.Heavy, HazardType.None);
+        AddTile(tiles, "bamboo_e1_d", TerrainType.Bamboo, "Tiles/snow_edge", 3, true, true, false, 1,
+                CoverType.Heavy, HazardType.None);
+        AddTile(tiles, "bamboo_e2", TerrainType.Bamboo, "Tiles/baekdu_snow_bamboo_floor", 3, true, true, false, 2,
+                CoverType.Heavy, HazardType.None);
+        AddTile(tiles, "bamboo_e2_b", TerrainType.Bamboo, "Tiles/bamboo_floor", 3, true, true, false, 2,
+                CoverType.Heavy, HazardType.None);
+        AddTile(tiles, "bamboo_e2_c", TerrainType.Bamboo, "Tiles/forest_floor", 3, true, true, false, 2,
+                CoverType.Heavy, HazardType.None);
+        AddTile(tiles, "bamboo_e2_d", TerrainType.Bamboo, "Tiles/snow_edge", 3, true, true, false, 2,
+                CoverType.Heavy, HazardType.None);
+
+        AddTile(tiles, "road_e0_c", TerrainType.Road, "Tiles/snow_edge", 1, true, false, false, 0, CoverType.None,
+                HazardType.None);
+        AddTile(tiles, "road_e0_d", TerrainType.Road, "Tiles/baekdu_snow_shrine_floor", 1, true, false, false, 0,
+                CoverType.None, HazardType.None);
+        AddTile(tiles, "road_e1_c", TerrainType.Road, "Tiles/snow_edge", 1, true, false, true, 1, CoverType.None,
+                HazardType.None);
+        AddTile(tiles, "road_e1_d", TerrainType.Road, "Tiles/baekdu_snow_shrine_floor", 1, true, false, true, 1,
+                CoverType.None, HazardType.None);
+        AddTile(tiles, "road_e2_c", TerrainType.Road, "Tiles/snow_edge", 1, true, false, true, 2, CoverType.None,
+                HazardType.None);
+        AddTile(tiles, "road_e2_d", TerrainType.Road, "Tiles/baekdu_snow_shrine_floor", 1, true, false, true, 2,
+                CoverType.None, HazardType.None);
+        AddTile(tiles, "road_e3", TerrainType.Road, "Tiles/baekdu_frozen_stair_road", 1, true, false, true, 3,
+                CoverType.None, HazardType.None);
+        AddTile(tiles, "road_e3_b", TerrainType.Road, "Tiles/road_stair", 1, true, false, true, 3,
+                CoverType.None, HazardType.None);
+        AddTile(tiles, "road_e3_c", TerrainType.Road, "Tiles/snow_edge", 1, true, false, true, 3, CoverType.None,
+                HazardType.None);
+        AddTile(tiles, "road_e3_d", TerrainType.Road, "Tiles/baekdu_snow_shrine_floor", 1, true, false, true, 3,
+                CoverType.None, HazardType.None);
+
+        AddTile(tiles, "bridge_e1_b", TerrainType.Bridge, "Tiles/wood_plank", 1, true, false, true, 1,
+                CoverType.None, HazardType.Collapse, EdgeType.BridgeRail, EdgeType.BridgeRail, EdgeType.BridgeRail,
+                EdgeType.BridgeRail, string.Empty, "central_bridge_choke");
+        AddTile(tiles, "bridge_e1_c", TerrainType.Bridge, "Tiles/road_stair", 1, true, false, true, 1,
+                CoverType.None, HazardType.Collapse, EdgeType.BridgeRail, EdgeType.BridgeRail, EdgeType.BridgeRail,
+                EdgeType.BridgeRail, string.Empty, "central_bridge_choke");
+        AddTile(tiles, "bridge_e1_d", TerrainType.Bridge, "Tiles/wood_bridge", 1, true, false, true, 1,
+                CoverType.None, HazardType.Collapse, EdgeType.BridgeRail, EdgeType.BridgeRail, EdgeType.BridgeRail,
+                EdgeType.BridgeRail, string.Empty, "central_bridge_choke");
+
+        AddTile(tiles, "shrine_e3", TerrainType.ShrineFloor, "Tiles/baekdu_snow_shrine_floor", 1, true, false, false,
+                3, CoverType.Light, HazardType.None);
+        AddTile(tiles, "shrine_e3_b", TerrainType.ShrineFloor, "Tiles/shrine_floor", 1, true, false, false, 3,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "shrine_e3_c", TerrainType.ShrineFloor, "Tiles/stone_courtyard", 1, true, false, false, 3,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "shrine_e3_d", TerrainType.ShrineFloor, "Tiles/snow_edge", 1, true, false, false, 3,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "gate_e4", TerrainType.Gate, "Tiles/gate_threshold", 1, true, false, false, 4, CoverType.Light,
+                HazardType.None, EdgeType.Gate, EdgeType.Gate, EdgeType.None, EdgeType.None, "objective",
+                "north_gate_shrine");
+        AddTile(tiles, "gate_e4_b", TerrainType.Gate, "Tiles/wall_broken", 1, true, false, false, 4,
+                CoverType.Light, HazardType.None, EdgeType.Gate, EdgeType.Gate, EdgeType.None, EdgeType.None,
+                "objective", "north_gate_shrine");
+        AddTile(tiles, "gate_e4_c", TerrainType.Gate, "Tiles/baekdu_snow_shrine_floor", 1, true, false, false, 4,
+                CoverType.Light, HazardType.None, EdgeType.Gate, EdgeType.Gate, EdgeType.None, EdgeType.None,
+                "objective", "north_gate_shrine");
+        AddTile(tiles, "gate_e4_d", TerrainType.Gate, "Tiles/road_stair", 1, true, false, false, 4,
+                CoverType.Light, HazardType.None, EdgeType.Gate, EdgeType.Gate, EdgeType.None, EdgeType.None,
+                "objective", "north_gate_shrine");
+
+        AddTile(tiles, "rubble_e1_c", TerrainType.Rubble, "Tiles/wall_broken", 2, true, true, false, 1,
+                CoverType.Heavy, HazardType.None);
+        AddTile(tiles, "rubble_e1_d", TerrainType.Rubble, "Tiles/snow_edge", 2, true, true, false, 1,
+                CoverType.Light, HazardType.None);
+        AddTile(tiles, "cliff_face_b", TerrainType.Cliff, "Tiles/cliff_face", 99, false, true, false, 2,
+                CoverType.None, HazardType.Fall, EdgeType.CliffDrop, EdgeType.CliffDrop, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "central_cliff_face");
+        AddTile(tiles, "cliff_face_c", TerrainType.Cliff, "Tiles/baekdu_volcanic_snow_rock", 99, false, true, false,
+                2, CoverType.None, HazardType.Fall, EdgeType.CliffDrop, EdgeType.CliffDrop, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "central_cliff_face");
+        AddTile(tiles, "cliff_face_d", TerrainType.Cliff, "Tiles/wall_broken", 99, false, true, false, 2,
+                CoverType.None, HazardType.Fall, EdgeType.CliffDrop, EdgeType.CliffDrop, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "central_cliff_face");
+
+        AddTile(tiles, "ridge_e1", TerrainType.Cliff, "Tiles/baekdu_snow_basalt_cliff", 3, true, false, false, 1,
+                CoverType.Light, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "right_cliff_highground");
+        AddTile(tiles, "ridge_e1_b", TerrainType.Cliff, "Tiles/cliff_face", 3, true, false, false, 1,
+                CoverType.Light, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "right_cliff_highground");
+        AddTile(tiles, "ridge_e1_c", TerrainType.Cliff, "Tiles/baekdu_volcanic_snow_rock", 3, true, false, false, 1,
+                CoverType.Light, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "right_cliff_highground");
+        AddTile(tiles, "ridge_e1_d", TerrainType.Cliff, "Tiles/snow_edge", 3, true, false, false, 1,
+                CoverType.Light, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "right_cliff_highground");
+        AddTile(tiles, "ridge_e2_c", TerrainType.Cliff, "Tiles/baekdu_volcanic_snow_rock", 2, true, false, false, 2,
+                CoverType.Light, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "right_cliff_highground");
+        AddTile(tiles, "ridge_e2_d", TerrainType.Cliff, "Tiles/snow_edge", 2, true, false, false, 2,
+                CoverType.Light, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "right_cliff_highground");
+        AddTile(tiles, "ridge_e3_c", TerrainType.Hill, "Tiles/baekdu_snow_basalt_cliff", 2, true, false, false, 3,
+                CoverType.Heavy, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "right_cliff_highground");
+        AddTile(tiles, "ridge_e3_d", TerrainType.Hill, "Tiles/snow_edge", 2, true, false, false, 3,
+                CoverType.Heavy, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, string.Empty, "right_cliff_highground");
+        AddTile(tiles, "ridge_e4", TerrainType.Hill, "Tiles/baekdu_wind_snow_ridge", 2, true, false, false, 4,
+                CoverType.Heavy, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, "beacon", "beacon_peak");
+        AddTile(tiles, "ridge_e4_b", TerrainType.Hill, "Tiles/baekdu_volcanic_snow_rock", 2, true, false, false, 4,
+                CoverType.Heavy, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, "beacon", "beacon_peak");
+        AddTile(tiles, "ridge_e4_c", TerrainType.Hill, "Tiles/baekdu_snow_basalt_cliff", 2, true, false, false, 4,
+                CoverType.Heavy, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, "beacon", "beacon_peak");
+        AddTile(tiles, "ridge_e4_d", TerrainType.Hill, "Tiles/snow_edge", 2, true, false, false, 4,
+                CoverType.Heavy, HazardType.Fall, EdgeType.None, EdgeType.None, EdgeType.CliffDrop,
+                EdgeType.CliffDrop, "beacon", "beacon_peak");
+
+        AddTile(tiles, "wall_e3", TerrainType.Wall, "Tiles/wall_broken", 99, false, true, false, 3, CoverType.None,
+                HazardType.Fall);
+        AddTile(tiles, "wall_e3_b", TerrainType.Wall, "Tiles/gate_threshold", 99, false, true, false, 3,
+                CoverType.None, HazardType.Fall);
+        AddTile(tiles, "wall_e4", TerrainType.Wall, "Tiles/wall_broken", 99, false, true, false, 4, CoverType.None,
+                HazardType.Fall);
+        AddTile(tiles, "wall_e4_b", TerrainType.Wall, "Tiles/baekdu_snow_basalt_cliff", 99, false, true, false, 4,
+                CoverType.None, HazardType.Fall);
+        AddTile(tiles, "ice_slick_b", TerrainType.Ice, "Tiles/ice_slick", 2, true, false, false, 0, CoverType.None,
+                HazardType.Ice);
+        AddTile(tiles, "ice_slick_c", TerrainType.Ice, "Tiles/baekdu_cracked_ice_hazard", 2, true, false, false, 0,
+                CoverType.None, HazardType.Ice);
+        AddTile(tiles, "shallow_water_d", TerrainType.ShallowWater, "Tiles/baekdu_ice_slick", 3, true, false, false,
+                0, CoverType.None, HazardType.Slippery, EdgeType.WaterBank, EdgeType.WaterBank,
+                EdgeType.WaterBank, EdgeType.WaterBank, string.Empty, "frozen_stream");
+        AddTile(tiles, "dark_water_b", TerrainType.DeepWater, "Tiles/deep_water", 99, false, false, false, 0,
+                CoverType.None, HazardType.DeepWater);
         return tiles;
     }
 
     private static Dictionary<string, TerrainVariantSet> BuildVariantSets(Dictionary<string, TerrainTileData> tiles)
     {
         Dictionary<string, TerrainVariantSet> variants = new Dictionary<string, TerrainVariantSet>();
-        AddVariantSet(variants, "snow_base", tiles["snow_e0"], tiles["snow_e0_b"], tiles["snow_e0_c"]);
-        AddVariantSet(variants, "snow_edge", tiles["snow_edge"], tiles["snow_e0_b"], tiles["snow_decor"]);
-        AddVariantSet(variants, "snow_decor", tiles["snow_decor"], tiles["snow_edge"], tiles["snow_e0_c"]);
-        AddVariantSet(variants, "forest_e0", tiles["forest_e0"], tiles["forest_e0_b"]);
-        AddVariantSet(variants, "forest_e1", tiles["forest_e1"], tiles["forest_e1_b"]);
-        AddVariantSet(variants, "bamboo_e0", tiles["bamboo_e0"], tiles["bamboo_e0_b"]);
-        AddVariantSet(variants, "bamboo_e1", tiles["bamboo_e1"], tiles["bamboo_e1_b"]);
-        AddVariantSet(variants, "road_e0", tiles["road_e0"], tiles["road_e0_b"]);
-        AddVariantSet(variants, "road_e1", tiles["road_e1"], tiles["road_e1_b"]);
-        AddVariantSet(variants, "road_e2", tiles["road_e2"], tiles["road_e2_b"]);
+        AddVariantSet(variants, "snow_base", tiles["snow_e0"], tiles["snow_e0_b"], tiles["snow_e0_c"],
+                      tiles["snow_e0_d"], tiles["snow_e0_e"], tiles["snow_e0_f"]);
+        AddVariantSet(variants, "snow_edge", tiles["snow_edge"], tiles["snow_e0_b"], tiles["snow_decor"],
+                      tiles["snow_e0_d"]);
+        AddVariantSet(variants, "snow_decor", tiles["snow_decor"], tiles["snow_edge"], tiles["snow_e0_c"],
+                      tiles["snow_e0_e"]);
+        AddVariantSet(variants, "forest_e0", tiles["forest_e0"], tiles["forest_e0_b"], tiles["forest_e0_c"],
+                      tiles["forest_e0_d"]);
+        AddVariantSet(variants, "forest_e1", tiles["forest_e1"], tiles["forest_e1_b"], tiles["forest_e1_c"],
+                      tiles["forest_e1_d"]);
+        AddVariantSet(variants, "forest_e2", tiles["forest_e2"], tiles["forest_e2_b"], tiles["forest_e2_c"],
+                      tiles["forest_e2_d"]);
+        AddVariantSet(variants, "bamboo_e0", tiles["bamboo_e0"], tiles["bamboo_e0_b"], tiles["bamboo_e0_c"],
+                      tiles["bamboo_e0_d"]);
+        AddVariantSet(variants, "bamboo_e1", tiles["bamboo_e1"], tiles["bamboo_e1_b"], tiles["bamboo_e1_c"],
+                      tiles["bamboo_e1_d"]);
+        AddVariantSet(variants, "bamboo_e2", tiles["bamboo_e2"], tiles["bamboo_e2_b"], tiles["bamboo_e2_c"],
+                      tiles["bamboo_e2_d"]);
+        AddVariantSet(variants, "road_e0", tiles["road_e0"], tiles["road_e0_b"], tiles["road_e0_c"],
+                      tiles["road_e0_d"]);
+        AddVariantSet(variants, "road_e1", tiles["road_e1"], tiles["road_e1_b"], tiles["road_e1_c"],
+                      tiles["road_e1_d"]);
+        AddVariantSet(variants, "road_e2", tiles["road_e2"], tiles["road_e2_b"], tiles["road_e2_c"],
+                      tiles["road_e2_d"]);
+        AddVariantSet(variants, "road_e3", tiles["road_e3"], tiles["road_e3_b"], tiles["road_e3_c"],
+                      tiles["road_e3_d"]);
         AddVariantSet(variants, "shrine_e2", tiles["shrine_e2"], tiles["shrine_e2_b"]);
-        AddVariantSet(variants, "ridge_e2", tiles["ridge_e2"], tiles["ridge_e2_b"]);
-        AddVariantSet(variants, "ridge_e3", tiles["ridge_e3"], tiles["ridge_e3_b"]);
-        AddVariantSet(variants, "rubble_e1", tiles["rubble_e1"], tiles["rubble_e1_b"]);
-        AddVariantSet(variants, "ice_surface", tiles["shallow_water"], tiles["shallow_water_b"], tiles["shallow_water_c"]);
-        AddVariantSet(variants, "dark_water", tiles["deep_water"], tiles["deep_water_b"]);
+        AddVariantSet(variants, "shrine_e3", tiles["shrine_e3"], tiles["shrine_e3_b"], tiles["shrine_e3_c"],
+                      tiles["shrine_e3_d"]);
+        AddVariantSet(variants, "ridge_e1", tiles["ridge_e1"], tiles["ridge_e1_b"], tiles["ridge_e1_c"],
+                      tiles["ridge_e1_d"]);
+        AddVariantSet(variants, "ridge_e2", tiles["ridge_e2"], tiles["ridge_e2_b"], tiles["ridge_e2_c"],
+                      tiles["ridge_e2_d"]);
+        AddVariantSet(variants, "ridge_e3", tiles["ridge_e3"], tiles["ridge_e3_b"], tiles["ridge_e3_c"],
+                      tiles["ridge_e3_d"]);
+        AddVariantSet(variants, "ridge_e4", tiles["ridge_e4"], tiles["ridge_e4_b"], tiles["ridge_e4_c"],
+                      tiles["ridge_e4_d"]);
+        AddVariantSet(variants, "rubble_e1", tiles["rubble_e1"], tiles["rubble_e1_b"], tiles["rubble_e1_c"],
+                      tiles["rubble_e1_d"]);
+        AddVariantSet(variants, "ice_surface", tiles["shallow_water"], tiles["shallow_water_b"],
+                      tiles["shallow_water_c"], tiles["shallow_water_d"], tiles["ice_slick"], tiles["ice_slick_b"]);
+        AddVariantSet(variants, "dark_water", tiles["deep_water"], tiles["deep_water_b"], tiles["dark_water"],
+                      tiles["dark_water_b"]);
         return variants;
     }
 
@@ -606,6 +820,14 @@ public static class BattleMapDioramaSceneBuilder
                    "Objects/baekdu_broken_snow_gate", true, CoverType.Heavy, true, true, true);
         CreateProp(binder, "hot_spring_steam", "Hot spring steam", InteractableKind.IncenseBurner,
                    new Vector2Int(16, 2), "Objects/baekdu_hot_spring_steam", true, CoverType.Light, true, false, true);
+        CreateProp(binder, "powder_cart", "Powder cart", InteractableKind.WineCart, new Vector2Int(6, 7),
+                   "Objects/wine_cart", true, CoverType.Light, false, true, true);
+        CreateProp(binder, "beacon_brazier", "Beacon brazier", InteractableKind.Beacon, new Vector2Int(18, 12),
+                   "Objects/red_lantern", true, CoverType.Light, false, true, true);
+        CreateProp(binder, "cliff_ladder", "Cliff ladder", InteractableKind.Ladder, new Vector2Int(13, 7),
+                   "Objects/baekdu_frozen_rope_posts", true, CoverType.Light, false, true, false);
+        CreateProp(binder, "fallen_wall", "Fallen shrine wall", InteractableKind.FallenWall, new Vector2Int(11, 8),
+                   "Objects/fallen_wall", true, CoverType.Heavy, true, true, false);
     }
 
     private static void CreateProp(BattleMapTilemapBinder binder, string id, string displayName, InteractableKind kind,
@@ -817,6 +1039,7 @@ public static class BattleMapDioramaSceneBuilder
             return InteractableEffectType.CreateSmoke;
         case InteractableKind.Lantern:
         case InteractableKind.OilJar:
+        case InteractableKind.WineCart:
             return InteractableEffectType.CreateFire;
         case InteractableKind.WoodenBridge:
             return InteractableEffectType.CollapseBridge;

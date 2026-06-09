@@ -223,6 +223,23 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private void UpdateCommands(BattleHudSnapshot snapshot)
     {
+        if (snapshot.scoutMode)
+        {
+            SetCommand(0, "Scout\nMove ally", false, false);
+            SetCommand(1, "Terrain\nInspect", false, false);
+            SetCommand(2, "Enemy\nRanges", false, false);
+            SetCommand(3, "Props\nCheck", false, false);
+            SetCommand(4, "Deploy\nOnly", false, false);
+            SetCommand(5, "End\nScout", snapshot.canWait, true);
+            SetCommand(6, snapshot.showThreatRange ? "Threat\nON" : "Threat\nOFF", true,
+                       snapshot.showThreatRange);
+            SetCommand(7, snapshot.showCoverOverlay ? "Cover\nON" : "Cover\nOFF", true,
+                       snapshot.showCoverOverlay);
+            SetCommand(8, snapshot.showLog ? "Log\nOpen" : "Log\nClosed", true, snapshot.showLog);
+            SetCommand(9, "Reset\nBattle", true, false);
+            return;
+        }
+
         SetCommand(0, "1 이동\n" + Ready(snapshot.canMove), snapshot.canMove,
                    snapshot.commandMode == BattleCommandMode.Move);
         SetCommand(1, "2 공격\n" + Ready(snapshot.canAttack), snapshot.canAttack,
@@ -468,6 +485,7 @@ public sealed class BattleHudSnapshot
     public BattlePhase phase;
     public int round;
     public bool battleOver;
+    public bool scoutMode;
     public string instruction;
     public string objectiveText;
     public string unitInfoText;

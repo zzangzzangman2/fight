@@ -48,5 +48,5 @@ MonoBehaviour:
   eastEdge: 8
   southEdge: 8
   westEdge: 8
-  zoneId:
+  zoneId: 
   laneId: frozen_stream

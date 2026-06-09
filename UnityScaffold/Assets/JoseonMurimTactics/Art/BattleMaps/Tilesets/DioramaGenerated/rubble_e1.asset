@@ -48,5 +48,5 @@ MonoBehaviour:
   eastEdge: 0
   southEdge: 0
   westEdge: 0
-  zoneId:
-  laneId:
+  zoneId: 
+  laneId: 

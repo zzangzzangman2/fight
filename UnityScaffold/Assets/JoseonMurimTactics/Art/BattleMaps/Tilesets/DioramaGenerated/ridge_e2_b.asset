@@ -48,5 +48,5 @@ MonoBehaviour:
   eastEdge: 0
   southEdge: 5
   westEdge: 5
-  zoneId:
+  zoneId: 
   laneId: right_cliff_highground
