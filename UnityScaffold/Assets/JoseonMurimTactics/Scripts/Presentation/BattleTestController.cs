@@ -3660,12 +3660,35 @@ public sealed class BattleTestController : MonoBehaviour
         ApplyAttackResultAtHitFrame(result);
         onResolved?.Invoke(result);
 
+        if (result.hit)
+        {
+            // 타격 프레임 히트스톱 — 명중 순간을 잠깐 멈춰 타격감을 만든다. 치명타는 더 길게.
+            yield return HitStop(result.critical ? 0.10f : 0.05f);
+        }
+
         if (timeline.CameraShakeDuration > 0f && timeline.CameraShakeStrength > 0f)
         {
-            yield return ShakeCamera(timeline.CameraShakeStrength, timeline.CameraShakeDuration);
+            float critBoost = result.critical ? 1.6f : 1f;
+            yield return ShakeCamera(timeline.CameraShakeStrength * critBoost,
+                                     timeline.CameraShakeDuration * (result.critical ? 1.3f : 1f));
         }
 
         yield return WaitActionSeconds(Mathf.Max(0f, timeline.Duration - timeline.HitTime) + timeline.RecoveryTime);
+    }
+
+    /// <summary>짧은 시간 정지(히트스톱). 실제 시간으로 기다린 뒤 timeScale을 복원한다.</summary>
+    private IEnumerator HitStop(float duration)
+    {
+        float previous = Time.timeScale;
+        Time.timeScale = 0.05f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        Time.timeScale = previous;
     }
 
     private BattleTestAttackResult RollAttackResult(BattleTestUnit attacker, BattleTestUnit target, bool special)

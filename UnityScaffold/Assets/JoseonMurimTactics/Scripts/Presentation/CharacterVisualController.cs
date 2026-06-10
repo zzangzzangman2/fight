@@ -406,11 +406,13 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             float step = Mathf.Sin(stride01 * Mathf.PI * 2f);
             float hop = Mathf.Abs(step);
             float planted = 1f - Mathf.SmoothStep(0.08f, 0.32f, Mathf.Abs(step));
-            localPosition.x += facingSign * step * 0.030f;
-            localPosition.y += hop * 0.040f;
-            localScale.x *= 1f - hop * 0.025f;
-            localScale.y *= 1f + hop * 0.035f;
-            rotation = (-facingSign * visual.moveLeanDegrees) + (facingSign * step * 2.4f);
+            // 실제 걷기 프레임이 있으면 보행감은 그림이 담당하므로 절차 변형은 잔향만 남긴다.
+            float gait = HasMoveFrames() ? 0.4f : 1f;
+            localPosition.x += facingSign * step * 0.030f * gait;
+            localPosition.y += hop * 0.040f * gait;
+            localScale.x *= 1f - hop * 0.025f * gait;
+            localScale.y *= 1f + hop * 0.035f * gait;
+            rotation = (-facingSign * visual.moveLeanDegrees) + (facingSign * step * 2.4f * gait);
             if (planted > 0.45f)
             {
                 showEffect = true;
@@ -700,6 +702,15 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         float rate = Mathf.Max(0.5f, visual.idleFrameRate);
         int index = Mathf.FloorToInt((Time.time + phaseSeed) * rate) % frames.Length;
         return frames[index];
+    }
+
+    private bool HasMoveFrames()
+    {
+        CharacterOutfitData outfit = ActiveOutfit();
+        Sprite[] frames = outfit != null && outfit.moveFrames != null && outfit.moveFrames.Length > 0
+                              ? outfit.moveFrames
+                              : visual != null ? visual.moveFrames : null;
+        return frames != null && frames.Length > 1;
     }
 
     private Sprite SelectIdleFallback()
