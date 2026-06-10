@@ -29,6 +29,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     public SpriteRenderer weaponLayerRenderer;
     public SpriteRenderer accessoryLayerRenderer;
     public SpriteRenderer shadowRenderer;
+    public SpriteRenderer leftFootRenderer;
+    public SpriteRenderer rightFootRenderer;
     public SpriteRenderer selectionRenderer;
     public SpriteRenderer effectRenderer;
     public Animator animator;
@@ -55,6 +57,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private static Sprite guardRingSprite;
     private static Sprite impactBurstSprite;
     private static Sprite footstepDustSprite;
+    private static Sprite footContactSprite;
     private static Sprite[] elementSlashSprites;
     private static Sprite[] elementSkillSprites;
     private static Sprite[] elementImpactSprites;
@@ -372,6 +375,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         float rotation = 0f;
         Color tint = visual.normalTint;
         float shadowAlpha = 0.34f;
+        float footStride01 = -1f;
         bool showEffect = false;
         Sprite effectSprite = null;
         Vector3 effectPosition = new Vector3(0f, 0.55f, -0.02f);
@@ -398,6 +402,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         {
         case CharacterBattleVisualState.Move:
             float stride01 = MoveStride01(stateAge);
+            footStride01 = stride01;
             float step = Mathf.Sin(stride01 * Mathf.PI * 2f);
             float hop = Mathf.Abs(step);
             float planted = 1f - Mathf.SmoothStep(0.08f, 0.32f, Mathf.Abs(step));
@@ -496,6 +501,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         bodyTransform.localPosition = localPosition;
         bodyTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
         bodyTransform.localScale = localScale;
+        UpdateFootContacts(visualState == CharacterBattleVisualState.Move, footStride01);
 
         shadowRenderer.color = new Color(0f, 0f, 0f, shadowAlpha);
         if (selectionRenderer != null)
@@ -533,6 +539,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private void EnsureRenderers()
     {
         shadowRenderer = shadowRenderer != null ? shadowRenderer : EnsureChildRenderer("Shadow");
+        leftFootRenderer = leftFootRenderer != null ? leftFootRenderer : EnsureChildRenderer("LeftFootContact");
+        rightFootRenderer = rightFootRenderer != null ? rightFootRenderer : EnsureChildRenderer("RightFootContact");
         selectionRenderer = selectionRenderer != null ? selectionRenderer : EnsureChildRenderer("SelectionRing");
         bodyRenderer = bodyRenderer != null ? bodyRenderer : EnsureChildRenderer("FullBody");
         baseLayerRenderer = baseLayerRenderer != null ? baseLayerRenderer : EnsureChildRenderer("Layer_Base", bodyRenderer.transform);
@@ -585,6 +593,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         selectionRenderer.sortingLayerName = sortingLayerName;
         effectRenderer.sortingLayerName = sortingLayerName;
         shadowRenderer.sortingOrder = order - 2;
+        leftFootRenderer.sortingLayerName = sortingLayerName;
+        rightFootRenderer.sortingLayerName = sortingLayerName;
+        leftFootRenderer.sortingOrder = order - 1;
+        rightFootRenderer.sortingOrder = order - 1;
         selectionRenderer.sortingOrder = order - 1;
         bodyRenderer.sortingOrder = order;
         SetLayerSorting(baseLayerRenderer, order);
@@ -809,6 +821,51 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
         renderer.sortingLayerName = sortingLayerName;
         renderer.sortingOrder = order;
+    }
+
+    private void UpdateFootContacts(bool moving, float stride01)
+    {
+        if (leftFootRenderer == null || rightFootRenderer == null)
+        {
+            return;
+        }
+
+        if (!moving || stride01 < 0f)
+        {
+            leftFootRenderer.enabled = false;
+            rightFootRenderer.enabled = false;
+            return;
+        }
+
+        SetFootContact(leftFootRenderer, -1f, FootPlant(stride01, 0f), stride01);
+        SetFootContact(rightFootRenderer, 1f, FootPlant(stride01, 0.5f), stride01 + 0.5f);
+    }
+
+    private void SetFootContact(SpriteRenderer renderer, float side, float plant, float phase)
+    {
+        renderer.sprite = GetFootContactSprite();
+        renderer.enabled = plant > 0.035f;
+        if (!renderer.enabled)
+        {
+            return;
+        }
+
+        float swing = Mathf.Sin(phase * Mathf.PI * 2f);
+        float lateral = side * 0.115f;
+        float forward = facingSign * swing * 0.024f;
+        renderer.transform.localPosition = new Vector3(lateral + forward, 0.058f + (plant * 0.010f), -0.01f);
+        renderer.transform.localScale = new Vector3(0.58f + (plant * 0.20f), 0.34f + (plant * 0.10f), 1f);
+        renderer.transform.localRotation = Quaternion.Euler(0f, 0f, (-facingSign * 8f) + (side * 7f));
+
+        Color color = Color.Lerp(new Color(0.12f, 0.15f, 0.18f, 1f), ElementPrimary(1f), 0.24f);
+        color.a = 0.18f + (plant * 0.42f);
+        renderer.color = color;
+    }
+
+    private static float FootPlant(float stride01, float contactPhase)
+    {
+        float distance = Mathf.Abs(Mathf.Repeat(stride01 - contactPhase + 0.5f, 1f) - 0.5f);
+        return 1f - Mathf.SmoothStep(0.12f, 0.36f, distance);
     }
 
     private CombatElementType ActiveElement()
@@ -1295,6 +1352,40 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 96f);
         footstepDustSprite.name = "GeneratedFootstepDust";
         return footstepDustSprite;
+    }
+
+    private static Sprite GetFootContactSprite()
+    {
+        if (footContactSprite != null)
+        {
+            return footContactSprite;
+        }
+
+        Texture2D texture = new Texture2D(56, 24, TextureFormat.RGBA32, false);
+        texture.name = "GeneratedFootContact";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            for (int x = 0; x < texture.width; x++)
+            {
+                float nx = ((x + 0.5f) / texture.width * 2f) - 1f;
+                float ny = ((y + 0.5f) / texture.height * 2f) - 1f;
+                float heel = Mathf.Clamp01((0.52f - (((nx + 0.22f) * (nx + 0.22f) * 1.45f) + (ny * ny * 2.9f))) * 2.8f);
+                float toe = Mathf.Clamp01((0.38f - (((nx - 0.34f) * (nx - 0.34f) * 1.9f) + ((ny + 0.04f) * (ny + 0.04f) * 3.2f))) * 3.2f);
+                float arch = Mathf.Clamp01((0.12f - Mathf.Abs(ny + 0.08f)) * 4.8f) *
+                             Mathf.Clamp01((0.60f - Mathf.Abs(nx * 0.95f)) * 1.6f);
+                float alpha = Mathf.Clamp01((heel * 0.72f) + (toe * 0.88f) + (arch * 0.22f));
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha * 0.78f));
+            }
+        }
+
+        texture.Apply();
+        footContactSprite =
+            Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 96f);
+        footContactSprite.name = "GeneratedFootContact";
+        return footContactSprite;
     }
 }
 }
