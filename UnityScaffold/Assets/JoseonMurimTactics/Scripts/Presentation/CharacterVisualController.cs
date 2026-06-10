@@ -55,6 +55,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private static Sprite guardRingSprite;
     private static Sprite impactBurstSprite;
     private static Sprite footstepDustSprite;
+    private static Sprite[] elementSlashSprites;
+    private static Sprite[] elementSkillSprites;
+    private static Sprite[] elementImpactSprites;
+    private const int CombatElementSpriteCount = 6;
 
     private void Awake()
     {
@@ -420,7 +424,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             localScale.y *= 1f - 0.025f * lunge;
             rotation = -facingSign * 8f * lunge;
             showEffect = progress > 0.16f && progress < 0.92f;
-            effectSprite = GetSlashSprite();
+            effectSprite = GetElementSlashSprite(ActiveElement());
             effectPosition = new Vector3(facingSign * (0.34f + (0.08f * lunge)), 0.56f, -0.02f);
             effectScale = new Vector3(0.72f, 0.52f, 1f);
             effectRotation = facingSign < 0f ? 180f : 0f;
@@ -434,7 +438,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             rotation = Mathf.Sin(progress * Mathf.PI * 2f) * 3.5f;
             tint = Color.Lerp(visual.normalTint, visual.guardTint, 0.42f * skill);
             showEffect = true;
-            effectSprite = GetSkillBurstSprite();
+            effectSprite = GetElementSkillSprite(ActiveElement());
             effectPosition = new Vector3(0f, 0.58f, -0.03f);
             effectScale = Vector3.one * (0.72f + 0.32f * skill);
             effectRotation = time * 18f;
@@ -447,7 +451,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             rotation = facingSign * 10f * hit;
             tint = Color.Lerp(visual.normalTint, visual.hitTint, hit);
             showEffect = progress < 0.82f;
-            effectSprite = GetImpactBurstSprite();
+            effectSprite = GetElementImpactSprite(ActiveElement());
             effectPosition = new Vector3(0f, 0.58f, -0.03f);
             effectScale = Vector3.one * (0.48f + 0.20f * hit);
             effectColor = ElementSecondary(0.62f);
@@ -807,6 +811,12 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         renderer.sortingOrder = order;
     }
 
+    private CombatElementType ActiveElement()
+    {
+        return visual != null && visual.weaponAnimationSet != null
+                   ? visual.weaponAnimationSet.elementType : CombatElementType.None;
+    }
+
     private Color ElementPrimary(float alpha)
     {
         Color color = visual != null && visual.weaponAnimationSet != null
@@ -1024,6 +1034,235 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 96f);
         impactBurstSprite.name = "GeneratedImpactBurst";
         return impactBurstSprite;
+    }
+
+    private static Sprite GetElementSlashSprite(CombatElementType element)
+    {
+        if (elementSlashSprites == null)
+        {
+            elementSlashSprites = new Sprite[CombatElementSpriteCount];
+        }
+
+        int index = ElementIndex(element);
+        if (elementSlashSprites[index] == null)
+        {
+            elementSlashSprites[index] = CreateElementSlashSprite(element);
+        }
+
+        return elementSlashSprites[index];
+    }
+
+    private static Sprite GetElementSkillSprite(CombatElementType element)
+    {
+        if (elementSkillSprites == null)
+        {
+            elementSkillSprites = new Sprite[CombatElementSpriteCount];
+        }
+
+        int index = ElementIndex(element);
+        if (elementSkillSprites[index] == null)
+        {
+            elementSkillSprites[index] = CreateElementSkillSprite(element);
+        }
+
+        return elementSkillSprites[index];
+    }
+
+    private static Sprite GetElementImpactSprite(CombatElementType element)
+    {
+        if (elementImpactSprites == null)
+        {
+            elementImpactSprites = new Sprite[CombatElementSpriteCount];
+        }
+
+        int index = ElementIndex(element);
+        if (elementImpactSprites[index] == null)
+        {
+            elementImpactSprites[index] = CreateElementImpactSprite(element);
+        }
+
+        return elementImpactSprites[index];
+    }
+
+    private static int ElementIndex(CombatElementType element)
+    {
+        int value = (int)element;
+        return value < 0 || value >= CombatElementSpriteCount ? 0 : value;
+    }
+
+    private static Sprite CreateElementSlashSprite(CombatElementType element)
+    {
+        switch (element)
+        {
+        case CombatElementType.Fire:
+            return CreateGeneratedSprite("GeneratedFireSlash", 180, 96, 120f, (nx, ny) => {
+                float arc = Mathf.Abs((nx * nx * 0.78f) + ((ny + 0.72f) * (ny + 0.72f) * 2.15f) - 1f);
+                float tongue = 0.58f + (0.42f * Mathf.Sin((nx * 18f) + (ny * 7f)));
+                float core = Mathf.Clamp01((0.22f - arc) * 7.8f);
+                float tail = Mathf.SmoothStep(-0.95f, 0.05f, nx) * (1f - Mathf.SmoothStep(0.74f, 1f, nx));
+                return new Color(1f, 1f, 1f, core * tail * tongue);
+            });
+        case CombatElementType.Ice:
+            return CreateGeneratedSprite("GeneratedIceShardSlash", 180, 96, 120f, (nx, ny) => {
+                float diagonal = Mathf.Abs((ny * 0.82f) - ((nx * 0.24f) - 0.04f));
+                float shards = Mathf.Abs(Mathf.Sin((nx * 15f) + (ny * 5f)));
+                float spine = Mathf.Clamp01((0.075f - diagonal) * 13f);
+                float chips = Mathf.Clamp01((0.028f - Mathf.Abs(diagonal - 0.15f * shards)) * 18f);
+                float gate = Mathf.SmoothStep(-0.88f, -0.05f, nx) * (1f - Mathf.SmoothStep(0.78f, 1f, nx));
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(spine + chips * 0.8f) * gate);
+            });
+        case CombatElementType.Lightning:
+            return CreateGeneratedSprite("GeneratedLightningSlash", 180, 96, 120f, (nx, ny) => {
+                float center = 0.12f * Mathf.Sign(Mathf.Sin((nx + 0.08f) * 11f));
+                float bolt = Mathf.Clamp01((0.060f - Mathf.Abs(ny - center)) * 17f);
+                float branch = Mathf.Clamp01((0.030f - Mathf.Abs((ny + 0.24f) - (nx * -0.34f))) * 18f);
+                float gate = Mathf.SmoothStep(-0.92f, -0.04f, nx) * (1f - Mathf.SmoothStep(0.86f, 1f, nx));
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(bolt + branch * 0.55f) * gate);
+            });
+        case CombatElementType.WindFlower:
+            return CreateGeneratedSprite("GeneratedWindFlowerSlash", 180, 96, 120f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny * 1.5f));
+                float angle = Mathf.Atan2(ny, nx);
+                float spiral = Mathf.Clamp01((0.080f - Mathf.Abs(r - (0.50f + (angle * 0.045f)))) * 12f);
+                float petals = Mathf.Clamp01((0.15f - Mathf.Abs(Mathf.Sin(angle * 5f) * r - 0.22f)) * 4.2f);
+                float gate = Mathf.SmoothStep(-0.92f, -0.10f, nx) * (1f - Mathf.SmoothStep(0.90f, 1f, nx));
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(spiral + petals * 0.45f) * gate);
+            });
+        case CombatElementType.DarkPoison:
+            return CreateGeneratedSprite("GeneratedPoisonSlash", 180, 96, 120f, (nx, ny) => {
+                float cloudA = Mathf.Clamp01((0.30f - ((nx + 0.25f) * (nx + 0.25f) + ((ny + 0.04f) * (ny + 0.04f) * 1.8f))) * 3.1f);
+                float cloudB = Mathf.Clamp01((0.25f - ((nx - 0.16f) * (nx - 0.16f) + ((ny - 0.06f) * (ny - 0.06f) * 2.2f))) * 3.4f);
+                float holes = 0.62f + (0.38f * Mathf.Sin((nx * 12f) - (ny * 16f)));
+                float gate = Mathf.SmoothStep(-0.95f, -0.05f, nx) * (1f - Mathf.SmoothStep(0.88f, 1f, nx));
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(cloudA + cloudB) * holes * gate);
+            });
+        default:
+            return GetSlashSprite();
+        }
+    }
+
+    private static Sprite CreateElementSkillSprite(CombatElementType element)
+    {
+        switch (element)
+        {
+        case CombatElementType.Fire:
+            return CreateGeneratedSprite("GeneratedFireNova", 132, 132, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float flame = Mathf.Clamp01((0.70f - r) * 1.6f) * (0.55f + 0.45f * Mathf.Sin(angle * 9f + r * 10f));
+                float core = Mathf.Clamp01((0.28f - r) * 3.2f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(flame + core));
+            });
+        case CombatElementType.Ice:
+            return CreateGeneratedSprite("GeneratedIceCrystalBurst", 132, 132, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float arms = Mathf.Clamp01((0.070f - Mathf.Abs(Mathf.Sin(angle * 6f) * r)) * 12f);
+                float ring = Mathf.Clamp01((0.050f - Mathf.Abs(r - 0.54f)) * 18f);
+                float core = Mathf.Clamp01((0.18f - r) * 4f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01((arms * (1f - r)) + ring + core));
+            });
+        case CombatElementType.Lightning:
+            return CreateGeneratedSprite("GeneratedLightningField", 132, 132, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float boltA = Mathf.Clamp01((0.050f - Mathf.Abs(ny - (Mathf.Sign(Mathf.Sin(nx * 9f)) * 0.18f))) * 16f);
+                float boltB = Mathf.Clamp01((0.040f - Mathf.Abs(nx + (ny * 0.45f))) * 14f);
+                float core = Mathf.Clamp01((0.26f - r) * 3.4f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01((boltA + boltB) * (1f - r * 0.45f) + core));
+            });
+        case CombatElementType.WindFlower:
+            return CreateGeneratedSprite("GeneratedPetalCyclone", 132, 132, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float swirl = Mathf.Clamp01((0.060f - Mathf.Abs(r - (0.22f + angle * 0.050f))) * 13f);
+                float petals = Mathf.Clamp01(Mathf.Abs(Mathf.Sin(angle * 6f + r * 6f)) * (1f - r));
+                float ring = Mathf.Clamp01((0.050f - Mathf.Abs(r - 0.62f)) * 16f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(swirl + petals * 0.38f + ring * 0.55f));
+            });
+        case CombatElementType.DarkPoison:
+            return CreateGeneratedSprite("GeneratedPoisonCloudBurst", 132, 132, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float blob = Mathf.Clamp01((0.72f - r) * 1.35f);
+                float mottled = 0.58f + 0.42f * Mathf.Sin(nx * 15f + ny * 11f);
+                float core = Mathf.Clamp01((0.30f - r) * 3f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(blob * mottled + core));
+            });
+        default:
+            return GetSkillBurstSprite();
+        }
+    }
+
+    private static Sprite CreateElementImpactSprite(CombatElementType element)
+    {
+        switch (element)
+        {
+        case CombatElementType.Fire:
+            return CreateGeneratedSprite("GeneratedFireImpact", 96, 96, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float spark = Mathf.Clamp01((0.16f - Mathf.Abs(Mathf.Sin(angle * 7f) * r - 0.18f)) * 5f);
+                float core = Mathf.Clamp01((0.34f - r) * 3.4f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(spark + core));
+            });
+        case CombatElementType.Ice:
+            return CreateGeneratedSprite("GeneratedIceImpact", 96, 96, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float chips = Mathf.Clamp01((0.080f - Mathf.Abs(Mathf.Sin(angle * 5f) * r)) * 10f);
+                float core = Mathf.Clamp01((0.26f - r) * 3.8f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(chips * (1f - r) + core));
+            });
+        case CombatElementType.Lightning:
+            return CreateGeneratedSprite("GeneratedLightningImpact", 96, 96, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float bolt = Mathf.Clamp01((0.055f - Mathf.Abs(nx - Mathf.Sign(Mathf.Sin(ny * 10f)) * 0.12f)) * 14f);
+                float flash = Mathf.Clamp01((0.32f - r) * 3.2f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(bolt * (1f - r * 0.35f) + flash));
+            });
+        case CombatElementType.WindFlower:
+            return CreateGeneratedSprite("GeneratedPetalImpact", 96, 96, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float petal = Mathf.Clamp01((0.13f - Mathf.Abs(Mathf.Sin(angle * 5f) * r - 0.16f)) * 4.8f);
+                float core = Mathf.Clamp01((0.22f - r) * 3f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(petal + core));
+            });
+        case CombatElementType.DarkPoison:
+            return CreateGeneratedSprite("GeneratedPoisonImpact", 96, 96, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float cloud = Mathf.Clamp01((0.58f - r) * 1.8f);
+                float mottled = 0.5f + 0.5f * Mathf.Sin(nx * 16f - ny * 13f);
+                float core = Mathf.Clamp01((0.24f - r) * 3f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(cloud * mottled + core));
+            });
+        default:
+            return GetImpactBurstSprite();
+        }
+    }
+
+    private static Sprite CreateGeneratedSprite(string name, int width, int height, float pixelsPerUnit,
+                                                System.Func<float, float, Color> sample)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        texture.name = name;
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            for (int x = 0; x < texture.width; x++)
+            {
+                float nx = ((x + 0.5f) / texture.width * 2f) - 1f;
+                float ny = ((y + 0.5f) / texture.height * 2f) - 1f;
+                texture.SetPixel(x, y, sample(nx, ny));
+            }
+        }
+
+        texture.Apply();
+        Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
+                                      new Vector2(0.5f, 0.5f), pixelsPerUnit);
+        sprite.name = name;
+        return sprite;
     }
 
     private static Sprite GetFootstepDustSprite()
