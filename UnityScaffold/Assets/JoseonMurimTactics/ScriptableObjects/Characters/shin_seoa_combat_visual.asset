@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ed4efd73f81d6b47ac11af670784f83, type: 3}
+  m_Name: shin_seoa_combat_visual
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterCombatVisualData
+  characterId: shin_seoa
+  displayName: "\uC2E0\uC11C\uC544"
+  unitSpritePrefab: {fileID: 6402904736522997103, guid: 3e6a6a02a8d8cc1498c76f6c257378f2, type: 3}
+  bustPortrait: {fileID: 21300000, guid: 42df1d94ba51d2c40aa3003f68a73c1c, type: 3}
+  faceIcon: {fileID: 21300000, guid: cddc76f3207d29f47802fab31037ee5b, type: 3}
+  defaultWeaponType: 7
+  weaponAnimationSet: {fileID: 11400000, guid: 4dd17f0fbe2275341843b0f45edf213f, type: 2}
+  boardVisual: {fileID: 11400000, guid: c19ee1d29735dc443ac30423e2c5016b, type: 2}
+  shadowPrefab: {fileID: 0}
+  selectionRingPrefab: {fileID: 0}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}

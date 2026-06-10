@@ -239,7 +239,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             return;
         }
 
-        bodyRenderer.sprite = visual.fullBodySprite;
+        bodyRenderer.sprite = SelectStateSprite();
         bodyRenderer.color = visual.normalTint;
         bodyRenderer.flipX = false;
 
@@ -249,10 +249,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             animator.enabled = visual.animatorController != null;
         }
 
+        Sprite fitSprite = bodyRenderer.sprite != null ? bodyRenderer.sprite : visual.fullBodySprite;
         float scale = 1f;
-        if (visual.fullBodySprite != null && visual.fullBodySprite.bounds.size.y > 0.01f)
+        if (fitSprite != null && fitSprite.bounds.size.y > 0.01f)
         {
-            scale = visual.heightInTiles / visual.fullBodySprite.bounds.size.y;
+            scale = visual.heightInTiles / fitSprite.bounds.size.y;
         }
 
         bodyTransform = bodyRenderer.transform;
@@ -296,6 +297,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         visualState = state;
         stateDuration = Mathf.Max(0f, duration);
         stateStartedAt = Time.time;
+        if (bodyRenderer != null)
+        {
+            bodyRenderer.sprite = SelectStateSprite();
+        }
     }
 
     private void UpdateStateLifetime()
@@ -325,6 +330,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         float idleBob = pulse * visual.idleAmplitude;
         float breath = 1f + (Mathf.Cos((time * visual.idleSpeed * 0.7f) + phaseSeed) * visual.breathingScale);
 
+        bodyRenderer.sprite = SelectStateSprite();
         Vector3 localPosition = baseBodyPosition + new Vector3(0f, idleBob, 0f);
         Vector3 localScale = new Vector3(baseBodyScale.x * breath, baseBodyScale.y, baseBodyScale.z);
         float rotation = 0f;
@@ -368,7 +374,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                 effectSprite = GetFootstepDustSprite();
                 effectPosition = new Vector3(-facingSign * 0.18f, 0.10f, -0.02f);
                 effectScale = Vector3.one * 0.42f;
-                effectColor = new Color(0.78f, 0.88f, 0.94f, 0.45f);
+                effectColor = Color.Lerp(new Color(0.78f, 0.88f, 0.94f, 0.45f), ElementPrimary(0.45f), 0.45f);
             }
             break;
         case CharacterBattleVisualState.Attack:
@@ -383,7 +389,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             effectPosition = new Vector3(facingSign * (0.34f + (0.08f * lunge)), 0.56f, -0.02f);
             effectScale = new Vector3(0.72f, 0.52f, 1f);
             effectRotation = facingSign < 0f ? 180f : 0f;
-            effectColor = new Color(0.55f, 0.98f, 1f, 0.90f);
+            effectColor = ElementPrimary(0.90f);
             break;
         case CharacterBattleVisualState.Skill:
             float skill = Mathf.Sin(progress * Mathf.PI);
@@ -397,7 +403,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             effectPosition = new Vector3(0f, 0.58f, -0.03f);
             effectScale = Vector3.one * (0.72f + 0.32f * skill);
             effectRotation = time * 18f;
-            effectColor = new Color(0.42f, 0.94f, 1f, 0.42f + 0.30f * skill);
+            effectColor = Color.Lerp(ElementPrimary(0.42f + 0.30f * skill), ElementSecondary(0.42f + 0.30f * skill), 0.38f);
             break;
         case CharacterBattleVisualState.Hit:
             float hit = Mathf.Sin(progress * Mathf.PI);
@@ -409,7 +415,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             effectSprite = GetImpactBurstSprite();
             effectPosition = new Vector3(0f, 0.58f, -0.03f);
             effectScale = Vector3.one * (0.48f + 0.20f * hit);
-            effectColor = new Color(1f, 0.88f, 0.58f, 0.62f);
+            effectColor = ElementSecondary(0.62f);
             break;
         case CharacterBattleVisualState.Guard:
             float guard = Mathf.Sin(progress * Mathf.PI);
@@ -421,7 +427,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             effectSprite = GetGuardRingSprite();
             effectPosition = new Vector3(0f, 0.55f, -0.03f);
             effectScale = Vector3.one * (0.56f + 0.14f * guard);
-            effectColor = new Color(0.52f, 0.94f, 1f, 0.34f + 0.30f * guard);
+            effectColor = ElementPrimary(0.34f + 0.30f * guard);
             break;
         case CharacterBattleVisualState.Defeat:
             float fall = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(stateAge / 0.55f));
@@ -530,6 +536,67 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         selectionRenderer.sortingOrder = order - 1;
         bodyRenderer.sortingOrder = order;
         effectRenderer.sortingOrder = order + 1;
+    }
+
+    private Sprite SelectStateSprite()
+    {
+        if (visual == null)
+        {
+            return null;
+        }
+
+        switch (visualState)
+        {
+        case CharacterBattleVisualState.Move:
+            return visual.movePoseSprite != null ? visual.movePoseSprite : SelectIdleFallback();
+        case CharacterBattleVisualState.Attack:
+            return visual.attackPoseSprite != null ? visual.attackPoseSprite : SelectIdleFallback();
+        case CharacterBattleVisualState.Skill:
+            return visual.skillPoseSprite != null ? visual.skillPoseSprite :
+                   visual.attackPoseSprite != null ? visual.attackPoseSprite : SelectIdleFallback();
+        case CharacterBattleVisualState.Hit:
+            return visual.hitPoseSprite != null ? visual.hitPoseSprite : SelectIdleFallback();
+        case CharacterBattleVisualState.Guard:
+            return visual.attackPoseSprite != null ? visual.attackPoseSprite : SelectIdleFallback();
+        case CharacterBattleVisualState.Defeat:
+            return visual.defeatedPoseSprite != null ? visual.defeatedPoseSprite : SelectIdleFallback();
+        case CharacterBattleVisualState.Victory:
+            return visual.skillPoseSprite != null ? visual.skillPoseSprite : SelectIdleFallback();
+        case CharacterBattleVisualState.Wait:
+            return visual.actedPoseSprite != null ? visual.actedPoseSprite : SelectIdleFallback();
+        default:
+            return SelectIdleFallback();
+        }
+    }
+
+    private Sprite SelectIdleFallback()
+    {
+        if (visual == null)
+        {
+            return null;
+        }
+
+        return visual.idlePoseSprite != null ? visual.idlePoseSprite :
+               visual.fullBodySprite != null ? visual.fullBodySprite :
+               visual.bustSprite != null ? visual.bustSprite : visual.portraitSprite;
+    }
+
+    private Color ElementPrimary(float alpha)
+    {
+        Color color = visual != null && visual.weaponAnimationSet != null
+                          ? visual.weaponAnimationSet.primaryEffectColor
+                          : new Color(0.55f, 0.98f, 1f, 1f);
+        color.a = alpha;
+        return color;
+    }
+
+    private Color ElementSecondary(float alpha)
+    {
+        Color color = visual != null && visual.weaponAnimationSet != null
+                          ? visual.weaponAnimationSet.secondaryEffectColor
+                          : Color.white;
+        color.a = alpha;
+        return color;
     }
 
     private float AttackLunge(bool special)

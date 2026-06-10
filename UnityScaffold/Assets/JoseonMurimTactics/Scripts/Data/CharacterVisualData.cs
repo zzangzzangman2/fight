@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace JoseonMurimTactics
 {
@@ -11,6 +11,16 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite portraitSprite;
     public Sprite faceIconSprite;
     public RuntimeAnimatorController animatorController;
+
+    [Header("Battle Pose Sprites")]
+    public Sprite idlePoseSprite;
+    public Sprite movePoseSprite;
+    public Sprite attackPoseSprite;
+    public Sprite skillPoseSprite;
+    public Sprite hitPoseSprite;
+    public Sprite defeatedPoseSprite;
+    public Sprite actedPoseSprite;
+
     public WeaponType defaultWeaponType = WeaponType.Sword;
     public WeaponAnimationSet weaponAnimationSet;
 

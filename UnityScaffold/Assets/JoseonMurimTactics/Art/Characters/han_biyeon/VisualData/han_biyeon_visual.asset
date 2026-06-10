@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95fb2a208870457687ddbb0bb4f0dd12, type: 3}
+  m_Name: han_biyeon_visual
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualData
+  visualId: han_biyeon
+  fullBodySprite: {fileID: 21300000, guid: 3fd70a32b2d875c41b3600bfcc028b9d, type: 3}
+  bustSprite: {fileID: 21300000, guid: 5b1a919cfa3f698489c7432f29258986, type: 3}
+  portraitSprite: {fileID: 21300000, guid: 5b1a919cfa3f698489c7432f29258986, type: 3}
+  faceIconSprite: {fileID: 21300000, guid: 9a0f91879ec86be47a47b5d97ff9d848, type: 3}
+  animatorController: {fileID: 0}
+  idlePoseSprite: {fileID: 21300000, guid: 3fd70a32b2d875c41b3600bfcc028b9d, type: 3}
+  movePoseSprite: {fileID: 21300000, guid: ddc8a863628b6a44f93f87c655c80824, type: 3}
+  attackPoseSprite: {fileID: 21300000, guid: 87d1cfa8cc2580c4da33668d5117f340, type: 3}
+  skillPoseSprite: {fileID: 21300000, guid: 289876635c2a6844e8291e8ad88bd850, type: 3}
+  hitPoseSprite: {fileID: 21300000, guid: 13e4544dd8e1d1344a882463d92a46f4, type: 3}
+  defeatedPoseSprite: {fileID: 21300000, guid: 650181996cf61cc4084f49fd927a839c, type: 3}
+  actedPoseSprite: {fileID: 21300000, guid: 3fd70a32b2d875c41b3600bfcc028b9d, type: 3}
+  defaultWeaponType: 5
+  weaponAnimationSet: {fileID: 11400000, guid: 0cc52ba2b1e65f04bb32b48a3338937d, type: 2}
+  heightInTiles: 1.2
+  spriteOffset: {x: 0, y: 0.14}
+  sortingOffset: 0
+  idleAmplitude: 0.035
+  idleSpeed: 1
+  breathingScale: 0.015
+  shadowWidth: 0.76
+  shadowHeight: 0.19
+  normalTint: {r: 1, g: 1, b: 1, a: 1}
+  selectedTint: {r: 0.8824, g: 0.804, b: 0.9776, a: 1}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
+  hitTint: {r: 0.9028, g: 0.68840003, b: 0.51519996, a: 1}
+  guardTint: {r: 0.853, g: 0.755, b: 0.972, a: 1}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}
+  moveSecondsPerTile: 0.2
+  moveSettleTime: 0.08
+  moveLeanDegrees: 5
+  attackLunge: 0.14
+  skillPulseScale: 0.1
+  hitRecoil: 0.11

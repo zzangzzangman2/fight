@@ -146,7 +146,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62f2a742e6ce4fe3af7c040e2c21817f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestController
   width: 16
   height: 12
@@ -158,39 +158,11 @@ MonoBehaviour:
   useCanvasHud: 1
   mapVariant: 1
   unitDefinitions:
-  - id: test_swordsman
-    displayName: "\uCCAD\uC6D4\uAC80 \uC18C\uC724"
-    faction: 0
-    visual: {fileID: 11400000, guid: 59400ee9bc43423394f8d6613776d840, type: 2}
-    startCell: {x: 7, y: 8}
-    sectName: "\uCCAD\uC6D4\uAC80\uBB38"
-    age: 16
-    mbti: ENFP
-    elementName: "\uCCAD\uAD11"
-    weaponName: "\uAC80"
-    speechTone: "\uBC1D\uACE0 \uCE68\uCC29\uD55C \uC2E4\uC804\uD615 \uB9D0\uD22C"
-    maxHp: 36
-    maxInner: 5
-    initiative: 15
-    agility: 16
-    moveRange: 4
-    attackRange: 1
-    attackBonus: 7
-    defense: 15
-    damageMin: 6
-    damageMax: 10
-    specialName: "\uCCAD\uC6D4\uC12C"
-    specialRange: 1
-    specialCost: 0
-    specialCooldown: 1
-    specialPower: 5
-    specialAttackBonus: 2
-    specialEffect: 5
   - id: baek_ryeon
     displayName: "\uBC31\uB828"
     faction: 0
-    visual: {fileID: 11400000, guid: e2f9bfa06a421ed0801dfcab12e62fcd, type: 2}
-    startCell: {x: 6, y: 9}
+    visual: {fileID: 11400000, guid: c77c023609474414284dae0354ceec2d, type: 2}
+    startCell: {x: 5, y: 8}
     sectName: "\uAC15\uC6D0 \uC124\uC545\uCC3D\uBB38"
     age: 17
     mbti: INFJ
@@ -217,13 +189,13 @@ MonoBehaviour:
   - id: do_arin
     displayName: "\uB3C4\uC544\uB9B0"
     faction: 0
-    visual: {fileID: 11400000, guid: bb014a386f3600589a86a20cc7f5c441, type: 2}
-    startCell: {x: 8, y: 8}
+    visual: {fileID: 11400000, guid: 2de93c0011812964a902c7b0b67f7a8c, type: 2}
+    startCell: {x: 7, y: 8}
     sectName: "\uACBD\uC0C1 \uD654\uC655\uB3C4\uBB38"
     age: 16
     mbti: ESTP
     elementName: "\uBD88"
-    weaponName: "\uB3C4"
+    weaponName: "\uB300\uB3C4"
     speechTone: "\uC9E7\uACE0 \uAC70\uCE5C \uC9C1\uC124"
     maxHp: 34
     maxInner: 3
@@ -245,8 +217,8 @@ MonoBehaviour:
   - id: jin_seoyul
     displayName: "\uC9C4\uC11C\uC728"
     faction: 0
-    visual: {fileID: 11400000, guid: 7f1a763097089996c20b6c46f9367093, type: 2}
-    startCell: {x: 10, y: 8}
+    visual: {fileID: 11400000, guid: f33b94466f4b6ed48a7a2b8ebca61610, type: 2}
+    startCell: {x: 9, y: 8}
     sectName: "\uACBD\uC131 \uCC9C\uB8B0\uBD09\uBB38"
     age: 15
     mbti: ENTP
@@ -271,11 +243,11 @@ MonoBehaviour:
     specialPower: 4
     specialAttackBonus: 3
     specialEffect: 1
-  - id: seo_a
+  - id: shin_seoa
     displayName: "\uC2E0\uC11C\uC544"
     faction: 0
-    visual: {fileID: 11400000, guid: b8332b8583947925754c36f3ebc60e8e, type: 2}
-    startCell: {x: 4, y: 8}
+    visual: {fileID: 11400000, guid: c19ee1d29735dc443ac30423e2c5016b, type: 2}
+    startCell: {x: 3, y: 8}
     sectName: "\uC804\uB77C\uB3C4 \uB0A8\uC6D0 \uD654\uC811\uD48D\uB958\uBB38"
     age: 13
     mbti: ENFP
@@ -302,8 +274,8 @@ MonoBehaviour:
   - id: han_biyeon
     displayName: "\uD55C\uBE44\uC5F0"
     faction: 0
-    visual: {fileID: 11400000, guid: b1a7ac4054895e811cf8b22f95691ff7, type: 2}
-    startCell: {x: 2, y: 7}
+    visual: {fileID: 11400000, guid: b3e2849120920b44b87c6353a2665b4a, type: 2}
+    startCell: {x: 11, y: 8}
     sectName: "\uD669\uD574\uB3C4 \uAD6C\uC6D4\uC0B0 \uD751\uB828\uC554\uBB38"
     age: 17
     mbti: ISTP
@@ -327,17 +299,17 @@ MonoBehaviour:
     specialPower: 3
     specialAttackBonus: 2
     specialEffect: 3
-  - id: iron_wolf_guard_1
-    displayName: "\uCCA0\uB791\uBB38 \uAC80\uC218"
+  - id: bandit_guard_1
+    displayName: "\uD751\uB9BD\uBC29 \uCE7C\uC7A1\uC774"
     faction: 1
-    visual: {fileID: 11400000, guid: 7f1a763097089996c20b6c46f9367093, type: 2}
-    startCell: {x: 7, y: 1}
-    sectName: "\uCCA0\uB791\uBB38"
+    visual: {fileID: 11400000, guid: 2de93c0011812964a902c7b0b67f7a8c, type: 2}
+    startCell: {x: 6, y: 2}
+    sectName: "\uD751\uB9BD\uBC29"
     age: 24
     mbti: ISTJ
-    elementName: "\uCCA0"
-    weaponName: "\uAC80"
-    speechTone: "\uB531\uB531\uD55C \uBA85\uB839\uC870"
+    elementName: "\uD654\uC57D"
+    weaponName: "\uB3C4"
+    speechTone: "\uAC70\uCE60\uACE0 \uC704\uD611\uC801\uC778 \uB9D0\uD22C"
     maxHp: 30
     maxInner: 3
     initiative: 12
@@ -348,58 +320,58 @@ MonoBehaviour:
     defense: 14
     damageMin: 5
     damageMax: 8
-    specialName: "\uCCA0\uB791\uAC80"
+    specialName: "\uB09C\uB3C4\uC9C8"
     specialRange: 1
     specialCost: 1
     specialCooldown: 2
     specialPower: 4
     specialAttackBonus: 1
     specialEffect: 1
-  - id: iron_wolf_spear_1
-    displayName: "\uCCA0\uB791\uBB38 \uC7A5\uCC3D\uC218"
+  - id: bandit_scout_1
+    displayName: "\uD751\uB9BD\uBC29 \uC554\uC218"
     faction: 1
-    visual: {fileID: 11400000, guid: b8332b8583947925754c36f3ebc60e8e, type: 2}
-    startCell: {x: 5, y: 1}
-    sectName: "\uCCA0\uB791\uBB38"
-    age: 25
-    mbti: ESTJ
-    elementName: "\uCCA0"
-    weaponName: "\uC7A5\uCC3D"
-    speechTone: "\uC704\uC555\uC801\uC778 \uB9D0\uD22C"
-    maxHp: 32
+    visual: {fileID: 11400000, guid: b3e2849120920b44b87c6353a2665b4a, type: 2}
+    startCell: {x: 9, y: 2}
+    sectName: "\uD751\uB9BD\uBC29"
+    age: 22
+    mbti: ISTP
+    elementName: "\uB3C5"
+    weaponName: "\uC554\uAE30"
+    speechTone: "\uB0AE\uAC8C \uBE44\uC6C3\uB294 \uB9D0\uD22C"
+    maxHp: 26
     maxInner: 3
-    initiative: 11
-    agility: 12
-    moveRange: 4
-    attackRange: 2
+    initiative: 16
+    agility: 16
+    moveRange: 5
+    attackRange: 3
     attackBonus: 5
-    defense: 15
-    damageMin: 5
-    damageMax: 9
-    specialName: "\uC1C4\uB791\uCC3D"
-    specialRange: 2
+    defense: 13
+    damageMin: 4
+    damageMax: 7
+    specialName: "\uBE44\uCE68"
+    specialRange: 3
     specialCost: 1
     specialCooldown: 2
-    specialPower: 4
-    specialAttackBonus: 1
-    specialEffect: 6
-  - id: iron_wolf_captain
-    displayName: "\uCCA0\uB791\uBB38 \uC815\uCC30\uC870\uC7A5"
+    specialPower: 3
+    specialAttackBonus: 2
+    specialEffect: 3
+  - id: bandit_captain
+    displayName: "\uD751\uB9BD\uBC29 \uB450\uBAA9 \uACFD\uCE60"
     faction: 1
-    visual: {fileID: 11400000, guid: b1a7ac4054895e811cf8b22f95691ff7, type: 2}
-    startCell: {x: 12, y: 2}
-    sectName: "\uCCA0\uB791\uBB38"
+    visual: {fileID: 11400000, guid: f33b94466f4b6ed48a7a2b8ebca61610, type: 2}
+    startCell: {x: 12, y: 3}
+    sectName: "\uD751\uB9BD\uBC29"
     age: 31
     mbti: ENTJ
     elementName: "\uC555\uBC15"
-    weaponName: "\uAC80"
+    weaponName: "\uCCA0\uBD09"
     speechTone: "\uAC70\uCE60\uACE0 \uC595\uBCF4\uB294 \uB9D0\uD22C"
     maxHp: 38
     maxInner: 4
     initiative: 13
     agility: 13
     moveRange: 4
-    attackRange: 1
+    attackRange: 2
     attackBonus: 7
     defense: 16
     damageMin: 6

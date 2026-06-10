@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ed4efd73f81d6b47ac11af670784f83, type: 3}
+  m_Name: baek_ryeon_combat_visual
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterCombatVisualData
+  characterId: baek_ryeon
+  displayName: "\uBC31\uB828"
+  unitSpritePrefab: {fileID: 2806800825433720907, guid: 50e7ee81134e21f4ca9bf9e0040375d6, type: 3}
+  bustPortrait: {fileID: 21300000, guid: e810b0d5d5bc5864ca41ecbe924b491e, type: 3}
+  faceIcon: {fileID: 21300000, guid: e89557e11eee59f429925c6fb59a3ea0, type: 3}
+  defaultWeaponType: 2
+  weaponAnimationSet: {fileID: 11400000, guid: 5bb1a69a23613ab419d5898bad73f6ad, type: 2}
+  boardVisual: {fileID: 11400000, guid: c77c023609474414284dae0354ceec2d, type: 2}
+  shadowPrefab: {fileID: 0}
+  selectionRingPrefab: {fileID: 0}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}

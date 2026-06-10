@@ -26,9 +26,19 @@ public enum ActionSlot
 }
 
 
+public enum CombatElementType
+{
+    None,
+    Fire,
+    Ice,
+    Lightning,
+    WindFlower,
+    DarkPoison
+}
 public enum WeaponType
 {
     Sword,
+    Dao,
     Spear,
     Bow,
     Fist,
@@ -156,6 +166,7 @@ public enum BattleMapTargetPattern
 public enum SkillTag
 {
     Sword,
+    Dao,
     Palm,
     Poison,
     Ice,

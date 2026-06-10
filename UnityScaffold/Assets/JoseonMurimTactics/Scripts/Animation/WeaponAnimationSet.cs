@@ -6,6 +6,9 @@ namespace JoseonMurimTactics
 public sealed class WeaponAnimationSet : ScriptableObject
 {
     public WeaponType weaponType = WeaponType.Sword;
+    public CombatElementType elementType = CombatElementType.None;
+    public Color primaryEffectColor = new Color(0.55f, 0.98f, 1f, 1f);
+    public Color secondaryEffectColor = Color.white;
 
     [Header("Animation Clips")]
     public AnimationClip idleClip;

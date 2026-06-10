@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ed4efd73f81d6b47ac11af670784f83, type: 3}
+  m_Name: do_arin_combat_visual
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterCombatVisualData
+  characterId: do_arin
+  displayName: "\uB3C4\uC544\uB9B0"
+  unitSpritePrefab: {fileID: 3743658782891743867, guid: cb89733577da631438aea19d6b31f49f, type: 3}
+  bustPortrait: {fileID: 21300000, guid: 14a4e44137ddada43ae5ceafe8a3a434, type: 3}
+  faceIcon: {fileID: 21300000, guid: f014ecebb5274c54da3bac7d4c3822cb, type: 3}
+  defaultWeaponType: 1
+  weaponAnimationSet: {fileID: 11400000, guid: a4c5e51357fdb7345b63d2da061950e4, type: 2}
+  boardVisual: {fileID: 11400000, guid: 2de93c0011812964a902c7b0b67f7a8c, type: 2}
+  shadowPrefab: {fileID: 0}
+  selectionRingPrefab: {fileID: 0}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}
