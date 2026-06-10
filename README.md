@@ -94,7 +94,7 @@ Boot
 - 서버 실행 모드는 저장 시 `UnityScaffold/Assets/JoseonMurimTactics/Resources/AuthoringContent/content_manifest.json`에 바로 반영합니다.
 - `index.html`을 file://로 직접 열면 `defaults.js` 기반 오프라인 미리보기를 사용하고, 저장 서버가 없을 때는 `content_manifest.json` 다운로드로 fallback합니다.
 - Prologue는 `AuthoringContentManifest.LoadFromResources()`로 `chapter1_prologue`를 우선 로드하고, manifest가 없거나 비어 있으면 C# fallback 대사를 사용합니다.
-- 미성년 또는 `romanceEligible=false` 캐릭터에게 `romanticIntent` 선택지를 저장하거나 런타임 적용하려 하면 차단됩니다.
+- 나이는 표시용 메타데이터로만 사용합니다. `romanticIntent` 선택지 저장과 런타임 적용은 `romanceEligible=false` 캐릭터만 차단합니다.
 
 ## 전투 방향
 

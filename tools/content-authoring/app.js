@@ -53,7 +53,6 @@ const characterMetaDefaults = {
   seo_a: { age: 13, sectId: "hwajeop_fan", romanceEligible: false },
   han_biyeon: { age: 18, sectId: "heukryeon_shadow", romanceEligible: false }
 };
-const romanticAdultAge = 19;
 const apiFallbackBases = ["http://127.0.0.1:5179", "http://127.0.0.1:5178"];
 
 let content = null;
@@ -193,7 +192,7 @@ function canUseRomanticIntent(choice, characters) {
   }
 
   const character = (characters || []).find(item => item.id === choice.approvalId);
-  return !!character && normalizeAge(character.age) >= romanticAdultAge && !!character.romanceEligible;
+  return !!character && !!character.romanceEligible;
 }
 
 function inferAge(character) {
@@ -709,7 +708,7 @@ function renderCharacters() {
         <label>나이<select class="char-age"></select></label>
         <label>문파<select class="char-sect"></select></label>
       </div>
-      <label class="inline-check"><input class="char-romance-eligible" type="checkbox"> 성인 로맨스 효과 허용</label>
+      <label class="inline-check"><input class="char-romance-eligible" type="checkbox"> 로맨스 효과 허용</label>
       <label>초상화<select class="char-portrait"></select></label>
       <label>메모<textarea class="char-notes" rows="3">${escapeHtml(character.notes || "")}</textarea></label>
       <button class="danger delete-character" type="button">인물 삭제</button>
@@ -721,8 +720,7 @@ function renderCharacters() {
     fillAgeSelect(ageSelect, character.age);
     fillSectSelect(sectSelect, character.sectId);
     fillPortraitSelect(portraitSelect, character.portraitId);
-    romanceEligibleInput.checked = !!character.romanceEligible && normalizeAge(character.age) >= romanticAdultAge;
-    romanceEligibleInput.disabled = normalizeAge(character.age) < romanticAdultAge;
+    romanceEligibleInput.checked = !!character.romanceEligible;
     card.querySelector(".char-name").addEventListener("input", event => {
       character.displayName = event.target.value;
       renderScenes();
@@ -732,14 +730,10 @@ function renderCharacters() {
     });
     ageSelect.addEventListener("change", event => {
       character.age = normalizeAge(event.target.value);
-      if (character.age < romanticAdultAge) {
-        character.romanceEligible = false;
-      }
-
       renderCharacters();
     });
     romanceEligibleInput.addEventListener("change", event => {
-      character.romanceEligible = normalizeAge(character.age) >= romanticAdultAge && event.target.checked;
+      character.romanceEligible = event.target.checked;
     });
     sectSelect.addEventListener("change", event => {
       character.sectId = event.target.value;
@@ -936,7 +930,7 @@ function prepareForSave() {
   output.characters.forEach(character => {
     character.id = slug(character.id || character.displayName, "character");
     character.age = normalizeAge(character.age);
-    character.romanceEligible = !!character.romanceEligible && character.age >= romanticAdultAge;
+    character.romanceEligible = !!character.romanceEligible;
     character.sectId = validSectId(character.sectId) ? character.sectId : "";
     character.sectName = sectLabel(character.sectId);
   });

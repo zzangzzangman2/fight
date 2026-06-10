@@ -12,7 +12,6 @@ const manifestPath = path.join(outputRoot, "content_manifest.json");
 const backupRoot = path.join(outputRoot, "Backups");
 const mapAssetCatalogPath = path.join(resourcesRoot, "MapAssets", "map_asset_catalog.json");
 const port = Number(process.env.PORT || 5178);
-const romanticAdultAge = 19;
 
 const mediaFolders = {
   backgrounds: "Backgrounds",
@@ -141,7 +140,7 @@ function canUseRomanticIntent(choiceItem, characters) {
   }
 
   const character = (characters || []).find(item => item.id === choiceItem.approvalId);
-  return !!character && Number(character.age || 0) >= romanticAdultAge && !!character.romanceEligible;
+  return !!character && !!character.romanceEligible;
 }
 
 function defaultCharacters() {
@@ -326,7 +325,7 @@ function buildNodesForScene(scene, characters) {
 
 function rebuildNodes(manifest) {
   for (const character of manifest.characters || []) {
-    character.romanceEligible = !!character.romanceEligible && Number(character.age || 0) >= romanticAdultAge;
+    character.romanceEligible = !!character.romanceEligible;
   }
 
   for (const scene of manifest.dialogueScenes || []) {

@@ -4,8 +4,6 @@ namespace JoseonMurimTactics
 {
 public sealed class CompanionInfo
 {
-    public const int AdultAge = 19;
-
     public string id;
     public string name;
     public string title;
@@ -41,8 +39,7 @@ public sealed class CompanionInfo
         this.romanceEligible = romanceEligible;
     }
 
-    public bool IsAdult => age >= AdultAge;
-    public bool CanReceiveRomanticEffects => IsAdult && romanceEligible;
+    public bool CanReceiveRomanticEffects => romanceEligible;
 }
 
 /// <summary>
