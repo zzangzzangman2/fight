@@ -44,8 +44,11 @@ public sealed class BattleResultController : MonoBehaviour
         int optionalDone = 0;
         foreach (string objId in result.completedObjectives)
         {
-            if (objId != "OBJ_DEFEAT_SCOUTS")
+            if (objId != "OBJ_DEFEAT_SCOUTS" && objId != "OBJ_CLEAR_BANDIT_LAIR" &&
+                objId != "OBJ_RECOVER_SUPPLIES")
+            {
                 optionalDone++;
+            }
         }
 
         if (optionalDone >= 2 && result.turnCount <= 8)
@@ -227,6 +230,12 @@ public sealed class BattleResultController : MonoBehaviour
         {
         case "OBJ_DEFEAT_SCOUTS":
             return "철랑문 정찰조 격퇴";
+        case "OBJ_CLEAR_BANDIT_LAIR":
+            return "흑립방 두목 제압";
+        case "OBJ_RECOVER_SUPPLIES":
+            return "빼앗긴 보급 회수";
+        case "OBJ_AVOID_TRAPS":
+            return "덫 피해 최소화";
         case "OBJ_SAVE_PORTERS":
             return "마을 짐꾼 생존";
         case "OBJ_INSPECT_MARK":

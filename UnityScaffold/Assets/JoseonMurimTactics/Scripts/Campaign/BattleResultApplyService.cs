@@ -38,7 +38,8 @@ public sealed class BattleResultApplyService
 
         root.Session.appliedBattleResultIds.Add(id);
 
-        bool alreadyCompletedMission = result.Won && definition != null && !string.IsNullOrEmpty(definition.questId) &&
+        bool alreadyCompletedMission = result.Won && definition != null && !definition.repeatable &&
+                                       !string.IsNullOrEmpty(definition.questId) &&
                                        root.Session.completedMissionIds.Contains(definition.questId);
         outcome.replayRewardsReduced = alreadyCompletedMission;
 
@@ -69,6 +70,11 @@ public sealed class BattleResultApplyService
             root.Flags.AddInt("silver", System.Math.Max(1, result.silver / 4));
         }
 
+        if (result.Won && definition != null && definition.id == HubController.BanditLairBattleId)
+        {
+            root.Flags.AddInt("sect:village_trust", 1);
+        }
+
         foreach (string companionId in result.woundedCompanions)
         {
             root.CompanionStates.MarkWounded(companionId);
@@ -79,7 +85,7 @@ public sealed class BattleResultApplyService
         {
             root.Session.missionAttempts[definition.questId] =
                 root.Session.missionAttempts.TryGetValue(definition.questId, out int attempts) ? attempts + 1 : 1;
-            if (result.Won)
+            if (result.Won && !definition.repeatable)
             {
                 root.Session.completedMissionIds.Add(definition.questId);
             }

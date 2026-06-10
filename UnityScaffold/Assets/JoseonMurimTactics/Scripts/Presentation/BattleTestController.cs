@@ -21,6 +21,7 @@ public sealed class BattleTestController : MonoBehaviour
     public bool useCanvasHud = true;
     public BattleTestMapVariant mapVariant = BattleTestMapVariant.BaekduMountainSnowfield;
     public BattleTestUnitDefinition[] unitDefinitions = new BattleTestUnitDefinition[0];
+    private BattleTestUnitDefinition[] baselineUnitDefinitions;
 
     private const int SmokeCoverBonus = 2;
     private const int CoverInteractBonus = 2;
@@ -31,23 +32,64 @@ public sealed class BattleTestController : MonoBehaviour
     private const string SnowfieldPaintedBattleMapResource = "MapAssets/Backgrounds/baekdu_mountain_snowfield_srpg_ground";
     private const string SnowGateMapDisplayName = "백두산 설문 관문전";
     private const string SnowfieldMapDisplayName = "백두산 천지 설산로";
+    private const string BanditLairMapDisplayName = "소백촌 도적 소굴";
     private const string SnowGateMapConcept =
         "중앙 1칸 협로, 좌측 설죽림 우회로, 우측 절벽 고지, 얼어붙은 여울과 붕괴 가능한 다리 밧줄을 쓰는 대표 수작업 전장";
     private const string SnowfieldMapConcept =
         "설송림, 현무암 절벽, 얼음 물길, 온천 증기를 따라 움직이는 백두산 설산 SRPG 전장";
+    private const string BanditLairMapConcept =
+        "벌목길, 폐광 동굴, 통나무 장애물, 진흙 웅덩이, 덫, 망루 고지로 구성된 자유시간 반복 의뢰 전장";
     private static readonly bool UseLegacyOnGui = false;
     private const float TacticalCameraMinSize = 3.05f;
     private const float TacticalCameraMaxSize = 3.45f;
     private const float CameraFocusYOffset = 0.22f;
-    private string PaintedBattleMapResource => mapVariant == BattleTestMapVariant.BaekduMountainSnowfield
-                                                   ? SnowfieldPaintedBattleMapResource
-                                                   : SnowGatePaintedBattleMapResource;
-    private string MapDisplayName => mapVariant == BattleTestMapVariant.BaekduMountainSnowfield
-                                         ? SnowfieldMapDisplayName
-                                         : SnowGateMapDisplayName;
-    private string MapConcept => mapVariant == BattleTestMapVariant.BaekduMountainSnowfield
-                                     ? SnowfieldMapConcept
-                                     : SnowGateMapConcept;
+    private string PaintedBattleMapResource
+    {
+        get
+        {
+            switch (mapVariant)
+            {
+            case BattleTestMapVariant.BaekduMountainSnowfield:
+                return SnowfieldPaintedBattleMapResource;
+            case BattleTestMapVariant.BanditLair:
+                return string.Empty;
+            default:
+                return SnowGatePaintedBattleMapResource;
+            }
+        }
+    }
+
+    private string MapDisplayName
+    {
+        get
+        {
+            switch (mapVariant)
+            {
+            case BattleTestMapVariant.BaekduMountainSnowfield:
+                return SnowfieldMapDisplayName;
+            case BattleTestMapVariant.BanditLair:
+                return BanditLairMapDisplayName;
+            default:
+                return SnowGateMapDisplayName;
+            }
+        }
+    }
+
+    private string MapConcept
+    {
+        get
+        {
+            switch (mapVariant)
+            {
+            case BattleTestMapVariant.BaekduMountainSnowfield:
+                return SnowfieldMapConcept;
+            case BattleTestMapVariant.BanditLair:
+                return BanditLairMapConcept;
+            default:
+                return SnowGateMapConcept;
+            }
+        }
+    }
 
     private readonly List<BattleTestUnit> units = new List<BattleTestUnit>();
     private readonly List<string> battleLog = new List<string>();
@@ -1020,6 +1062,7 @@ public sealed class BattleTestController : MonoBehaviour
     {
         StopAllCoroutines();
         ClearGeneratedObjects();
+        ApplyBattleEntryConfiguration();
         width = Mathf.Max(width, 16);
         height = Mathf.Max(height, 12);
 
@@ -1109,6 +1152,209 @@ public sealed class BattleTestController : MonoBehaviour
         battleHud = null;
         hudNotice = string.Empty;
         hudNoticeUntil = 0f;
+    }
+
+    private void ApplyBattleEntryConfiguration()
+    {
+        if (baselineUnitDefinitions == null)
+        {
+            baselineUnitDefinitions = CloneUnitDefinitions(unitDefinitions);
+        }
+
+        string battleId = !string.IsNullOrEmpty(BattleEntryAdapter.PendingBattleId)
+                              ? BattleEntryAdapter.PendingBattleId
+                              : BattleResultBridge.CurrentBattleId;
+        if (battleId == HubController.BanditLairBattleId)
+        {
+            mapVariant = BattleTestMapVariant.BanditLair;
+            useAuthoredSceneMap = false;
+            width = 16;
+            height = 12;
+            unitDefinitions = BuildBanditLairUnitDefinitions(baselineUnitDefinitions);
+            return;
+        }
+
+        unitDefinitions = CloneUnitDefinitions(baselineUnitDefinitions);
+    }
+
+    private static BattleTestUnitDefinition[] CloneUnitDefinitions(BattleTestUnitDefinition[] source)
+    {
+        if (source == null)
+        {
+            return new BattleTestUnitDefinition[0];
+        }
+
+        BattleTestUnitDefinition[] clones = new BattleTestUnitDefinition[source.Length];
+        for (int i = 0; i < source.Length; i++)
+        {
+            clones[i] = CloneUnitDefinition(source[i]);
+        }
+
+        return clones;
+    }
+
+    private static BattleTestUnitDefinition CloneUnitDefinition(BattleTestUnitDefinition source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        return new BattleTestUnitDefinition
+        {
+            id = source.id,
+            displayName = source.displayName,
+            faction = source.faction,
+            visual = source.visual,
+            startCell = source.startCell,
+            sectName = source.sectName,
+            age = source.age,
+            mbti = source.mbti,
+            elementName = source.elementName,
+            weaponName = source.weaponName,
+            speechTone = source.speechTone,
+            maxHp = source.maxHp,
+            maxInner = source.maxInner,
+            initiative = source.initiative,
+            agility = source.agility,
+            moveRange = source.moveRange,
+            attackRange = source.attackRange,
+            attackBonus = source.attackBonus,
+            defense = source.defense,
+            damageMin = source.damageMin,
+            damageMax = source.damageMax,
+            specialName = source.specialName,
+            specialRange = source.specialRange,
+            specialCost = source.specialCost,
+            specialCooldown = source.specialCooldown,
+            specialPower = source.specialPower,
+            specialAttackBonus = source.specialAttackBonus,
+            specialEffect = source.specialEffect
+        };
+    }
+
+    private static BattleTestUnitDefinition[] BuildBanditLairUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
+    {
+        List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
+        Vector2Int[] allyCells = {
+            new Vector2Int(7, 1),
+            new Vector2Int(6, 1),
+            new Vector2Int(8, 1),
+            new Vector2Int(9, 1),
+            new Vector2Int(5, 2),
+            new Vector2Int(4, 2)
+        };
+
+        int allyIndex = 0;
+        foreach (BattleTestUnitDefinition definition in baseDefinitions)
+        {
+            if (definition == null || definition.faction != Faction.Ally)
+            {
+                continue;
+            }
+
+            BattleTestUnitDefinition ally = CloneUnitDefinition(definition);
+            ally.startCell = allyCells[Mathf.Min(allyIndex, allyCells.Length - 1)];
+            result.Add(ally);
+            allyIndex++;
+        }
+
+        BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
+                                        FindFirstDefinition(baseDefinitions, Faction.Enemy);
+        BattleTestUnitDefinition spear = FindDefinition(baseDefinitions, "iron_wolf_spear_1") ?? guard;
+        BattleTestUnitDefinition captain = FindDefinition(baseDefinitions, "iron_wolf_captain") ?? guard;
+
+        result.Add(BanditUnit(guard, "bandit_cutthroat_1", "흑립방 칼잡이", new Vector2Int(7, 8),
+                              "흑립방 산도적", "흙먼지", "도", 26, 3, 13, 14, 4, 1, 5, 13, 4, 8, "난도질", 1,
+                              1, 2, 3, 1, BattleSpecialEffect.Strike));
+        result.Add(BanditUnit(spear, "bandit_spear_1", "벌목길 창수", new Vector2Int(10, 7),
+                              "흑립방 산도적", "거친 바람", "장창", 28, 3, 12, 13, 4, 2, 5, 13, 4, 8, "밀쳐 찌르기",
+                              2, 1, 2, 3, 1, BattleSpecialEffect.BreakGuard));
+        result.Add(BanditUnit(guard, "bandit_slinger_1", "망루 투석꾼", new Vector2Int(13, 8),
+                              "흑립방 산도적", "돌가루", "투석끈", 22, 2, 14, 15, 4, 3, 4, 12, 3, 6, "흙먼지 던지기",
+                              3, 1, 2, 0, 0, BattleSpecialEffect.Mark));
+        result.Add(BanditUnit(spear, "bandit_trapper_1", "덫지기", new Vector2Int(4, 7),
+                              "흑립방 산도적", "독", "단검", 24, 3, 15, 16, 5, 1, 5, 12, 3, 7, "독묻은 쇠못",
+                              2, 1, 2, 3, 1, BattleSpecialEffect.Poison));
+        result.Add(BanditUnit(captain, "bandit_boss_gwakchil", "흑립방 두목 곽칠", new Vector2Int(8, 10),
+                              "흑립방", "압박", "대도", 40, 4, 11, 12, 4, 1, 7, 15, 6, 11, "목책 내려찍기", 1,
+                              1, 2, 5, 2, BattleSpecialEffect.BreakGuard));
+
+        return result.ToArray();
+    }
+
+    private static BattleTestUnitDefinition BanditUnit(BattleTestUnitDefinition template, string id, string displayName,
+                                                       Vector2Int cell, string sectName, string elementName,
+                                                       string weaponName, int maxHp, int maxInner, int initiative,
+                                                       int agility, int moveRange, int attackRange, int attackBonus,
+                                                       int defense, int damageMin, int damageMax, string specialName,
+                                                       int specialRange, int specialCost, int specialCooldown,
+                                                       int specialPower, int specialAttackBonus,
+                                                       BattleSpecialEffect specialEffect)
+    {
+        BattleTestUnitDefinition unit = CloneUnitDefinition(template) ?? new BattleTestUnitDefinition();
+        unit.id = id;
+        unit.displayName = displayName;
+        unit.faction = Faction.Enemy;
+        unit.startCell = cell;
+        unit.sectName = sectName;
+        unit.elementName = elementName;
+        unit.weaponName = weaponName;
+        unit.speechTone = "험한 산도적 말투";
+        unit.maxHp = maxHp;
+        unit.maxInner = maxInner;
+        unit.initiative = initiative;
+        unit.agility = agility;
+        unit.moveRange = moveRange;
+        unit.attackRange = attackRange;
+        unit.attackBonus = attackBonus;
+        unit.defense = defense;
+        unit.damageMin = damageMin;
+        unit.damageMax = damageMax;
+        unit.specialName = specialName;
+        unit.specialRange = specialRange;
+        unit.specialCost = specialCost;
+        unit.specialCooldown = specialCooldown;
+        unit.specialPower = specialPower;
+        unit.specialAttackBonus = specialAttackBonus;
+        unit.specialEffect = specialEffect;
+        return unit;
+    }
+
+    private static BattleTestUnitDefinition FindDefinition(BattleTestUnitDefinition[] definitions, string id)
+    {
+        if (definitions == null)
+        {
+            return null;
+        }
+
+        foreach (BattleTestUnitDefinition definition in definitions)
+        {
+            if (definition != null && definition.id == id)
+            {
+                return definition;
+            }
+        }
+
+        return null;
+    }
+
+    private static BattleTestUnitDefinition FindFirstDefinition(BattleTestUnitDefinition[] definitions, Faction faction)
+    {
+        if (definitions == null)
+        {
+            return null;
+        }
+
+        foreach (BattleTestUnitDefinition definition in definitions)
+        {
+            if (definition != null && definition.faction == faction)
+            {
+                return definition;
+            }
+        }
+
+        return null;
     }
 
     private void EnsureBattleHud()
@@ -1202,6 +1448,11 @@ public sealed class BattleTestController : MonoBehaviour
         if (scoutMode)
         {
             return $"{MapDisplayName}\nSCOUT: enemy positions, danger tiles, terrain info, LoS blockers, props.\nSelect ally -> click southern deployment tile to reposition. S/Space starts battle.";
+        }
+
+        if (mapVariant == BattleTestMapVariant.BanditLair)
+        {
+            return $"{MapDisplayName}\n주 목표: 도적 두목 제압 / 보급 상자 회수\n보조: 덫 회피, 망루 고지 제압, 통나무 엄폐 활용\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
         }
 
         return $"{MapDisplayName}\n주 목표: 관문 정찰조장 제압\n보조: 협로 엄폐, 고저차, 지형 상호작용 활용\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
@@ -1715,6 +1966,12 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (mapVariant == BattleTestMapVariant.BanditLair)
+        {
+            CreateBanditLairInteractables(propRoot);
+            return;
+        }
+
         AddInteractable(propRoot, "signboard", "백두천광 현판", BattleTestInteractableKind.Objective,
                         new Vector2Int(7, 10), new Color(0.92f, 0.76f, 0.34f, 1f));
         AddInteractable(propRoot, "incense", "제단 향로", BattleTestInteractableKind.Smoke, new Vector2Int(7, 9),
@@ -1758,6 +2015,26 @@ public sealed class BattleTestController : MonoBehaviour
         AddInteractable(propRoot, "baekdu_frozen_rope_posts", "얼어붙은 밧줄 말뚝",
                         BattleTestInteractableKind.CollapseBridge, new Vector2Int(8, 3),
                         new Color(0.45f, 0.35f, 0.22f, 1f));
+    }
+
+    private void CreateBanditLairInteractables(Transform propRoot)
+    {
+        AddInteractable(propRoot, "stolen_cache", "빼앗긴 보급 상자", BattleTestInteractableKind.Objective,
+                        new Vector2Int(8, 10), new Color(0.84f, 0.68f, 0.38f, 1f));
+        AddInteractable(propRoot, "wine_cart", "넘어진 짐수레", BattleTestInteractableKind.Cover,
+                        new Vector2Int(5, 5), new Color(0.54f, 0.32f, 0.18f, 1f));
+        AddInteractable(propRoot, "oil_jar", "도적 화약 항아리", BattleTestInteractableKind.Fire,
+                        new Vector2Int(9, 7), new Color(0.74f, 0.38f, 0.18f, 1f));
+        AddInteractable(propRoot, "lantern", "망루 횃불", BattleTestInteractableKind.Fire,
+                        new Vector2Int(13, 8), new Color(1f, 0.42f, 0.16f, 1f));
+        AddInteractable(propRoot, "fallen_wall", "쌓아둔 통나무", BattleTestInteractableKind.Cover,
+                        new Vector2Int(6, 8), new Color(0.44f, 0.28f, 0.16f, 1f));
+        AddInteractable(propRoot, "bridge_rope", "낡은 밧줄 다리", BattleTestInteractableKind.CollapseBridge,
+                        new Vector2Int(7, 4), new Color(0.42f, 0.25f, 0.12f, 1f));
+        AddInteractable(propRoot, "bamboo_bundle", "쓰러뜨릴 벌목 더미", BattleTestInteractableKind.BambooFall,
+                        new Vector2Int(4, 7), new Color(0.28f, 0.46f, 0.20f, 1f));
+        AddInteractable(propRoot, "stone_lantern", "굴 입구 낙석", BattleTestInteractableKind.Rockfall,
+                        new Vector2Int(10, 10), new Color(0.45f, 0.43f, 0.38f, 1f));
     }
 
     private void AddInteractable(Transform parent, string id, string displayName, BattleTestInteractableKind kind,
@@ -3560,7 +3837,9 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (interactable.kind == BattleTestInteractableKind.Objective)
         {
-            AddLog("[목표] 현판은 지켜야 합니다. 적이 닿기 전에 병목을 막으세요.");
+            AddLog(mapVariant == BattleTestMapVariant.BanditLair
+                       ? "[목표] 빼앗긴 보급입니다. 도적 두목을 제압한 뒤 회수하세요."
+                       : "[목표] 현판은 지켜야 합니다. 적이 닿기 전에 병목을 막으세요.");
             return false;
         }
 
@@ -3689,6 +3968,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         unit.view.PlayMove();
         float duration = unit.view.WalkSecondsPerTile();
+        int stepIndex = 0;
         for (int i = 1; i < path.Count; i++)
         {
             Vector3 start = unit.view.transform.position;
@@ -3700,8 +3980,10 @@ public sealed class BattleTestController : MonoBehaviour
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
                 float eased = Mathf.SmoothStep(0f, 1f, t);
-                float stepHop = Mathf.Sin(t * Mathf.PI) * 0.035f;
-                unit.view.transform.position = Vector3.Lerp(start, target, eased) + new Vector3(0f, stepHop, 0f);
+                float stride = (stepIndex + t) * Mathf.PI * 2f;
+                float stepHop = Mathf.Abs(Mathf.Sin(stride)) * 0.030f;
+                float footSway = Mathf.Sin(stride) * 0.026f;
+                unit.view.transform.position = Vector3.Lerp(start, target, eased) + new Vector3(footSway, stepHop, 0f);
                 if (camera != null)
                 {
                     Vector3 cameraTarget = CameraPositionForFocus(camera, unit.view.transform.position, cameraTargetSize);
@@ -3713,6 +3995,7 @@ public sealed class BattleTestController : MonoBehaviour
             }
 
             unit.view.transform.position = target;
+            stepIndex++;
         }
 
         unit.view.PlayIdle();
@@ -5568,7 +5851,7 @@ public sealed class BattleTestController : MonoBehaviour
             {
                 enemiesAlive = true;
                 BattleTestTile tile = TileAt(unit.cell);
-                if (tile != null && tile.objective)
+                if (mapVariant != BattleTestMapVariant.BanditLair && tile != null && tile.objective)
                 {
                     objectiveBreached = true;
                 }
@@ -5936,9 +6219,141 @@ public sealed class BattleTestController : MonoBehaviour
 
     private TerrainProfile ResolveTerrain(int x, int y)
     {
-        return mapVariant == BattleTestMapVariant.BaekduMountainSnowfield
-                   ? ResolveBaekduMountainSnowfieldTerrain(x, y)
-                   : ResolveBaekduSnowGateTerrain(x, y);
+        switch (mapVariant)
+        {
+        case BattleTestMapVariant.BaekduMountainSnowfield:
+            return ResolveBaekduMountainSnowfieldTerrain(x, y);
+        case BattleTestMapVariant.BanditLair:
+            return ResolveBanditLairTerrain(x, y);
+        default:
+            return ResolveBaekduSnowGateTerrain(x, y);
+        }
+    }
+
+    private TerrainProfile ResolveBanditLairTerrain(int x, int y)
+    {
+        if (IsBanditLairOuterWall(x, y))
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.10f, 0.18f, 0.12f, 1f), y >= 8 ? 1 : 0, 0,
+                                      99, false, true, false, false, false, "bandit_outer_forest_wall",
+                                      "Dense mountain brush and felled trees: impassable edge of the lair.");
+        }
+
+        if (IsBanditLairPalisadeBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Wall, new Color(0.25f, 0.18f, 0.12f, 1f), y >= 8 ? 2 : 1, 0,
+                                      99, false, true, false, false, false, "bandit_palisade_wall",
+                                      "Sharpened log palisade: blocks movement and sight.");
+        }
+
+        if (IsBanditLairCaveWall(x, y))
+        {
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.16f, 0.15f, 0.13f, 1f), 3, 0, 99, false, true,
+                                      false, false, true, "bandit_cave_wall",
+                                      "Old mine wall: blocked cave rock and fall edge.");
+        }
+
+        if (IsBanditLairLogBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Rubble, new Color(0.36f, 0.25f, 0.15f, 1f), y >= 7 ? 1 : 0, 3,
+                                      99, false, true, false, false, false, "bandit_log_blocker",
+                                      "Stacked lumber and thorn barricade: move around it.");
+        }
+
+        if (y == 4 && x >= 3 && x <= 12)
+        {
+            if (x == 7 || x == 8)
+            {
+                return new TerrainProfile(TerrainType.Bridge, new Color(0.42f, 0.28f, 0.16f, 1f), 0, 0, 1, true,
+                                          false, true, false, false, "bandit_rope_bridge",
+                                          "Narrow rope bridge over the drainage ditch.");
+            }
+
+            if (x == 3 || x == 12)
+            {
+                return new TerrainProfile(TerrainType.Mud, new Color(0.26f, 0.22f, 0.15f, 1f), 0, 1, 3, true,
+                                          false, false, false, true, "bandit_muddy_bank",
+                                          "Muddy ditch bank: passable but slow and exposed.");
+            }
+
+            return new TerrainProfile(TerrainType.DeepWater, new Color(0.06f, 0.13f, 0.12f, 1f), 0, 0, 99, false,
+                                      false, false, false, true, "bandit_drainage_ditch",
+                                      "Deep drainage ditch: cannot be crossed away from the bridge.");
+        }
+
+        if ((x == 5 && y == 6) || (x == 10 && y == 5) || (x == 9 && y == 8))
+        {
+            return new TerrainProfile(TerrainType.Trap, new Color(0.34f, 0.22f, 0.15f, 1f), 0, 0, 3, true, false,
+                                      false, false, true, "bandit_hidden_trap",
+                                      "Hidden snare pit: passable, costly, and dangerous.");
+        }
+
+        if (x >= 12 && x <= 14 && y >= 7 && y <= 9)
+        {
+            bool tower = x >= 13 && y >= 8;
+            return new TerrainProfile(tower ? TerrainType.Roof : TerrainType.Hill,
+                                      tower ? new Color(0.45f, 0.30f, 0.18f, 1f)
+                                            : new Color(0.42f, 0.36f, 0.24f, 1f),
+                                      tower ? 2 : 1, tower ? 2 : 1, tower ? 1 : 2, true, false,
+                                      x == 12 && y == 7, false, tower, "bandit_watchtower_ridge",
+                                      tower
+                                          ? "Bandit watchtower: high ground with cover and long sight lines."
+                                          : "Slope up toward the watchtower.");
+        }
+
+        if (x >= 6 && x <= 10 && y >= 9 && y <= 10)
+        {
+            bool cache = x == 8 && y == 10;
+            return new TerrainProfile(cache ? TerrainType.Gate : TerrainType.Interior,
+                                      cache ? new Color(0.58f, 0.42f, 0.22f, 1f)
+                                            : new Color(0.31f, 0.25f, 0.18f, 1f),
+                                      2, cache ? 2 : 1, 1, true, false, cache, cache, false,
+                                      "bandit_cave_mouth",
+                                      cache
+                                          ? "Stolen supply cache at the mine mouth: mission objective."
+                                          : "Mine mouth planks: defensible high ground.");
+        }
+
+        if (x >= 4 && x <= 11 && y >= 6 && y <= 8)
+        {
+            bool centralRoad = x >= 6 && x <= 9;
+            bool cover = (x == 5 && y == 7) || (x == 10 && y == 7);
+            return new TerrainProfile(centralRoad ? TerrainType.Road : TerrainType.Mud,
+                                      centralRoad ? new Color(0.48f, 0.38f, 0.25f, 1f)
+                                                  : new Color(0.30f, 0.26f, 0.18f, 1f),
+                                      y >= 8 ? 1 : 0, cover ? 2 : 0, centralRoad ? 1 : 2, true, cover,
+                                      centralRoad && y == 8, false, false, "bandit_camp_lane",
+                                      "Main camp lane: faster route through the bandit tents and lumber piles.");
+        }
+
+        if (x <= 4 && y >= 5 && y <= 9)
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.15f, 0.31f, 0.18f, 1f), y >= 8 ? 1 : 0, 2,
+                                      2, true, true, x == 4 && y == 7, false, false, "bandit_left_woods",
+                                      "Left woods: slow cover route with blocked sight lines.");
+        }
+
+        if (x >= 4 && x <= 10 && y <= 3)
+        {
+            bool road = x >= 6 && x <= 9;
+            return new TerrainProfile(road ? TerrainType.Road : TerrainType.Plain,
+                                      road ? new Color(0.50f, 0.42f, 0.28f, 1f)
+                                           : new Color(0.32f, 0.42f, 0.24f, 1f),
+                                      0, 0, road ? 1 : 2, true, false, road && y == 2, false, false,
+                                      "bandit_southern_logging_road",
+                                      "Southern logging road: ally entry into the bandit lair.");
+        }
+
+        if (x >= 11 && y <= 6)
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.18f, 0.33f, 0.20f, 1f), 0, 1, 2, true, true,
+                                      false, false, false, "bandit_right_scrub",
+                                      "Right scrub path below the watchtower.");
+        }
+
+        return new TerrainProfile(TerrainType.Plain, new Color(0.34f, 0.43f, 0.25f, 1f), 0, 0, 2, true, false,
+                                  false, false, false, "bandit_open_clearing",
+                                  "Open lair clearing: uneven grass and dirt.");
     }
 
     private TerrainProfile ResolveBaekduMountainSnowfieldTerrain(int x, int y)
@@ -6245,6 +6660,36 @@ public sealed class BattleTestController : MonoBehaviour
                (x == 13 && y == 6);
     }
 
+    private static bool IsBanditLairOuterWall(int x, int y)
+    {
+        return x == 0 ||
+               y == 11 ||
+               (x == 1 && (y <= 2 || y >= 8)) ||
+               (x == 15 && y >= 2) ||
+               (x == 14 && y >= 10);
+    }
+
+    private static bool IsBanditLairPalisadeBlocker(int x, int y)
+    {
+        return (x == 5 && y >= 8 && y <= 10) ||
+               (x == 11 && y >= 8 && y <= 10) ||
+               (y == 9 && (x == 4 || x == 12));
+    }
+
+    private static bool IsBanditLairCaveWall(int x, int y)
+    {
+        return (y == 10 && (x <= 4 || x >= 12)) ||
+               (y == 9 && (x == 13 || x == 14));
+    }
+
+    private static bool IsBanditLairLogBlocker(int x, int y)
+    {
+        return (x == 3 && y == 6) ||
+               (x == 6 && y == 6) ||
+               (x == 10 && y == 8) ||
+               (x == 2 && y == 4);
+    }
+
     private static bool IsDenseTreeBlocker(int x, int y)
     {
         return (x == 0 && y >= 0 && y <= 10) ||
@@ -6397,7 +6842,8 @@ public sealed class BattleTestController : MonoBehaviour
         mapAssetSpritesLoaded = true;
         terrainAssetSprites.Clear();
         interactableAssetSprites.Clear();
-        paintedMapBackdropSprite = Resources.Load<Sprite>(PaintedBattleMapResource);
+        string backdropResource = PaintedBattleMapResource;
+        paintedMapBackdropSprite = string.IsNullOrEmpty(backdropResource) ? null : Resources.Load<Sprite>(backdropResource);
         terrainAssetSprites[TerrainType.Plain] = LoadMapSprite("Tiles/plain_moss");
         terrainAssetSprites[TerrainType.Hill] = LoadMapSprite("Tiles/hill_moss");
         terrainAssetSprites[TerrainType.Stone] = LoadMapSprite("Tiles/stone_courtyard");
@@ -6914,7 +7360,8 @@ public enum BattleCommandMode
 public enum BattleTestMapVariant
 {
     BaekduSnowGate,
-    BaekduMountainSnowfield
+    BaekduMountainSnowfield,
+    BanditLair
 }
 
 public enum BattleSpecialEffect

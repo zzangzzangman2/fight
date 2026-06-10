@@ -11,8 +11,9 @@ namespace JoseonMurimTactics
 public sealed class HubController : MonoBehaviour
 {
     public const string FirstBattleId = "BATTLE_PYESADANG_DEFENSE";
+    public const string BanditLairBattleId = "BATTLE_SOBAEK_BANDIT_LAIR";
     private const int MaxDailyActions = 3;
-    private const string ActionPointKey = "hub:daily_actions_remaining";
+    public const string ActionPointKey = "hub:daily_actions_remaining";
     private const string ActionPointInitializedFlag = "FLAG_HUB_ACTION_POINTS_READY";
 
     private enum HubMenu
@@ -249,8 +250,8 @@ public sealed class HubController : MonoBehaviour
     {
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "출정", UiTheme.Heading);
         GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 90f * s),
-                  "임무 게시판에서 출정할 임무를 고른다.\n임무를 선택하면 적 정보·보상·승패 조건을 확인하고 출격 " +
-                      "준비로 넘어간다.",
+                  "임무 게시판에서 메인 전투와 자유시간 의뢰를 고른다.\n도적 소굴 같은 마을 의뢰는 기력 1을 쓰고, " +
+                      "적 정보·보상·승패 조건을 확인한 뒤 출격 준비로 넘어간다.",
                   UiTheme.Body);
         if (GUI.Button(new Rect(r.x, r.y + 150f * s, r.width * 0.7f, 60f * s), "임무 선택 →", UiTheme.ButtonPrimary))
         {

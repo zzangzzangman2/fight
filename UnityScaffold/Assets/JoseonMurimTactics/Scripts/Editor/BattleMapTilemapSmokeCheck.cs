@@ -77,6 +77,7 @@ public static class BattleMapTilemapSmokeCheck
         VerifyPlayerMoveFlow(controller);
 
         CleanupGeneratedChildren(controller.transform);
+        VerifyBanditLairFreeTimeMap(controller);
         Debug.Log("[BattleMapTilemapSmokeCheck] BattleTest Tilemap battlefield smoke check passed.");
     }
 
@@ -227,6 +228,82 @@ public static class BattleMapTilemapSmokeCheck
                 "Northern basalt cliff should not appear in reachable tiles.");
     }
 
+    private static void VerifyBanditLairFreeTimeMap(BattleTestController controller)
+    {
+        BattleEntryAdapter.SetPendingBattle(HubController.BanditLairBattleId);
+        SetPrivate(controller, "mapAssetSpritesLoaded", false);
+        InvokePrivate(controller, "ApplyBattleEntryConfiguration");
+        BattleEntryAdapter.Clear();
+        Require(controller.mapVariant == BattleTestMapVariant.BanditLair,
+                "Bandit lair battle id should select the BanditLair map variant.");
+
+        GetPrivate<List<BattleTestUnit>>(controller, "units").Clear();
+        GetPrivate<List<BattleTestInteractable>>(controller, "interactables").Clear();
+        InvokePrivate(controller, "EnsureMapVisualSprites");
+        InvokePrivate(controller, "CreateTerrain");
+        Require(GameObject.Find("Battlefield_Tilemap") != null, "Bandit lair tilemap battlefield was not created.");
+        RequireTilemap("Tilemap_Ground_Base");
+        RequireTilemap("Tilemap_Road_Path");
+        RequireTilemap("Tilemap_Cliff_Top");
+        RequireTilemap("Tilemap_Water_Base");
+        RequireTilemap("Tilemap_Highlight_Move");
+        Require(GameObject.Find("PropsRoot") != null, "Bandit lair props root was not created.");
+        Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
+                "Bandit lair should generate interactable prop metadata.");
+
+        VerifyBanditLairTerrainRules(controller);
+        InvokePrivate(controller, "SpawnUnits");
+        List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        Require(FindUnit(units, "bandit_boss_gwakchil") != null, "Expected bandit boss unit for free-time lair.");
+        Require(FindUnit(units, "iron_wolf_captain") == null, "Bandit lair should not spawn the main-story captain.");
+        VerifyBanditLairBlockedCellsStayUnreachable(controller, units);
+
+        CleanupGeneratedChildren(controller.transform);
+    }
+
+    private static void VerifyBanditLairTerrainRules(BattleTestController controller)
+    {
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        RequireBlocked(tiles, new Vector2Int(0, 6), "bandit outer forest wall");
+        RequireBlocked(tiles, new Vector2Int(5, 8), "bandit palisade wall");
+        RequireBlocked(tiles, new Vector2Int(12, 10), "bandit cave wall");
+        RequireBlocked(tiles, new Vector2Int(4, 4), "bandit drainage ditch");
+
+        BattleTestTile ropeBridge = RequireTile(tiles, new Vector2Int(7, 4), "bandit rope bridge");
+        BattleTestTile muddyBank = RequireTile(tiles, new Vector2Int(3, 4), "bandit muddy ditch bank");
+        BattleTestTile snareTrap = RequireTile(tiles, new Vector2Int(5, 6), "bandit snare trap");
+        BattleTestTile slope = RequireTile(tiles, new Vector2Int(12, 7), "bandit watchtower slope");
+        BattleTestTile tower = RequireTile(tiles, new Vector2Int(13, 8), "bandit watchtower");
+        BattleTestTile supplyCache = RequireTile(tiles, new Vector2Int(8, 10), "bandit stolen supply cache");
+
+        Require(ropeBridge.walkable && ropeBridge.moveCost == 1, "Bandit rope bridge should be the fast crossing.");
+        Require(muddyBank.walkable && muddyBank.moveCost == 3, "Bandit muddy bank should be slow but passable.");
+        Require(snareTrap.walkable && snareTrap.danger && snareTrap.moveCost == 3,
+                "Bandit trap should be passable, dangerous, and costly.");
+        Require(slope.walkable && slope.elevation == 1, "Bandit watchtower slope should be walkable elevation 1.");
+        Require(tower.walkable && tower.elevation == 2 && tower.coverBonus >= 2,
+                "Bandit watchtower should be covered elevation 2.");
+        Require(supplyCache.walkable && supplyCache.objective && supplyCache.elevation == 2,
+                "Bandit supply cache should be a walkable objective on high ground.");
+        Require(StepMoveCost(controller, slope, tower) == tower.moveCost + 1,
+                "Bandit watchtower climb should allow a costly one-level climb.");
+        Require(StepMoveCost(controller, ropeBridge, tiles[6, 4]) == int.MaxValue,
+                "Bandit rope bridge should not leak into the deep ditch.");
+    }
+
+    private static void VerifyBanditLairBlockedCellsStayUnreachable(BattleTestController controller,
+                                                                    List<BattleTestUnit> units)
+    {
+        BattleTestUnit hanBiyeon = FindUnit(units, "han_biyeon");
+        Require(hanBiyeon != null, "Expected Han Biyeon in bandit lair test roster.");
+        Dictionary<Vector2Int, int> reachable =
+            (Dictionary<Vector2Int, int>)InvokePrivate(controller, "GetReachableCells", hanBiyeon);
+        Require(!reachable.ContainsKey(new Vector2Int(5, 8)),
+                "Bandit palisade wall should not appear in reachable tiles.");
+        Require(!reachable.ContainsKey(new Vector2Int(4, 4)),
+                "Bandit deep ditch should not appear in reachable tiles.");
+    }
+
     private static void VerifyTacticalCameraFocus(BattleTestController controller, BattleTestUnit focusUnit)
     {
         Camera camera = Camera.main;
@@ -313,6 +390,17 @@ public static class BattleMapTilemapSmokeCheck
         }
 
         return (T)field.GetValue(controller);
+    }
+
+    private static void SetPrivate(BattleTestController controller, string fieldName, object value)
+    {
+        FieldInfo field = typeof(BattleTestController).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        if (field == null)
+        {
+            throw new MissingFieldException(nameof(BattleTestController), fieldName);
+        }
+
+        field.SetValue(controller, value);
     }
 
     private static void Require(bool condition, string message)

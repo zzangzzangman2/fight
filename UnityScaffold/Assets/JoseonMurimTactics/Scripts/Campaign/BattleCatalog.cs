@@ -35,12 +35,23 @@ namespace JoseonMurimTactics
         public List<IdDelta> factionOnWin = new List<IdDelta>();
         public List<IdDelta> approvalOnWin = new List<IdDelta>();
         public string questId;
+        public bool repeatable;
     }
 
     /// <summary>Battle catalog for the currently playable early-story encounter.</summary>
     public static class BattleCatalog
     {
         public static BattleDefinition Get(string battleId)
+        {
+            if (battleId == HubController.BanditLairBattleId)
+            {
+                return CreateBanditLairBattle();
+            }
+
+            return CreatePyesadangDefenseBattle(battleId);
+        }
+
+        private static BattleDefinition CreatePyesadangDefenseBattle(string battleId)
         {
             BattleDefinition d = new BattleDefinition
             {
@@ -76,6 +87,46 @@ namespace JoseonMurimTactics
 
             d.factionOnWin.Add(new IdDelta(FactionIds.ZhongyuanAlliance, -3));
             d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +3));
+
+            return d;
+        }
+
+        private static BattleDefinition CreateBanditLairBattle()
+        {
+            BattleDefinition d = new BattleDefinition
+            {
+                id = HubController.BanditLairBattleId,
+                title = "소백촌 도적 소굴 토벌",
+                location = "소백촌 서쪽 벌목길 폐광 입구",
+                bossName = "흑립방 두목 곽칠",
+                victoryCondition = "도적 두목 제압과 빼앗긴 보급 회수",
+                mapHint = "남쪽 벌목길에서 진입한다. 중앙 진흙길은 빠르지만 덫이 많고, 좌측 숲길은 엄폐가 좋으며, 우측 망루는 고지라 원거리 도적을 먼저 끊어야 한다.",
+                silverReward = 45,
+                joseonRenownOnWin = 1,
+                questId = "MISSION_FREE_SOBAEK_BANDIT_LAIR",
+                repeatable = true
+            };
+
+            d.roster.Add("박성준");
+            d.roster.Add("백련");
+            d.roster.Add("도아린");
+            d.roster.Add("진서율");
+            d.roster.Add("신서아");
+            d.roster.Add("한비연");
+
+            d.defeatConditions.Add("아군 전멸");
+            d.defeatConditions.Add("12턴 초과");
+
+            d.objectives.Add(new BattleObjective("OBJ_CLEAR_BANDIT_LAIR", "흑립방 두목 곽칠 제압", false));
+            d.objectives.Add(new BattleObjective("OBJ_RECOVER_SUPPLIES", "빼앗긴 약재·목재 회수", false));
+            d.objectives.Add(new BattleObjective("OBJ_AVOID_TRAPS", "덫 피해 최소화", true));
+
+            d.rewardItems.Add("약재 꾸러미");
+            d.rewardItems.Add("목재 묶음");
+            d.rewardItems.Add("마을 감사패");
+
+            d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +1));
+            d.factionOnWin.Add(new IdDelta(FactionIds.BlackHatGuild, -2));
 
             return d;
         }

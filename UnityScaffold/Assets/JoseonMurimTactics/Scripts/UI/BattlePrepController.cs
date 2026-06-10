@@ -64,6 +64,10 @@ public sealed class BattlePrepController : MonoBehaviour
             y += 36f * s;
             Pair(lx, ref y, lw, s, "적 세력", mission.enemyFaction);
             Pair(lx, ref y, lw, s, "추천 레벨", "Lv." + mission.recommendedLevel + " · " + mission.difficulty);
+            if (mission.consumesFreeTime)
+            {
+                Pair(lx, ref y, lw, s, "자유시간", $"기력 1 소모 · 남은 기력 {FreeActionsRemaining()}");
+            }
             y += 10f * s;
         }
 
@@ -166,8 +170,16 @@ public sealed class BattlePrepController : MonoBehaviour
         ry += 38f * s;
         Rect mapRect = new Rect(rx, ry, rw, Mathf.Max(152f * s, right.yMax - 22f * s - ry));
         UiTheme.DrawFill(mapRect, UiTheme.HanjiPanelAlt);
-        DrawTacticalMapPreview(new Rect(mapRect.x + 12f * s, mapRect.y + 12f * s, 146f * s,
-                                        mapRect.height - 24f * s), s);
+        Rect previewRect = new Rect(mapRect.x + 12f * s, mapRect.y + 12f * s, 146f * s,
+                                    mapRect.height - 24f * s);
+        if (def != null && def.id == HubController.BanditLairBattleId)
+        {
+            DrawBanditLairMapPreview(previewRect, s);
+        }
+        else
+        {
+            DrawTacticalMapPreview(previewRect, s);
+        }
         Rect analysisText = new Rect(mapRect.x + 172f * s, mapRect.y + 12f * s, mapRect.width - 184f * s,
                                      mapRect.height - 24f * s);
         GUI.Label(analysisText, BuildMapAnalysisText(), new GUIStyle(UiTheme.Small) {
@@ -186,9 +198,37 @@ public sealed class BattlePrepController : MonoBehaviour
 
         if (GUI.Button(new Rect(w - margin - bw, by, bw, 56f * s), "출격! →", UiTheme.ButtonPrimary))
         {
+            if (!TrySpendMissionFreeTime())
+            {
+                return;
+            }
+
             root.Session.actionsTaken++;
             root.Flow.GoToBattle(def.id);
         }
+    }
+
+    private bool TrySpendMissionFreeTime()
+    {
+        if (mission == null || !mission.consumesFreeTime)
+        {
+            return true;
+        }
+
+        int remaining = FreeActionsRemaining();
+        if (remaining <= 0)
+        {
+            Debug.Log("[BattlePrep] Not enough free-time action points for " + mission.id);
+            return false;
+        }
+
+        root.Flags.SetInt(HubController.ActionPointKey, remaining - 1);
+        return true;
+    }
+
+    private int FreeActionsRemaining()
+    {
+        return root == null || root.Flags == null ? 0 : Mathf.Max(0, root.Flags.GetInt(HubController.ActionPointKey));
     }
 
     private static void Pair(float x, ref float y, float w, float s, string label, string value)
@@ -250,6 +290,34 @@ public sealed class BattlePrepController : MonoBehaviour
         GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "H2 사당 / H3 누각",
                   new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         GUI.Label(new Rect(rect.x, rect.yMax - 20f * s, rect.width, 18f * s), "적 진입",
+                  new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+    }
+
+    private static void DrawBanditLairMapPreview(Rect rect, float s)
+    {
+        UiTheme.DrawFill(rect, new Color(0.10f, 0.13f, 0.09f, 0.46f));
+
+        Color woods = new Color(0.14f, 0.34f, 0.17f, 0.92f);
+        Color road = new Color(0.48f, 0.38f, 0.24f, 0.94f);
+        Color mud = new Color(0.25f, 0.20f, 0.14f, 0.92f);
+        Color tower = new Color(0.45f, 0.28f, 0.16f, 0.94f);
+        Color cave = new Color(0.18f, 0.16f, 0.13f, 0.96f);
+        Color mark = new Color(0.96f, 0.78f, 0.24f, 1f);
+
+        UiTheme.DrawFill(new Rect(rect.x + 8f * s, rect.y + 18f * s, 32f * s, rect.height - 32f * s), woods);
+        UiTheme.DrawFill(new Rect(rect.center.x - 12f * s, rect.y + 22f * s, 24f * s, rect.height - 38f * s), road);
+        UiTheme.DrawFill(new Rect(rect.x + 38f * s, rect.center.y - 8f * s, rect.width - 76f * s, 16f * s), mud);
+        UiTheme.DrawFill(new Rect(rect.xMax - 44f * s, rect.y + 30f * s, 30f * s, 52f * s), tower);
+        UiTheme.DrawFill(new Rect(rect.center.x - 34f * s, rect.y + 12f * s, 68f * s, 34f * s), cave);
+        UiTheme.DrawFill(new Rect(rect.center.x - 7f * s, rect.y + 20f * s, 14f * s, 14f * s), mark);
+        UiTheme.DrawFill(new Rect(rect.center.x - 26f * s, rect.center.y + 22f * s, 14f * s, 14f * s),
+                         new Color(0.72f, 0.18f, 0.10f, 0.88f));
+        UiTheme.DrawFill(new Rect(rect.center.x + 24f * s, rect.center.y + 2f * s, 14f * s, 14f * s),
+                         new Color(0.72f, 0.18f, 0.10f, 0.88f));
+
+        GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "폐광 / 보급 상자",
+                  new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        GUI.Label(new Rect(rect.x, rect.yMax - 20f * s, rect.width, 18f * s), "아군 진입",
                   new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
     }
 }

@@ -52,7 +52,7 @@ public sealed class MissionBoardController : MonoBehaviour
         DrawDetail(new Rect(detailX, top, detailW, bottom - top), s);
 
         MissionInfo sel = Current();
-        bool playable = sel != null && sel.IsUnlocked(root.Flags) && sel.IsPlayable;
+        bool playable = sel != null && sel.IsUnlocked(root.Flags) && sel.IsPlayable && HasFreeTimeFor(sel);
 
         float bw = 240f * s;
         float by = h - 78f * s;
@@ -62,10 +62,10 @@ public sealed class MissionBoardController : MonoBehaviour
         }
 
         GUI.enabled = playable;
-        string label = sel != null && !sel.IsPlayable ? "준비 중" : "출격 준비로 →";
+        string label = sel != null && !sel.IsPlayable ? "준비 중" :
+                       sel != null && sel.consumesFreeTime && !HasFreeTimeFor(sel) ? "기력 부족" : "출격 준비로 →";
         if (GUI.Button(new Rect(w - margin - bw, by, bw, 56f * s), label, UiTheme.ButtonPrimary))
         {
-            root.Session.actionsTaken++;
             root.Flow.GoToBattlePrep(sel.battleId);
         }
         GUI.enabled = true;
@@ -88,7 +88,6 @@ public sealed class MissionBoardController : MonoBehaviour
             }
 
             bool unlocked = m.IsUnlocked(root.Flags);
-            bool done = m.IsCompleted(root.Flags);
             Rect card = new Rect(x, y, cw, ch);
 
             if (i == selected)
@@ -137,6 +136,10 @@ public sealed class MissionBoardController : MonoBehaviour
         Line(x, ref y, wdt, s, "추천 레벨", "Lv." + m.recommendedLevel);
         Line(x, ref y, wdt, s, "난이도", m.difficulty);
         Line(x, ref y, wdt, s, "상태", MissionStatus(m));
+        if (m.consumesFreeTime)
+        {
+            Line(x, ref y, wdt, s, "자유시간", $"기력 1 소모 · 남은 기력 {FreeActionsRemaining()}");
+        }
         Line(x, ref y, wdt, s, "시도", MissionAttempts(m.id).ToString());
         Line(x, ref y, wdt, s, "승리 조건", m.victoryConditionShort);
         y += 8f * s;
@@ -157,13 +160,19 @@ public sealed class MissionBoardController : MonoBehaviour
 
         GUI.Label(new Rect(x, y, wdt, 24f * s), "보조 목표 / 실패 결과 / 세력 변화", UiTheme.SmallMuted);
         y += 28f * s;
-        GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s), "· 보조 목표: 제단 보존 / 부상자 최소화 / 8턴 이내",
+        GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s),
+                  m.repeatable ? "· 보조 목표: 덫 피해 최소화 / 보급 회수 / 망루 고지 제압"
+                               : "· 보조 목표: 제단 보존 / 부상자 최소화 / 8턴 이내",
                   UiTheme.Small);
         y += 26f * s;
-        GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s), "· 실패: 중원무림맹 위압 상승, 허브 기능 일부 지연",
+        GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s),
+                  m.repeatable ? "· 실패: 자유시간 소모, 도적 소문 위험도 유지"
+                               : "· 실패: 중원무림맹 위압 상승, 허브 기능 일부 지연",
                   UiTheme.Small);
         y += 26f * s;
-        GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s), "· 예상 변화: 조선문파연합 +5 / 감찰단 적대 +5",
+        GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s),
+                  m.repeatable ? "· 예상 변화: 조선문파연합 +1 / 흑립방 -2 / 마을 신뢰 상승"
+                               : "· 예상 변화: 조선문파연합 +5 / 감찰단 적대 +5",
                   UiTheme.Small);
         y += 34f * s;
 
@@ -186,9 +195,14 @@ public sealed class MissionBoardController : MonoBehaviour
             GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "이 임무의 전투는 다음 버전에서 구현됩니다.",
                       new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         }
-        else if (m.IsCompleted(root.Flags) || root.Session.completedMissionIds.Contains(m.id))
+        else if (IsMissionCompleted(m))
         {
             GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "재전투 시 첫 클리어 보상과 평판 변화는 반복 지급되지 않습니다.",
+                      new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        }
+        else if (m.repeatable)
+        {
+            GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "반복 의뢰입니다. 출격 확정 시 자유시간/기력 1을 소모합니다.",
                       new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         }
     }
@@ -231,7 +245,7 @@ public sealed class MissionBoardController : MonoBehaviour
         }
 
         bool unlocked = mission.IsUnlocked(root.Flags);
-        bool completed = mission.IsCompleted(root.Flags) || root.Session.completedMissionIds.Contains(mission.id);
+        bool completed = IsMissionCompleted(mission);
         switch (filter)
         {
         case MissionFilter.Available:
@@ -257,12 +271,37 @@ public sealed class MissionBoardController : MonoBehaviour
             return "잠김";
         }
 
-        if (mission.IsCompleted(root.Flags) || root.Session.completedMissionIds.Contains(mission.id))
+        if (IsMissionCompleted(mission))
         {
             return "완료";
         }
 
+        if (mission.repeatable)
+        {
+            return mission.IsPlayable ? "반복 의뢰" : "준비 중";
+        }
+
         return mission.IsPlayable ? (mission.isStory ? "주요" : "의뢰") : "준비 중";
+    }
+
+    private bool IsMissionCompleted(MissionInfo mission)
+    {
+        if (mission == null || mission.repeatable)
+        {
+            return false;
+        }
+
+        return mission.IsCompleted(root.Flags) || root.Session.completedMissionIds.Contains(mission.id);
+    }
+
+    private bool HasFreeTimeFor(MissionInfo mission)
+    {
+        return mission == null || !mission.consumesFreeTime || FreeActionsRemaining() > 0;
+    }
+
+    private int FreeActionsRemaining()
+    {
+        return root == null || root.Flags == null ? 0 : Mathf.Max(0, root.Flags.GetInt(HubController.ActionPointKey));
     }
 
     private int MissionAttempts(string missionId)

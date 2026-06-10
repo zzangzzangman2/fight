@@ -19,6 +19,8 @@ namespace JoseonMurimTactics
         public string completeFlag;
         public string dangerNotes;
         public bool isStory = true;
+        public bool repeatable;
+        public bool consumesFreeTime;
 
         public bool IsUnlocked(StoryFlagService flags)
         {
@@ -162,6 +164,30 @@ namespace JoseonMurimTactics
             m6.rewardPreview.Add("한비연 영입 (예정)");
             m6.rewardPreview.Add("무공 단서: 흑련독침");
             list.Add(m6);
+
+            MissionInfo banditLair = new MissionInfo
+            {
+                id = "MISSION_FREE_SOBAEK_BANDIT_LAIR",
+                title = "소백촌 뒷산 도적 소굴",
+                location = "소백촌 서쪽 벌목길 폐광 입구",
+                battleId = HubController.BanditLairBattleId,
+                recommendedLevel = 1,
+                enemyFaction = "흑립방 산도적",
+                difficulty = "평이",
+                summary = "자유시간에 소백촌 주민들이 맡긴 의뢰를 처리한다. 폐광을 차지한 도적떼가 약재와 목재를 빼앗아 숨겨두었으니, 좁은 벌목길과 망루를 피해 소굴을 정리해야 한다.",
+                victoryConditionShort = "도적 두목 제압과 빼앗긴 보급 회수",
+                requiredFlag = "",
+                completeFlag = "",
+                dangerNotes = "벌목길 병목, 통나무 장애물, 진흙 웅덩이, 덫, 망루 고지. 자유시간/기력 1을 소모하는 반복 의뢰.",
+                isStory = false,
+                repeatable = true,
+                consumesFreeTime = true
+            };
+            banditLair.rewardPreview.Add("은전 45");
+            banditLair.rewardPreview.Add("약재 꾸러미");
+            banditLair.rewardPreview.Add("목재 묶음");
+            banditLair.rewardPreview.Add("마을 신뢰 +1");
+            list.Add(banditLair);
 
             return list;
         }

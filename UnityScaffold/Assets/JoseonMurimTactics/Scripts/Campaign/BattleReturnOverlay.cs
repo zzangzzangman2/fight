@@ -103,7 +103,7 @@ public sealed class BattleReturnOverlay : MonoBehaviour
         GUI.Label(new Rect(bar.x + 16f * s, bar.y + 8f * s, bar.width - 32f * s, 26f * s),
                   "승리 조건 — " + def.victoryCondition, UiTheme.Small);
         GUI.Label(new Rect(bar.x + 16f * s, bar.y + 34f * s, bar.width - 32f * s, 24f * s),
-                  "패배 — 박성준/백련 전투불능 또는 10턴 초과", UiTheme.SmallMuted);
+                  "패배 — " + DefeatSummary(def), UiTheme.SmallMuted);
 
         // 폴백: 리플렉션이 안 되면 수동 버튼 (소프트락 방지)
         if ((stateProvider == null || !stateProvider.Ready) && searchTimer >= FallbackGrace)
@@ -160,8 +160,14 @@ public sealed class BattleReturnOverlay : MonoBehaviour
 
         if (victory)
         {
-            // 일반 전투에서 자동 판정 가능한 것은 대장 제압(주 목표)뿐.
-            result.completedObjectives.Add("OBJ_DEFEAT_SCOUTS");
+            foreach (BattleObjective objective in def.objectives)
+            {
+                if (!objective.optional)
+                {
+                    result.completedObjectives.Add(objective.id);
+                }
+            }
+
             result.silver = def.silverReward;
             result.rewardItems.AddRange(def.rewardItems);
             foreach (IdDelta f in def.factionOnWin)
@@ -171,10 +177,26 @@ public sealed class BattleReturnOverlay : MonoBehaviour
         }
         else
         {
-            result.failedObjectives.Add("OBJ_DEFEAT_SCOUTS");
+            foreach (BattleObjective objective in def.objectives)
+            {
+                if (!objective.optional)
+                {
+                    result.failedObjectives.Add(objective.id);
+                }
+            }
         }
 
         root.Flow.GoToBattleResult(result);
+    }
+
+    private static string DefeatSummary(BattleDefinition def)
+    {
+        if (def == null || def.defeatConditions == null || def.defeatConditions.Count == 0)
+        {
+            return "아군 전멸";
+        }
+
+        return string.Join(" / ", def.defeatConditions.ToArray());
     }
 }
 
