@@ -37,13 +37,13 @@ MonoBehaviour:
   attackVfxTime: 0.28
   skillVfxTime: 0.42
   recoveryTime: 0.16
-  attackVfxPrefab: {fileID: 0}
-  skillVfxPrefab: {fileID: 0}
-  projectilePrefab: {fileID: 0}
-  weaponTrailPrefab: {fileID: 0}
-  impactVfxPrefab: {fileID: 0}
-  guardVfxPrefab: {fileID: 0}
-  footstepVfxPrefab: {fileID: 0}
+  attackVfxPrefab: {fileID: 4304817405574201659, guid: 42f6fab62af49b94487df2fd49eb5f65, type: 3}
+  skillVfxPrefab: {fileID: 2143653082892596166, guid: 9160c88ab92168446b6d14319f5ca005, type: 3}
+  projectilePrefab: {fileID: 4842195110721373992, guid: 1ac6df741c41d5f47b4dc4dea251ae95, type: 3}
+  weaponTrailPrefab: {fileID: 4304817405574201659, guid: 42f6fab62af49b94487df2fd49eb5f65, type: 3}
+  impactVfxPrefab: {fileID: 2248550750003756078, guid: 84eaf9dc440546444a3e8b2f7cb1baf8, type: 3}
+  guardVfxPrefab: {fileID: 6354050235160331072, guid: 5db77baf0b1eb4140b0b1fda05eee87d, type: 3}
+  footstepVfxPrefab: {fileID: 4494956917847078813, guid: f3ae228b8189221409417941df496de8, type: 3}
   attackMoveForwardDistance: 0.14
   skillMoveForwardDistance: 0.2
   cameraShakeStrength: 0.055

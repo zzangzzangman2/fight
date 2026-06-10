@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "note": "VFX prefabs are linked into WeaponAnimationSet visual impact slots. Character body SD sprites are not included in this manifest.",
+  "weaponAnimationSets": [
+    {
+      "characterId": "park_sungjun",
+      "aliases": ["protagonist", "park"],
+      "weaponSetPath": "Assets/JoseonMurimTactics/ScriptableObjects/Weapons/park_sungjun_sword_motion_set.asset",
+      "attackVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/park_sungjun_light_sword_slash.prefab",
+      "skillVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/park_sungjun_radiant_cross_slash.prefab",
+      "projectilePrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/park_sungjun_light_pillar.prefab",
+      "weaponTrailPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/park_sungjun_light_sword_slash.prefab",
+      "impactVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/park_sungjun_star_flare_impact.prefab",
+      "guardVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/park_sungjun_holy_guard_spark.prefab",
+      "footstepVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_footstep_dust.prefab"
+    },
+    {
+      "characterId": "baek_ryeon",
+      "aliases": [],
+      "weaponSetPath": "Assets/JoseonMurimTactics/ScriptableObjects/Weapons/baek_ryeon_spear_motion_set.asset",
+      "attackVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/baek_ryeon_frost_spear_thrust.prefab",
+      "skillVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/baek_ryeon_ice_wall_burst.prefab",
+      "projectilePrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/baek_ryeon_frost_spear_thrust.prefab",
+      "weaponTrailPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/baek_ryeon_ice_spear_slash_arc.prefab",
+      "impactVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/baek_ryeon_ice_crystal_impact.prefab",
+      "guardVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_guard_parry_spark.prefab",
+      "footstepVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_footstep_dust.prefab"
+    },
+    {
+      "characterId": "do_arin",
+      "aliases": [],
+      "weaponSetPath": "Assets/JoseonMurimTactics/ScriptableObjects/Weapons/do_arin_dao_motion_set.asset",
+      "attackVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/do_arin_fire_dao_slash.prefab",
+      "skillVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/do_arin_meteor_dao_crash.prefab",
+      "projectilePrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/do_arin_blazing_charge_trail.prefab",
+      "weaponTrailPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/do_arin_fire_dao_slash.prefab",
+      "impactVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/do_arin_burn_impact.prefab",
+      "guardVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_guard_parry_spark.prefab",
+      "footstepVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_footstep_dust.prefab"
+    },
+    {
+      "characterId": "jin_seoyul",
+      "aliases": [],
+      "weaponSetPath": "Assets/JoseonMurimTactics/ScriptableObjects/Weapons/jin_seoyul_staff_motion_set.asset",
+      "attackVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/jin_seoyul_lightning_staff_spin.prefab",
+      "skillVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/jin_seoyul_staff_thunderfall.prefab",
+      "projectilePrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/jin_seoyul_electric_dash_trail.prefab",
+      "weaponTrailPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/jin_seoyul_lightning_staff_spin.prefab",
+      "impactVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/jin_seoyul_thunder_impact.prefab",
+      "guardVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_guard_parry_spark.prefab",
+      "footstepVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_footstep_dust.prefab"
+    },
+    {
+      "characterId": "seo_a",
+      "aliases": ["shin_seoa"],
+      "weaponSetPath": "Assets/JoseonMurimTactics/ScriptableObjects/Weapons/shin_seoa_fan_motion_set.asset",
+      "attackVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/seo_a_fan_gust_slash.prefab",
+      "skillVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/seo_a_blossom_field.prefab",
+      "projectilePrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/seo_a_flower_wind_arc.prefab",
+      "weaponTrailPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/seo_a_flower_wind_arc.prefab",
+      "impactVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/seo_a_petal_buff_aura.prefab",
+      "guardVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_guard_parry_spark.prefab",
+      "footstepVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_footstep_dust.prefab"
+    },
+    {
+      "characterId": "han_biyeon",
+      "aliases": [],
+      "weaponSetPath": "Assets/JoseonMurimTactics/ScriptableObjects/Weapons/han_biyeon_dagger_motion_set.asset",
+      "attackVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/han_biyeon_shadow_dagger_slash.prefab",
+      "skillVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/han_biyeon_dark_poison_mist.prefab",
+      "projectilePrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/han_biyeon_poison_needle_projectile.prefab",
+      "weaponTrailPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/han_biyeon_shadow_afterimage.prefab",
+      "impactVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/han_biyeon_toxic_impact_splash.prefab",
+      "guardVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_guard_parry_spark.prefab",
+      "footstepVfxPrefab": "Assets/JoseonMurimTactics/Prefabs/VFX/common_footstep_dust.prefab"
+    }
+  ]
+}
