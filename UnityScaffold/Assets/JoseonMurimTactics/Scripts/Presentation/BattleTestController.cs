@@ -2762,13 +2762,20 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        List<Vector2Int> path = FindMovePath(unit, destination.cell);
+        if (path.Count < 2)
+        {
+            AddLog("[Move] No valid path to destination.");
+            return;
+        }
+
         unit.cell = destination.cell;
         unit.SpendMovement(reachable[destination.cell]);
         ApplyTileEntry(unit, destination);
         commandMode = DefaultCommandForUnit(unit);
         if (Application.isPlaying)
         {
-            StartCoroutine(AnimateMove(unit, UnitWorldPosition(destination.cell)));
+            StartCoroutine(AnimateMove(unit, path));
         }
         else
         {
@@ -3316,38 +3323,51 @@ public sealed class BattleTestController : MonoBehaviour
         return false;
     }
 
-    private IEnumerator AnimateMove(BattleTestUnit unit, Vector3 target)
+    private IEnumerator AnimateMove(BattleTestUnit unit, List<Vector2Int> path)
     {
         StopCameraPanRoutine();
         busy = true;
-        Vector3 start = unit.view.transform.position;
-        unit.view.FaceToward(target);
-        unit.view.PlayMove();
         Camera camera = Camera.main;
         float cameraTargetSize = camera == null ? 0f : CalculateTacticalCameraSize(camera);
-        float elapsed = 0f;
-        const float duration = 0.18f;
 
-        while (elapsed < duration)
+        if (path == null || path.Count < 2)
         {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-            unit.view.transform.position = Vector3.Lerp(start, target, t);
-            if (camera != null)
-            {
-                Vector3 cameraTarget = CameraPositionForFocus(camera, unit.view.transform.position, cameraTargetSize);
-                camera.transform.position = Vector3.Lerp(camera.transform.position, cameraTarget, t);
-                camera.orthographicSize = Mathf.Lerp(camera.orthographicSize, cameraTargetSize, t);
-            }
-
-            yield return null;
+            busy = false;
+            yield break;
         }
 
-        unit.view.transform.position = target;
+        unit.view.PlayMove();
+        const float duration = 0.16f;
+        for (int i = 1; i < path.Count; i++)
+        {
+            Vector3 start = unit.view.transform.position;
+            Vector3 target = UnitWorldPosition(path[i]);
+            unit.view.FaceToward(target);
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = Mathf.SmoothStep(0f, 1f, t);
+                float stepHop = Mathf.Sin(t * Mathf.PI) * 0.035f;
+                unit.view.transform.position = Vector3.Lerp(start, target, eased) + new Vector3(0f, stepHop, 0f);
+                if (camera != null)
+                {
+                    Vector3 cameraTarget = CameraPositionForFocus(camera, unit.view.transform.position, cameraTargetSize);
+                    camera.transform.position = Vector3.Lerp(camera.transform.position, cameraTarget, t);
+                    camera.orthographicSize = Mathf.Lerp(camera.orthographicSize, cameraTargetSize, t);
+                }
+
+                yield return null;
+            }
+
+            unit.view.transform.position = target;
+        }
+
         unit.view.PlayIdle();
         if (camera != null)
         {
-            SetCameraFocusImmediate(camera, target, cameraTargetSize);
+            SetCameraFocusImmediate(camera, unit.view.transform.position, cameraTargetSize);
         }
 
         busy = false;
@@ -3393,10 +3413,11 @@ public sealed class BattleTestController : MonoBehaviour
                     int moveCost = 0;
                     Dictionary<Vector2Int, int> reachable = GetReachableCells(activeUnit);
                     reachable.TryGetValue(best.cell, out moveCost);
+                    List<Vector2Int> path = FindMovePath(activeUnit, best.cell);
                     activeUnit.cell = best.cell;
                     activeUnit.SpendMovement(moveCost);
                     ApplyTileEntry(activeUnit, best);
-                    yield return AnimateMove(activeUnit, UnitWorldPosition(best.cell));
+                    yield return AnimateMove(activeUnit, path);
                     yield return new WaitForSeconds(0.15f);
                 }
             }
@@ -4756,6 +4777,85 @@ public sealed class BattleTestController : MonoBehaviour
         return cost;
     }
 
+    private List<Vector2Int> FindMovePath(BattleTestUnit unit, Vector2Int destination)
+    {
+        Dictionary<Vector2Int, int> cost = new Dictionary<Vector2Int, int>();
+        Dictionary<Vector2Int, Vector2Int> cameFrom = new Dictionary<Vector2Int, Vector2Int>();
+        List<Vector2Int> frontier = new List<Vector2Int>();
+        cost[unit.cell] = 0;
+        frontier.Add(unit.cell);
+
+        while (frontier.Count > 0)
+        {
+            Vector2Int current = PopLowestCost(frontier, cost);
+            if (current == destination)
+            {
+                break;
+            }
+
+            foreach (Vector2Int next in Neighbors(current))
+            {
+                BattleTestTile tile = TileAt(next);
+                if (tile == null || !tile.walkable)
+                {
+                    continue;
+                }
+
+                BattleTestUnit occupant = UnitAt(next);
+                if (occupant != null && occupant != unit)
+                {
+                    continue;
+                }
+
+                int stepCost = StepMoveCost(TileAt(current), tile);
+                if (stepCost == int.MaxValue)
+                {
+                    continue;
+                }
+
+                int nextCost = cost[current] + stepCost;
+                if (nextCost > EffectiveMoveRange(unit))
+                {
+                    continue;
+                }
+
+                if (cost.TryGetValue(next, out int oldCost) && oldCost <= nextCost)
+                {
+                    continue;
+                }
+
+                cost[next] = nextCost;
+                cameFrom[next] = current;
+                if (!frontier.Contains(next))
+                {
+                    frontier.Add(next);
+                }
+            }
+        }
+
+        if (!cost.ContainsKey(destination))
+        {
+            return new List<Vector2Int>();
+        }
+
+        List<Vector2Int> path = new List<Vector2Int>();
+        Vector2Int cell = destination;
+        path.Add(cell);
+        while (cell != unit.cell)
+        {
+            if (!cameFrom.TryGetValue(cell, out Vector2Int previous))
+            {
+                return new List<Vector2Int>();
+            }
+
+            cell = previous;
+            path.Add(cell);
+        }
+
+        path.Reverse();
+        return path;
+    }
+
     private static Vector2Int PopLowestCost(List<Vector2Int> frontier, Dictionary<Vector2Int, int> cost)
     {
         int bestIndex = 0;
@@ -5503,6 +5603,13 @@ public sealed class BattleTestController : MonoBehaviour
             return new TerrainProfile(TerrainType.DeepWater, new Color(0.08f, 0.28f, 0.38f, 1f), 0, 0, 99, false,
                                       false, false, false, true, "deep_frozen_channel",
                                       "Deep frozen water: impassable ice channel.");
+        }
+
+        if (x >= 12 && x <= 14 && y == 7)
+        {
+            return new TerrainProfile(TerrainType.Hill, new Color(0.62f, 0.67f, 0.66f, 1f), 2, 1, 2, true,
+                                      false, x == 13, false, false, "hot_spring_snow_ramp",
+                                      "Snow ramp toward the hot spring ridge: high ground is reachable but costly.");
         }
 
         if (x >= 12 && x <= 14 && y >= 8 && y <= 10)

@@ -73,6 +73,7 @@ public static class BattleMapTilemapSmokeCheck
         Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
                 "Expected generated interactable props to carry MapPropView metadata.");
         VerifyBlockedMapCells(controller);
+        VerifyElevationMovementRules(controller);
         VerifyPlayerMoveFlow(controller);
 
         CleanupGeneratedChildren(controller.transform);
@@ -102,6 +103,51 @@ public static class BattleMapTilemapSmokeCheck
         Require(tile != null, $"Expected blocker tile for {label} at {cell}.");
         Require(!tile.walkable, $"{label} at {cell} should block movement.");
         Require(tile.moveCost >= 99, $"{label} at {cell} should have impassable move cost.");
+    }
+
+    private static void VerifyElevationMovementRules(BattleTestController controller)
+    {
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        BattleTestTile snowPass = RequireTile(tiles, new Vector2Int(9, 7), "snow pass approach");
+        BattleTestTile centralRidge = RequireTile(tiles, new Vector2Int(9, 8), "central high ridge");
+        BattleTestTile hotSpringRamp = RequireTile(tiles, new Vector2Int(12, 7), "hot spring snow ramp");
+        BattleTestTile hotSpring = RequireTile(tiles, new Vector2Int(12, 8), "hot spring high ground");
+        BattleTestTile openSnow = RequireTile(tiles, new Vector2Int(15, 8), "open snow beside high ground");
+        BattleTestTile steepHighGround = RequireTile(tiles, new Vector2Int(14, 8), "steep hot spring flank");
+        BattleTestTile safeCrossing = RequireTile(tiles, new Vector2Int(7, 3), "safe frozen crossing");
+        BattleTestTile thinIce = RequireTile(tiles, new Vector2Int(4, 3), "thin ice edge");
+
+        Require(snowPass.walkable && snowPass.elevation == 1, "Snow pass should be walkable elevation 1.");
+        Require(centralRidge.walkable && centralRidge.elevation == 2, "Central ridge should be walkable elevation 2.");
+        Require(hotSpringRamp.walkable && hotSpringRamp.elevation == 2,
+                "Hot spring ramp should be walkable elevation 2.");
+        Require(hotSpring.walkable && hotSpring.elevation == 3, "Hot spring should be walkable elevation 3.");
+        Require(safeCrossing.walkable && safeCrossing.moveCost == 1,
+                "Narrow frozen crossing should be the fast safe ice route.");
+        Require(thinIce.walkable && thinIce.moveCost == 3, "Thin ice edge should be passable but slow.");
+
+        Require(StepMoveCost(controller, snowPass, centralRidge) == centralRidge.moveCost + 1,
+                "Climbing one elevation level should add movement cost.");
+        Require(StepMoveCost(controller, hotSpringRamp, hotSpring) == hotSpring.moveCost + 1,
+                "Hot spring ramp should allow a costly one-level climb.");
+        Require(StepMoveCost(controller, openSnow, steepHighGround) == int.MaxValue,
+                "Direct three-level hot spring flank climb should be blocked.");
+        Require(StepMoveCost(controller, tiles[3, 9], tiles[4, 9]) == int.MaxValue,
+                "Basalt cliff edge should block movement even when adjacent.");
+        Require(StepMoveCost(controller, safeCrossing, tiles[6, 3]) == int.MaxValue,
+                "Safe crossing should not leak into the deep frozen channel.");
+    }
+
+    private static BattleTestTile RequireTile(BattleTestTile[,] tiles, Vector2Int cell, string label)
+    {
+        BattleTestTile tile = tiles[cell.x, cell.y];
+        Require(tile != null, $"Expected {label} tile at {cell}.");
+        return tile;
+    }
+
+    private static int StepMoveCost(BattleTestController controller, BattleTestTile from, BattleTestTile to)
+    {
+        return (int)InvokePrivate(controller, "StepMoveCost", from, to);
     }
 
     private static void VerifyPlayerMoveFlow(BattleTestController controller)

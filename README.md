@@ -1,18 +1,18 @@
 # 조선 무협 SRPG v1.6 Pipeline Hardening
 
-> 현재 작업 브랜치: `map-quality-v1.2` /
-> 기준 흐름: `story-start-v0.8` → `noncombat-ui-v1.1` → `map-quality-v1.2` /
+> 현재 통합 기준: `main` = `map-quality-v1.2` /
+> 기준 흐름: `story-start-v0.8` → `noncombat-ui-v1.1` → `map-quality-v1.2` → `main` /
 > 현재 게임 루프 버전: `v1.6 pipeline hardening` /
 > 다음 목표: 대표 수작업 맵, 맵 검증, 콘텐츠 제작 파이프라인 안정화
 
-`main` 브랜치는 구버전/안정 기준입니다. 최신 맵 파이프라인, 콘텐츠 편집기, Unity Resources 연동, BattleTest Tilemap 전장은 `map-quality-v1.2` 브랜치에서 확인하세요.
+`main` 브랜치는 새 채팅과 기본 QA가 참고하는 최신 통합 기준입니다. 최신 맵 파이프라인, 콘텐츠 편집기, Unity Resources 연동, BattleTest Tilemap 전장은 `main`과 `map-quality-v1.2`에 함께 유지합니다.
 
 브랜치별 목적:
 
-- `main`: 구버전 전투 프로토타입과 안정 기준.
+- `main`: 최신 전투/맵 통합 기준. 새 채팅, 기본 테스트, QA 기준으로 우선 확인합니다.
 - `story-start-v0.8`: Boot부터 프롤로그까지의 시작 루프.
 - `noncombat-ui-v1.1`: 타이틀, 새 게임, 허브, 저장/설정 등 비전투 UI 흐름.
-- `map-quality-v1.2`: Tilemap 전장, 맵 에셋, 콘텐츠 편집기, 오프라인 기본값, palette refine 통합 브랜치.
+- `map-quality-v1.2`: Tilemap 전장, 맵 에셋, 콘텐츠 편집기, 오프라인 기본값, palette refine을 검증하는 맵 QA 브랜치. `main`과 같은 최신 기준으로 유지합니다.
 
 조선 문파들이 중원무림맹의 흡수와 동화 압박에 맞서 해동문을 중심으로 연합하는 Unity 기반 SRPG 게임 루프 프로토타입입니다.
 
@@ -22,7 +22,7 @@
 
 - `e8cb8d1`: Tilemap 전장, 맵 에셋 파이프라인, Unity Resources 연동 기반 확장.
 - `3282d01`: 콘텐츠 편집기 레이아웃과 palette refine.
-- 현재 hardening: 압축된 코드 포맷 정리, 대표맵 지표 강화, 연령/로맨스 안전 가드 복구, README 최신화.
+- 현재 hardening: 압축된 코드 포맷 정리, 대표맵 지표 강화, 백두산 설산맵 높낮이/막힘 검증, README와 기본 브랜치 기준 최신화.
 
 ## 현재 구현된 씬
 
