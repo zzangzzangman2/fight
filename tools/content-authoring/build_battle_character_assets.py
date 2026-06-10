@@ -77,7 +77,7 @@ DISCARD_CENTERS = {
 MAX_COMPONENT_DISTANCE = 360
 
 
-def is_checker_background(pixel: tuple[int, int, int, int]) -> bool:
+def is_checker_background(pixel: tuple[int, int, int, int], preserve_pale_art: bool = False) -> bool:
     r, g, b, alpha = pixel
     if alpha < 16:
         return True
@@ -85,10 +85,13 @@ def is_checker_background(pixel: tuple[int, int, int, int]) -> bool:
     maximum = max(r, g, b)
     minimum = min(r, g, b)
     saturation = maximum - minimum
+    if preserve_pale_art:
+        return minimum > 232 and saturation < 8
+
     return (maximum > 216 and saturation < 38) or (r > 236 and g > 236 and b > 236)
 
 
-def remove_checker_background(image: Image.Image) -> Image.Image:
+def remove_checker_background(image: Image.Image, preserve_pale_art: bool = False) -> Image.Image:
     image = image.convert("RGBA")
     width, height = image.size
     pixels = image.load()
@@ -106,7 +109,7 @@ def remove_checker_background(image: Image.Image) -> Image.Image:
     while stack:
         x, y = stack.pop()
         index = y * width + x
-        if background[index] or not is_checker_background(pixels[x, y]):
+        if background[index] or not is_checker_background(pixels[x, y], preserve_pale_art):
             continue
 
         background[index] = 1
@@ -176,7 +179,7 @@ def pose_center(character_id: str, pose: str, sheet: Image.Image) -> tuple[float
 
 
 def assign_components(character_id: str, sheet: Image.Image) -> dict[str, Image.Image]:
-    cleaned = remove_checker_background(sheet)
+    cleaned = remove_checker_background(sheet, preserve_pale_art=character_id == "shin_seoa")
     components = connected_components(cleaned)
     pose_centers = {pose: pose_center(character_id, pose, cleaned) for pose in POSE_CELLS}
     candidate_centers = dict(pose_centers)

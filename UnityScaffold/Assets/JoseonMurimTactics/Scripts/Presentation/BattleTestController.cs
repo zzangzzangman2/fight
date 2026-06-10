@@ -3943,8 +3943,10 @@ public sealed class BattleTestController : MonoBehaviour
             {
                 target.inner = Mathf.Max(0, target.inner - target.definition.specialCost);
                 target.specialCooldownLeft = Mathf.Max(target.specialCooldownLeft, target.definition.specialCooldown);
-                ApplySpecialEffect(target, attacker, true);
-                yield return WaitActionSeconds(target.view.CreateTimeline(true).Duration);
+                PrepareSpecialBeforeAttack(target, attacker);
+                BattleTestAttackResult counterResult = default;
+                yield return ExecuteAttackSequence(target, attacker, true, resolved => counterResult = resolved);
+                ApplySpecialStatusAfterHit(counterResult);
             }
             else
             {
@@ -3960,7 +3962,17 @@ public sealed class BattleTestController : MonoBehaviour
         {
             AddLog($"[추격] {attacker.definition.displayName}가 빈틈을 찔렀다.");
             yield return WaitActionSeconds(0.18f);
-            yield return ExecuteAttackSequence(attacker, target, special, _ => { });
+            if (special)
+            {
+                PrepareSpecialBeforeAttack(attacker, target);
+            }
+
+            BattleTestAttackResult followUpResult = default;
+            yield return ExecuteAttackSequence(attacker, target, special, resolved => followUpResult = resolved);
+            if (special)
+            {
+                ApplySpecialStatusAfterHit(followUpResult);
+            }
         }
     }
 
