@@ -18,6 +18,9 @@ public sealed class DialogueScriptAsset : ScriptableObject
         {
             DialogueNode node = new DialogueNode(nodeAsset.nodeId, nodeAsset.speakerName, nodeAsset.line,
                                                  nodeAsset.nextNodeId, nodeAsset.speakerId);
+            node.portraitResource = nodeAsset.portraitResource;
+            node.backgroundId = nodeAsset.backgroundId;
+            node.backgroundResource = nodeAsset.backgroundResource;
 
             foreach (DialogueChoiceAsset choiceAsset in nodeAsset.choices)
             {
@@ -53,6 +56,9 @@ public sealed class DialogueNodeAsset
     public string nodeId;
     public string speakerId;
     public string speakerName;
+    public string portraitResource;
+    public string backgroundId;
+    public string backgroundResource;
     [TextArea(2, 5)]
     public string line;
     public string nextNodeId;

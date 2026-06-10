@@ -13,7 +13,7 @@ namespace JoseonMurimTactics.Editor
 public static class NoMapAssetChecklistBuilder
 {
     private const string Root = "Assets/JoseonMurimTactics";
-    private const string SourceChecklistPath = @"C:\Users\godho\Downloads\" + "\uC5D0\uC14B" + @"\codex_no_map_asset_checklist.txt";
+    private const string SourceChecklistReference = "codex_no_map_asset_checklist.txt";
     private const string ManifestFolder = Root + "/Resources/AssetManifest";
     private const string GeneratedManifestPath = ManifestFolder + "/generated_asset_manifest.json";
     private const string IconMappingPath = ManifestFolder + "/icon_mapping.json";
@@ -24,8 +24,49 @@ public static class NoMapAssetChecklistBuilder
     private static readonly Vector2 CenterPivot = new Vector2(0.5f, 0.5f);
     private static readonly Vector2 BottomCenterPivot = new Vector2(0.5f, 0.03f);
 
-    [MenuItem("Joseon Murim Tactics/Assets/Rebuild No-Map Placeholder Assets")]
+    [MenuItem("Joseon Murim Tactics/Assets/Rebuild No-Map Placeholder Assets (Dangerous)")]
     public static void Rebuild()
+    {
+        bool forceOverwrite = HasCommandLineFlag("-forceNoMapAssetOverwrite");
+        if (!Application.isBatchMode)
+        {
+            forceOverwrite = EditorUtility.DisplayDialog(
+                "Rebuild No-Map Placeholder Assets",
+                "This can overwrite placeholder PNGs. Use Repair Import Settings Only unless you intentionally want to regenerate art.",
+                "Overwrite/Rebuild",
+                "Cancel");
+            if (!forceOverwrite)
+            {
+                Debug.Log("[NoMapAssetChecklistBuilder] Rebuild canceled.");
+                return;
+            }
+        }
+
+        RebuildInternal(forceOverwrite);
+    }
+
+    [MenuItem("Joseon Murim Tactics/Assets/Repair No-Map Placeholder Import Settings Only")]
+    public static void RepairImportSettingsOnly()
+    {
+        EnsureFolders();
+
+        List<TextureSpec> specs = BuildTextureSpecs();
+        AssetDatabase.Refresh();
+
+        foreach (TextureSpec spec in specs)
+        {
+            if (File.Exists(AssetPathToAbsolutePath(spec.Path)))
+            {
+                ConfigureSpriteImporter(spec);
+            }
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log("[NoMapAssetChecklistBuilder] Repaired import settings without regenerating PNGs.");
+    }
+
+    private static void RebuildInternal(bool forceOverwrite)
     {
         EnsureFolders();
 
@@ -34,7 +75,7 @@ public static class NoMapAssetChecklistBuilder
 
         foreach (TextureSpec spec in specs)
         {
-            WriteTexture(spec, verification);
+            WriteTexture(spec, verification, forceOverwrite);
         }
 
         AssetDatabase.Refresh();
@@ -47,7 +88,8 @@ public static class NoMapAssetChecklistBuilder
         AssetDatabase.Refresh();
 
         Dictionary<string, GameObject> vfxPrefabs = CreateVfxPrefabs(specs);
-        Dictionary<string, GameObject> enemyPrefabs = CreateEnemyPrefabs(specs);
+        Dictionary<string, EnemyPlaceholderVisualData> enemyVisuals = CreateEnemyVisualData(specs);
+        Dictionary<string, GameObject> enemyPrefabs = CreateEnemyPrefabs(specs, enemyVisuals);
         List<WeaponLinkRecord> weaponLinks = ConnectWeaponAnimationSets(vfxPrefabs);
 
         WriteGeneratedManifest(specs, verification);
@@ -62,7 +104,7 @@ public static class NoMapAssetChecklistBuilder
         int transparentAssets = verification.Values.Count(record => record.TransparentPixelCount > 0);
         Debug.Log(
             "[NoMapAssetChecklistBuilder] Generated " + specs.Count.ToString(CultureInfo.InvariantCulture) +
-            " no-map placeholder sprites, " + vfxPrefabs.Count.ToString(CultureInfo.InvariantCulture) +
+            " no-map placeholder sprite records, " + vfxPrefabs.Count.ToString(CultureInfo.InvariantCulture) +
             " VFX prefabs, " + enemyPrefabs.Count.ToString(CultureInfo.InvariantCulture) +
             " enemy prefabs. Transparent-pixel sprites: " +
             transparentAssets.ToString(CultureInfo.InvariantCulture) + ".");
@@ -80,6 +122,7 @@ public static class NoMapAssetChecklistBuilder
             Root + "/Art/VFX/Characters/SeoA",
             Root + "/Art/VFX/Characters/HanBiyeon",
             Root + "/Prefabs/VFX",
+            Root + "/ScriptableObjects/Enemies/Visuals",
             Root + "/Art/UI/Icons/Elements",
             Root + "/Art/UI/Icons/Weapons",
             Root + "/Art/UI/Icons/Statuses",
@@ -130,11 +173,11 @@ public static class NoMapAssetChecklistBuilder
     private static void AddVfxSpecs(List<TextureSpec> specs)
     {
         CharacterStyle park = new CharacterStyle("park_sungjun", "ParkSungjun", "Light", "Sword", new Color32(249, 232, 123, 255), new Color32(105, 232, 255, 255), new[] { "protagonist", "park" });
-        CharacterStyle baek = new CharacterStyle("baek_ryeon", "BaekRyeon", "Ice", "Spear", new Color32(142, 222, 255, 255), new Color32(240, 255, 255, 255), Array.Empty<string>());
-        CharacterStyle arin = new CharacterStyle("do_arin", "DoArin", "Fire", "Dao", new Color32(255, 103, 58, 255), new Color32(255, 209, 91, 255), Array.Empty<string>());
-        CharacterStyle jin = new CharacterStyle("jin_seoyul", "JinSeoyul", "Lightning", "Staff", new Color32(120, 204, 255, 255), new Color32(255, 247, 118, 255), Array.Empty<string>());
+        CharacterStyle baek = new CharacterStyle("baek_ryeon", "BaekRyeon", "Ice", "Spear", new Color32(142, 222, 255, 255), new Color32(240, 255, 255, 255), new[] { "baek", "baekryeon" });
+        CharacterStyle arin = new CharacterStyle("do_arin", "DoArin", "Fire", "Dao", new Color32(255, 103, 58, 255), new Color32(255, 209, 91, 255), new[] { "arin", "doarin" });
+        CharacterStyle jin = new CharacterStyle("jin_seoyul", "JinSeoyul", "Lightning", "Staff", new Color32(120, 204, 255, 255), new Color32(255, 247, 118, 255), new[] { "jin", "jinseoyul" });
         CharacterStyle seoa = new CharacterStyle("seo_a", "SeoA", "WindFlower", "Fan", new Color32(246, 158, 214, 255), new Color32(133, 230, 184, 255), new[] { "shin_seoa" });
-        CharacterStyle han = new CharacterStyle("han_biyeon", "HanBiyeon", "DarkPoison", "Dagger", new Color32(139, 94, 210, 255), new Color32(108, 226, 99, 255), Array.Empty<string>());
+        CharacterStyle han = new CharacterStyle("han_biyeon", "HanBiyeon", "DarkPoison", "Dagger", new Color32(139, 94, 210, 255), new Color32(108, 226, 99, 255), new[] { "han", "hanbiyeon" });
 
         AddCharacterVfx(specs, park, new[]
         {
@@ -729,10 +772,20 @@ public static class NoMapAssetChecklistBuilder
         }
     }
 
-    private static void WriteTexture(TextureSpec spec, Dictionary<string, VerificationRecord> verification)
+    private static void WriteTexture(TextureSpec spec, Dictionary<string, VerificationRecord> verification, bool forceOverwrite)
     {
         string absolutePath = AssetPathToAbsolutePath(spec.Path);
         Directory.CreateDirectory(Path.GetDirectoryName(absolutePath));
+        if (File.Exists(absolutePath) && !forceOverwrite)
+        {
+            RecordExistingTexture(spec, absolutePath, verification);
+            return;
+        }
+
+        if (File.Exists(absolutePath))
+        {
+            BackupExistingAsset(spec.Path);
+        }
 
         Texture2D texture = new Texture2D(spec.Width, spec.Height, TextureFormat.RGBA32, false);
         Color32[] pixels = new Color32[spec.Width * spec.Height];
@@ -780,6 +833,43 @@ public static class NoMapAssetChecklistBuilder
 
         int transparentPixelCount = pixels.Count(pixel => pixel.a < 8);
         verification[spec.Path] = new VerificationRecord(spec.Path, spec.Width, spec.Height, transparentPixelCount, pixels.Length);
+    }
+
+    private static void RecordExistingTexture(TextureSpec spec, string absolutePath, Dictionary<string, VerificationRecord> verification)
+    {
+        Texture2D existing = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        try
+        {
+            byte[] bytes = File.ReadAllBytes(absolutePath);
+            if (existing.LoadImage(bytes))
+            {
+                Color32[] pixels = existing.GetPixels32();
+                int transparentPixelCount = pixels.Count(pixel => pixel.a < 8);
+                verification[spec.Path] = new VerificationRecord(spec.Path, existing.width, existing.height, transparentPixelCount, pixels.Length);
+                return;
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning("[NoMapAssetChecklistBuilder] Could not inspect existing texture " + spec.Path + ": " + exception.Message);
+        }
+        finally
+        {
+            Object.DestroyImmediate(existing);
+        }
+
+        verification[spec.Path] = new VerificationRecord(spec.Path, spec.Width, spec.Height, 0, spec.Width * spec.Height);
+    }
+
+    private static void BackupExistingAsset(string assetPath)
+    {
+        string sourceAbsolutePath = AssetPathToAbsolutePath(assetPath);
+        string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+        string backupRoot = Path.Combine(projectRoot, "Library", "CodexBackups", "NoMapPlaceholder",
+            DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ", CultureInfo.InvariantCulture));
+        string targetAbsolutePath = Path.Combine(backupRoot, assetPath.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(targetAbsolutePath));
+        File.Copy(sourceAbsolutePath, targetAbsolutePath, true);
     }
 
     private static void DrawDialogueBackground(Color32[] pixels, TextureSpec spec)
@@ -1108,6 +1198,8 @@ public static class NoMapAssetChecklistBuilder
         importer.filterMode = FilterMode.Bilinear;
         importer.textureCompression = TextureImporterCompression.Uncompressed;
         importer.spritePixelsPerUnit = spec.PixelsPerUnit;
+        ConfigurePlatformSettings(importer, spec, "Standalone");
+        ConfigurePlatformSettings(importer, spec, "WebGL");
 
         TextureImporterSettings settings = new TextureImporterSettings();
         importer.ReadTextureSettings(settings);
@@ -1116,6 +1208,17 @@ public static class NoMapAssetChecklistBuilder
         settings.spritePivot = spec.Pivot;
         importer.SetTextureSettings(settings);
         importer.SaveAndReimport();
+    }
+
+    private static void ConfigurePlatformSettings(TextureImporter importer, TextureSpec spec, string platformName)
+    {
+        TextureImporterPlatformSettings settings = importer.GetPlatformTextureSettings(platformName);
+        settings.name = platformName;
+        settings.overridden = true;
+        settings.maxTextureSize = Mathf.NextPowerOfTwo(Mathf.Max(spec.Width, spec.Height));
+        settings.format = TextureImporterFormat.RGBA32;
+        settings.textureCompression = TextureImporterCompression.Uncompressed;
+        importer.SetPlatformTextureSettings(settings);
     }
 
     private static Dictionary<string, GameObject> CreateVfxPrefabs(List<TextureSpec> specs)
@@ -1146,7 +1249,72 @@ public static class NoMapAssetChecklistBuilder
         return prefabs;
     }
 
-    private static Dictionary<string, GameObject> CreateEnemyPrefabs(List<TextureSpec> specs)
+    private static Dictionary<string, EnemyPlaceholderVisualData> CreateEnemyVisualData(List<TextureSpec> specs)
+    {
+        Dictionary<string, List<TextureSpec>> specsByEnemy = specs
+            .Where(s => s.Kind == AssetKind.EnemyPose)
+            .GroupBy(s => s.EnemyId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+
+        Dictionary<string, EnemyPlaceholderVisualData> visuals = new Dictionary<string, EnemyPlaceholderVisualData>(StringComparer.Ordinal);
+        foreach (KeyValuePair<string, List<TextureSpec>> pair in specsByEnemy)
+        {
+            string assetPath = Root + "/ScriptableObjects/Enemies/Visuals/" + pair.Key + "_placeholder_visual.asset";
+            EnemyPlaceholderVisualData data = AssetDatabase.LoadAssetAtPath<EnemyPlaceholderVisualData>(assetPath);
+            if (data == null)
+            {
+                data = ScriptableObject.CreateInstance<EnemyPlaceholderVisualData>();
+                AssetDatabase.CreateAsset(data, assetPath);
+            }
+
+            data.enemyId = pair.Key;
+            foreach (TextureSpec spec in pair.Value)
+            {
+                Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spec.Path);
+                if (sprite == null)
+                {
+                    continue;
+                }
+
+                SetEnemyPoseSprite(data, spec.Pose, sprite);
+            }
+
+            EditorUtility.SetDirty(data);
+            visuals[pair.Key] = data;
+        }
+
+        return visuals;
+    }
+
+    private static void SetEnemyPoseSprite(EnemyPlaceholderVisualData data, string pose, Sprite sprite)
+    {
+        switch (pose)
+        {
+            case "move":
+                data.moveSprite = sprite;
+                break;
+            case "attack":
+                data.attackSprite = sprite;
+                break;
+            case "skill":
+                data.skillSprite = sprite;
+                break;
+            case "hit":
+                data.hitSprite = sprite;
+                break;
+            case "defeated":
+                data.defeatedSprite = sprite;
+                break;
+            case "acted":
+                data.actedSprite = sprite;
+                break;
+            default:
+                data.idleSprite = sprite;
+                break;
+        }
+    }
+
+    private static Dictionary<string, GameObject> CreateEnemyPrefabs(List<TextureSpec> specs, Dictionary<string, EnemyPlaceholderVisualData> enemyVisuals)
     {
         Dictionary<string, TextureSpec> idleSpecs = specs
             .Where(s => s.Kind == AssetKind.EnemyPose && s.Pose == "idle")
@@ -1166,6 +1334,12 @@ public static class NoMapAssetChecklistBuilder
             SpriteRenderer renderer = root.AddComponent<SpriteRenderer>();
             renderer.sprite = sprite;
             renderer.sortingOrder = 600;
+            EnemyPlaceholderVisualController controller = root.AddComponent<EnemyPlaceholderVisualController>();
+            if (enemyVisuals.TryGetValue(pair.Key, out EnemyPlaceholderVisualData visualData))
+            {
+                controller.VisualData = visualData;
+            }
+
             string prefabPath = Root + "/Prefabs/Units/Enemies/" + pair.Key + "_unit.prefab";
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             Object.DestroyImmediate(root);
@@ -1188,17 +1362,17 @@ public static class NoMapAssetChecklistBuilder
         LinkWeapon(records, vfxPrefabs, "baek_ryeon", "baek_ryeon_spear_motion_set.asset",
             "baek_ryeon_frost_spear_thrust", "baek_ryeon_ice_wall_burst", "baek_ryeon_frost_spear_thrust",
             "baek_ryeon_ice_spear_slash_arc", "baek_ryeon_ice_crystal_impact", "common_guard_parry_spark", "common_footstep_dust",
-            Array.Empty<string>());
+            new[] { "baek", "baekryeon" });
 
         LinkWeapon(records, vfxPrefabs, "do_arin", "do_arin_dao_motion_set.asset",
             "do_arin_fire_dao_slash", "do_arin_meteor_dao_crash", "do_arin_blazing_charge_trail",
             "do_arin_fire_dao_slash", "do_arin_burn_impact", "common_guard_parry_spark", "common_footstep_dust",
-            Array.Empty<string>());
+            new[] { "arin", "doarin" });
 
         LinkWeapon(records, vfxPrefabs, "jin_seoyul", "jin_seoyul_staff_motion_set.asset",
             "jin_seoyul_lightning_staff_spin", "jin_seoyul_staff_thunderfall", "jin_seoyul_electric_dash_trail",
             "jin_seoyul_lightning_staff_spin", "jin_seoyul_thunder_impact", "common_guard_parry_spark", "common_footstep_dust",
-            Array.Empty<string>());
+            new[] { "jin", "jinseoyul" });
 
         LinkWeapon(records, vfxPrefabs, "seo_a", "shin_seoa_fan_motion_set.asset",
             "seo_a_fan_gust_slash", "seo_a_blossom_field", "seo_a_flower_wind_arc",
@@ -1208,7 +1382,7 @@ public static class NoMapAssetChecklistBuilder
         LinkWeapon(records, vfxPrefabs, "han_biyeon", "han_biyeon_dagger_motion_set.asset",
             "han_biyeon_shadow_dagger_slash", "han_biyeon_dark_poison_mist", "han_biyeon_poison_needle_projectile",
             "han_biyeon_shadow_afterimage", "han_biyeon_toxic_impact_splash", "common_guard_parry_spark", "common_footstep_dust",
-            Array.Empty<string>());
+            new[] { "han", "hanbiyeon" });
 
         return records;
     }
@@ -1272,9 +1446,9 @@ public static class NoMapAssetChecklistBuilder
         StringBuilder builder = new StringBuilder();
         builder.AppendLine("{");
         builder.AppendLine("  \"schemaVersion\": 1,");
-        builder.AppendLine("  \"sourceChecklist\": " + JsonString(SourceChecklistPath) + ",");
+        builder.AppendLine("  \"sourceChecklist\": " + JsonString(SourceChecklistReference) + ",");
         builder.AppendLine("  \"scope\": \"No MAP, no Tilemap, no world-map background assets were generated by this builder.\",");
-        builder.AppendLine("  \"generatedUtc\": " + JsonString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)) + ",");
+        builder.AppendLine("  \"generatedUtc\": \"stable\",");
         builder.AppendLine("  \"assets\": [");
         for (int i = 0; i < specs.Count; i++)
         {
@@ -1325,7 +1499,12 @@ public static class NoMapAssetChecklistBuilder
         builder.AppendLine("  \"note\": \"SkillData has no direct icon field yet, so this manifest maps elements, weapons, statuses, tags, command buttons, hub actions, rewards, and UI frames to stable sprite paths.\",");
         builder.AppendLine("  \"aliases\": {");
         builder.AppendLine("    \"seo_a\": [\"shin_seoa\"],");
-        builder.AppendLine("    \"park_sungjun\": [\"protagonist\", \"park\"]");
+        builder.AppendLine("    \"park_sungjun\": [\"protagonist\", \"park\"],");
+        builder.AppendLine("    \"cho_hui\": [\"chohui\"],");
+        builder.AppendLine("    \"do_arin\": [\"arin\", \"doarin\"],");
+        builder.AppendLine("    \"baek_ryeon\": [\"baek\", \"baekryeon\"],");
+        builder.AppendLine("    \"han_biyeon\": [\"han\", \"hanbiyeon\"],");
+        builder.AppendLine("    \"jin_seoyul\": [\"jin\", \"jinseoyul\"]");
         builder.AppendLine("  },");
         builder.AppendLine("  \"elementIcons\": {");
         AppendMapping(builder, "Light", entries, "icon_element_light", true);
@@ -1516,7 +1695,7 @@ public static class NoMapAssetChecklistBuilder
         builder.AppendLine();
         builder.AppendLine("Generated from:");
         builder.AppendLine();
-        builder.AppendLine("- `" + SourceChecklistPath.Replace("\\", "\\\\") + "`");
+        builder.AppendLine("- `" + SourceChecklistReference + "`");
         builder.AppendLine();
         builder.AppendLine("## Scope");
         builder.AppendLine();
@@ -1552,6 +1731,11 @@ public static class NoMapAssetChecklistBuilder
         builder.AppendLine();
         builder.AppendLine("- `seo_a` = `shin_seoa`");
         builder.AppendLine("- `park_sungjun` = `protagonist` = `park`");
+        builder.AppendLine("- `cho_hui` = `chohui`");
+        builder.AppendLine("- `do_arin` = `arin` = `doarin`");
+        builder.AppendLine("- `baek_ryeon` = `baek` = `baekryeon`");
+        builder.AppendLine("- `han_biyeon` = `han` = `hanbiyeon`");
+        builder.AppendLine("- `jin_seoyul` = `jin` = `jinseoyul`");
         builder.AppendLine();
         builder.AppendLine("## Replacement Rules");
         builder.AppendLine();
@@ -1584,6 +1768,19 @@ public static class NoMapAssetChecklistBuilder
     {
         string absolute = AssetPathToAbsolutePath(assetFolder);
         Directory.CreateDirectory(absolute);
+    }
+
+    private static bool HasCommandLineFlag(string flag)
+    {
+        foreach (string argument in Environment.GetCommandLineArgs())
+        {
+            if (string.Equals(argument, flag, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string AssetPathToAbsolutePath(string assetPath)

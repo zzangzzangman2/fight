@@ -74,6 +74,7 @@ public sealed class DialogueController
         // 그 위에 이름+소속 태그, 빛나는 구분선, 본문이 프레임 없이 얹힌다.
         float shadeH = screenH * (hasChoices ? 0.46f : 0.40f);
 
+        DrawBackground(screenW, screenH);
         DrawStanding(screenW, screenH);
         UiTheme.DrawBottomShade(new Rect(0f, screenH - shadeH * 1.3f, screenW, shadeH * 1.3f));
 
@@ -250,6 +251,21 @@ public sealed class DialogueController
 
     private static readonly Dictionary<string, Texture2D> StandingCache = new Dictionary<string, Texture2D>();
 
+    private void DrawBackground(float screenW, float screenH)
+    {
+        string resource = !string.IsNullOrEmpty(current.backgroundResource)
+                              ? current.backgroundResource
+                              : DialogueBackgroundRegistry.ResolveResourcePath(current.backgroundId);
+        Texture2D background = DialogueBackgroundRegistry.LoadBackgroundTexture(resource);
+        if (background == null)
+        {
+            return;
+        }
+
+        GUI.DrawTexture(new Rect(0f, 0f, screenW, screenH), background, ScaleMode.ScaleAndCrop);
+        UiTheme.DrawFill(new Rect(0f, 0f, screenW, screenH), new Color(0.03f, 0.04f, 0.06f, 0.18f));
+    }
+
     private string SpeakerTitle()
     {
         if (!string.IsNullOrEmpty(current.speakerTitle))
@@ -274,12 +290,7 @@ public sealed class DialogueController
 
         if (!StandingCache.TryGetValue(resource, out Texture2D tex))
         {
-            tex = Resources.Load<Texture2D>(resource);
-            if (tex == null)
-            {
-                Sprite sprite = Resources.Load<Sprite>(resource);
-                tex = sprite != null ? sprite.texture : null;
-            }
+            tex = PortraitRegistry.LoadPortraitTexture(resource);
 
             StandingCache[resource] = tex; // 실패도 캐시해 매 프레임 재시도를 막는다.
         }

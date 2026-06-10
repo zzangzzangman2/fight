@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-06-09T08:50:02.998Z",
+  "updatedAt": "2026-06-10T00:00:00Z",
   "project": {
     "title": "조선 무협 SRPG",
     "note": "콘텐츠 편집기에서 저장하면 Unity Resources의 게임 대사에 즉시 반영됩니다."
@@ -21,8 +21,8 @@
       "id": "park_mugyeom",
       "displayName": "박무겸",
       "role": "병든 문주",
-      "portraitId": "",
-      "portraitResource": "",
+      "portraitId": "park_mugyeom_face",
+      "portraitResource": "Portraits/NPC/park_mugyeom/park_mugyeom_face",
       "notes": "백두천광검문의 현 문주.",
       "age": 62,
       "sectId": "baekdu_light_sword",
@@ -32,8 +32,8 @@
       "id": "yeon_ok",
       "displayName": "연옥",
       "role": "엄격한 사범",
-      "portraitId": "",
-      "portraitResource": "",
+      "portraitId": "yeon_ok_face",
+      "portraitResource": "Portraits/NPC/yeon_ok/yeon_ok_face",
       "notes": "성준을 단련시키는 사범.",
       "age": 0,
       "sectId": "baekdu_light_sword",
@@ -43,8 +43,8 @@
       "id": "cho_hui",
       "displayName": "초희",
       "role": "소백촌 약방",
-      "portraitId": "",
-      "portraitResource": "",
+      "portraitId": "chohui_face",
+      "portraitResource": "Portraits/NPC/chohui/chohui_face",
       "notes": "초반 생계와 약재 루프의 연결 인물.",
       "age": 0,
       "sectId": "sobaek_village",
@@ -109,20 +109,203 @@
   "backgrounds": [
     {
       "id": "joseon_murim_game_map",
-      "title": "조선-중원 강호도",
-      "resourcePath": "WorldMap/joseon_murim_game_map",
-      "previewUrl": "/resources/WorldMap/joseon_murim_game_map.png",
-      "notes": "통합 월드맵"
+      "title": "Legacy world map alias",
+      "resourcePath": "Backgrounds/Dialogue/bg_baekdu_light_sword_gate_day",
+      "previewUrl": "",
+      "notes": "Deprecated dialogue id; runtime resolves to Baekdu gate background."
+    },
+    {
+      "id": "bg_baekdu_light_sword_gate_day",
+      "title": "Baekdu Light Sword Gate - Day",
+      "resourcePath": "Backgrounds/Dialogue/bg_baekdu_light_sword_gate_day",
+      "previewUrl": "",
+      "notes": "Dialogue background placeholder in Resources."
+    },
+    {
+      "id": "bg_baekdu_training_yard_snow",
+      "title": "Baekdu Training Yard - Snow",
+      "resourcePath": "Backgrounds/Dialogue/bg_baekdu_training_yard_snow",
+      "previewUrl": "",
+      "notes": "Dialogue background placeholder in Resources."
+    },
+    {
+      "id": "bg_baekdu_rooftop_day",
+      "title": "Baekdu Rooftop - Day",
+      "resourcePath": "Backgrounds/Dialogue/bg_baekdu_rooftop_day",
+      "previewUrl": "",
+      "notes": "Dialogue background placeholder in Resources."
+    },
+    {
+      "id": "bg_sect_master_room_sickbed",
+      "title": "Sect Master Sickroom",
+      "resourcePath": "Backgrounds/Dialogue/bg_sect_master_room_sickbed",
+      "previewUrl": "",
+      "notes": "Dialogue background placeholder in Resources."
+    },
+    {
+      "id": "bg_sobaek_village_street_day",
+      "title": "Sobaek Village Street - Day",
+      "resourcePath": "Backgrounds/Dialogue/bg_sobaek_village_street_day",
+      "previewUrl": "",
+      "notes": "Dialogue background placeholder in Resources."
+    },
+    {
+      "id": "bg_chohui_apothecary_shop",
+      "title": "Chohui Apothecary Shop",
+      "resourcePath": "Backgrounds/Dialogue/bg_chohui_apothecary_shop",
+      "previewUrl": "",
+      "notes": "Dialogue background placeholder in Resources."
+    },
+    {
+      "id": "bg_baekdu_broken_flag_night",
+      "title": "Baekdu Broken Flag - Night",
+      "resourcePath": "Backgrounds/Dialogue/bg_baekdu_broken_flag_night",
+      "previewUrl": "",
+      "notes": "Dialogue background placeholder in Resources."
+    },
+    {
+      "id": "bg_wood_chopping_yard",
+      "title": "Wood Chopping Yard",
+      "resourcePath": "Backgrounds/Dialogue/bg_wood_chopping_yard",
+      "previewUrl": "",
+      "notes": "Free-time labor dialogue background."
+    },
+    {
+      "id": "bg_mountain_herb_path",
+      "title": "Mountain Herb Path",
+      "resourcePath": "Backgrounds/Dialogue/bg_mountain_herb_path",
+      "previewUrl": "",
+      "notes": "Free-time herb gathering dialogue background."
+    },
+    {
+      "id": "bg_leaking_roof_repair_scene",
+      "title": "Leaking Roof Repair Scene",
+      "resourcePath": "Backgrounds/Dialogue/bg_leaking_roof_repair_scene",
+      "previewUrl": "",
+      "notes": "Free-time repair dialogue background."
+    },
+    {
+      "id": "bg_seorak_spear_hall_frost",
+      "title": "Seorak Spear Hall - Frost",
+      "resourcePath": "Backgrounds/Dialogue/bg_seorak_spear_hall_frost",
+      "previewUrl": "",
+      "notes": "Companion dialogue background."
+    },
+    {
+      "id": "bg_hwawang_blade_training_ground",
+      "title": "Hwawang Blade Training Ground",
+      "resourcePath": "Backgrounds/Dialogue/bg_hwawang_blade_training_ground",
+      "previewUrl": "",
+      "notes": "Companion dialogue background."
+    },
+    {
+      "id": "bg_cheonroe_staff_dojo_gyeongseong",
+      "title": "Cheonroe Staff Dojo - Gyeongseong",
+      "resourcePath": "Backgrounds/Dialogue/bg_cheonroe_staff_dojo_gyeongseong",
+      "previewUrl": "",
+      "notes": "Companion dialogue background."
+    },
+    {
+      "id": "bg_hwajeop_flower_fan_courtyard",
+      "title": "Hwajeop Flower Fan Courtyard",
+      "resourcePath": "Backgrounds/Dialogue/bg_hwajeop_flower_fan_courtyard",
+      "previewUrl": "",
+      "notes": "Companion dialogue background."
+    },
+    {
+      "id": "bg_heukryeon_shadow_cliff_temple",
+      "title": "Heukryeon Shadow Cliff Temple",
+      "resourcePath": "Backgrounds/Dialogue/bg_heukryeon_shadow_cliff_temple",
+      "previewUrl": "",
+      "notes": "Companion dialogue background."
     }
   ],
-  "portraits": [],
+  "portraits": [
+    {
+      "id": "park_mugyeom_face",
+      "title": "Park Mugyeom Face",
+      "resourcePath": "Portraits/NPC/park_mugyeom/park_mugyeom_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "yeon_ok_face",
+      "title": "Yeon Ok Face",
+      "resourcePath": "Portraits/NPC/yeon_ok/yeon_ok_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "chohui_face",
+      "title": "Chohui Face",
+      "resourcePath": "Portraits/NPC/chohui/chohui_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait; cho_hui alias resolves here."
+    },
+    {
+      "id": "infirmary_doctor_face",
+      "title": "Infirmary Doctor Face",
+      "resourcePath": "Portraits/NPC/infirmary_doctor/infirmary_doctor_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "library_keeper_face",
+      "title": "Library Keeper Face",
+      "resourcePath": "Portraits/NPC/library_keeper/library_keeper_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "market_merchant_face",
+      "title": "Market Merchant Face",
+      "resourcePath": "Portraits/NPC/market_merchant/market_merchant_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "mission_board_clerk_face",
+      "title": "Mission Board Clerk Face",
+      "resourcePath": "Portraits/NPC/mission_board_clerk/mission_board_clerk_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "sect_blacksmith_face",
+      "title": "Sect Blacksmith Face",
+      "resourcePath": "Portraits/NPC/sect_blacksmith/sect_blacksmith_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "sobaek_village_chief_face",
+      "title": "Sobaek Village Chief Face",
+      "resourcePath": "Portraits/NPC/sobaek_village_chief/sobaek_village_chief_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "suspicious_messenger_face",
+      "title": "Suspicious Messenger Face",
+      "resourcePath": "Portraits/NPC/suspicious_messenger/suspicious_messenger_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    },
+    {
+      "id": "tavern_owner_face",
+      "title": "Tavern Owner Face",
+      "resourcePath": "Portraits/NPC/tavern_owner/tavern_owner_face",
+      "previewUrl": "",
+      "notes": "Runtime NPC face portrait."
+    }
+  ],
   "props": [],
   "dialogueScenes": [
     {
       "id": "chapter1_prologue",
       "title": "제1장 · 꺼져가는 천광",
       "location": "백두산 백두천광검문",
-      "backgroundId": "joseon_murim_game_map",
+      "backgroundId": "bg_baekdu_training_yard_snow",
       "startNodeId": "chapter1_prologue_001",
       "entries": [
         {
@@ -130,7 +313,7 @@
           "speakerId": "",
           "line": "백두산 중턱. 눈은 쌓였고, 검각은 기울었고, 백두천광검문의 깃발은 바람에 ‘나 아직 안 죽었다’는 듯 겨우 펄럭인다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -138,7 +321,7 @@
           "speakerId": "",
           "line": "한때는 북방의 명문. 지금은 병든 문주, 무서운 사범, 그리고 지붕 위에서 낮잠 자는 소문주 하나가 전 재산이다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_light_sword_gate_day",
           "choices": []
         },
         {
@@ -146,7 +329,7 @@
           "speakerId": "yeon_ok",
           "line": "박성준. 내려와라. 지붕은 연무장이 아니고, 네 이불도 아니다.",
           "mood": "엄격",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -154,7 +337,7 @@
           "speakerId": "park_sungjun",
           "line": "사범님, 낮잠이 아닙니다. 하늘의 기운을 받아 천광심법을... 음, 누워서 받는 중이었습니다.",
           "mood": "능청",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -162,7 +345,7 @@
           "speakerId": "yeon_ok",
           "line": "좋다. 그럼 누운 채로 장작도 패고, 목인도 서른 번 치거라.",
           "mood": "차갑게",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -170,7 +353,7 @@
           "speakerId": "park_sungjun",
           "line": "(어떻게 둘러댈까?)",
           "mood": "선택",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": [
             {
               "id": "c1_060",
@@ -224,7 +407,7 @@
           "speakerId": "yeon_ok",
           "line": "입공만 보면 벌써 천하제일이다. 몸도 내려와라. 문주님이 찾으신다.",
           "mood": "단호",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -232,7 +415,7 @@
           "speakerId": "",
           "line": "성준이 뛰어내리자 기와 세 장이 먼저 하산했다. 연옥의 눈썹도 같이 올라갔다.",
           "mood": "서술",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -240,7 +423,7 @@
           "speakerId": "park_sungjun",
           "line": "보셨죠? 제 경공이 아니라 검각이 먼저 움직였습니다. 건물이 아주 적극적이에요.",
           "mood": "농담",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -248,7 +431,7 @@
           "speakerId": "yeon_ok",
           "line": "다음엔 네 용돈이 먼저 하산할 것이다.",
           "mood": "꾸짖음",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -256,7 +439,7 @@
           "speakerId": "park_mugyeom",
           "line": "성준아. 검은 폼으로 드는 게 아니다. 지켜야 할 것이 있을 때 비로소 손에 붙는다.",
           "mood": "조용함",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -264,7 +447,7 @@
           "speakerId": "park_sungjun",
           "line": "아버지, 저는 폼도 지키고 문파도 지키고 밥상도 지키고 싶은데요. 셋 중 밥상이 제일 위태롭습니다.",
           "mood": "능청",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -272,7 +455,7 @@
           "speakerId": "park_mugyeom",
           "line": "그래서 부른 것이다. 중원 문파들이 백두산 영맥을 눈독 들인다는 말이 돈다.",
           "mood": "걱정",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -280,7 +463,7 @@
           "speakerId": "park_mugyeom",
           "line": "천광심법과 백야검결, 이제 네 차례다. 문파가 작아졌다고 이름까지 작게 부르지는 마라.",
           "mood": "당부",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -288,7 +471,7 @@
           "speakerId": "park_sungjun",
           "line": "걱정 마세요. 제가 가벼운 건 말투뿐입니다. 건드리면, 꽤 무겁게 받아칠 겁니다.",
           "mood": "다짐",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -296,7 +479,7 @@
           "speakerId": "",
           "line": "낮이 되자 성준은 소백촌으로 내려갔다. 마을 사람들은 그를 ‘사고뭉치 도련님’이라 부르면서도, 은근히 길을 터준다.",
           "mood": "서술",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -304,7 +487,7 @@
           "speakerId": "cho_hui",
           "line": "왔네, 백두산 대표 한량. 오늘은 지붕 말고 땅 밟고 다니네?",
           "mood": "핀잔",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -312,7 +495,7 @@
           "speakerId": "park_sungjun",
           "line": "초희야, 그 말투... 나를 기다린 사람의 향기가 난다.",
           "mood": "풍류",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -320,7 +503,7 @@
           "speakerId": "cho_hui",
           "line": "기다렸지. 장작더미가. 약초 바구니도. 그리고 네가 미룬 외상 장부도.",
           "mood": "현실적",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -328,7 +511,7 @@
           "speakerId": "",
           "line": "문파 부흥은 거창한 비급에서 시작되지 않았다. 장작, 약초, 지붕 수리. 듣기엔 초라해도 은전은 거짓말을 하지 않는다.",
           "mood": "서술",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -336,7 +519,7 @@
           "speakerId": "park_sungjun",
           "line": "(오늘은 뭘 해야 덜 혼나고 더 벌까?)",
           "mood": "선택",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": [
             {
               "id": "c1_210__.",
@@ -390,7 +573,7 @@
           "speakerId": "park_sungjun",
           "line": "좋아. 백야검결 제일식, 장작분광. 나무야 미안하다, 우리 집이 가난하다.",
           "mood": "농담",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -398,7 +581,7 @@
           "speakerId": "park_sungjun",
           "line": "산길? 내가 전문이지. 어릴 때 길 잃은 경험이 이렇게 경력이 될 줄이야.",
           "mood": "능청",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -406,7 +589,7 @@
           "speakerId": "park_sungjun",
           "line": "비 새는 검각에서 천하제일을 꿈꾸면 감기부터 천하제일이 된다. 지붕부터 살리자.",
           "mood": "현실적",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -414,7 +597,7 @@
           "speakerId": "",
           "line": "밤이 되자, 성준은 다시 찢어진 깃발 아래 섰다. 낮엔 웃었고, 손에는 물집이 잡혔다.",
           "mood": "서술",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -422,7 +605,7 @@
           "speakerId": "park_sungjun",
           "line": "좋아. 중원인지 뭔지, 우리 집 앞마당까지 들어오면 손님 대접은 못 하지.",
           "mood": "다짐",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         },
         {
@@ -430,7 +613,7 @@
           "speakerId": "",
           "line": "꺼져가던 천광은 아직 남아 있었다. 조금 시끄럽고, 조금 가난하고, 이상하게 포기할 마음은 안 드는 빛이었다.",
           "mood": "서술",
-          "backgroundId": "",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "choices": []
         }
       ],
@@ -441,7 +624,7 @@
           "speakerName": "",
           "line": "백두산 중턱. 눈은 쌓였고, 검각은 기울었고, 백두천광검문의 깃발은 바람에 ‘나 아직 안 죽었다’는 듯 겨우 펄럭인다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_training_yard_snow",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_002",
@@ -453,7 +636,7 @@
           "speakerName": "",
           "line": "한때는 북방의 명문. 지금은 병든 문주, 무서운 사범, 그리고 지붕 위에서 낮잠 자는 소문주 하나가 전 재산이다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_light_sword_gate_day",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_003",
@@ -465,9 +648,9 @@
           "speakerName": "연옥",
           "line": "박성준. 내려와라. 지붕은 연무장이 아니고, 네 이불도 아니다.",
           "mood": "엄격",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_baekdu_rooftop_day",
+          "portraitId": "yeon_ok_face",
+          "portraitResource": "Portraits/NPC/yeon_ok/yeon_ok_face",
           "nextNodeId": "chapter1_prologue_004",
           "choices": []
         },
@@ -477,7 +660,7 @@
           "speakerName": "박성준",
           "line": "사범님, 낮잠이 아닙니다. 하늘의 기운을 받아 천광심법을... 음, 누워서 받는 중이었습니다.",
           "mood": "능청",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_005",
@@ -489,9 +672,9 @@
           "speakerName": "연옥",
           "line": "좋다. 그럼 누운 채로 장작도 패고, 목인도 서른 번 치거라.",
           "mood": "차갑게",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_baekdu_rooftop_day",
+          "portraitId": "yeon_ok_face",
+          "portraitResource": "Portraits/NPC/yeon_ok/yeon_ok_face",
           "nextNodeId": "chapter1_prologue_006",
           "choices": []
         },
@@ -501,7 +684,7 @@
           "speakerName": "박성준",
           "line": "(어떻게 둘러댈까?)",
           "mood": "선택",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_007",
@@ -556,9 +739,9 @@
           "speakerName": "연옥",
           "line": "입공만 보면 벌써 천하제일이다. 몸도 내려와라. 문주님이 찾으신다.",
           "mood": "단호",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_baekdu_rooftop_day",
+          "portraitId": "yeon_ok_face",
+          "portraitResource": "Portraits/NPC/yeon_ok/yeon_ok_face",
           "nextNodeId": "chapter1_prologue_008",
           "choices": []
         },
@@ -568,7 +751,7 @@
           "speakerName": "",
           "line": "성준이 뛰어내리자 기와 세 장이 먼저 하산했다. 연옥의 눈썹도 같이 올라갔다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_009",
@@ -580,7 +763,7 @@
           "speakerName": "박성준",
           "line": "보셨죠? 제 경공이 아니라 검각이 먼저 움직였습니다. 건물이 아주 적극적이에요.",
           "mood": "농담",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_010",
@@ -592,9 +775,9 @@
           "speakerName": "연옥",
           "line": "다음엔 네 용돈이 먼저 하산할 것이다.",
           "mood": "꾸짖음",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_baekdu_rooftop_day",
+          "portraitId": "yeon_ok_face",
+          "portraitResource": "Portraits/NPC/yeon_ok/yeon_ok_face",
           "nextNodeId": "chapter1_prologue_011",
           "choices": []
         },
@@ -604,9 +787,9 @@
           "speakerName": "박무겸",
           "line": "성준아. 검은 폼으로 드는 게 아니다. 지켜야 할 것이 있을 때 비로소 손에 붙는다.",
           "mood": "조용함",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_sect_master_room_sickbed",
+          "portraitId": "park_mugyeom_face",
+          "portraitResource": "Portraits/NPC/park_mugyeom/park_mugyeom_face",
           "nextNodeId": "chapter1_prologue_012",
           "choices": []
         },
@@ -616,7 +799,7 @@
           "speakerName": "박성준",
           "line": "아버지, 저는 폼도 지키고 문파도 지키고 밥상도 지키고 싶은데요. 셋 중 밥상이 제일 위태롭습니다.",
           "mood": "능청",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_sect_master_room_sickbed",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_013",
@@ -628,9 +811,9 @@
           "speakerName": "박무겸",
           "line": "그래서 부른 것이다. 중원 문파들이 백두산 영맥을 눈독 들인다는 말이 돈다.",
           "mood": "걱정",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_sect_master_room_sickbed",
+          "portraitId": "park_mugyeom_face",
+          "portraitResource": "Portraits/NPC/park_mugyeom/park_mugyeom_face",
           "nextNodeId": "chapter1_prologue_014",
           "choices": []
         },
@@ -640,9 +823,9 @@
           "speakerName": "박무겸",
           "line": "천광심법과 백야검결, 이제 네 차례다. 문파가 작아졌다고 이름까지 작게 부르지는 마라.",
           "mood": "당부",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_sect_master_room_sickbed",
+          "portraitId": "park_mugyeom_face",
+          "portraitResource": "Portraits/NPC/park_mugyeom/park_mugyeom_face",
           "nextNodeId": "chapter1_prologue_015",
           "choices": []
         },
@@ -652,7 +835,7 @@
           "speakerName": "박성준",
           "line": "걱정 마세요. 제가 가벼운 건 말투뿐입니다. 건드리면, 꽤 무겁게 받아칠 겁니다.",
           "mood": "다짐",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_sect_master_room_sickbed",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_016",
@@ -664,7 +847,7 @@
           "speakerName": "",
           "line": "낮이 되자 성준은 소백촌으로 내려갔다. 마을 사람들은 그를 ‘사고뭉치 도련님’이라 부르면서도, 은근히 길을 터준다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_sobaek_village_street_day",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_017",
@@ -676,9 +859,9 @@
           "speakerName": "초희",
           "line": "왔네, 백두산 대표 한량. 오늘은 지붕 말고 땅 밟고 다니네?",
           "mood": "핀잔",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_chohui_apothecary_shop",
+          "portraitId": "chohui_face",
+          "portraitResource": "Portraits/NPC/chohui/chohui_face",
           "nextNodeId": "chapter1_prologue_018",
           "choices": []
         },
@@ -688,7 +871,7 @@
           "speakerName": "박성준",
           "line": "초희야, 그 말투... 나를 기다린 사람의 향기가 난다.",
           "mood": "풍류",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_chohui_apothecary_shop",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_019",
@@ -700,9 +883,9 @@
           "speakerName": "초희",
           "line": "기다렸지. 장작더미가. 약초 바구니도. 그리고 네가 미룬 외상 장부도.",
           "mood": "현실적",
-          "backgroundId": "joseon_murim_game_map",
-          "portraitId": "",
-          "portraitResource": "",
+          "backgroundId": "bg_chohui_apothecary_shop",
+          "portraitId": "chohui_face",
+          "portraitResource": "Portraits/NPC/chohui/chohui_face",
           "nextNodeId": "chapter1_prologue_020",
           "choices": []
         },
@@ -712,7 +895,7 @@
           "speakerName": "",
           "line": "문파 부흥은 거창한 비급에서 시작되지 않았다. 장작, 약초, 지붕 수리. 듣기엔 초라해도 은전은 거짓말을 하지 않는다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_sobaek_village_street_day",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_021",
@@ -724,7 +907,7 @@
           "speakerName": "박성준",
           "line": "(오늘은 뭘 해야 덜 혼나고 더 벌까?)",
           "mood": "선택",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_wood_chopping_yard",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_022",
@@ -794,7 +977,7 @@
           "speakerName": "박성준",
           "line": "좋아. 백야검결 제일식, 장작분광. 나무야 미안하다, 우리 집이 가난하다.",
           "mood": "농담",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_mountain_herb_path",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_023",
@@ -806,7 +989,7 @@
           "speakerName": "박성준",
           "line": "산길? 내가 전문이지. 어릴 때 길 잃은 경험이 이렇게 경력이 될 줄이야.",
           "mood": "능청",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_leaking_roof_repair_scene",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_024",
@@ -818,7 +1001,7 @@
           "speakerName": "박성준",
           "line": "비 새는 검각에서 천하제일을 꿈꾸면 감기부터 천하제일이 된다. 지붕부터 살리자.",
           "mood": "현실적",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_sobaek_village_street_day",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_025",
@@ -830,7 +1013,7 @@
           "speakerName": "",
           "line": "밤이 되자, 성준은 다시 찢어진 깃발 아래 섰다. 낮엔 웃었고, 손에는 물집이 잡혔다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_broken_flag_night",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_026",
@@ -842,7 +1025,7 @@
           "speakerName": "박성준",
           "line": "좋아. 중원인지 뭔지, 우리 집 앞마당까지 들어오면 손님 대접은 못 하지.",
           "mood": "다짐",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_broken_flag_night",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_027",
@@ -854,7 +1037,7 @@
           "speakerName": "",
           "line": "꺼져가던 천광은 아직 남아 있었다. 조금 시끄럽고, 조금 가난하고, 이상하게 포기할 마음은 안 드는 빛이었다.",
           "mood": "서술",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_baekdu_broken_flag_night",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "",
@@ -866,7 +1049,7 @@
       "id": "companion_baek_ryeon_talk",
       "title": "백련 첫 대화",
       "location": "백두산 검각",
-      "backgroundId": "joseon_murim_game_map",
+      "backgroundId": "bg_seorak_spear_hall_frost",
       "startNodeId": "companion_baek_ryeon_talk_001",
       "entries": [
         {
@@ -874,7 +1057,7 @@
           "speakerId": "baek_ryeon",
           "line": "“창끝은 차갑게 둘게요. 대신 사람 마음까지 얼리라는 명령은... 조금 곤란합니다.”",
           "mood": "차분",
-          "backgroundId": "",
+          "backgroundId": "bg_seorak_spear_hall_frost",
           "choices": []
         },
         {
@@ -882,7 +1065,7 @@
           "speakerId": "park_sungjun",
           "line": "(어떻게 답할까?)",
           "mood": "선택",
-          "backgroundId": "",
+          "backgroundId": "bg_seorak_spear_hall_frost",
           "choices": [
             {
               "id": "t2a__.",
@@ -921,7 +1104,7 @@
           "speakerId": "baek_ryeon",
           "line": "백련이 아주 작게 웃는다. “그 순서라면, 제 창도 덜 차가워질 것 같네요.”",
           "mood": "안도",
-          "backgroundId": "",
+          "backgroundId": "bg_seorak_spear_hall_frost",
           "choices": []
         },
         {
@@ -929,7 +1112,7 @@
           "speakerId": "baek_ryeon",
           "line": "백련이 눈을 내리깐다. “말씀은 차갑지만... 버리지 않겠다는 쪽을 믿겠습니다.”",
           "mood": "서늘",
-          "backgroundId": "",
+          "backgroundId": "bg_seorak_spear_hall_frost",
           "choices": []
         }
       ],
@@ -940,7 +1123,7 @@
           "speakerName": "백련",
           "line": "“창끝은 차갑게 둘게요. 대신 사람 마음까지 얼리라는 명령은... 조금 곤란합니다.”",
           "mood": "차분",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_seorak_spear_hall_frost",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "companion_baek_ryeon_talk_002",
@@ -952,7 +1135,7 @@
           "speakerName": "박성준",
           "line": "(어떻게 답할까?)",
           "mood": "선택",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_seorak_spear_hall_frost",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "companion_baek_ryeon_talk_003",
@@ -999,7 +1182,7 @@
           "speakerName": "백련",
           "line": "백련이 아주 작게 웃는다. “그 순서라면, 제 창도 덜 차가워질 것 같네요.”",
           "mood": "안도",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_seorak_spear_hall_frost",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "companion_baek_ryeon_talk_004",
@@ -1011,7 +1194,7 @@
           "speakerName": "백련",
           "line": "백련이 눈을 내리깐다. “말씀은 차갑지만... 버리지 않겠다는 쪽을 믿겠습니다.”",
           "mood": "서늘",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_seorak_spear_hall_frost",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "",
@@ -1023,7 +1206,7 @@
       "id": "companion_do_arin_talk",
       "title": "도아린 첫 대화",
       "location": "백두산 검각",
-      "backgroundId": "joseon_murim_game_map",
+      "backgroundId": "bg_hwawang_blade_training_ground",
       "startNodeId": "companion_do_arin_talk_001",
       "entries": [
         {
@@ -1031,7 +1214,7 @@
           "speakerId": "do_arin",
           "line": "“문주, 길게 말하면 불 꺼져. 저놈들 오면 내가 앞에서 확 열어버릴게.”",
           "mood": "호쾌",
-          "backgroundId": "",
+          "backgroundId": "bg_hwawang_blade_training_ground",
           "choices": []
         },
         {
@@ -1039,7 +1222,7 @@
           "speakerId": "park_sungjun",
           "line": "(어떻게 답할까?)",
           "mood": "선택",
-          "backgroundId": "",
+          "backgroundId": "bg_hwawang_blade_training_ground",
           "choices": [
             {
               "id": "t2a__.",
@@ -1078,7 +1261,7 @@
           "speakerId": "do_arin",
           "line": "도아린이 히죽 웃고 도집을 친다. “한 발. 음... 큰 한 발은 괜찮지?”",
           "mood": "씩씩",
-          "backgroundId": "",
+          "backgroundId": "bg_hwawang_blade_training_ground",
           "choices": []
         },
         {
@@ -1086,7 +1269,7 @@
           "speakerId": "do_arin",
           "line": "도아린의 눈이 반짝인다. “그 말, 내가 제일 좋아하는 종류야.”",
           "mood": "전의",
-          "backgroundId": "",
+          "backgroundId": "bg_hwawang_blade_training_ground",
           "choices": []
         }
       ],
@@ -1097,7 +1280,7 @@
           "speakerName": "도아린",
           "line": "“문주, 길게 말하면 불 꺼져. 저놈들 오면 내가 앞에서 확 열어버릴게.”",
           "mood": "호쾌",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_hwawang_blade_training_ground",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "companion_do_arin_talk_002",
@@ -1109,7 +1292,7 @@
           "speakerName": "박성준",
           "line": "(어떻게 답할까?)",
           "mood": "선택",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_hwawang_blade_training_ground",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "companion_do_arin_talk_003",
@@ -1156,7 +1339,7 @@
           "speakerName": "도아린",
           "line": "도아린이 히죽 웃고 도집을 친다. “한 발. 음... 큰 한 발은 괜찮지?”",
           "mood": "씩씩",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_hwawang_blade_training_ground",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "companion_do_arin_talk_004",
@@ -1168,7 +1351,7 @@
           "speakerName": "도아린",
           "line": "도아린의 눈이 반짝인다. “그 말, 내가 제일 좋아하는 종류야.”",
           "mood": "전의",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_hwawang_blade_training_ground",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "",
@@ -1180,7 +1363,7 @@
       "id": "companion_jin_seoyul_talk",
       "title": "진서율 첫 대화",
       "location": "백두산 검각",
-      "backgroundId": "joseon_murim_game_map",
+      "backgroundId": "bg_cheonroe_staff_dojo_gyeongseong",
       "startNodeId": "companion_jin_seoyul_talk_001",
       "entries": [
         {
@@ -1188,7 +1371,7 @@
           "speakerId": "jin_seoyul",
           "line": "“문주님, 저 물받이 보이죠? 저기에 번개 한 줄만 흘리면 감찰단이 춤추듯 넘어질걸요. 물론... 이론상요!”",
           "mood": "흥분",
-          "backgroundId": "",
+          "backgroundId": "bg_cheonroe_staff_dojo_gyeongseong",
           "choices": []
         }
       ],
@@ -1199,7 +1382,7 @@
           "speakerName": "진서율",
           "line": "“문주님, 저 물받이 보이죠? 저기에 번개 한 줄만 흘리면 감찰단이 춤추듯 넘어질걸요. 물론... 이론상요!”",
           "mood": "흥분",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_cheonroe_staff_dojo_gyeongseong",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "",
@@ -1211,7 +1394,7 @@
       "id": "companion_seo_a_talk",
       "title": "신서아 첫 대화",
       "location": "백두산 검각",
-      "backgroundId": "joseon_murim_game_map",
+      "backgroundId": "bg_hwajeop_flower_fan_courtyard",
       "startNodeId": "companion_seo_a_talk_001",
       "entries": [
         {
@@ -1219,7 +1402,7 @@
           "speakerId": "seo_a",
           "line": "“나도 할 수 있어요! 작다고 얕보면 안 돼요. 꽃바람은 원래 빈틈으로 쏙 들어가는 법이라구요!”",
           "mood": "밝음",
-          "backgroundId": "",
+          "backgroundId": "bg_hwajeop_flower_fan_courtyard",
           "choices": []
         }
       ],
@@ -1230,7 +1413,7 @@
           "speakerName": "신서아",
           "line": "“나도 할 수 있어요! 작다고 얕보면 안 돼요. 꽃바람은 원래 빈틈으로 쏙 들어가는 법이라구요!”",
           "mood": "밝음",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_hwajeop_flower_fan_courtyard",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "",
@@ -1242,7 +1425,7 @@
       "id": "companion_han_biyeon_talk",
       "title": "한비연 첫 대화",
       "location": "백두산 검각",
-      "backgroundId": "joseon_murim_game_map",
+      "backgroundId": "bg_heukryeon_shadow_cliff_temple",
       "startNodeId": "companion_han_biyeon_talk_001",
       "entries": [
         {
@@ -1250,7 +1433,7 @@
           "speakerId": "han_biyeon",
           "line": "“정면승부? 멋은 있지. 내 취향은 아니고. 나는 그림자길로 돌아가서, 저쪽 허리부터 톡 건드릴게.”",
           "mood": "낮게",
-          "backgroundId": "",
+          "backgroundId": "bg_heukryeon_shadow_cliff_temple",
           "choices": []
         }
       ],
@@ -1261,7 +1444,7 @@
           "speakerName": "한비연",
           "line": "“정면승부? 멋은 있지. 내 취향은 아니고. 나는 그림자길로 돌아가서, 저쪽 허리부터 톡 건드릴게.”",
           "mood": "낮게",
-          "backgroundId": "joseon_murim_game_map",
+          "backgroundId": "bg_heukryeon_shadow_cliff_temple",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "",

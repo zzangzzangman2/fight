@@ -29,12 +29,16 @@ public sealed class AuthoringContentManifest
 
     public AuthoringCharacter FindCharacter(string id)
     {
-        return characters.Find(character => character.id == id);
+        string normalizedId = AssetAliasResolver.NormalizeCharacterId(id);
+        return characters.Find(character => character.id == normalizedId ||
+                                           AssetAliasResolver.NormalizeCharacterId(character.id) == normalizedId);
     }
 
     public AuthoringMediaItem FindBackground(string id)
     {
-        return backgrounds.Find(background => background.id == id);
+        string normalizedId = AssetAliasResolver.NormalizeBackgroundId(id);
+        return backgrounds.Find(background => background.id == normalizedId ||
+                                           AssetAliasResolver.NormalizeBackgroundId(background.id) == normalizedId);
     }
 
     public AuthoringDialogueScene FindDialogueScene(string id)

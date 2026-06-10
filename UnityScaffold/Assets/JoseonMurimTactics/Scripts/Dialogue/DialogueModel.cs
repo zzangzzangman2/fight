@@ -75,6 +75,8 @@ public sealed class DialogueNode
     public string speakerName;
     public string speakerTitle;     // 이름 옆 소속/직함 태그(예: 백두천광검문 소문주). 비면 표시 생략.
     public string portraitResource; // Resources 경로의 전신/스탠딩 일러. 비면 표시 생략.
+    public string backgroundId;
+    public string backgroundResource;
     public string line;
     public List<DialogueChoice> choices = new List<DialogueChoice>();
     public string nextNodeId; // 선택지가 없을 때 다음 노드. null이면 종료.
