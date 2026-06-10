@@ -31,3 +31,4 @@ desktop.ini
 # Local runtime logs
 *.log
 *.tmp
+/work/

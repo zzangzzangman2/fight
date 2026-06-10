@@ -2,7 +2,7 @@
 setlocal
 
 set "PROJECT_DIR=%~dp0UnityScaffold"
-set "UNITY_EXE=C:\Program Files\Unity\Hub\Editor\6000.3.0f1\Editor\Unity.exe"
+set "UNITY_EXE=C:\Program Files\Unity\Hub\Editor\6000.4.9f1\Editor\Unity.exe"
 set "PLAYER_EXE=%PROJECT_DIR%\Builds\Windows\JoseonMurimTactics.exe"
 set "BUILD_LOG=%TEMP%\joseon-murim-game-build.log"
 set "BUILD_ONLY="
@@ -36,7 +36,7 @@ if not exist "%PROJECT_DIR%\Assets" (
 
 echo.
 echo [1/2] Building full game player from Boot scene...
-"%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_DIR%" -executeMethod JoseonMurimTactics.Editor.CharacterPlayerBuild.BuildWindowsGame -logFile "%BUILD_LOG%"
+"%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_DIR%" -buildTarget Win64 -executeMethod JoseonMurimTactics.Editor.CharacterPlayerBuild.BuildWindowsGame -logFile "%BUILD_LOG%"
 if errorlevel 1 (
   echo Windows full game build failed.
   echo Log: %BUILD_LOG%
