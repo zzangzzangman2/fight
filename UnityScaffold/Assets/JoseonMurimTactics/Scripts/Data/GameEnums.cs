@@ -25,6 +25,19 @@ public enum ActionSlot
     Free
 }
 
+
+public enum WeaponType
+{
+    Sword,
+    Spear,
+    Bow,
+    Fist,
+    Dagger,
+    Staff,
+    Fan,
+    Talisman,
+    HiddenWeapon
+}
 public enum TargetType
 {
     Self,

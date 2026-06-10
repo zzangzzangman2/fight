@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace JoseonMurimTactics
 {
@@ -11,6 +11,8 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite portraitSprite;
     public Sprite faceIconSprite;
     public RuntimeAnimatorController animatorController;
+    public WeaponType defaultWeaponType = WeaponType.Sword;
+    public WeaponAnimationSet weaponAnimationSet;
 
     [Header("Board Fit")]
     public float heightInTiles = 1.18f;
@@ -33,9 +35,14 @@ public sealed class CharacterVisualData : ScriptableObject
     public Color defeatedTint = new Color(0.55f, 0.55f, 0.55f, 0.68f);
 
     [Header("State Motion")]
+    public float moveSecondsPerTile = 0.24f;
+    public float moveSettleTime = 0.10f;
     public float moveLeanDegrees = 5f;
     public float attackLunge = 0.13f;
     public float skillPulseScale = 0.09f;
     public float hitRecoil = 0.10f;
+
+    public float WalkSecondsPerTile => weaponAnimationSet == null ? moveSecondsPerTile : weaponAnimationSet.walkSecondsPerTile;
+    public float MoveSettleTime => weaponAnimationSet == null ? moveSettleTime : weaponAnimationSet.moveSettleTime;
 }
 }

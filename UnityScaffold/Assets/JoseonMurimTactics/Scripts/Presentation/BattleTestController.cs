@@ -153,6 +153,12 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+
+        if (phaseTurn.IsPlayerPhase && activeUnit != null && HandleCombatMotionDebugKeys())
+        {
+            return;
+        }
+
         if (phaseTurn.IsPlayerPhase && Input.GetKeyDown(KeyCode.S))
         {
             ToggleScoutMode();
@@ -244,6 +250,94 @@ public sealed class BattleTestController : MonoBehaviour
         }
     }
 
+    private bool HandleCombatMotionDebugKeys()
+    {
+        if (activeUnit == null || activeUnit.defeated || activeUnit.view == null)
+        {
+            return false;
+        }
+
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            BattleTestTile tile = FindDebugMoveTile(activeUnit);
+            if (tile != null)
+            {
+                TryMove(activeUnit, tile);
+            }
+            else
+            {
+                AddLog("[MotionTest] No reachable move tile.");
+            }
+
+            return true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            BattleTestUnit target = FindNearestEnemy(activeUnit);
+            if (target != null)
+            {
+                SetCommandMode(BattleCommandMode.Attack);
+                TryAttack(activeUnit, target, false);
+            }
+            else
+            {
+                AddLog("[MotionTest] No attack target.");
+            }
+
+            return true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            BattleTestUnit target = FindNearestEnemy(activeUnit);
+            if (target != null)
+            {
+                SetCommandMode(BattleCommandMode.Skill);
+                TrySpecial(activeUnit, target);
+            }
+            else
+            {
+                AddLog("[MotionTest] No skill target.");
+            }
+
+            return true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            activeUnit.view.PlayHit();
+            AddLog("[MotionTest] Hit reaction.");
+            return true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            activeUnit.guarded = true;
+            activeUnit.view.PlayGuard();
+            AddLog("[MotionTest] Guard pose.");
+            return true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            activeUnit.hp = 0;
+            activeUnit.defeated = true;
+            activeUnit.view.SetDefeated(true);
+            RefreshUnits();
+            AddLog("[MotionTest] Defeat pose.");
+            return true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            activeUnit.view.PlayVictory();
+            AddLog("[MotionTest] Victory pose.");
+            return true;
+        }
+
+        return false;
+    }
     private void LateUpdate()
     {
         RefreshTileNameVisibility();
@@ -2814,6 +2908,12 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
+        if (Application.isPlaying)
+        {
+            StartCoroutine(RunAttackCommand(attacker, target, false, endAfterAttack));
+            return true;
+        }
+
         ResolveAttack(attacker, target, false);
         ResolvePostAttack(attacker, target, false);
         attacker.SpendMainAction();
@@ -2854,9 +2954,157 @@ public sealed class BattleTestController : MonoBehaviour
             attacker.view.PlayAttack();
         }
 
+        BattleTestAttackResult result = RollAttackResult(attacker, target, special);
+        ApplyAttackResultAtHitFrame(result);
+        return result.hit;
+    }
+
+    private struct BattleTestAttackResult
+    {
+        public BattleTestUnit attacker;
+        public BattleTestUnit target;
+        public bool special;
+        public string moveName;
+        public bool hit;
+        public bool critical;
+        public int damage;
+
+        public BattleTestAttackResult(BattleTestUnit attacker, BattleTestUnit target, bool special, string moveName,
+                                      bool hit, bool critical, int damage)
+        {
+            this.attacker = attacker;
+            this.target = target;
+            this.special = special;
+            this.moveName = moveName;
+            this.hit = hit;
+            this.critical = critical;
+            this.damage = damage;
+        }
+    }
+
+    private IEnumerator RunAttackCommand(BattleTestUnit attacker, BattleTestUnit target, bool special, bool endAfterAttack)
+    {
+        StopCameraPanRoutine();
+        busy = true;
+        if (special)
+        {
+            SpendSpecialResource(attacker);
+            PrepareSpecialBeforeAttack(attacker, target);
+        }
+
+        BattleTestAttackResult result = default;
+        yield return ExecuteAttackSequence(attacker, target, special, resolved => result = resolved);
+        if (special)
+        {
+            ApplySpecialStatusAfterHit(result);
+        }
+
+        ResolvePostAttack(attacker, target, special);
+        attacker.SpendMainAction();
+        RefreshHighlights();
+        RefreshUnits();
+
+        if (CheckBattleEnd())
+        {
+            busy = false;
+            yield break;
+        }
+
+        if (!AdvanceAfterAction(attacker))
+        {
+            if (endAfterAttack)
+            {
+                EndTurn();
+            }
+            else
+            {
+                RefreshHighlights();
+            }
+        }
+
+        busy = false;
+    }
+
+    private IEnumerator RunEnemyActionCommand(BattleTestUnit actor, BattleTestUnit target, bool special)
+    {
+        if (actor == null || target == null || actor.defeated || target.defeated)
+        {
+            yield break;
+        }
+
+        bool specialAttackLike = special && IsHostileAttackSpecial(actor.definition.specialEffect);
+        if (special)
+        {
+            SpendSpecialResource(actor);
+        }
+
+        if (specialAttackLike)
+        {
+            PrepareSpecialBeforeAttack(actor, target);
+            BattleTestAttackResult result = default;
+            yield return ExecuteAttackSequence(actor, target, true, resolved => result = resolved);
+            ApplySpecialStatusAfterHit(result);
+            ResolvePostAttack(actor, target, true);
+        }
+        else if (special)
+        {
+            actor.view.FaceToward(target.view.transform.position);
+            actor.view.PlaySkill();
+            bool attackLike = ApplySpecialEffect(actor, target, true);
+            if (attackLike)
+            {
+                ResolvePostAttack(actor, target, true);
+            }
+
+            yield return WaitActionSeconds(actor.view.CreateTimeline(true).Duration);
+        }
+        else
+        {
+            BattleTestAttackResult result = default;
+            yield return ExecuteAttackSequence(actor, target, false, resolved => result = resolved);
+            ResolvePostAttack(actor, target, false);
+        }
+
+        actor.SpendMainAction();
+        RefreshHighlights();
+        RefreshUnits();
+        CheckBattleEnd();
+    }
+
+    private IEnumerator ExecuteAttackSequence(BattleTestUnit attacker, BattleTestUnit target, bool special,
+                                              Action<BattleTestAttackResult> onResolved)
+    {
+        CombatActionTimeline timeline = attacker.view.CreateTimeline(special);
+        attacker.view.FaceToward(target.view.transform.position);
+        target.view.FaceToward(attacker.view.transform.position);
+        if (special)
+        {
+            attacker.view.PlaySkill();
+        }
+        else
+        {
+            attacker.view.PlayAttack();
+        }
+
+        BattleTestAttackResult result = RollAttackResult(attacker, target, special);
+        yield return WaitActionSeconds(timeline.VfxTime);
+        yield return WaitActionSeconds(Mathf.Max(0f, timeline.HitTime - timeline.VfxTime));
+        ApplyAttackResultAtHitFrame(result);
+        onResolved?.Invoke(result);
+
+        if (timeline.CameraShakeDuration > 0f && timeline.CameraShakeStrength > 0f)
+        {
+            yield return ShakeCamera(timeline.CameraShakeStrength, timeline.CameraShakeDuration);
+        }
+
+        yield return WaitActionSeconds(Mathf.Max(0f, timeline.Duration - timeline.HitTime) + timeline.RecoveryTime);
+    }
+
+    private BattleTestAttackResult RollAttackResult(BattleTestUnit attacker, BattleTestUnit target, bool special)
+    {
         BattleTestTile from = TileAt(attacker.cell);
         BattleTestTile to = TileAt(target.cell);
-        string moveName = special ? attacker.definition.specialName : "공격";
+        string moveName = special ? attacker.definition.specialName : "Attack";
         int d20 = random.Next(1, 21);
         int heightBonus = HeightAttackModifier(from, to);
         int attackBonus = attacker.definition.attackBonus + (special ? attacker.definition.specialAttackBonus : 0);
@@ -2864,45 +3112,142 @@ public sealed class BattleTestController : MonoBehaviour
         int defense = DefenseValue(target, to);
         bool critical = d20 == 20;
         bool hit = critical || (d20 != 1 && attackTotal >= defense);
+        int damage = 0;
 
-        if (!hit)
+        if (hit)
+        {
+            damage = random.Next(attacker.definition.damageMin, attacker.definition.damageMax + 1);
+            if (special)
+            {
+                damage += attacker.definition.specialPower;
+            }
+
+            if (critical)
+            {
+                damage *= 2;
+            }
+
+            damage += HeightDamageBonus(heightBonus);
+            if (target.guarded)
+            {
+                damage = Mathf.Max(1, Mathf.CeilToInt(damage * 0.55f));
+            }
+        }
+
+        return new BattleTestAttackResult(attacker, target, special, moveName, hit, critical, damage);
+    }
+
+    private void ApplyAttackResultAtHitFrame(BattleTestAttackResult result)
+    {
+        BattleTestUnit attacker = result.attacker;
+        BattleTestUnit target = result.target;
+        if (attacker == null || target == null || target.defeated)
+        {
+            return;
+        }
+
+        if (!result.hit)
         {
             target.view.PlayGuard();
-            AddLog($"[빗나감] {attacker.definition.displayName}의 {moveName} 실패.");
-            return false;
-        }
-
-        int damage = random.Next(attacker.definition.damageMin, attacker.definition.damageMax + 1);
-        if (special)
-        {
-            damage += attacker.definition.specialPower;
-        }
-
-        if (critical)
-        {
-            damage *= 2;
-        }
-
-        damage += HeightDamageBonus(heightBonus);
-        if (target.guarded)
-        {
-            damage = Mathf.Max(1, Mathf.CeilToInt(damage * 0.55f));
+            AddLog($"[Miss] {attacker.definition.displayName}: {result.moveName} missed at hit frame.");
+            return;
         }
 
         target.view.PlayHit();
-        target.hp = Mathf.Max(0, target.hp - damage);
-        AddLog($"[명중] {attacker.definition.displayName}: {moveName}! 피해 {damage}.");
+        target.hp = Mathf.Max(0, target.hp - result.damage);
+        AddLog($"[HitFrame] {attacker.definition.displayName}: {result.moveName}, damage {result.damage}.");
 
         if (target.hp == 0)
         {
             target.defeated = true;
             target.view.SetDefeated(true);
-            AddLog($"[전투불능] {target.definition.displayName} 쓰러짐.");
+            AddLog($"[Defeat] {target.definition.displayName} is down.");
         }
-
-        return true;
     }
 
+    private void PrepareSpecialBeforeAttack(BattleTestUnit actor, BattleTestUnit target)
+    {
+        if (actor == null || target == null)
+        {
+            return;
+        }
+
+        if (actor.definition.specialEffect == BattleSpecialEffect.BreakGuard)
+        {
+            target.guarded = false;
+            target.marked = true;
+        }
+    }
+
+    private void ApplySpecialStatusAfterHit(BattleTestAttackResult result)
+    {
+        BattleTestUnit actor = result.attacker;
+        BattleTestUnit target = result.target;
+        if (actor == null || target == null || !result.hit || target.defeated)
+        {
+            return;
+        }
+
+        switch (actor.definition.specialEffect)
+        {
+        case BattleSpecialEffect.Poison:
+            target.poisoned = true;
+            CreatePoisonSmoke(target.cell);
+            AddLog($"[Status] {target.definition.displayName} poisoned.");
+            break;
+        case BattleSpecialEffect.Freeze:
+            target.chilled = true;
+            FreezeWaterAround(target.cell);
+            AddLog($"[Status] {target.definition.displayName} chilled.");
+            break;
+        case BattleSpecialEffect.BreakGuard:
+            TryPushTarget(actor, target, 1, "palm strike");
+            break;
+        }
+    }
+
+    private void SpendSpecialResource(BattleTestUnit actor)
+    {
+        if (actor == null)
+        {
+            return;
+        }
+
+        actor.inner = Mathf.Max(0, actor.inner - actor.definition.specialCost);
+        actor.specialCooldownLeft = actor.definition.specialCooldown;
+    }
+
+    private IEnumerator WaitActionSeconds(float seconds)
+    {
+        float elapsed = 0f;
+        while (elapsed < seconds)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private IEnumerator ShakeCamera(float strength, float duration)
+    {
+        Camera camera = Camera.main;
+        if (camera == null || duration <= 0f || strength <= 0f)
+        {
+            yield break;
+        }
+
+        Vector3 basePosition = camera.transform.position;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float fade = 1f - Mathf.Clamp01(elapsed / duration);
+            Vector2 jitter = UnityEngine.Random.insideUnitCircle * strength * fade;
+            camera.transform.position = basePosition + new Vector3(jitter.x, jitter.y, 0f);
+            yield return null;
+        }
+
+        camera.transform.position = basePosition;
+    }
     private bool TrySpecial(BattleTestUnit actor, BattleTestUnit target)
     {
         if (!CanUseSpecial(actor))
@@ -2932,8 +3277,14 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
-        actor.inner -= actor.definition.specialCost;
-        actor.specialCooldownLeft = actor.definition.specialCooldown;
+        bool specialAttackLike = IsHostileAttackSpecial(actor.definition.specialEffect);
+        if (Application.isPlaying && specialAttackLike)
+        {
+            StartCoroutine(RunAttackCommand(actor, target, true, false));
+            return true;
+        }
+
+        SpendSpecialResource(actor);
         actor.SpendMainAction();
         actor.view.FaceToward(target.view.transform.position);
         actor.view.PlaySkill();
@@ -3337,12 +3688,12 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         unit.view.PlayMove();
-        const float duration = 0.16f;
+        float duration = unit.view.WalkSecondsPerTile();
         for (int i = 1; i < path.Count; i++)
         {
             Vector3 start = unit.view.transform.position;
             Vector3 target = UnitWorldPosition(path[i]);
-            unit.view.FaceToward(target);
+            unit.view.FaceDirection(new Vector2(target.x - start.x, target.y - start.y));
             float elapsed = 0f;
             while (elapsed < duration)
             {
@@ -3365,6 +3716,12 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         unit.view.PlayIdle();
+        float settleTime = unit.view.MoveSettleTime();
+        if (settleTime > 0f)
+        {
+            yield return new WaitForSeconds(settleTime);
+        }
+
         if (camera != null)
         {
             SetCameraFocusImmediate(camera, unit.view.transform.position, cameraTargetSize);
@@ -3422,18 +3779,12 @@ public sealed class BattleTestController : MonoBehaviour
                 }
             }
 
-            if (CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) &&
-                GridDistance(activeUnit.cell, target.cell) <= EffectiveSpecialRange(activeUnit) &&
-                (!IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
-                 EffectiveSpecialRange(activeUnit) <= 1 ||
-                 HasLineOfSight(activeUnit.cell, target.cell)))
-            {
-                TrySpecial(activeUnit, target);
-            }
-            else
-            {
-                TryAttack(activeUnit, target, false);
-            }
+            bool useSpecial = CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) &&
+                              GridDistance(activeUnit.cell, target.cell) <= EffectiveSpecialRange(activeUnit) &&
+                              (!IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
+                               EffectiveSpecialRange(activeUnit) <= 1 ||
+                               HasLineOfSight(activeUnit.cell, target.cell));
+            yield return RunEnemyActionCommand(activeUnit, target, useSpecial);
 
             if (battleOver)
             {
@@ -3450,6 +3801,35 @@ public sealed class BattleTestController : MonoBehaviour
         EndEnemyPhase();
     }
 
+    private BattleTestTile FindDebugMoveTile(BattleTestUnit unit)
+    {
+        Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
+        BattleTestTile best = null;
+        int bestScore = int.MinValue;
+
+        foreach (KeyValuePair<Vector2Int, int> pair in reachable)
+        {
+            if (pair.Key == unit.cell || UnitAt(pair.Key) != null)
+            {
+                continue;
+            }
+
+            BattleTestTile tile = TileAt(pair.Key);
+            if (tile == null || !tile.walkable)
+            {
+                continue;
+            }
+
+            int score = GridDistance(unit.cell, pair.Key) * 10 - pair.Value + tile.elevation;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = tile;
+            }
+        }
+
+        return best;
+    }
     private BattleTestTile FindBestMoveToward(BattleTestUnit unit, Vector2Int targetCell)
     {
         Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
@@ -6741,6 +7121,28 @@ public sealed class BattleTestUnitView : MonoBehaviour
         }
     }
 
+    public void FaceDirection(Vector2 direction)
+    {
+        if (visualController != null)
+        {
+            visualController.FaceDirection(direction);
+        }
+    }
+
+    public CombatActionTimeline CreateTimeline(bool special)
+    {
+        return visualController != null ? visualController.CreateTimeline(special) : new CombatActionTimeline(null, special);
+    }
+
+    public float WalkSecondsPerTile()
+    {
+        return visualController != null ? visualController.WalkSecondsPerTile() : 0.24f;
+    }
+
+    public float MoveSettleTime()
+    {
+        return visualController != null ? visualController.MoveSettleTime() : 0.10f;
+    }
     public void PlayIdle()
     {
         if (visualController != null)

@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd07477b8e191754d98c82a61606029e, type: 3}
+  m_Name: sword_motion_set
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.WeaponAnimationSet
+  weaponType: 0
+  idleClip: {fileID: 7400000, guid: 719748631b4c7fa4bb52ecb14419cf66, type: 2}
+  selectedIdleClip: {fileID: 7400000, guid: 5fb62f5ef25c40e44b4fb0913c675c62, type: 2}
+  walkClip: {fileID: 7400000, guid: efd5befa80dfcc143b8e5df2e67b9b3e, type: 2}
+  attackClip: {fileID: 7400000, guid: 3901e70983ef8c04285733f3a7ecae8d, type: 2}
+  attackAltClip: {fileID: 0}
+  skillClip: {fileID: 7400000, guid: 8028c2896b140e04989ea03dabaa5daf, type: 2}
+  guardClip: {fileID: 7400000, guid: 94335c0be6361b3428be76cdca4667bb, type: 2}
+  evadeClip: {fileID: 0}
+  hitClip: {fileID: 7400000, guid: ac429127ad306bb45a2a3b07f32fddcc, type: 2}
+  defeatClip: {fileID: 7400000, guid: f0a3d7df767e59a42a1fa5978d617e60, type: 2}
+  victoryClip: {fileID: 7400000, guid: cd817a9986bb1c849aa1731a8e051e90, type: 2}
+  actedClip: {fileID: 7400000, guid: 583c8fc95af6b6a47af60780b387618e, type: 2}
+  walkSecondsPerTile: 0.24
+  moveSettleTime: 0.1
+  attackDuration: 0.72
+  skillDuration: 1.12
+  attackHitTime: 0.4
+  skillHitTime: 0.58
+  attackVfxTime: 0.3
+  skillVfxTime: 0.44
+  recoveryTime: 0.18
+  attackVfxPrefab: {fileID: 3667903242392609744, guid: c7c69b357fd38eb41899a8d9a4edc7b8, type: 3}
+  skillVfxPrefab: {fileID: 4733982529933230619, guid: cff11aea19e1c9e45af3309e43e3ef6f, type: 3}
+  projectilePrefab: {fileID: 0}
+  weaponTrailPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 0}
+  guardVfxPrefab: {fileID: 3292566094183952568, guid: 06f99db070b025b4aa00badd1afe313b, type: 3}
+  footstepVfxPrefab: {fileID: 0}
+  attackMoveForwardDistance: 0.13
+  skillMoveForwardDistance: 0.2
+  cameraShakeStrength: 0.055
+  cameraShakeDuration: 0.11

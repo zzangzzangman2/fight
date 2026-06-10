@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace JoseonMurimTactics
 {
@@ -17,7 +17,7 @@ public enum CharacterBattleVisualState
 }
 
 [DisallowMultipleComponent]
-public sealed class CharacterVisualController : MonoBehaviour
+public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationEventReceiver
 {
     public CharacterVisualData visual;
     public SpriteRenderer bodyRenderer;
@@ -44,6 +44,8 @@ public sealed class CharacterVisualController : MonoBehaviour
     private static Sprite slashSprite;
     private static Sprite skillBurstSprite;
     private static Sprite guardRingSprite;
+    private static Sprite impactBurstSprite;
+    private static Sprite footstepDustSprite;
 
     private void Awake()
     {
@@ -123,11 +125,30 @@ public sealed class CharacterVisualController : MonoBehaviour
 
     public void FaceToward(Vector3 worldPosition)
     {
-        float dx = worldPosition.x - transform.position.x;
-        if (Mathf.Abs(dx) > 0.01f)
+        FaceDirection(new Vector2(worldPosition.x - transform.position.x, worldPosition.y - transform.position.y));
+    }
+
+    public void FaceDirection(Vector2 direction)
+    {
+        if (Mathf.Abs(direction.x) > 0.01f)
         {
-            facingSign = dx < 0f ? -1f : 1f;
+            facingSign = direction.x < 0f ? -1f : 1f;
         }
+    }
+
+    public CombatActionTimeline CreateTimeline(bool special)
+    {
+        return new CombatActionTimeline(visual == null ? null : visual.weaponAnimationSet, special);
+    }
+
+    public float WalkSecondsPerTile()
+    {
+        return visual == null ? 0.24f : Mathf.Max(0.05f, visual.WalkSecondsPerTile);
+    }
+
+    public float MoveSettleTime()
+    {
+        return visual == null ? 0.10f : Mathf.Max(0f, visual.MoveSettleTime);
     }
 
     public void PlayIdle()
@@ -153,7 +174,7 @@ public sealed class CharacterVisualController : MonoBehaviour
     {
         if (!defeated)
         {
-            PlayState(CharacterBattleVisualState.Attack, 0.34f);
+            PlayState(CharacterBattleVisualState.Attack, CreateTimeline(false).Duration);
         }
     }
 
@@ -161,7 +182,7 @@ public sealed class CharacterVisualController : MonoBehaviour
     {
         if (!defeated)
         {
-            PlayState(CharacterBattleVisualState.Skill, 0.58f);
+            PlayState(CharacterBattleVisualState.Skill, CreateTimeline(true).Duration);
         }
     }
 
@@ -169,7 +190,7 @@ public sealed class CharacterVisualController : MonoBehaviour
     {
         if (!defeated)
         {
-            PlayState(CharacterBattleVisualState.Hit, 0.28f);
+            PlayState(CharacterBattleVisualState.Hit, 0.30f);
         }
     }
 
@@ -341,10 +362,18 @@ public sealed class CharacterVisualController : MonoBehaviour
             localScale.x *= 1f - hop * 0.025f;
             localScale.y *= 1f + hop * 0.035f;
             rotation = -facingSign * visual.moveLeanDegrees;
+            if (Mathf.Abs(step) < 0.20f)
+            {
+                showEffect = true;
+                effectSprite = GetFootstepDustSprite();
+                effectPosition = new Vector3(-facingSign * 0.18f, 0.10f, -0.02f);
+                effectScale = Vector3.one * 0.42f;
+                effectColor = new Color(0.78f, 0.88f, 0.94f, 0.45f);
+            }
             break;
         case CharacterBattleVisualState.Attack:
             float lunge = Mathf.Sin(progress * Mathf.PI);
-            localPosition.x += facingSign * visual.attackLunge * lunge;
+            localPosition.x += facingSign * AttackLunge(false) * lunge;
             localPosition.y += 0.025f * lunge;
             localScale.x *= 1f + 0.06f * lunge;
             localScale.y *= 1f - 0.025f * lunge;
@@ -358,6 +387,7 @@ public sealed class CharacterVisualController : MonoBehaviour
             break;
         case CharacterBattleVisualState.Skill:
             float skill = Mathf.Sin(progress * Mathf.PI);
+            localPosition.x += facingSign * AttackLunge(true) * 0.55f * skill;
             localPosition.y += 0.06f * skill;
             localScale *= 1f + visual.skillPulseScale * skill;
             rotation = Mathf.Sin(progress * Mathf.PI * 2f) * 3.5f;
@@ -375,6 +405,11 @@ public sealed class CharacterVisualController : MonoBehaviour
             localPosition.y += 0.018f * hit;
             rotation = facingSign * 10f * hit;
             tint = Color.Lerp(visual.normalTint, visual.hitTint, hit);
+            showEffect = progress < 0.82f;
+            effectSprite = GetImpactBurstSprite();
+            effectPosition = new Vector3(0f, 0.58f, -0.03f);
+            effectScale = Vector3.one * (0.48f + 0.20f * hit);
+            effectColor = new Color(1f, 0.88f, 0.58f, 0.62f);
             break;
         case CharacterBattleVisualState.Guard:
             float guard = Mathf.Sin(progress * Mathf.PI);
@@ -495,6 +530,32 @@ public sealed class CharacterVisualController : MonoBehaviour
         selectionRenderer.sortingOrder = order - 1;
         bodyRenderer.sortingOrder = order;
         effectRenderer.sortingOrder = order + 1;
+    }
+
+    private float AttackLunge(bool special)
+    {
+        CombatActionTimeline timeline = CreateTimeline(special);
+        return Mathf.Max(0f, timeline.LungeDistance);
+    }
+
+    public void OnAttackHitFrame()
+    {
+    }
+
+    public void OnSkillHitFrame()
+    {
+    }
+
+    public void OnProjectileSpawnFrame()
+    {
+    }
+
+    public void OnFootstepFrame()
+    {
+    }
+
+    public void OnAnimationComplete()
+    {
     }
 
     private static bool IsTransientState(CharacterBattleVisualState state)
@@ -636,6 +697,72 @@ public sealed class CharacterVisualController : MonoBehaviour
             Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 96f);
         guardRingSprite.name = "GeneratedGuardRing";
         return guardRingSprite;
+    }
+
+    private static Sprite GetImpactBurstSprite()
+    {
+        if (impactBurstSprite != null)
+        {
+            return impactBurstSprite;
+        }
+
+        Texture2D texture = new Texture2D(96, 96, TextureFormat.RGBA32, false);
+        texture.name = "GeneratedImpactBurst";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            for (int x = 0; x < texture.width; x++)
+            {
+                float nx = ((x + 0.5f) / texture.width * 2f) - 1f;
+                float ny = ((y + 0.5f) / texture.height * 2f) - 1f;
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float star = Mathf.Clamp01((0.18f - Mathf.Abs(Mathf.Sin(angle * 5f) * r - 0.22f)) * 4.6f);
+                float core = Mathf.Clamp01((0.36f - r) * 3.2f);
+                float alpha = Mathf.Clamp01((star * (1f - r)) + (core * 0.72f));
+                texture.SetPixel(x, y, new Color(1f, 0.86f, 0.42f, alpha));
+            }
+        }
+
+        texture.Apply();
+        impactBurstSprite =
+            Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 96f);
+        impactBurstSprite.name = "GeneratedImpactBurst";
+        return impactBurstSprite;
+    }
+
+    private static Sprite GetFootstepDustSprite()
+    {
+        if (footstepDustSprite != null)
+        {
+            return footstepDustSprite;
+        }
+
+        Texture2D texture = new Texture2D(96, 48, TextureFormat.RGBA32, false);
+        texture.name = "GeneratedFootstepDust";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            for (int x = 0; x < texture.width; x++)
+            {
+                float nx = ((x + 0.5f) / texture.width * 2f) - 1f;
+                float ny = ((y + 0.5f) / texture.height * 2f) - 1f;
+                float left = Mathf.Clamp01((0.32f - ((nx + 0.35f) * (nx + 0.35f) + (ny * ny * 2.2f))) * 3.2f);
+                float right = Mathf.Clamp01((0.24f - ((nx - 0.22f) * (nx - 0.22f) + ((ny + 0.05f) * (ny + 0.05f) * 2.4f))) * 3.8f);
+                float alpha = Mathf.Clamp01((left + right) * Mathf.SmoothStep(-0.88f, 0.35f, ny));
+                texture.SetPixel(x, y, new Color(0.82f, 0.88f, 0.92f, alpha * 0.58f));
+            }
+        }
+
+        texture.Apply();
+        footstepDustSprite =
+            Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 96f);
+        footstepDustSprite.name = "GeneratedFootstepDust";
+        return footstepDustSprite;
     }
 }
 }
