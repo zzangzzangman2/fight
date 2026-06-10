@@ -42,12 +42,14 @@ public sealed class HubController : MonoBehaviour
     private RumorData rumorData;
     private string pendingOverwriteSlot;
     private GameSettings settings;
+    private Texture2D hubMapTexture;
 
     private void Awake()
     {
         root = GameRoot.EnsureExists();
         EnsureActionPoints();
         settings = GameSettings.Load();
+        hubMapTexture = Resources.Load<Texture2D>("UI/hub_free_time_map_v1");
         AddLog($"{root.Session.sectName}의 낡은 검각에 새벽빛이 들었다.");
         RefreshRumor("hub");
     }
@@ -84,13 +86,18 @@ public sealed class HubController : MonoBehaviour
         float top = 96f * s;
         float bottom = h - 52f * s;
         float menuW = 210f * s;
-        float rightW = 300f * s;
+        bool overviewMap = menu == HubMenu.Overview;
+        float rightW = overviewMap ? 0f : 300f * s;
+        float rightGap = overviewMap ? 0f : 16f * s;
         float centerX = margin + menuW + 16f * s;
-        float centerW = w - margin - rightW - 16f * s - centerX;
+        float centerW = w - margin - rightW - rightGap - centerX;
 
         DrawMenu(new Rect(margin, top, menuW, bottom - top), s);
         DrawContent(new Rect(centerX, top, centerW, bottom - top), s);
-        DrawCompanionSummary(new Rect(w - margin - rightW, top, rightW, bottom - top), s);
+        if (!overviewMap)
+        {
+            DrawCompanionSummary(new Rect(w - margin - rightW, top, rightW, bottom - top), s);
+        }
 
         string hint = log.Count > 0 ? log[log.Count - 1] : "메뉴를 선택하세요.";
         GUI.Label(new Rect(margin, bottom + 12f * s, w - margin * 2f, 28f * s), "• " + hint, UiTheme.SmallMuted);
@@ -196,54 +203,199 @@ public sealed class HubController : MonoBehaviour
 
     private void DrawOverview(Rect r, float s)
     {
-        GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "백두산 검각", UiTheme.Heading);
-        GUI.Label(new Rect(r.x, r.y + 38f * s, r.width, 44f * s),
-                  "하루가 지나면 기력이 회복된다. 수련, 일감, 복구를 골라 오늘의 자유시간을 쓴다.",
-                  UiTheme.Body);
+        GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "소백촌 자유시간 지도", UiTheme.Heading);
+        GUI.Label(new Rect(r.x, r.y + 38f * s, r.width, 34f * s),
+                  "장소 표지판을 눌러 오늘의 자유시간 행동, 마을 의뢰, 정비 메뉴로 이동한다.", UiTheme.Body);
 
-        Rect yard = new Rect(r.x, r.y + 92f * s, r.width, Mathf.Min(360f * s, r.height - 140f * s));
-        UiTheme.DrawFill(yard, UiTheme.HanjiPanelAlt);
-        GUI.Label(new Rect(yard.x + 18f * s, yard.y + 14f * s, yard.width - 36f * s, 30f * s),
-                  "검각 전경: 본당 / 연무장 / 소백촌 장터 / 의원 / 약방 / 서고 / 출정 깃발", UiTheme.SmallMuted);
-
-        Hotspot(yard, 0.44f, 0.13f, 0.22f, 0.13f, s, "출정 깃발", HubMenu.Sortie, "!");
-        Hotspot(yard, 0.08f, 0.38f, 0.22f, 0.14f, s, "연무장", HubMenu.Training, ActionsRemaining > 0 ? "" : "!");
-        Hotspot(yard, 0.38f, 0.42f, 0.24f, 0.15f, s, "검각 마루", HubMenu.Companions, CompanionBadge());
-        Hotspot(yard, 0.40f, 0.68f, 0.22f, 0.14f, s, "문파 재건", HubMenu.Sect, "!");
-        Hotspot(yard, 0.68f, 0.30f, 0.22f, 0.14f, s, "객잔", HubMenu.Tavern, "!");
-        Hotspot(yard, 0.68f, 0.56f, 0.22f, 0.14f, s, "의원", HubMenu.Infirmary, InjuredCount() > 0 ? "!" : "");
-        Hotspot(yard, 0.09f, 0.64f, 0.20f, 0.13f, s, "장터", HubMenu.Market, "");
-        Hotspot(yard, 0.12f, 0.16f, 0.20f, 0.13f, s, "서고", HubMenu.Library,
-                root.Flags.HasFlag(StoryFlags.FirstBattleWon) ? "!" : "");
-
-        float y = yard.yMax + 14f * s;
-        GUI.Label(new Rect(r.x, y, r.width * 0.55f, 28f * s), $"오늘 기력: {ActionsRemaining}/{MaxDailyActions}",
-                  UiTheme.Body);
-        GUI.Label(new Rect(r.x, y + 30f * s, r.width * 0.72f, 26f * s),
-                  $"수련도 {root.Flags.GetInt("growth:martial_xp")}   연구 {root.Flags.GetInt("growth:research_xp")}   문파 복구 {root.Flags.GetInt("sect:repair")}   마을 신뢰 {root.Flags.GetInt("sect:village_trust")}",
+        Rect status = new Rect(r.x, r.y + 78f * s, r.width, 38f * s);
+        UiTheme.DrawFill(status, new Color(0.010f, 0.014f, 0.014f, 0.62f));
+        GUI.Label(new Rect(status.x + 14f * s, status.y + 7f * s, status.width * 0.30f, 26f * s),
+                  $"제{DayIndex}일 · 기력 {ActionsRemaining}/{MaxDailyActions}", UiTheme.Body);
+        GUI.Label(new Rect(status.x + status.width * 0.30f, status.y + 8f * s, status.width * 0.54f, 24f * s),
+                  $"수련 {root.Flags.GetInt("growth:martial_xp")} · 연구 {root.Flags.GetInt("growth:research_xp")} · 문파 복구 {root.Flags.GetInt("sect:repair")} · 마을 신뢰 {root.Flags.GetInt("sect:village_trust")}",
                   UiTheme.SmallMuted);
-        if (GUI.Button(new Rect(r.x + r.width - 160f * s, y - 6f * s, 160f * s, 42f * s), "하루 보내기", UiTheme.Button))
+        if (GUI.Button(new Rect(status.xMax - 142f * s, status.y + 4f * s, 126f * s, 30f * s), "하루 보내기",
+                       UiTheme.Button))
         {
             BeginNextDay();
         }
+
+        Rect frame = new Rect(r.x, r.y + 128f * s, r.width, Mathf.Max(320f * s, r.height - 132f * s));
+        UiTheme.DrawPanel(frame, true);
+        Rect map = FitAspect(new Rect(frame.x + 10f * s, frame.y + 10f * s, frame.width - 20f * s,
+                                      frame.height - 20f * s), 16f / 9f);
+
+        if (hubMapTexture != null)
+        {
+            GUI.DrawTexture(map, hubMapTexture, ScaleMode.ScaleAndCrop);
+        }
+        else
+        {
+            DrawFallbackHubMap(map, s);
+        }
+
+        UiTheme.DrawFill(map, new Color(0.000f, 0.010f, 0.012f, 0.12f));
+        DrawMapCornerFrame(map, s);
+
+        if (MapHotspot(map, 0.045f, 0.200f, 0.185f, 0.092f, s, "출정문", "임무 게시판", "!",
+                       HubMenu.Sortie))
+        {
+            root.Flow.GoToMissionBoard();
+        }
+
+        if (MapHotspot(map, 0.055f, 0.060f, 0.225f, 0.092f, s, "뒷산 도적 소굴", "기력 1 · 반복 의뢰",
+                       ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
+        {
+            if (ActionsRemaining <= 0)
+            {
+                ShowToast("기력이 부족합니다.");
+                AddLog("도적 소굴 의뢰: 기력이 부족하다. 하루를 보내고 다시 행동할 수 있다.");
+            }
+            else
+            {
+                root.Flow.GoToBattlePrep(BanditLairBattleId);
+            }
+        }
+
+        if (MapHotspot(map, 0.505f, 0.382f, 0.175f, 0.092f, s, "연무장", "수련 · 기력 1",
+                       ActionsRemaining > 0 ? "" : "0", HubMenu.Training))
+        {
+            menu = HubMenu.Training;
+        }
+
+        if (MapHotspot(map, 0.365f, 0.165f, 0.190f, 0.092f, s, "검각 본당", "문파 재건", "!", HubMenu.Sect))
+        {
+            menu = HubMenu.Sect;
+        }
+
+        if (MapHotspot(map, 0.690f, 0.165f, 0.170f, 0.092f, s, "후산 정자", "동료 대화", CompanionBadge(),
+                       HubMenu.Companions))
+        {
+            menu = HubMenu.Companions;
+        }
+
+        if (MapHotspot(map, 0.090f, 0.535f, 0.160f, 0.092f, s, "객잔", "소문 · 일감", "!", HubMenu.Tavern))
+        {
+            menu = HubMenu.Tavern;
+        }
+
+        if (MapHotspot(map, 0.300f, 0.705f, 0.165f, 0.092f, s, "장터", "보급 구매", "", HubMenu.Market))
+        {
+            menu = HubMenu.Market;
+        }
+
+        if (MapHotspot(map, 0.560f, 0.735f, 0.170f, 0.092f, s, "서고", "무공 연구", root.Flags.HasFlag(StoryFlags.FirstBattleWon) ? "!" : "",
+                       HubMenu.Library))
+        {
+            menu = HubMenu.Library;
+        }
+
+        if (MapHotspot(map, 0.755f, 0.520f, 0.165f, 0.092f, s, "의원", "치료 · 약초", InjuredCount() > 0 ? "!" : "",
+                       HubMenu.Infirmary))
+        {
+            menu = HubMenu.Infirmary;
+        }
     }
 
-    private void Hotspot(Rect parent, float px, float py, float pw, float ph, float s, string label, HubMenu target,
-                         string badge)
+    private bool MapHotspot(Rect parent, float px, float py, float pw, float ph, float s, string title, string subtitle,
+                            string badge, HubMenu target)
     {
         Rect rect = new Rect(parent.x + parent.width * px, parent.y + parent.height * py, parent.width * pw,
                              parent.height * ph);
-        bool clicked = GUI.Button(rect, label, menu == target ? UiTheme.ButtonPrimary : UiTheme.Button);
+        rect.width = Mathf.Max(rect.width, 126f * s);
+        rect.height = Mathf.Max(rect.height, 44f * s);
+
+        bool hover = rect.Contains(Event.current.mousePosition);
+        bool selected = menu == target;
+        Color fill = selected
+                         ? new Color(0.090f, 0.165f, 0.140f, 0.86f)
+                         : hover ? new Color(0.070f, 0.082f, 0.074f, 0.86f)
+                                 : new Color(0.022f, 0.026f, 0.024f, 0.76f);
+        Color edge = selected || hover ? UiTheme.GoldBright : new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.72f);
+
+        UiTheme.DrawFill(new Rect(rect.x + 4f * s, rect.y + 5f * s, rect.width, rect.height),
+                         new Color(0f, 0f, 0f, 0.32f));
+        UiTheme.DrawFill(rect, fill);
+        DrawSimpleFrame(rect, Mathf.Max(1f, 1.3f * s), edge);
+
+        GUIStyle titleStyle = new GUIStyle(UiTheme.Body)
+        {
+            alignment = TextAnchor.UpperLeft,
+            fontStyle = FontStyle.Bold,
+            fontSize = Mathf.RoundToInt(15f * s),
+            clipping = TextClipping.Clip
+        };
+        titleStyle.normal.textColor = UiTheme.GoldBright;
+        GUIStyle subStyle = new GUIStyle(UiTheme.SmallMuted)
+        {
+            alignment = TextAnchor.UpperLeft,
+            fontSize = Mathf.RoundToInt(11f * s),
+            clipping = TextClipping.Clip
+        };
+        subStyle.normal.textColor = UiTheme.Ink;
+
+        GUI.Label(new Rect(rect.x + 12f * s, rect.y + 6f * s, rect.width - 34f * s, 20f * s), title, titleStyle);
+        GUI.Label(new Rect(rect.x + 12f * s, rect.y + 25f * s, rect.width - 24f * s, 17f * s), subtitle, subStyle);
+
         if (!string.IsNullOrEmpty(badge))
         {
-            Rect dot = new Rect(rect.xMax - 24f * s, rect.y + 6f * s, 18f * s, 18f * s);
+            Rect dot = new Rect(rect.xMax - 23f * s, rect.y + 5f * s, 18f * s, 18f * s);
             UiTheme.DrawSeal(dot, badge);
         }
 
-        if (clicked)
+        return GUI.Button(rect, GUIContent.none, GUIStyle.none);
+    }
+
+    private static Rect FitAspect(Rect bounds, float aspect)
+    {
+        float width = bounds.width;
+        float height = width / aspect;
+        if (height > bounds.height)
         {
-            menu = target;
+            height = bounds.height;
+            width = height * aspect;
         }
+
+        return new Rect(bounds.x + (bounds.width - width) * 0.5f, bounds.y + (bounds.height - height) * 0.5f, width,
+                        height);
+    }
+
+    private static void DrawSimpleFrame(Rect rect, float thick, Color color)
+    {
+        UiTheme.DrawFill(new Rect(rect.x, rect.y, rect.width, thick), color);
+        UiTheme.DrawFill(new Rect(rect.x, rect.yMax - thick, rect.width, thick), color);
+        UiTheme.DrawFill(new Rect(rect.x, rect.y, thick, rect.height), color);
+        UiTheme.DrawFill(new Rect(rect.xMax - thick, rect.y, thick, rect.height), color);
+    }
+
+    private static void DrawMapCornerFrame(Rect rect, float s)
+    {
+        DrawSimpleFrame(rect, Mathf.Max(1f, 1.2f * s), new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.56f));
+        float len = 28f * s;
+        float thick = Mathf.Max(2f, 2f * s);
+        Color gold = UiTheme.GoldBright;
+        UiTheme.DrawFill(new Rect(rect.x + 8f * s, rect.y + 8f * s, len, thick), gold);
+        UiTheme.DrawFill(new Rect(rect.x + 8f * s, rect.y + 8f * s, thick, len), gold);
+        UiTheme.DrawFill(new Rect(rect.xMax - 8f * s - len, rect.y + 8f * s, len, thick), gold);
+        UiTheme.DrawFill(new Rect(rect.xMax - 8f * s - thick, rect.y + 8f * s, thick, len), gold);
+        UiTheme.DrawFill(new Rect(rect.x + 8f * s, rect.yMax - 8f * s - thick, len, thick), gold);
+        UiTheme.DrawFill(new Rect(rect.x + 8f * s, rect.yMax - 8f * s - len, thick, len), gold);
+        UiTheme.DrawFill(new Rect(rect.xMax - 8f * s - len, rect.yMax - 8f * s - thick, len, thick), gold);
+        UiTheme.DrawFill(new Rect(rect.xMax - 8f * s - thick, rect.yMax - 8f * s - len, thick, len), gold);
+    }
+
+    private static void DrawFallbackHubMap(Rect map, float s)
+    {
+        UiTheme.DrawFill(map, new Color(0.315f, 0.365f, 0.285f, 1f));
+        UiTheme.DrawFill(new Rect(map.x, map.y, map.width, map.height * 0.30f), new Color(0.420f, 0.455f, 0.390f, 1f));
+        UiTheme.DrawFill(new Rect(map.x + map.width * 0.44f, map.y + map.height * 0.16f, map.width * 0.20f,
+                                  map.height * 0.16f), new Color(0.250f, 0.310f, 0.285f, 1f));
+        UiTheme.DrawFill(new Rect(map.x + map.width * 0.47f, map.y + map.height * 0.40f, map.width * 0.22f,
+                                  map.height * 0.18f), new Color(0.520f, 0.460f, 0.330f, 1f));
+        UiTheme.DrawFill(new Rect(map.x + map.width * 0.16f, map.y + map.height * 0.68f, map.width * 0.22f,
+                                  map.height * 0.14f), new Color(0.410f, 0.290f, 0.210f, 1f));
+        GUI.Label(new Rect(map.x + 18f * s, map.y + 16f * s, map.width - 36f * s, 28f * s),
+                  "hub_free_time_map_v1 리소스를 불러오지 못했습니다.", UiTheme.SmallMuted);
     }
 
     private void DrawSortie(Rect r, float s)
