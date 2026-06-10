@@ -1,5 +1,5 @@
-const GRID_W = 14;
-const GRID_H = 10;
+const GRID_W = 16;
+const GRID_H = 9;
 
 const statLabels = {
   strength: "근력",
@@ -11,39 +11,40 @@ const statLabels = {
 };
 
 const terrainDefs = {
-  C: { id: "courtyard", label: "폐사당 마당", short: "마", moveCost: 1, defense: 0, avoid: 0, cover: "없음", height: 0, walkable: true, tags: [] },
-  R: { id: "road", label: "흙길", short: "길", moveCost: 1, defense: 0, avoid: 0, cover: "없음", height: 0, walkable: true, tags: ["road"] },
-  B: { id: "bamboo", label: "대나무숲", short: "죽", moveCost: 2, defense: 1, avoid: 2, cover: "약한 엄폐", height: 0, walkable: true, tags: ["bamboo", "cover"] },
-  F: { id: "forest", label: "갈대숲", short: "숲", moveCost: 2, defense: 0, avoid: 2, cover: "약한 엄폐", height: 0, walkable: true, tags: ["cover", "stealth"] },
-  W: { id: "water", label: "압록강 여울", short: "수", moveCost: 3, defense: 0, avoid: -1, cover: "없음", height: 0, walkable: true, hazard: "slippery", tags: ["water"] },
-  P: { id: "bridge", label: "낡은 나무다리", short: "교", moveCost: 1, defense: 0, avoid: 0, cover: "없음", height: 0, walkable: true, tags: ["bridge"] },
-  H: { id: "roof", label: "누각 지붕", short: "지", moveCost: 1, defense: 1, avoid: 1, cover: "약한 엄폐", height: 1, walkable: true, tags: ["high", "roof"] },
-  V: { id: "cliff", label: "벼랑 능선", short: "벼", moveCost: 2, defense: 2, avoid: 0, cover: "약한 엄폐", height: 2, walkable: true, hazard: "fall", tags: ["high", "cliff"] },
-  M: { id: "ruin", label: "무너진 담장", short: "벽", moveCost: 99, defense: 3, avoid: 0, cover: "강한 엄폐", height: 1, walkable: false, tags: ["block", "ruin"] },
-  S: { id: "shrine", label: "폐사당 제단", short: "단", moveCost: 1, defense: 1, avoid: 1, cover: "약한 엄폐", height: 1, walkable: true, tags: ["shrine"] },
+  C: { id: "courtyard", label: "관문 앞마당", short: "마", moveCost: 1, defense: 0, avoid: 0, cover: "없음", height: 0, walkable: true, tags: [] },
+  R: { id: "road", label: "산길", short: "길", moveCost: 1, defense: 0, avoid: 0, cover: "없음", height: 0, walkable: true, tags: ["road"] },
+  B: { id: "bamboo", label: "설죽림", short: "죽", moveCost: 2, defense: 1, avoid: 2, cover: "약한 엄폐", height: 0, walkable: true, tags: ["bamboo", "cover"] },
+  F: { id: "forest", label: "솔숲 풀밭", short: "숲", moveCost: 2, defense: 0, avoid: 2, cover: "약한 엄폐", height: 0, walkable: true, tags: ["cover", "stealth"] },
+  W: { id: "water", label: "백두 계류", short: "수", moveCost: 3, defense: 0, avoid: -1, cover: "없음", height: 0, walkable: true, hazard: "slippery", tags: ["water"] },
+  P: { id: "bridge", label: "돌다리", short: "교", moveCost: 1, defense: 0, avoid: 0, cover: "없음", height: 0, walkable: true, tags: ["bridge"] },
+  H: { id: "roof", label: "너럭바위", short: "암", moveCost: 1, defense: 1, avoid: 1, cover: "약한 엄폐", height: 1, walkable: true, tags: ["high", "roof"] },
+  V: { id: "cliff", label: "벼랑 바위", short: "벼", moveCost: 2, defense: 2, avoid: 0, cover: "약한 엄폐", height: 2, walkable: true, hazard: "fall", tags: ["high", "cliff"] },
+  M: { id: "ruin", label: "깎아지른 암벽", short: "벽", moveCost: 99, defense: 3, avoid: 0, cover: "강한 엄폐", height: 1, walkable: false, tags: ["block", "ruin"] },
+  S: { id: "shrine", label: "설문 제단", short: "단", moveCost: 1, defense: 1, avoid: 1, cover: "약한 엄폐", height: 1, walkable: true, tags: ["shrine"] },
   E: { id: "fire", label: "불붙은 잔해", short: "화", moveCost: 2, defense: 0, avoid: -1, cover: "없음", height: 0, walkable: true, hazard: "fire", tags: ["fire"] }
 };
 
+// 백두산 설문 관문전 — baekdu_snow_gate_srpg_ground.png(16:9) 일러스트의 지형을 16x9 그리드로 옮긴 레이아웃.
+// 좌측 설죽림(B), 좌상단 설벽(M/V), 중앙 계류(W)와 돌다리(P), 상단 설문/제단(S), 우측 대강(W)과 벼랑(V).
 const mapRows = [
-  "BBBBRRHHHHVVVV",
-  "BBBRRCHHHRRVVV",
-  "FBBRCCSSCRRCCC",
-  "FFRCCCCCCRRCCC",
-  "RRRCCMMMMCCCCC",
-  "CCCWWPWWCCCEEE",
-  "CCFWWPWWCCCRRR",
-  "CCFFRPRRCCCRRR",
-  "CCCCRRRCCBBBBB",
-  "CCCRRRRCCCCBBB"
+  "MVVVCCCCCCSSSMMM",
+  "VBBFCCCCCCCRRRMM",
+  "BBBFFCCCCCCRVVVM",
+  "BBBFFCCCRRRCVVVW",
+  "BBWWWWWPCCCCVVWW",
+  "BFFCCCCRWWWVVWWW",
+  "FFCCRRRRCCVVWWWW",
+  "FFCRRCCFFCVWWWWW",
+  "CCRRCCCFFVVWWWWW"
 ];
 
 const terrainProps = [
-  { id: "incense", x: 6, y: 2, label: "제단 향로", icon: "煙", stat: "insight", dc: 12, kind: "smoke", desc: "향로를 뒤집어 2라운드 연막과 강엄폐를 만든다." },
-  { id: "lanternNorth", x: 10, y: 2, label: "붉은 등불", icon: "燈", stat: "agility", dc: 12, kind: "fire", desc: "등불을 베어 주변에 화염 지대를 만든다." },
-  { id: "bridgeRope", x: 5, y: 6, label: "다리 밧줄", icon: "索", stat: "strength", dc: 13, kind: "bridge", desc: "다리 일부를 끊어 통로를 제한하고 위의 적을 물가로 떨어뜨린다." },
-  { id: "wineCart", x: 9, y: 5, label: "술수레", icon: "車", stat: "strength", dc: 11, kind: "cart", desc: "술수레를 밀어 강엄폐를 만들고 인접 적을 노출시킨다." },
-  { id: "bambooTrap", x: 2, y: 1, label: "휘어진 대나무", icon: "竹", stat: "agility", dc: 13, kind: "bambooTrap", desc: "대나무를 튕겨 지나가는 적을 넘어뜨릴 덫을 만든다." },
-  { id: "shrineBell", x: 7, y: 2, label: "사당 종", icon: "鐘", stat: "spirit", dc: 12, kind: "bell", desc: "종을 울려 조선 문파의 기세를 끌어올린다." }
+  { id: "incense", x: 10, y: 2, label: "제단 향로", icon: "煙", stat: "insight", dc: 12, kind: "smoke", desc: "향로를 뒤집어 2라운드 연막과 강엄폐를 만든다." },
+  { id: "lanternNorth", x: 13, y: 4, label: "붉은 등불", icon: "燈", stat: "agility", dc: 12, kind: "fire", desc: "벼랑의 등불을 베어 주변에 화염 지대를 만든다." },
+  { id: "bridgeRope", x: 7, y: 4, label: "다리 밧줄", icon: "索", stat: "strength", dc: 13, kind: "bridge", desc: "돌다리 밧줄을 끊어 통로를 제한하고 위의 적을 계류로 떨어뜨린다." },
+  { id: "wineCart", x: 9, y: 3, label: "술수레", icon: "車", stat: "strength", dc: 11, kind: "cart", desc: "술수레를 밀어 강엄폐를 만들고 인접 적을 노출시킨다." },
+  { id: "bambooTrap", x: 1, y: 3, label: "휘어진 대나무", icon: "竹", stat: "agility", dc: 13, kind: "bambooTrap", desc: "설죽을 튕겨 지나가는 적을 넘어뜨릴 덫을 만든다." },
+  { id: "shrineBell", x: 11, y: 0, label: "설문 종", icon: "鐘", stat: "spirit", dc: 12, kind: "bell", desc: "관문 종을 울려 조선 문파의 기세를 끌어올린다." }
 ];
 
 const skills = {
@@ -202,41 +203,41 @@ const unitTemplates = [
     id: "park", name: "박성준", short: "성준", faction: "ally", role: "해동문 문주 / 풍류검",
     hp: 48, inner: 7, guard: 16, movement: 5, level: 3, morale: 68,
     stats: { strength: 13, agility: 15, innerPower: 13, spirit: 12, insight: 12, charm: 18 },
-    skills: ["parkGentlemanSword", "parkMoonCharm", "parkCommand", "parkStep"], appearance: appearances.park, x: 1, y: 8
+    skills: ["parkGentlemanSword", "parkMoonCharm", "parkCommand", "parkStep"], appearance: appearances.park, x: 2, y: 8
   },
   {
     id: "yun", name: "윤서화", short: "서화", faction: "ally", role: "예검 반격수",
     hp: 38, inner: 8, guard: 17, movement: 6, level: 3, morale: 70,
     stats: { strength: 11, agility: 18, innerPower: 14, spirit: 14, insight: 17, charm: 11 },
-    skills: ["yunMoonReturn", "yunMeasureLine", "yunCounter"], appearance: appearances.yun, x: 2, y: 8
+    skills: ["yunMoonReturn", "yunMeasureLine", "yunCounter"], appearance: appearances.yun, x: 3, y: 8
   },
   {
     id: "baek", name: "백련", short: "백련", faction: "ally", role: "빙백심법 / 치유",
     hp: 34, inner: 10, guard: 14, movement: 5, level: 3, morale: 64,
     stats: { strength: 9, agility: 12, innerPower: 18, spirit: 16, insight: 14, charm: 13 },
-    skills: ["baekIcePalm", "baekHeal", "baekFreezeFord"], appearance: appearances.baek, x: 0, y: 9
+    skills: ["baekIcePalm", "baekHeal", "baekFreezeFord"], appearance: appearances.baek, x: 1, y: 8
   },
   {
     id: "han", name: "한비연", short: "비연", faction: "ally", role: "흑립방 암기 / 독공",
     hp: 32, inner: 7, guard: 15, movement: 6, level: 3, morale: 62,
     stats: { strength: 10, agility: 19, innerPower: 13, spirit: 12, insight: 16, charm: 10 },
-    skills: ["hanPoisonNeedle", "hanStealth", "hanNeedleRain"], appearance: appearances.han, x: 3, y: 9
+    skills: ["hanPoisonNeedle", "hanStealth", "hanNeedleRain"], appearance: appearances.han, x: 1, y: 7
   },
   {
     id: "arin", name: "도아린", short: "아린", faction: "ally", role: "파산권 / 비살상 제압",
     hp: 44, inner: 6, guard: 15, movement: 5, level: 3, morale: 66,
     stats: { strength: 18, agility: 12, innerPower: 14, spirit: 15, insight: 11, charm: 12 },
-    skills: ["arinMountainPalm", "arinIronShoulder", "arinQinna"], appearance: appearances.arin, x: 1, y: 7
+    skills: ["arinMountainPalm", "arinIronShoulder", "arinQinna"], appearance: appearances.arin, x: 4, y: 8
   },
 
-  { id: "envoy", name: "사절 주홍문", short: "사절", faction: "enemy", role: "정도맹 문화강요 사절", hp: 44, inner: 6, guard: 17, movement: 5, level: 3, morale: 78, stats: { strength: 12, agility: 16, innerPower: 14, spirit: 15, insight: 14, charm: 17 }, skills: ["enemyOrthodoxSword", "enemyEdict"], appearance: appearances.enemyOfficer, x: 10, y: 1 },
-  { id: "swordA", name: "청성검수 갑", short: "검갑", faction: "enemy", role: "검진 전열", hp: 32, inner: 3, guard: 15, movement: 5, level: 2, morale: 58, stats: { strength: 13, agility: 15, innerPower: 11, spirit: 12, insight: 12, charm: 9 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 9, y: 2 },
-  { id: "swordB", name: "청성검수 을", short: "검을", faction: "enemy", role: "검진 후열", hp: 32, inner: 3, guard: 15, movement: 5, level: 2, morale: 58, stats: { strength: 13, agility: 15, innerPower: 11, spirit: 12, insight: 12, charm: 9 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 12, y: 3 },
-  { id: "palm", name: "복호장 고수", short: "장법", faction: "enemy", role: "밀치기 장법가", hp: 40, inner: 4, guard: 15, movement: 5, level: 2, morale: 64, stats: { strength: 17, agility: 12, innerPower: 13, spirit: 13, insight: 11, charm: 9 }, skills: ["enemyPalm"], appearance: { ...appearances.enemyOfficer, weapon: "fist", build: "sturdy" }, x: 9, y: 6 },
-  { id: "scribe", name: "예법기록관", short: "기록", faction: "enemy", role: "기세 교란", hp: 27, inner: 4, guard: 14, movement: 4, level: 2, morale: 55, stats: { strength: 9, agility: 12, innerPower: 12, spirit: 14, insight: 16, charm: 15 }, skills: ["enemyTaunt"], appearance: { ...appearances.enemyOfficer, weapon: "scroll", hairStyle: "cap" }, x: 13, y: 2 },
-  { id: "archer", name: "사천궁수", short: "궁수", faction: "enemy", role: "고지 궁수", hp: 28, inner: 3, guard: 14, movement: 5, level: 2, morale: 55, stats: { strength: 10, agility: 16, innerPower: 10, spirit: 12, insight: 13, charm: 9 }, skills: ["enemyArrow"], appearance: appearances.enemyScout, x: 8, y: 0 },
-  { id: "guardA", name: "정도맹 호위", short: "호위", faction: "enemy", role: "다리 봉쇄", hp: 30, inner: 3, guard: 15, movement: 4, level: 2, morale: 56, stats: { strength: 14, agility: 13, innerPower: 11, spirit: 12, insight: 11, charm: 8 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 8, y: 4 },
-  { id: "guardB", name: "정도맹 추격대", short: "추격", faction: "enemy", role: "후방 압박", hp: 30, inner: 3, guard: 15, movement: 5, level: 2, morale: 56, stats: { strength: 14, agility: 14, innerPower: 11, spirit: 12, insight: 11, charm: 8 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 12, y: 8 }
+  { id: "envoy", name: "사절 주홍문", short: "사절", faction: "enemy", role: "정도맹 문화강요 사절", hp: 44, inner: 6, guard: 17, movement: 5, level: 3, morale: 78, stats: { strength: 12, agility: 16, innerPower: 14, spirit: 15, insight: 14, charm: 17 }, skills: ["enemyOrthodoxSword", "enemyEdict"], appearance: appearances.enemyOfficer, x: 11, y: 1 },
+  { id: "swordA", name: "청성검수 갑", short: "검갑", faction: "enemy", role: "검진 전열", hp: 32, inner: 3, guard: 15, movement: 5, level: 2, morale: 58, stats: { strength: 13, agility: 15, innerPower: 11, spirit: 12, insight: 12, charm: 9 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 9, y: 1 },
+  { id: "swordB", name: "청성검수 을", short: "검을", faction: "enemy", role: "검진 후열", hp: 32, inner: 3, guard: 15, movement: 5, level: 2, morale: 58, stats: { strength: 13, agility: 15, innerPower: 11, spirit: 12, insight: 12, charm: 9 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 12, y: 1 },
+  { id: "palm", name: "복호장 고수", short: "장법", faction: "enemy", role: "밀치기 장법가", hp: 40, inner: 4, guard: 15, movement: 5, level: 2, morale: 64, stats: { strength: 17, agility: 12, innerPower: 13, spirit: 13, insight: 11, charm: 9 }, skills: ["enemyPalm"], appearance: { ...appearances.enemyOfficer, weapon: "fist", build: "sturdy" }, x: 8, y: 3 },
+  { id: "scribe", name: "예법기록관", short: "기록", faction: "enemy", role: "기세 교란", hp: 27, inner: 4, guard: 14, movement: 4, level: 2, morale: 55, stats: { strength: 9, agility: 12, innerPower: 12, spirit: 14, insight: 16, charm: 15 }, skills: ["enemyTaunt"], appearance: { ...appearances.enemyOfficer, weapon: "scroll", hairStyle: "cap" }, x: 10, y: 1 },
+  { id: "archer", name: "사천궁수", short: "궁수", faction: "enemy", role: "고지 궁수", hp: 28, inner: 3, guard: 14, movement: 5, level: 2, morale: 55, stats: { strength: 10, agility: 16, innerPower: 10, spirit: 12, insight: 13, charm: 9 }, skills: ["enemyArrow"], appearance: appearances.enemyScout, x: 12, y: 2 },
+  { id: "guardA", name: "정도맹 호위", short: "호위", faction: "enemy", role: "돌다리 봉쇄", hp: 30, inner: 3, guard: 15, movement: 4, level: 2, morale: 56, stats: { strength: 14, agility: 13, innerPower: 11, spirit: 12, insight: 11, charm: 8 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 8, y: 4 },
+  { id: "guardB", name: "정도맹 추격대", short: "추격", faction: "enemy", role: "강변 압박", hp: 30, inner: 3, guard: 15, movement: 5, level: 2, morale: 56, stats: { strength: 14, agility: 14, innerPower: 11, spirit: 12, insight: 11, charm: 8 }, skills: ["enemyOrthodoxSword"], appearance: appearances.enemyOfficer, x: 11, y: 4 }
 ];
 
 const state = {
@@ -258,6 +259,9 @@ const state = {
   preMove: null,
   showDanger: false,
   battleOver: false,
+  showIntro: true,
+  outcome: null,
+  resultDismissed: false,
   enemyQueue: [],
   log: []
 };
@@ -265,7 +269,7 @@ const state = {
 const els = {};
 
 document.addEventListener("DOMContentLoaded", () => {
-  ["battlefield", "phaseLabel", "roundCounter", "dangerToggle", "endPhaseButton", "restartButton", "selectedPanel", "actionBar", "forecastPanel", "tilePanel", "allyRoster", "enemyRoster", "seedLabel", "combatLog"].forEach((id) => {
+  ["battlefield", "phaseLabel", "roundCounter", "phaseCard", "dangerToggle", "endPhaseButton", "restartButton", "briefingButton", "guidePanel", "phaseBanner", "introOverlay", "resultOverlay", "selectedPanel", "actionBar", "forecastPanel", "tilePanel", "allyRoster", "enemyRoster", "seedLabel", "combatLog"].forEach((id) => {
     els[id] = document.getElementById(id);
   });
 
@@ -276,6 +280,10 @@ document.addEventListener("DOMContentLoaded", () => {
   els.dangerToggle.addEventListener("click", () => {
     state.showDanger = !state.showDanger;
     els.dangerToggle.setAttribute("aria-pressed", String(state.showDanger));
+    render();
+  });
+  els.briefingButton.addEventListener("click", () => {
+    state.showIntro = true;
     render();
   });
 
@@ -301,11 +309,14 @@ function resetBattle(seed) {
   state.preMove = null;
   state.showDanger = false;
   state.battleOver = false;
+  state.showIntro = true;
+  state.outcome = null;
+  state.resultDismissed = false;
   state.enemyQueue = [];
   state.log = [];
   els.dangerToggle.setAttribute("aria-pressed", "false");
-  logEvent("System", `seed ${seed}. 압록강 폐사당 전투 개시.`, "system");
-  logEvent("World", "중원정파 사절단이 조선 문파에게 중원식 말과 예법을 강요한다. 해동문은 조선 문파 연합의 명분을 걸고 맞선다.", "phase");
+  logEvent("System", `seed ${seed}. 백두산 설문 관문전 개시.`, "system");
+  logEvent("World", "중원 감찰단이 백두산 설문(雪門)을 넘어 조선 문파에 중원식 말과 예법을 강요하려 한다. 해동문이 관문 앞을 막아선다.", "phase");
   startPlayerPhase();
 }
 
@@ -368,6 +379,7 @@ function startPlayerPhase() {
     tickUnitStart(unit);
   });
   logEvent("Phase", `${state.round}라운드 아군 페이즈 시작. 원하는 아군을 클릭해 이동/공격하세요.`, "phase");
+  showPhaseBanner(`아군 페이즈 · ${state.round}턴`, "player");
   render();
 }
 
@@ -377,6 +389,7 @@ function endPlayerPhase() {
   state.phase = "enemy";
   state.enemyQueue = livingUnits("enemy").slice();
   logEvent("Phase", `${state.round}라운드 적 페이즈 시작.`, "phase");
+  showPhaseBanner("적 페이즈", "enemy");
   render();
   window.setTimeout(processEnemyQueue, 420);
 }
@@ -737,7 +750,13 @@ function finishUnitAction(unit) {
   state.preMove = null;
   checkBattleEnd();
   if (!state.battleOver && livingUnits("ally").every((ally) => ally.acted || ally.defeated || ally.surrendered)) {
-    logEvent("Phase", "모든 아군이 행동했습니다. 페이즈 종료 버튼을 누르거나 자동으로 적 페이즈가 시작됩니다.", "phase");
+    logEvent("Phase", "모든 아군이 행동했습니다. 잠시 후 적 페이즈가 자동으로 시작됩니다.", "phase");
+    window.setTimeout(() => {
+      const allies = livingUnits("ally");
+      if (state.phase === "player" && !state.battleOver && !state.showIntro && allies.length && allies.every((ally) => ally.acted || ally.defeated || ally.surrendered)) {
+        endPlayerPhase();
+      }
+    }, 750);
   }
 }
 
@@ -885,6 +904,7 @@ function resolveSocial(actor, target, skill) {
     if (target.morale <= 12 && target.id === "envoy") {
       livingUnits("enemy").forEach((enemy) => { enemy.surrendered = true; });
       state.battleOver = true;
+      state.outcome = "victory";
       logEvent("Victory", "사절 주홍문이 체면을 접고 철수를 받아들였다. 조선 문파 연합의 첫 승리.", "hit");
     }
   } else {
@@ -991,18 +1011,18 @@ function executeTerrainInteraction(actor, prop) {
 
   if (prop.kind === "bridge") {
     if (check.success) {
-      [getTile(5, 5), getTile(5, 6)].forEach((t) => {
+      [getTile(7, 4)].forEach((t) => {
         if (!t) return;
         t.code = "W";
         Object.assign(t, structuredClone(terrainDefs.W), { x: t.x, y: t.y, code: "W", smoke: t.smoke, frozen: 0, burning: 0, trap: t.trap });
       });
-      livingUnits("enemy").filter((unit) => unit.position.x === 5 && [5, 6].includes(unit.position.y)).forEach((unit) => {
+      livingUnits("enemy").filter((unit) => unit.position.x === 7 && unit.position.y === 4).forEach((unit) => {
         const damage = rollDice("1d6").total;
         applyDamage(unit, damage, actor);
         unit.breakGauge = clamp(unit.breakGauge + 10, 0, 100);
         logEvent("Terrain", `${unit.name} 다리 붕괴 피해 ${damage}, 파훼 +10.`, "hit");
       });
-      logEvent("Terrain", "나무다리 일부가 끊어져 물가가 됨.", "hit");
+      logEvent("Terrain", "돌다리가 무너져 계류가 됨.", "hit");
     }
     return;
   }
@@ -1314,9 +1334,11 @@ function checkBattleEnd() {
   const enemiesAlive = livingUnits("enemy").length > 0;
   if (!alliesAlive) {
     state.battleOver = true;
+    state.outcome = "defeat";
     logEvent("Defeat", "해동문 전열 붕괴.", "miss");
   } else if (!enemiesAlive) {
     state.battleOver = true;
+    state.outcome = "victory";
     logEvent("Victory", "중원정파 사절단 제압 완료. 조선 문파 연합의 명분이 세워졌다.", "hit");
   }
   return state.battleOver;
@@ -1325,19 +1347,155 @@ function checkBattleEnd() {
 function render() {
   renderBattlefield();
   renderTop();
+  renderGuide();
   renderSelectedPanel();
   renderActionBar();
   renderForecast();
   renderTilePanel();
   renderRoster();
   renderLog();
+  renderOverlays();
 }
 
 function renderTop() {
   els.phaseLabel.textContent = state.battleOver ? "Battle End" : state.phase === "player" ? "Player Phase" : "Enemy Phase";
+  els.phaseCard.className = `phase-card ${state.battleOver ? "end" : state.phase}`;
   els.roundCounter.textContent = String(state.round);
   els.seedLabel.textContent = `seed ${state.seed}`;
   els.endPhaseButton.disabled = state.phase !== "player" || state.battleOver;
+}
+
+const guideSteps = [
+  { label: "아군 선택" },
+  { label: "이동" },
+  { label: "명령" },
+  { label: "대상 선택" }
+];
+
+function renderGuide() {
+  let kind = "player";
+  let stepIndex = -1;
+  let hint = "";
+  if (state.battleOver) {
+    kind = "end";
+    hint = state.outcome === "victory" ? "승리! 새 전투 버튼으로 다시 시작할 수 있습니다." : "패배… 새 전투 버튼으로 다시 도전하세요.";
+  } else if (state.phase !== "player") {
+    kind = "enemy";
+    hint = "적 페이즈 진행 중 — 중원 사절단이 행동하고 있습니다.";
+  } else {
+    stepIndex = { select: 0, move: 1, command: 2, target: 3, interact: 3 }[state.mode] ?? 0;
+    hint = {
+      select: "행동할 아군을 클릭하세요. 아래 부대 명단을 눌러도 선택됩니다.",
+      move: "파란 칸 중 이동할 위치를 클릭하세요. 이동 없이 바로 무공을 골라도 됩니다.",
+      command: "오른쪽 명령 패널에서 무공 · 지형 사용 · 대기를 선택하세요.",
+      target: "붉은 칸의 대상을 클릭하세요. 적을 가리키면 전투 예측이 표시됩니다.",
+      interact: "금색 칸의 지형지물을 클릭해 발동하세요."
+    }[state.mode] || "";
+  }
+  els.guidePanel.className = `guide-panel ${kind}`;
+  els.guidePanel.innerHTML = `
+    <ol class="guide-steps">
+      ${guideSteps.map((step, i) => `<li class="guide-step ${i === stepIndex ? "active" : i < stepIndex ? "done" : ""}"><b>${i + 1}</b>${step.label}</li>`).join("")}
+    </ol>
+    <p class="guide-hint">${escapeHtml(hint)}</p>
+  `;
+}
+
+let bannerTimer = null;
+function showPhaseBanner(text, kind) {
+  if (!els.phaseBanner || state.showIntro) return;
+  const textEl = els.phaseBanner.querySelector(".pb-text");
+  els.phaseBanner.classList.remove("show", "player", "enemy", "end");
+  void els.phaseBanner.offsetWidth;
+  textEl.textContent = text;
+  els.phaseBanner.classList.add("show", kind);
+  if (bannerTimer) window.clearTimeout(bannerTimer);
+  bannerTimer = window.setTimeout(() => els.phaseBanner.classList.remove("show"), 1900);
+}
+
+function renderOverlays() {
+  if (state.showIntro) {
+    els.introOverlay.hidden = false;
+    els.introOverlay.innerHTML = `
+      <div class="briefing-card">
+        <p class="briefing-kicker">作戰 BRIEFING</p>
+        <h2>백두산 설문 관문전</h2>
+        <p class="briefing-lede">중원 감찰단이 백두산 설문(雪門)을 넘어 조선 문파에 중원식 말과 예법을 강요하려 한다. 해동문 다섯 무인이 관문 아래 계곡에서 감찰단을 저지한다.</p>
+        <div class="briefing-grid">
+          <section>
+            <h3>승리 조건</h3>
+            <ul>
+              <li>사절 주홍문 제압</li>
+              <li>또는 사절의 기세를 12 이하로 꺾어 항복시키기</li>
+            </ul>
+          </section>
+          <section>
+            <h3>패배 조건</h3>
+            <ul>
+              <li>아군 전원 전투불능</li>
+            </ul>
+          </section>
+          <section>
+            <h3>지형 활용</h3>
+            <ul>
+              <li>좌측 설죽림 엄폐 · 벼랑 고지 명중 보너스</li>
+              <li>돌다리가 유일한 빠른 도하로 — 밧줄을 끊거나 빙공으로 계류를 얼릴 수 있다</li>
+            </ul>
+          </section>
+          <section>
+            <h3>조작</h3>
+            <ul>
+              <li>① 아군 클릭 → ② 파란 칸 이동 → ③ 무공/지형/대기 → ④ 붉은 칸 대상</li>
+              <li>모든 아군이 행동하면 적 페이즈가 자동으로 시작됩니다</li>
+            </ul>
+          </section>
+        </div>
+        <div class="briefing-actions">
+          <button id="introStart" class="primary-button big" type="button">출진</button>
+        </div>
+      </div>
+    `;
+    els.introOverlay.querySelector("#introStart").addEventListener("click", () => {
+      state.showIntro = false;
+      render();
+      showPhaseBanner(state.phase === "player" ? `아군 페이즈 · ${state.round}턴` : "적 페이즈", state.phase);
+    });
+  } else {
+    els.introOverlay.hidden = true;
+    els.introOverlay.innerHTML = "";
+  }
+
+  const showResult = state.battleOver && state.outcome && !state.resultDismissed;
+  if (showResult) {
+    const victory = state.outcome === "victory";
+    const enemies = state.units.filter((unit) => unit.faction === "enemy");
+    const downed = enemies.filter((unit) => unit.defeated || unit.surrendered).length;
+    els.resultOverlay.hidden = false;
+    els.resultOverlay.innerHTML = `
+      <div class="briefing-card result ${victory ? "victory" : "defeat"}">
+        <p class="briefing-kicker">${victory ? "勝利" : "敗北"}</p>
+        <h2>${victory ? "승리" : "패배"}</h2>
+        <p class="briefing-lede">${victory ? "중원 사절단을 물리쳤다. 조선 문파 연합의 명분이 세워졌다." : "해동문의 전열이 무너졌다. 전열을 가다듬고 다시 도전하자."}</p>
+        <div class="result-stats">
+          <div><span>라운드</span><strong>${state.round}</strong></div>
+          <div><span>아군 생존</span><strong>${livingUnits("ally").length}/${state.units.filter((unit) => unit.faction === "ally").length}</strong></div>
+          <div><span>적 제압</span><strong>${downed}/${enemies.length}</strong></div>
+        </div>
+        <div class="briefing-actions">
+          <button id="resultInspect" class="small-button" type="button">전장 확인</button>
+          <button id="resultRestart" class="primary-button big" type="button">새 전투</button>
+        </div>
+      </div>
+    `;
+    els.resultOverlay.querySelector("#resultInspect").addEventListener("click", () => {
+      state.resultDismissed = true;
+      render();
+    });
+    els.resultOverlay.querySelector("#resultRestart").addEventListener("click", () => resetBattle(Date.now() % 100000000));
+  } else {
+    els.resultOverlay.hidden = true;
+    els.resultOverlay.innerHTML = "";
+  }
 }
 
 function renderBattlefield() {
@@ -1355,6 +1513,8 @@ function renderBattlefield() {
     button.className = [
       "tile",
       `terrain-${tile.id}`,
+      tile.hazard === "fire" ? "hazard-fire" : "",
+      tile.smoke > 0 ? "hazard-smoke" : "",
       state.selectedTile && tileKey(state.selectedTile) === tileKey(tile) ? "selected" : "",
       moveTarget ? "move-target" : "",
       attackTarget ? "attack-target" : "",
@@ -1553,30 +1713,171 @@ function skillMeta(unit, skill) {
   return parts.join(" · ");
 }
 
+function diceRange(expr, multiplier = 1) {
+  const match = /^([0-9]+)d([0-9]+)$/.exec(expr || "");
+  if (!match) return { min: 0, max: 0 };
+  const count = Number(match[1]) * multiplier;
+  return { min: count, max: count * Number(match[2]) };
+}
+
+function chanceFromThreshold(threshold, mode) {
+  const t = clamp(threshold, 2, 20);
+  let p = (21 - t) / 20;
+  if (mode === "advantage") p = 1 - (1 - p) * (1 - p);
+  if (mode === "disadvantage") p = p * p;
+  return clamp(Math.round(p * 100), 0, 100);
+}
+
+function critChance(mode) {
+  if (mode === "advantage") return 10;
+  if (mode === "disadvantage") return 0;
+  return 5;
+}
+
+function rollModeLabel(mode) {
+  return mode === "advantage" ? "기회" : mode === "disadvantage" ? "불리" : "일반";
+}
+
+function computeStrike(actor, target, skill) {
+  const mode = attackRollMode(actor, target, skill);
+  const statMod = mod(actor.stats[skill.stat]);
+  const tileBonus = attackTerrainBonus(actor, target, skill);
+  const bonus = statMod + actor.prof + (skill.hitBonus || 0) + tileBonus.hit + statusBonus(actor, "hit");
+  const defense = target.guard + defenseTerrainBonus(target) + statusDefenseBonus(target);
+  const flat = statMod + tileBonus.damage - defenseDamageReduction(target) + (hasStatus(actor, "은신") && skill.tags.includes("암기") ? 2 : 0);
+  const range = diceRange(skill.damage);
+  const critRange = diceRange(skill.damage, 2);
+  return {
+    mode,
+    hitPct: chanceFromThreshold(defense - bonus, mode),
+    critPct: critChance(mode),
+    dmgMin: Math.max(1, range.min + flat),
+    dmgMax: Math.max(1, range.max + flat),
+    critMax: Math.max(1, critRange.max + flat)
+  };
+}
+
+function socialChance(actor, target, skill) {
+  const mode = attackRollMode(actor, target, skill);
+  const dc = 12 + mod(target.stats[skill.dcStat || "spirit"]) + Math.floor(target.morale / 35);
+  const bonus = mod(actor.stats[skill.stat]) + actor.prof + statusBonus(actor, "hit");
+  return { mode, dc, pct: chanceFromThreshold(dc - bonus, mode) };
+}
+
+function debuffChance(actor, target, skill) {
+  const mode = attackRollMode(actor, target, skill);
+  const dc = skill.fixedDc || 12;
+  const bonus = mod(actor.stats[skill.stat]) + actor.prof;
+  return { mode, dc, pct: chanceFromThreshold(dc - bonus, mode) };
+}
+
+function pctClass(pct) {
+  return pct >= 75 ? "pct-good" : pct >= 45 ? "pct-mid" : "pct-bad";
+}
+
+function vsRow(label, value, extraClass = "") {
+  return `<div class="vs-row"><span>${escapeHtml(label)}</span><strong class="${extraClass}">${value}</strong></div>`;
+}
+
 function renderForecast() {
   const unit = selectedUnit();
   const skill = selectedSkill();
   const hover = state.hoverTile || state.selectedTile;
   const target = hover ? unitAt(hover.x, hover.y) : null;
   if (!unit || !skill) {
-    els.forecastPanel.innerHTML = `<h2>전투 예측</h2><p class="empty-hint">무공을 선택하고 적을 가리키면 d20 명중식, 지형 보정, 반격 여부를 보여줍니다.</p>`;
+    els.forecastPanel.innerHTML = `<h2>전투 예측</h2><p class="empty-hint">무공을 선택하고 적을 가리키면 명중률, 피해, 반격 여부를 미리 보여줍니다.</p>`;
     return;
   }
 
   if (target && isValidSkillTarget(unit, skill, target)) {
     const dist = distance(unit.position, target.position);
-    const mode = attackRollMode(unit, target, skill);
-    const totalBonus = mod(unit.stats[skill.stat]) + unit.prof + (skill.hitBonus || 0) + attackTerrainBonus(unit, target, skill).hit + statusBonus(unit, "hit");
-    const defense = target.guard + defenseTerrainBonus(target) + statusDefenseBonus(target);
-    const counter = findCounterSkill(target, unit);
+
+    if (skill.type === "attack") {
+      const atk = computeStrike(unit, target, skill);
+      const counterSkill = findCounterSkill(target, unit);
+      const counter = counterSkill ? computeStrike(target, unit, counterSkill) : null;
+      const followUp = canFollowUp(unit, target, skill);
+      els.forecastPanel.innerHTML = `
+        <h2>전투 예측</h2>
+        <div class="vs-card">
+          <div class="vs-side atk">
+            <span class="vs-tag">공격</span>
+            <strong class="vs-name">${escapeHtml(unit.short)}</strong>
+            <span class="vs-skill">${escapeHtml(skill.name)}</span>
+            ${vsRow("HP", `${unit.hp}/${unit.maxHp}`)}
+            ${vsRow("명중", `${atk.hitPct}% <small>${rollModeLabel(atk.mode)}</small>`, pctClass(atk.hitPct))}
+            ${vsRow("피해", `${atk.dmgMin}~${atk.dmgMax}`)}
+            ${vsRow("필살", `${atk.critPct}% <small>~${atk.critMax}</small>`)}
+          </div>
+          <div class="vs-mid"><b>VS</b><span>거리 ${dist}</span></div>
+          <div class="vs-side def">
+            <span class="vs-tag">수비</span>
+            <strong class="vs-name">${escapeHtml(target.short)}</strong>
+            <span class="vs-skill">${counterSkill ? escapeHtml(counterSkill.name) : "반격 불가"}</span>
+            ${vsRow("HP", `${target.hp}/${target.maxHp}`)}
+            ${counter ? vsRow("명중", `${counter.hitPct}% <small>${rollModeLabel(counter.mode)}</small>`, pctClass(counter.hitPct)) : vsRow("명중", "-")}
+            ${counter ? vsRow("피해", `${counter.dmgMin}~${counter.dmgMax}`) : vsRow("피해", "-")}
+            ${vsRow("파훼", `${target.breakGauge}/100`)}
+          </div>
+        </div>
+        <div class="vs-foot">${followUp ? `⚡ 추격 — ${escapeHtml(unit.short)}이(가) 민첩 우위로 한 번 더 공격합니다.` : "추격 없음 (민첩 차 5 이상이면 2회 공격)"}</div>
+      `;
+      return;
+    }
+
+    if (skill.type === "social") {
+      const info = socialChance(unit, target, skill);
+      els.forecastPanel.innerHTML = `
+        <h2>전투 예측</h2>
+        <div class="forecast-card">
+          <div class="forecast-row"><span>심리전</span><strong>${escapeHtml(unit.short)} · ${escapeHtml(skill.name)}</strong></div>
+          <div class="forecast-row"><span>대상</span><strong>${escapeHtml(target.name)} · 거리 ${dist}</strong></div>
+          <div class="forecast-row"><span>성공률</span><strong class="${pctClass(info.pct)}">${info.pct}% (${rollModeLabel(info.mode)} vs DC ${info.dc})</strong></div>
+          <div class="forecast-row"><span>성공 시</span><strong>기세 -${skill.moraleDamage}, 파훼 +${skill.breakGain || 0}</strong></div>
+          <div class="forecast-row"><span>실패 시</span><strong>${escapeHtml(unit.short)} 기세 -5</strong></div>
+        </div>
+      `;
+      return;
+    }
+
+    if (skill.type === "debuff") {
+      const info = debuffChance(unit, target, skill);
+      els.forecastPanel.innerHTML = `
+        <h2>전투 예측</h2>
+        <div class="forecast-card">
+          <div class="forecast-row"><span>제압기</span><strong>${escapeHtml(unit.short)} · ${escapeHtml(skill.name)}</strong></div>
+          <div class="forecast-row"><span>대상</span><strong>${escapeHtml(target.name)} · 거리 ${dist}</strong></div>
+          <div class="forecast-row"><span>성공률</span><strong class="${pctClass(info.pct)}">${info.pct}% (${rollModeLabel(info.mode)} vs DC ${info.dc})</strong></div>
+          <div class="forecast-row"><span>성공 시</span><strong>파훼 +${skill.breakGain || 0}${skill.statusTarget ? `, ${escapeHtml(skill.statusTarget.name)} ${skill.statusTarget.duration}턴` : ""}</strong></div>
+        </div>
+      `;
+      return;
+    }
+
+    if (skill.type === "heal") {
+      const range = diceRange(skill.heal);
+      const bonus = mod(unit.stats[skill.stat]);
+      els.forecastPanel.innerHTML = `
+        <h2>전투 예측</h2>
+        <div class="forecast-card">
+          <div class="forecast-row"><span>회복</span><strong>${escapeHtml(unit.short)} · ${escapeHtml(skill.name)}</strong></div>
+          <div class="forecast-row"><span>대상</span><strong>${escapeHtml(target.name)} · HP ${target.hp}/${target.maxHp}</strong></div>
+          <div class="forecast-row"><span>회복량</span><strong class="pct-good">${Math.max(1, range.min + bonus)}~${Math.max(1, range.max + bonus)}</strong></div>
+          <div class="forecast-row"><span>부가</span><strong>중독 · 화상 정화</strong></div>
+        </div>
+      `;
+      return;
+    }
+  }
+
+  if (skill.type === "aoe" || skill.type === "terrainSkill") {
+    const range = diceRange(skill.damage);
     els.forecastPanel.innerHTML = `
       <h2>전투 예측</h2>
       <div class="forecast-card">
-        <div class="forecast-row"><span>공격</span><strong>${escapeHtml(unit.name)} · ${escapeHtml(skill.name)}</strong></div>
-        <div class="forecast-row"><span>대상</span><strong>${escapeHtml(target.name)} · 거리 ${dist}</strong></div>
-        <div class="forecast-row"><span>d20</span><strong>${mode === "advantage" ? "기회" : mode === "disadvantage" ? "불리" : "일반"} + ${signed(totalBonus)} vs ${defense}</strong></div>
-        <div class="forecast-row"><span>피해</span><strong>${escapeHtml(skill.damage || "-")}</strong></div>
-        <div class="forecast-row"><span>반격</span><strong>${counter ? counter.name : "불가"}</strong></div>
+        <div class="forecast-row"><span>무공</span><strong>${escapeHtml(unit.short)} · ${escapeHtml(skill.name)}</strong></div>
+        <div class="forecast-row"><span>방식</span><strong>붉은 칸 중 지점을 클릭</strong></div>
+        ${skill.type === "aoe" ? `<div class="forecast-row"><span>범위</span><strong>중심 ${skill.radius || 1}칸</strong></div><div class="forecast-row"><span>피해</span><strong>${range.min}~${range.max} + 보정</strong></div>` : `<div class="forecast-row"><span>효과</span><strong>${escapeHtml(skill.desc)}</strong></div>`}
       </div>
     `;
     return;
@@ -1585,12 +1886,26 @@ function renderForecast() {
   const targets = listTargetsForSkill(unit, skill);
   els.forecastPanel.innerHTML = `
     <h2>대상 후보</h2>
-    ${targets.length ? `<div class="target-list">${targets.map((target) => `<button class="target-button" type="button" data-target="${target.id}"><strong>${escapeHtml(target.name)}</strong><br><span>거리 ${distance(unit.position, target.position)} · HP ${target.hp}/${target.maxHp} · 반격 ${findCounterSkill(target, unit)?.name || "불가"}</span></button>`).join("")}</div>` : `<p class="empty-hint">현재 위치에서 사거리 안 대상이 없습니다.</p>`}
+    ${targets.length ? `<div class="target-list">${targets.map((candidate) => {
+      let pctText = "";
+      if (skill.type === "attack") {
+        const strike = computeStrike(unit, candidate, skill);
+        pctText = `명중 <b class="${pctClass(strike.hitPct)}">${strike.hitPct}%</b> · 피해 ${strike.dmgMin}~${strike.dmgMax}`;
+      } else if (skill.type === "social") {
+        pctText = `성공 <b class="${pctClass(socialChance(unit, candidate, skill).pct)}">${socialChance(unit, candidate, skill).pct}%</b>`;
+      } else if (skill.type === "debuff") {
+        pctText = `성공 <b class="${pctClass(debuffChance(unit, candidate, skill).pct)}">${debuffChance(unit, candidate, skill).pct}%</b>`;
+      } else if (skill.type === "heal") {
+        pctText = `HP ${candidate.hp}/${candidate.maxHp}`;
+      }
+      const counterText = isHostileSkill(skill) ? ` · 반격 ${escapeHtml(findCounterSkill(candidate, unit)?.name || "불가")}` : "";
+      return `<button class="target-button" type="button" data-target="${candidate.id}"><strong>${escapeHtml(candidate.name)}</strong><span>거리 ${distance(unit.position, candidate.position)} · ${pctText}${counterText}</span></button>`;
+    }).join("")}</div>` : `<p class="empty-hint">현재 위치에서 사거리 안 대상이 없습니다. 붉은 칸 표시를 참고하세요.</p>`}
   `;
   els.forecastPanel.querySelectorAll(".target-button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const target = getUnit(btn.dataset.target);
-      if (target) handleTargetTile(getTile(target.position.x, target.position.y), target);
+      const candidate = getUnit(btn.dataset.target);
+      if (candidate) handleTargetTile(getTile(candidate.position.x, candidate.position.y), candidate);
     });
   });
 }
@@ -1628,10 +1943,49 @@ function renderRosterList(el, faction) {
   el.innerHTML = "";
   state.units.filter((unit) => unit.faction === faction).forEach((unit) => {
     const li = document.createElement("li");
-    li.className = ["roster-item", faction, unit.acted ? "acted" : "", unit.defeated || unit.surrendered ? "defeated" : ""].filter(Boolean).join(" ");
-    li.innerHTML = `<span class="faction-line"></span><span><span class="roster-name">${escapeHtml(unit.name)}</span><span class="roster-role">${escapeHtml(unit.role)}</span></span><span class="roster-hp">${unit.hp}/${unit.maxHp}</span>`;
+    li.className = [
+      "roster-item",
+      faction,
+      unit.acted ? "acted" : "",
+      unit.defeated || unit.surrendered ? "defeated" : "",
+      unit.id === state.selectedUnitId ? "selected" : ""
+    ].filter(Boolean).join(" ");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "roster-card";
+    const hpPct = clamp(Math.round((unit.hp / unit.maxHp) * 100), 0, 100);
+    btn.innerHTML = `<span class="faction-line"></span><span class="roster-main"><span class="roster-name">${escapeHtml(unit.name)}</span><span class="roster-role">${escapeHtml(unit.role)}</span><span class="roster-hpbar"><span style="width:${hpPct}%"></span></span></span><span class="roster-hp">${unit.hp}/${unit.maxHp}</span>`;
+    btn.title = unit.defeated || unit.surrendered ? `${unit.name} 전투 이탈` : `${unit.name} — 클릭해 ${unit.faction === "ally" ? "선택/확인" : "위치 확인"}`;
+    btn.addEventListener("click", () => handleRosterClick(unit));
+    li.appendChild(btn);
     el.appendChild(li);
   });
+}
+
+function handleRosterClick(unit) {
+  if (state.battleOver) {
+    focusUnitTile(unit);
+    return;
+  }
+  const actor = selectedUnit();
+  const skill = selectedSkill();
+  if (state.mode === "target" && actor && skill && !unit.defeated && !unit.surrendered && isValidSkillTarget(actor, skill, unit)) {
+    handleTargetTile(getTile(unit.position.x, unit.position.y), unit);
+    return;
+  }
+  if (unit.faction === "ally" && state.phase === "player" && !unit.acted && !unit.defeated && !unit.surrendered) {
+    selectUnit(unit.id);
+    return;
+  }
+  focusUnitTile(unit);
+}
+
+function focusUnitTile(unit) {
+  const tile = getTile(unit.position.x, unit.position.y);
+  if (!tile) return;
+  state.selectedTile = tile;
+  state.hoverTile = tile;
+  render();
 }
 
 function renderLog() {

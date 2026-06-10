@@ -202,7 +202,7 @@ public sealed class BattleHUDController : MonoBehaviour
         AddCommandButton(2, "3 무공", () => owner.HudSetCommand(BattleCommandMode.Skill));
         AddCommandButton(3, "4 방어", () => owner.HudGuard());
         AddCommandButton(4, "5 지형", () => owner.HudSetCommand(BattleCommandMode.Interact));
-        AddCommandButton(5, "페이즈 종료", () => owner.HudWait());
+        AddCommandButton(5, "대기", () => owner.HudWait());
         AddCommandButton(6, "위협 범위", () => owner.HudToggleThreat());
         AddCommandButton(7, "엄폐 표시", () => owner.HudToggleCover());
         AddCommandButton(8, "로그", () => owner.HudToggleLog());
@@ -232,7 +232,7 @@ public sealed class BattleHUDController : MonoBehaviour
         SetCommand(3, "4 방어\n" + Ready(snapshot.canGuard), snapshot.canGuard, false);
         SetCommand(4, "5 지형\n" + Ready(snapshot.canTerrain), snapshot.canTerrain,
                    snapshot.commandMode == BattleCommandMode.Interact);
-        SetCommand(5, "페이즈\n종료", snapshot.canWait, false);
+        SetCommand(5, "대기\n넘기기", snapshot.canWait, false);
         SetCommand(6, snapshot.showThreatRange ? "위협 범위\n표시 중" : "위협 범위\n숨김", true,
                    snapshot.showThreatRange);
         SetCommand(7, snapshot.showCoverOverlay ? "엄폐\n표시 중" : "엄폐\n숨김", true,
