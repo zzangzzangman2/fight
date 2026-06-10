@@ -3276,7 +3276,7 @@ public sealed class BattleTestController : MonoBehaviour
             ApplySpecialStatusAfterHit(result);
         }
 
-        ResolvePostAttack(attacker, target, special);
+        yield return RunPostAttackSequence(attacker, target, special);
         attacker.SpendMainAction();
         RefreshHighlights();
         RefreshUnits();
@@ -3321,25 +3321,24 @@ public sealed class BattleTestController : MonoBehaviour
             BattleTestAttackResult result = default;
             yield return ExecuteAttackSequence(actor, target, true, resolved => result = resolved);
             ApplySpecialStatusAfterHit(result);
-            ResolvePostAttack(actor, target, true);
+            yield return RunPostAttackSequence(actor, target, true);
         }
         else if (special)
         {
             actor.view.FaceToward(target.view.transform.position);
             actor.view.PlaySkill();
             bool attackLike = ApplySpecialEffect(actor, target, true);
+            yield return WaitActionSeconds(actor.view.CreateTimeline(true).Duration);
             if (attackLike)
             {
-                ResolvePostAttack(actor, target, true);
+                yield return RunPostAttackSequence(actor, target, true);
             }
-
-            yield return WaitActionSeconds(actor.view.CreateTimeline(true).Duration);
         }
         else
         {
             BattleTestAttackResult result = default;
             yield return ExecuteAttackSequence(actor, target, false, resolved => result = resolved);
-            ResolvePostAttack(actor, target, false);
+            yield return RunPostAttackSequence(actor, target, false);
         }
 
         actor.SpendMainAction();
@@ -3630,6 +3629,46 @@ public sealed class BattleTestController : MonoBehaviour
         default:
             ResolveAttack(actor, target, true);
             return true;
+        }
+    }
+
+    /// <summary>반격/추격 연출판 — 즉발 대신 본 공격과 같은 선딜→타격 프레임→후딜 타임라인으로 재생한다.
+    /// 플레이 중 코루틴 경로 전용. 동기 ResolvePostAttack은 에디터/스모크 체크 경로에서만 쓴다.</summary>
+    private IEnumerator RunPostAttackSequence(BattleTestUnit attacker, BattleTestUnit target, bool special)
+    {
+        if (attacker == null || target == null || attacker.defeated || target.defeated)
+        {
+            yield break;
+        }
+
+        BattleTestCounterMove counter = FindCounterMove(target, attacker);
+        if (counter.valid)
+        {
+            target.SpendReaction();
+            AddLog($"[반격] {target.definition.displayName}: {counter.label}.");
+            yield return WaitActionSeconds(0.22f);
+            if (counter.special)
+            {
+                target.inner = Mathf.Max(0, target.inner - target.definition.specialCost);
+                target.specialCooldownLeft = Mathf.Max(target.specialCooldownLeft, target.definition.specialCooldown);
+                ApplySpecialEffect(target, attacker, true);
+                yield return WaitActionSeconds(target.view.CreateTimeline(true).Duration);
+            }
+            else
+            {
+                yield return ExecuteAttackSequence(target, attacker, false, _ => { });
+            }
+        }
+        else
+        {
+            AddLog($"[반격] {target.definition.displayName} 반격 불가.");
+        }
+
+        if (!attacker.defeated && !target.defeated && CanFollowUp(attacker, target, special))
+        {
+            AddLog($"[추격] {attacker.definition.displayName}가 빈틈을 찔렀다.");
+            yield return WaitActionSeconds(0.18f);
+            yield return ExecuteAttackSequence(attacker, target, special, _ => { });
         }
     }
 
@@ -3973,23 +4012,28 @@ public sealed class BattleTestController : MonoBehaviour
         {
             Vector3 start = unit.view.transform.position;
             Vector3 target = UnitWorldPosition(path[i]);
+            bool firstStep = i == 1;
+            bool lastStep = i == path.Count - 1;
             unit.view.FaceDirection(new Vector2(target.x - start.x, target.y - start.y));
             float elapsed = 0f;
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
-                float eased = Mathf.SmoothStep(0f, 1f, t);
-                float stride = (stepIndex + t) * Mathf.PI * 2f;
-                float stepHop = Mathf.Abs(Mathf.Sin(stride)) * 0.030f;
-                float footSway = Mathf.Sin(stride) * 0.026f;
+                // 출발 칸만 가속, 도착 칸만 감속, 중간 칸은 등속(경계 속도 일치) — 칸마다 멈칫거리지 않는다.
+                // 보폭 바운스/스쿼시는 CharacterVisualController가 몸 스프라이트에만 적용한다(그림자·발자국은 지면 고정).
+                float eased = firstStep && lastStep ? Mathf.SmoothStep(0f, 1f, t)
+                              : firstStep          ? t * t * (2f - t)
+                              : lastStep           ? 1f - ((1f - t) * (1f - t) * (1f + t))
+                                                   : t;
                 unit.view.SetMoveStridePhase(stepIndex + t);
-                unit.view.transform.position = Vector3.Lerp(start, target, eased) + new Vector3(footSway, stepHop, 0f);
+                unit.view.transform.position = Vector3.Lerp(start, target, eased);
                 if (camera != null)
                 {
                     Vector3 cameraTarget = CameraPositionForFocus(camera, unit.view.transform.position, cameraTargetSize);
-                    camera.transform.position = Vector3.Lerp(camera.transform.position, cameraTarget, t);
-                    camera.orthographicSize = Mathf.Lerp(camera.orthographicSize, cameraTargetSize, t);
+                    float follow = 1f - Mathf.Exp(-7f * Time.deltaTime);
+                    camera.transform.position = Vector3.Lerp(camera.transform.position, cameraTarget, follow);
+                    camera.orthographicSize = Mathf.Lerp(camera.orthographicSize, cameraTargetSize, follow);
                 }
 
                 yield return null;
@@ -4617,18 +4661,41 @@ public sealed class BattleTestController : MonoBehaviour
 
         Vector2Int direction = PushDirection(actor.cell, target.cell);
         BattleTestTile currentTile = TileAt(target.cell);
+        bool movedAny = false;
+
+        // 밀려난 거리만큼 순간이동하지 않고 짧게 미끄러지는 연출로 따라간다(로직 좌표는 즉시 갱신).
+        void SyncPushedView()
+        {
+            if (!movedAny || target.view == null)
+            {
+                return;
+            }
+
+            Vector3 destination = UnitWorldPosition(target.cell);
+            if (Application.isPlaying)
+            {
+                StartCoroutine(AnimatePushSlide(target.view.transform, destination));
+            }
+            else
+            {
+                target.view.transform.position = destination;
+            }
+        }
+
         for (int i = 0; i < Mathf.Max(1, distance); i++)
         {
             Vector2Int nextCell = target.cell + direction;
             BattleTestTile nextTile = TileAt(nextCell);
             if (nextTile == null)
             {
+                SyncPushedView();
                 DealTerrainDamage(target, FallDamage, reason + " over the edge");
                 return true;
             }
 
             if (UnitAt(nextCell) != null)
             {
+                SyncPushedView();
                 DealTerrainDamage(target, 3, reason + " collision");
                 return false;
             }
@@ -4638,39 +4705,59 @@ public sealed class BattleTestController : MonoBehaviour
                 if (nextTile.hazardType == HazardType.DeepWater || nextTile.terrain == TerrainType.DeepWater)
                 {
                     target.chilled = true;
+                    SyncPushedView();
                     DealTerrainDamage(target, 6, reason + " into deep water");
                     return true;
                 }
 
                 if (IsCliffDropToward(currentTile, direction) || nextTile.hazardType == HazardType.Fall)
                 {
+                    SyncPushedView();
                     DealTerrainDamage(target, FallDamage, reason + " off a cliff");
                     return true;
                 }
 
+                SyncPushedView();
                 DealTerrainDamage(target, 3, reason + " into terrain");
                 return false;
             }
 
             target.cell = nextCell;
-            if (target.view != null)
-            {
-                target.view.transform.position = UnitWorldPosition(nextCell);
-            }
-
+            movedAny = true;
             ApplyTileEntry(target, nextTile);
             ApplyPushLandingHazard(target, nextTile, reason);
             currentTile = nextTile;
             if (target.defeated)
             {
+                SyncPushedView();
                 return true;
             }
         }
 
+        SyncPushedView();
         AddLog($"[Push] {target.definition.displayName} pushed by {reason}.");
         RefreshHighlights();
         RefreshUnits();
         return true;
+    }
+
+    private IEnumerator AnimatePushSlide(Transform view, Vector3 destination)
+    {
+        Vector3 start = view.position;
+        const float duration = 0.16f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float eased = 1f - ((1f - t) * (1f - t));
+            Vector3 position = Vector3.Lerp(start, destination, eased);
+            position.y += Mathf.Sin(t * Mathf.PI) * 0.06f; // 짧은 포물선 — 튕겨난 느낌
+            view.position = position;
+            yield return null;
+        }
+
+        view.position = destination;
     }
 
     private static Vector2Int PushDirection(Vector2Int from, Vector2Int to)
