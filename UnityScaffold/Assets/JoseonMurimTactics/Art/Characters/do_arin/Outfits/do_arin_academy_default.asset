@@ -25,6 +25,21 @@ MonoBehaviour:
   hitPoseSprite: {fileID: 21300000, guid: 64fcbb788e572f240a8d941d33b7a34c, type: 3}
   defeatedPoseSprite: {fileID: 21300000, guid: 39939577039b24541822812f07433b52, type: 3}
   actedPoseSprite: {fileID: 21300000, guid: 5163689b675300344ad0139a5bc1d196, type: 3}
+  idleFrames: []
+  moveFrames:
+  - {fileID: 21300000, guid: 9bda6df4dd0e739488de1eef6a51bc29, type: 3}
+  - {fileID: 21300000, guid: 20d64cfb495950646a512f661f27585d, type: 3}
+  - {fileID: 21300000, guid: a8b9a372fa46683498dbead5f325fa1b, type: 3}
+  - {fileID: 21300000, guid: 680071c7e350d604799dccb406a02983, type: 3}
+  - {fileID: 21300000, guid: 688bbf4f7693035479353755256ca7a7, type: 3}
+  - {fileID: 21300000, guid: e128a1225d78c824e81dd16c081c8ead, type: 3}
+  attackFrames:
+  - {fileID: 21300000, guid: 76ef77985da0d174e9fd5d013a88da18, type: 3}
+  - {fileID: 21300000, guid: da97706d8d8632e4880d3e7dc2fbd883, type: 3}
+  - {fileID: 21300000, guid: b126c9f466b314b448eeb0738f4b27f5, type: 3}
+  - {fileID: 21300000, guid: 4451725520158ff4face3ddef4dbc920, type: 3}
+  skillFrames: []
+  hitFrames: []
   useLayeredSprites: 0
   baseBodyLayer: {fileID: 0}
   outfitLayer: {fileID: 0}
