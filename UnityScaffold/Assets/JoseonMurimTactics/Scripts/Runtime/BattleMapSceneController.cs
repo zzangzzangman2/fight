@@ -7,16 +7,15 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleMapSceneController : MonoBehaviour
 {
-    [SerializeField] private string mapId = "baekdu_snowgate_v1";
-    [SerializeField] private string displayName = "Baekdu Snow Gate";
+    [SerializeField] private string mapId = "authored_battle_map";
+    [SerializeField] private string displayName = "Authored Battle Map";
     [SerializeField] private bool authoredProductionMap = true;
     [SerializeField] private BattleMapTilemapBinder binder;
     [SerializeField] private Vector2Int origin;
     [SerializeField] private Vector2Int size = new Vector2Int(20, 14);
     [SerializeField] private float tileWidth = 1.16f;
     [SerializeField] private float tileHeight = 0.62f;
-    [SerializeField] private Color cameraBackground = new Color(0.22f, 0.34f, 0.32f, 1f);
-    [SerializeField] private bool generateBaekduOverlayAtRuntime = true;
+    [SerializeField] private Color cameraBackground = new Color(0.094f, 0.118f, 0.137f, 1f);
 
     public string MapId => mapId;
     public string DisplayName => displayName;
@@ -57,11 +56,6 @@ public sealed class BattleMapSceneController : MonoBehaviour
         }
 
         binder.EnsureStructure(tileWidth, tileHeight);
-        if (generateBaekduOverlayAtRuntime && binder.TacticalOverlay != null && binder.TacticalOverlay.Cells.Count == 0)
-        {
-            GenerateBaekduOverlay();
-        }
-
         if (binder.TacticalOverlay == null || binder.TacticalOverlay.Cells.Count == 0)
         {
             binder.SyncTacticalOverlayFromVisualTilemaps();
@@ -78,47 +72,6 @@ public sealed class BattleMapSceneController : MonoBehaviour
 
         ApplyCameraDefaults();
         EnsureLightRig();
-    }
-
-    private void GenerateBaekduOverlay()
-    {
-        binder.TacticalOverlay.Configure(Vector2Int.zero, new Vector2Int(BaekduSnowGateLayout.Width, BaekduSnowGateLayout.Height));
-        for (int y = 0; y < BaekduSnowGateLayout.Height; y++)
-        {
-            for (int x = 0; x < BaekduSnowGateLayout.Width; x++)
-            {
-                binder.TacticalOverlay.SetCell(CreateBaekduCell(new Vector2Int(x, y)));
-            }
-        }
-    }
-
-    private TacticalGridCellData CreateBaekduCell(Vector2Int cell)
-    {
-        BaekduCellSpec spec = BaekduSnowGateLayout.Resolve(cell);
-        return new TacticalGridCellData
-        {
-            cell = cell,
-            displayName = spec.terrain.ToString(),
-            worldPosition = CellToWorld(cell),
-            terrainType = spec.terrain,
-            moveCost = Mathf.Max(1, spec.moveCost),
-            walkable = spec.walkable,
-            blocksMovement = spec.blocksMovement,
-            blocksLineOfSight = spec.blocksLineOfSight,
-            isChokePoint = spec.isChokePoint,
-            capacity = Mathf.Max(1, spec.capacity),
-            elevation = spec.elevation,
-            coverType = spec.coverType,
-            hazardType = spec.hazardType,
-            northEdge = spec.northEdge,
-            eastEdge = spec.eastEdge,
-            southEdge = spec.southEdge,
-            westEdge = spec.westEdge,
-            zoneId = spec.zoneId,
-            laneId = spec.laneId,
-            visualTileKey = spec.tileKey,
-            decorSetKey = spec.note,
-        };
     }
 
     public bool TryGetCell(Vector2Int cell, out TacticalGridCellData data)
@@ -148,7 +101,9 @@ public sealed class BattleMapSceneController : MonoBehaviour
     {
         if (binder == null || binder.Grid == null)
         {
-            return BaekduSnowGateLayout.CellToWorld(cell);
+            float worldX = (cell.x - cell.y) * tileWidth * 0.5f;
+            float worldY = (cell.x + cell.y) * tileHeight * 0.5f;
+            return transform.position + new Vector3(worldX, worldY, 0f);
         }
 
         return binder.Grid.CellToWorld(new Vector3Int(cell.x, cell.y, 0));
@@ -174,18 +129,18 @@ public sealed class BattleMapSceneController : MonoBehaviour
             return;
         }
 
-        GameObject global = new GameObject("Global Light 2D - Snow Dawn");
+        GameObject global = new GameObject("Global Light 2D - Battle Map");
         global.transform.SetParent(root, false);
         Light2D globalLight = global.AddComponent<Light2D>();
         globalLight.lightType = Light2D.LightType.Global;
         globalLight.color = new Color(0.78f, 0.86f, 0.94f, 1f);
         globalLight.intensity = 0.78f;
 
-        CreatePointLight(root, "Gate Lantern Warm Pool", new Vector2Int(8, 11), new Color(1f, 0.68f, 0.32f, 1f),
+        CreatePointLight(root, "Warm Prop Light", new Vector2Int(8, 11), new Color(1f, 0.68f, 0.32f, 1f),
                          2.8f, 0.55f);
-        CreatePointLight(root, "Frozen Stream Bounce", new Vector2Int(12, 5), new Color(0.42f, 0.70f, 0.86f, 1f),
+        CreatePointLight(root, "Cool Bounce Light", new Vector2Int(12, 5), new Color(0.42f, 0.70f, 0.86f, 1f),
                          2.4f, 0.36f);
-        CreatePointLight(root, "Right Cliff Rim Light", new Vector2Int(16, 9), new Color(0.88f, 0.82f, 0.56f, 1f),
+        CreatePointLight(root, "Rim Light", new Vector2Int(16, 9), new Color(0.88f, 0.82f, 0.56f, 1f),
                          2.2f, 0.32f);
     }
 

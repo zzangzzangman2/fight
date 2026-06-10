@@ -36,18 +36,9 @@ public static class CharacterPlayerBuild
         BuildWindowsPlayer(BattleTestSceneLauncher.ScenePath, BattleBuildFolder, BattleExeName);
     }
 
-    public static void BuildWindowsBattleMapDiorama()
-    {
-        BattleMapDioramaSceneBuilder.RebuildBaekduSnowGateScene();
-        BuildWindowsPlayer(BattleMapDioramaSceneBuilder.ScenePath, BattleBuildFolder, BattleExeName);
-    }
-
     public static void BuildWindowsBattleTestCurrentScene()
     {
-        string scenePath = AssetDatabase.LoadAssetAtPath<SceneAsset>(BattleMapDioramaSceneBuilder.ScenePath) == null
-                               ? BattleTestSceneLauncher.ScenePath
-                               : BattleMapDioramaSceneBuilder.ScenePath;
-        BuildWindowsPlayer(scenePath, BattleBuildFolder, BattleExeName);
+        BuildWindowsPlayer(BattleTestSceneLauncher.ScenePath, BattleBuildFolder, BattleExeName);
     }
 
     private static void BuildWindowsPlayer(string scenePath, string buildFolder, string exeName)
@@ -67,9 +58,9 @@ public static class CharacterPlayerBuild
                                      options = BuildOptions.None };
 
         BuildReport report = BuildPipeline.BuildPlayer(options);
-        if (report.summary.result != BuildResult.Succeeded)
+        if (report.summary.result != BuildResult.Succeeded || !File.Exists(exePath))
         {
-            throw new InvalidOperationException($"Windows player build failed: {report.summary.result}");
+            throw new InvalidOperationException($"Windows player build failed: {report.summary.result}; exe exists={File.Exists(exePath)}");
         }
 
         Debug.Log($"[CharacterPlayerBuild] Built player: {exePath}");
