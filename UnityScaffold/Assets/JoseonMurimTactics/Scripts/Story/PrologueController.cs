@@ -20,8 +20,9 @@ public sealed class PrologueController : MonoBehaviour
 
     private void OnGUI()
     {
-        UiTheme.Begin(true);
-        UiTheme.DrawMountains();
+        UiTheme.Begin(false);
+        UiTheme.DrawTitleBackdrop();
+        UiTheme.DrawFill(new Rect(0f, 0f, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.16f));
 
         float w = Screen.width;
         float h = Screen.height;

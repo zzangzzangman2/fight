@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2a71814bd8647f4c91e6d2b7cc22b7d, type: 3}
+  m_Name: snow_edge_variants
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.TerrainVariantSet
+  setId: snow_edge
+  variants:
+  - tile: {fileID: 11400000, guid: 9cf57769c5a51ce4d8081e70fad60097, type: 2}
+    weight: 5
+  - tile: {fileID: 11400000, guid: bb90cc216ea255743beac1ecee602ddb, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: c192c165f93f04c44b0d01c43f248ca0, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: 01ccfe1828dfaef4e89d36c65f9bcfcd, type: 2}
+    weight: 2

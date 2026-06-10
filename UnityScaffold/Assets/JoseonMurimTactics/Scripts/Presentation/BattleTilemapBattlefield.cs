@@ -9,7 +9,7 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleTilemapBattlefield : MonoBehaviour
 {
-    private const float HighlightAlphaScale = 0.58f;
+    private const float HighlightAlphaScale = 0.22f;
     private const bool UsePaintedGroundBackdrop = true;
 
     private readonly Dictionary<string, TerrainTileData> terrainTiles = new Dictionary<string, TerrainTileData>();
@@ -78,6 +78,46 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         BuildTerrainLayerLookup();
         CreateLightingRig(width, height);
         EnsureCinemachineIntroCamera();
+    }
+
+    public void BindAuthored(BattleMapTilemapBinder authoredBinder, float tileWidth, float tileHeight, Sprite fallbackSprite,
+                             Sprite softSprite, Sprite detail, Sprite dot)
+    {
+        fallbackDiamond = fallbackSprite;
+        softDiamond = softSprite == null ? fallbackSprite : softSprite;
+        detailSprite = detail;
+        dotSprite = dot;
+        binder = authoredBinder == null ? gameObject.GetComponent<BattleMapTilemapBinder>() : authoredBinder;
+        if (binder == null)
+        {
+            binder = gameObject.AddComponent<BattleMapTilemapBinder>();
+        }
+
+        binder.EnsureStructure(tileWidth, tileHeight);
+        grid = binder.Grid;
+        GroundTilemap = binder.GroundTilemap;
+        RoadTilemap = binder.RoadTilemap;
+        CliffTilemap = binder.CliffTilemap;
+        WaterTilemap = binder.WaterTilemap;
+        DecorTilemap = binder.DecorTilemap;
+        PropsTilemap = binder.PropsTilemap;
+        OverlayTilemap = binder.OverlayTilemap;
+        HighlightMoveTilemap = binder.HighlightMoveTilemap;
+        HighlightAttackTilemap = binder.HighlightAttackTilemap;
+        HighlightDangerTilemap = binder.HighlightDangerTilemap;
+        TacticalOverlay = binder.TacticalOverlay;
+        overlayTile = CreateUtilityTile("Authored Tactical Overlay", softDiamond, Color.white);
+        highlightTile = CreateUtilityTile("Authored Highlight Tile", softDiamond, Color.white);
+
+        Transform colliderRoot = transform.Find("AuthoredTacticalGridOverlay_Colliders");
+        if (colliderRoot == null)
+        {
+            colliderRoot = new GameObject("AuthoredTacticalGridOverlay_Colliders").transform;
+            colliderRoot.SetParent(transform, false);
+        }
+
+        CellColliderRoot = colliderRoot;
+        BuildTerrainLayerLookup();
     }
 
     public void SetTerrainCell(Vector2Int cell, TerrainType terrainType, Sprite sprite, Color baseColor, int moveCost,
@@ -157,16 +197,48 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
     public void ClearHighlights()
     {
-        HighlightMoveTilemap.ClearAllTiles();
-        HighlightAttackTilemap.ClearAllTiles();
-        HighlightDangerTilemap.ClearAllTiles();
+        if (HighlightMoveTilemap != null)
+        {
+            HighlightMoveTilemap.ClearAllTiles();
+        }
+
+        if (HighlightAttackTilemap != null)
+        {
+            HighlightAttackTilemap.ClearAllTiles();
+        }
+
+        if (HighlightDangerTilemap != null)
+        {
+            HighlightDangerTilemap.ClearAllTiles();
+        }
+
+        if (binder != null && binder.HighlightPathArrowTilemap != null)
+        {
+            binder.HighlightPathArrowTilemap.ClearAllTiles();
+        }
     }
 
     private void ClearHighlightCell(Vector3Int tileCell)
     {
-        HighlightMoveTilemap.SetTile(tileCell, null);
-        HighlightAttackTilemap.SetTile(tileCell, null);
-        HighlightDangerTilemap.SetTile(tileCell, null);
+        if (HighlightMoveTilemap != null)
+        {
+            HighlightMoveTilemap.SetTile(tileCell, null);
+        }
+
+        if (HighlightAttackTilemap != null)
+        {
+            HighlightAttackTilemap.SetTile(tileCell, null);
+        }
+
+        if (HighlightDangerTilemap != null)
+        {
+            HighlightDangerTilemap.SetTile(tileCell, null);
+        }
+
+        if (binder != null && binder.HighlightPathArrowTilemap != null)
+        {
+            binder.HighlightPathArrowTilemap.SetTile(tileCell, null);
+        }
     }
 
     private Tilemap HighlightTilemapFor(Color color)
@@ -287,19 +359,19 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         Color color = Color.clear;
         if (objective)
         {
-            color = new Color(1f, 0.78f, 0.28f, 0.10f);
+            color = new Color(1f, 0.78f, 0.28f, 0.13f);
         }
         else if (danger || terrainType == TerrainType.Cliff || terrainType == TerrainType.DeepWater)
         {
-            color = new Color(0.72f, 0.16f, 0.10f, 0.045f);
+            color = new Color(0.72f, 0.16f, 0.10f, 0.07f);
         }
         else if (coverBonus >= 2)
         {
-            color = new Color(0.18f, 0.48f, 0.26f, 0.030f);
+            color = new Color(0.18f, 0.48f, 0.26f, 0.06f);
         }
         else if (elevation > 0)
         {
-            color = new Color(0.95f, 0.76f, 0.34f, 0.018f);
+            color = new Color(0.95f, 0.76f, 0.34f, Mathf.Clamp01(0.035f + elevation * 0.018f));
         }
 
         if (color.a <= 0.01f)

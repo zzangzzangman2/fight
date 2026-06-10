@@ -71,7 +71,10 @@ public sealed class DialogueController
         }
 
         float margin = Mathf.Clamp(38f * s, 22f, 58f * s);
-        float boxH = Mathf.Clamp(hasChoices ? 410f * s : 292f * s, screenH * 0.30f, screenH * 0.52f);
+        float wantedH = hasChoices ? 360f * s : 230f * s;
+        float minH = hasChoices ? screenH * 0.34f : screenH * 0.22f;
+        float maxH = hasChoices ? screenH * 0.50f : screenH * 0.32f;
+        float boxH = Mathf.Clamp(wantedH, minH, maxH);
         Rect box = new Rect(margin, screenH - boxH - margin, screenW - margin * 2f, boxH);
         Rect inner = new Rect(box.x + 42f * s, box.y + 58f * s, box.width - 84f * s, box.height - 104f * s);
 
@@ -80,7 +83,6 @@ public sealed class DialogueController
         inner.width -= portraitReserve;
 
         DrawCinematicShade(screenW, screenH, s);
-        DrawHistory(screenW, box.y - 116f * s, s);
         if (hasSpeaker)
         {
             DrawPortrait(box, portraitSize, s);
@@ -96,7 +98,7 @@ public sealed class DialogueController
 
         if (complete)
         {
-            DrawTailGlyph(box, s);
+            DrawAdvanceHint(box, s);
         }
 
         if (!string.IsNullOrEmpty(LastEffect))
@@ -245,38 +247,42 @@ public sealed class DialogueController
 
     private void DrawDialogueFrame(Rect box, float s)
     {
+        Rect shadow = new Rect(box.x + 8f * s, box.y + 10f * s, box.width, box.height);
+        UiTheme.DrawFill(shadow, new Color(0f, 0f, 0f, 0.38f));
+
         UiTheme.DrawPanel(box);
 
-        Rect topBand = new Rect(box.x + 8f * s, box.y + 8f * s, box.width - 16f * s, 34f * s);
-        UiTheme.DrawFill(topBand, new Color(0.120f, 0.086f, 0.082f, 0.94f));
-        UiTheme.DrawFill(new Rect(topBand.x, topBand.yMax - 4f * s, topBand.width, 4f * s), UiTheme.SealRed);
-        UiTheme.DrawFill(new Rect(box.x + 18f * s, box.yMax - 18f * s, box.width - 36f * s, 2f * s), UiTheme.Gold);
+        Rect fill = new Rect(box.x + 10f * s, box.y + 10f * s, box.width - 20f * s, box.height - 20f * s);
+        UiTheme.DrawFill(fill, new Color(0.020f, 0.032f, 0.032f, 0.95f));
 
-        for (int i = 0; i < 9; i++)
-        {
-            float x = topBand.x + 18f * s + i * 32f * s;
-            DrawDiamond(new Rect(x, topBand.y + 10f * s, 10f * s, 10f * s),
-                        new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.55f));
-        }
+        Rect topBand = new Rect(box.x + 12f * s, box.y + 12f * s, box.width - 24f * s, 30f * s);
+        UiTheme.DrawFill(topBand, new Color(0.010f, 0.052f, 0.056f, 0.86f));
+        UiTheme.DrawFill(new Rect(topBand.x, topBand.yMax - 2f * s, topBand.width, 2f * s),
+                         new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.72f));
+        UiTheme.DrawFill(new Rect(box.x + 24f * s, box.yMax - 18f * s, box.width - 48f * s, 1.5f * s),
+                         new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.55f));
+
+        Rect breath = new Rect(fill.x + 14f * s, fill.y + 48f * s, fill.width - 28f * s, 1f * s);
+        UiTheme.DrawFill(breath, new Color(1f, 1f, 1f, 0.06f));
     }
 
     private void DrawNamePlate(Rect box, float s)
     {
         string name = string.IsNullOrEmpty(current.speakerName) ? "서술" : current.speakerName;
-        float plateW = Mathf.Clamp(118f * s + name.Length * 24f * s, 150f * s, 320f * s);
-        Rect plate = new Rect(box.x + 42f * s, box.y - 20f * s, plateW, 46f * s);
+        float plateW = Mathf.Clamp(96f * s + name.Length * 22f * s, 138f * s, 292f * s);
+        Rect plate = new Rect(box.x + 42f * s, box.y - 15f * s, plateW, 42f * s);
 
-        UiTheme.DrawFill(new Rect(plate.x - 12f * s, plate.y + 8f * s, 18f * s, 30f * s), UiTheme.Ink);
-        UiTheme.DrawFill(new Rect(plate.x + plate.width - 6f * s, plate.y + 8f * s, 18f * s, 30f * s), UiTheme.Ink);
-        UiTheme.DrawFill(plate, UiTheme.Navy);
+        UiTheme.DrawFill(new Rect(plate.x + 6f * s, plate.y + 7f * s, plate.width, plate.height),
+                         new Color(0f, 0f, 0f, 0.34f));
+        UiTheme.DrawFill(plate, new Color(0.010f, 0.020f, 0.024f, 0.98f));
         UiTheme.DrawFill(new Rect(plate.x + 4f * s, plate.y + 4f * s, plate.width - 8f * s, plate.height - 8f * s),
-                         new Color(0.196f, 0.111f, 0.180f, 0.92f));
-        DrawDiamond(new Rect(plate.x + 12f * s, plate.y + 17f * s, 12f * s, 12f * s), UiTheme.Gold);
-        DrawDiamond(new Rect(plate.xMax - 24f * s, plate.y + 17f * s, 12f * s, 12f * s), UiTheme.Gold);
+                         new Color(0.055f, 0.030f, 0.052f, 0.94f));
+        UiTheme.DrawFill(new Rect(plate.x + 10f * s, plate.yMax - 7f * s, plate.width - 20f * s, 2f * s),
+                         new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.78f));
 
         GUIStyle nameStyle =
-            new GUIStyle(UiTheme.Speaker) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(23f * s) };
-        nameStyle.normal.textColor = UiTheme.HanjiPanel;
+            new GUIStyle(UiTheme.Speaker) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(22f * s) };
+        nameStyle.normal.textColor = UiTheme.Ink;
         GUI.Label(plate, name, nameStyle);
     }
 
@@ -286,8 +292,8 @@ public sealed class DialogueController
         UiTheme.DrawPanel(frame, true);
 
         Rect inner = new Rect(frame.x + 14f * s, frame.y + 14f * s, frame.width - 28f * s, frame.height - 28f * s);
-        UiTheme.DrawFill(inner, new Color(0.905f, 0.879f, 0.812f, 0.94f));
-        UiTheme.DrawFill(new Rect(inner.x, inner.y, inner.width, 24f * s), new Color(0.120f, 0.086f, 0.082f, 0.82f));
+        UiTheme.DrawFill(inner, new Color(0.055f, 0.070f, 0.068f, 0.94f));
+        UiTheme.DrawFill(new Rect(inner.x, inner.y, inner.width, 24f * s), new Color(0.020f, 0.050f, 0.054f, 0.82f));
 
         float seal = Mathf.Min(inner.width, inner.height) * 0.58f;
         Rect sealRect = new Rect(inner.center.x - seal * 0.5f, inner.center.y - seal * 0.55f, seal, seal);
@@ -295,7 +301,7 @@ public sealed class DialogueController
 
         GUIStyle caption =
             new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-        caption.normal.textColor = UiTheme.Ink;
+        caption.normal.textColor = UiTheme.GoldBright;
         GUI.Label(new Rect(inner.x + 6f * s, inner.yMax - 36f * s, inner.width - 12f * s, 28f * s), current.speakerName,
                   caption);
     }
@@ -605,7 +611,7 @@ public sealed class DialogueController
         Rect toast = new Rect(box.xMax - w - 40f * s, box.y - 64f * s, w, 38f * s);
         UiTheme.DrawFill(toast, new Color(UiTheme.Ink.r, UiTheme.Ink.g, UiTheme.Ink.b, 0.72f));
         GUIStyle style = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-        style.normal.textColor = UiTheme.HanjiPanel;
+        style.normal.textColor = UiTheme.Ink;
         GUI.Label(toast, quickMessage, style);
     }
 
@@ -665,48 +671,22 @@ public sealed class DialogueController
         return slot == SaveManager.AutoSlot ? "자동" : "수동 " + slot;
     }
 
-    private void DrawTailGlyph(Rect box, float s)
+    private void DrawAdvanceHint(Rect box, float s)
     {
-        Rect r = new Rect(box.xMax - 78f * s, box.yMax - 92f * s, 18f * s, 18f * s);
-        Color c = Mathf.Repeat(Time.unscaledTime * 1.6f, 1f) > 0.5f ? UiTheme.SealRed : UiTheme.Gold;
-        DrawDiamond(r, c);
-    }
-
-    private void DrawHistory(float screenW, float y, float s)
-    {
-        int endExclusive = history.Count - 1;
-        if (endExclusive <= 0 || screenW < 920f)
+        float alpha = Mathf.Lerp(0.35f, 0.78f, Mathf.PingPong(Time.unscaledTime * 1.45f, 1f));
+        Rect hint = new Rect(box.xMax - 106f * s, box.yMax - 92f * s, 38f * s, 24f * s);
+        GUIStyle style = new GUIStyle(UiTheme.SmallMuted)
         {
-            return;
-        }
-
-        float width = Mathf.Min(560f * s, screenW - 90f * s);
-        Rect panel = new Rect(screenW - width - 42f * s, Mathf.Max(104f * s, y), width, 104f * s);
-        UiTheme.DrawPanel(panel, true);
-        GUI.Label(new Rect(panel.x + 14f * s, panel.y + 8f * s, panel.width - 28f * s, 22f * s), "지난 흐름",
-                  UiTheme.SmallMuted);
-
-        int start = Mathf.Max(0, endExclusive - 3);
-        float lineY = panel.y + 34f * s;
-        for (int i = start; i < endExclusive; i++)
-        {
-            string text = history[i];
-            if (text.Length > 62)
-            {
-                text = text.Substring(0, 61) + "…";
-            }
-
-            GUI.Label(new Rect(panel.x + 14f * s, lineY, panel.width - 28f * s, 20f * s), text, UiTheme.SmallMuted);
-            lineY += 22f * s;
-        }
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = Mathf.RoundToInt(20f * s)
+        };
+        style.normal.textColor = new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, alpha);
+        GUI.Label(hint, "...", style);
     }
 
     private static void DrawCinematicShade(float screenW, float screenH, float s)
     {
-        Color ink = new Color(UiTheme.Ink.r, UiTheme.Ink.g, UiTheme.Ink.b, 0.30f);
-        UiTheme.DrawFill(new Rect(0f, 0f, screenW, 52f * s), ink);
-        UiTheme.DrawFill(new Rect(0f, screenH - 18f * s, screenW, 18f * s), ink);
-        UiTheme.DrawFill(new Rect(0f, 52f * s, screenW, 3f * s), UiTheme.SealRed);
+        UiTheme.DrawFill(new Rect(0f, screenH - 16f * s, screenW, 16f * s), new Color(0f, 0f, 0f, 0.38f));
     }
 
     private static GUIStyle DialogueBodyStyle(float s)
@@ -716,14 +696,6 @@ public sealed class DialogueController
                                          wordWrap = true, richText = true };
         style.normal.textColor = UiTheme.Ink;
         return style;
-    }
-
-    private static void DrawDiamond(Rect rect, Color color)
-    {
-        Matrix4x4 matrix = GUI.matrix;
-        GUIUtility.RotateAroundPivot(45f, rect.center);
-        UiTheme.DrawFill(rect, color);
-        GUI.matrix = matrix;
     }
 
     private static string ChoiceMark(int index)

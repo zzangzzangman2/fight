@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2a71814bd8647f4c91e6d2b7cc22b7d, type: 3}
+  m_Name: ice_surface_variants
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.TerrainVariantSet
+  setId: ice_surface
+  variants:
+  - tile: {fileID: 11400000, guid: 3d9ac47cb6cb23243a92e854b6962fb8, type: 2}
+    weight: 5
+  - tile: {fileID: 11400000, guid: 80b3fd896d2c76e4fb50c0e0c61f5fc6, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: 635177942abc95f4699b21c1140bc151, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: 99709827a99c8b744b1a951d0ae9df8b, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: ccd1fc058ce818d4e9c60d8f5a9891e6, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: 72cdfa8af38be00438aaff3ea810488d, type: 2}
+    weight: 2

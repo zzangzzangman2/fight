@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2a71814bd8647f4c91e6d2b7cc22b7d, type: 3}
+  m_Name: rubble_e1_variants
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.TerrainVariantSet
+  setId: rubble_e1
+  variants:
+  - tile: {fileID: 11400000, guid: 7e0dcf9e51b9c624ba810fb3d37f4fb2, type: 2}
+    weight: 5
+  - tile: {fileID: 11400000, guid: d5d4a5937130e2b4dad27b0b29625218, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: f9244ada304761a408ae44849f0db46a, type: 2}
+    weight: 2
+  - tile: {fileID: 11400000, guid: b30d341143f82d34b9f04ef4e0f39379, type: 2}
+    weight: 2

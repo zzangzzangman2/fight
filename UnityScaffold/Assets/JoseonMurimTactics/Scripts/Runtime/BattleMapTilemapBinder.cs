@@ -7,13 +7,35 @@ public enum BattleMapHighlightLayer
 {
     Move,
     Attack,
-    Danger
+    Danger,
+    PathArrow
 }
 
 [DisallowMultipleComponent]
 public sealed class BattleMapTilemapBinder : MonoBehaviour
 {
     [SerializeField] private Grid grid;
+    [Header("Authored Diorama Layers")]
+    [SerializeField] private Tilemap backdropBaseTilemap;
+    [SerializeField] private Tilemap backdropDistantTilemap;
+    [SerializeField] private Tilemap groundBaseTilemap;
+    [SerializeField] private Tilemap groundVariationTilemap;
+    [SerializeField] private Tilemap roadPathTilemap;
+    [SerializeField] private Tilemap roadEdgeTilemap;
+    [SerializeField] private Tilemap cliffTopTilemap;
+    [SerializeField] private Tilemap cliffFaceTilemap;
+    [SerializeField] private Tilemap cliffEdgeTilemap;
+    [SerializeField] private Tilemap waterBaseTilemap;
+    [SerializeField] private Tilemap waterSurfaceTilemap;
+    [SerializeField] private Tilemap decorGroundTilemap;
+    [SerializeField] private Tilemap decorGrassRockSnowTilemap;
+    [SerializeField] private Tilemap propsBehindUnitsTilemap;
+    [SerializeField] private Tilemap propsFrontOfUnitsTilemap;
+    [SerializeField] private Tilemap shadowAoTilemap;
+    [SerializeField] private Tilemap fogMistTilemap;
+    [SerializeField] private Tilemap gridSubtleTilemap;
+
+    [Header("Legacy Runtime Aliases")]
     [SerializeField] private Tilemap groundTilemap;
     [SerializeField] private Tilemap roadTilemap;
     [SerializeField] private Tilemap waterTilemap;
@@ -24,6 +46,7 @@ public sealed class BattleMapTilemapBinder : MonoBehaviour
     [SerializeField] private Tilemap highlightMoveTilemap;
     [SerializeField] private Tilemap highlightAttackTilemap;
     [SerializeField] private Tilemap highlightDangerTilemap;
+    [SerializeField] private Tilemap highlightPathArrowTilemap;
     [SerializeField] private Transform propsRoot;
     [SerializeField] private Transform lightsRoot;
     [SerializeField] private TacticalGridOverlay tacticalGridOverlay;
@@ -32,22 +55,44 @@ public sealed class BattleMapTilemapBinder : MonoBehaviour
     [SerializeField] private Vector2Int size = new Vector2Int(16, 12);
 
     public Grid Grid => grid;
-    public Tilemap GroundTilemap => groundTilemap;
-    public Tilemap RoadTilemap => roadTilemap;
-    public Tilemap WaterTilemap => waterTilemap;
-    public Tilemap CliffTilemap => cliffTilemap;
-    public Tilemap DecorTilemap => decorTilemap;
-    public Tilemap PropsTilemap => propsTilemap;
-    public Tilemap OverlayTilemap => overlayTilemap;
+    public Tilemap BackdropBaseTilemap => backdropBaseTilemap;
+    public Tilemap BackdropDistantTilemap => backdropDistantTilemap;
+    public Tilemap GroundBaseTilemap => groundBaseTilemap;
+    public Tilemap GroundVariationTilemap => groundVariationTilemap;
+    public Tilemap RoadPathTilemap => roadPathTilemap;
+    public Tilemap RoadEdgeTilemap => roadEdgeTilemap;
+    public Tilemap CliffTopTilemap => cliffTopTilemap;
+    public Tilemap CliffFaceTilemap => cliffFaceTilemap;
+    public Tilemap CliffEdgeTilemap => cliffEdgeTilemap;
+    public Tilemap WaterBaseTilemap => waterBaseTilemap;
+    public Tilemap WaterSurfaceTilemap => waterSurfaceTilemap;
+    public Tilemap DecorGroundTilemap => decorGroundTilemap;
+    public Tilemap DecorGrassRockSnowTilemap => decorGrassRockSnowTilemap;
+    public Tilemap PropsBehindUnitsTilemap => propsBehindUnitsTilemap;
+    public Tilemap PropsFrontOfUnitsTilemap => propsFrontOfUnitsTilemap;
+    public Tilemap ShadowAoTilemap => shadowAoTilemap;
+    public Tilemap FogMistTilemap => fogMistTilemap;
+    public Tilemap GridSubtleTilemap => gridSubtleTilemap;
+    public Tilemap GroundTilemap => groundBaseTilemap == null ? groundTilemap : groundBaseTilemap;
+    public Tilemap RoadTilemap => roadPathTilemap == null ? roadTilemap : roadPathTilemap;
+    public Tilemap WaterTilemap => waterBaseTilemap == null ? waterTilemap : waterBaseTilemap;
+    public Tilemap CliffTilemap => cliffTopTilemap == null ? cliffTilemap : cliffTopTilemap;
+    public Tilemap DecorTilemap => decorGrassRockSnowTilemap == null ? decorTilemap : decorGrassRockSnowTilemap;
+    public Tilemap PropsTilemap => propsFrontOfUnitsTilemap == null ? propsTilemap : propsFrontOfUnitsTilemap;
+    public Tilemap OverlayTilemap => gridSubtleTilemap == null ? overlayTilemap : gridSubtleTilemap;
     public Tilemap HighlightMoveTilemap => highlightMoveTilemap;
     public Tilemap HighlightAttackTilemap => highlightAttackTilemap;
     public Tilemap HighlightDangerTilemap => highlightDangerTilemap;
+    public Tilemap HighlightPathArrowTilemap => highlightPathArrowTilemap;
     public Transform PropsRoot => propsRoot;
     public Transform LightsRoot => lightsRoot;
     public TacticalGridOverlay TacticalOverlay => tacticalGridOverlay;
     public BattleMapData BattleMapData => battleMapData;
     public Vector2Int Origin => origin;
     public Vector2Int Size => size;
+    public bool HasAuthoredProductionLayers => groundBaseTilemap != null && groundVariationTilemap != null &&
+                                               roadPathTilemap != null && cliffFaceTilemap != null &&
+                                               waterBaseTilemap != null && propsFrontOfUnitsTilemap != null;
 
     public void ConfigureRuntime(Vector2Int newOrigin, Vector2Int newSize, float tileWidth, float tileHeight)
     {
@@ -75,16 +120,36 @@ public sealed class BattleMapTilemapBinder : MonoBehaviour
             grid.cellSize = new Vector3(1f, 0.5f, 1f);
         }
 
-        groundTilemap = EnsureTilemap("Tilemap_Ground", groundTilemap, 0);
-        roadTilemap = EnsureTilemap("Tilemap_Road", roadTilemap, 20);
-        waterTilemap = EnsureTilemap("Tilemap_Water", waterTilemap, 10);
-        cliffTilemap = EnsureTilemap("Tilemap_Cliff", cliffTilemap, 40);
-        decorTilemap = EnsureTilemap("Tilemap_Decor", decorTilemap, 70);
-        propsTilemap = EnsureTilemap("Tilemap_Props", propsTilemap, 80);
-        overlayTilemap = EnsureTilemap("Tilemap_Overlay", overlayTilemap, 120);
+        backdropBaseTilemap = EnsureTilemap("Tilemap_Backdrop_Base", backdropBaseTilemap, -140);
+        backdropDistantTilemap = EnsureTilemap("Tilemap_Backdrop_Distant", backdropDistantTilemap, -130);
+        groundBaseTilemap = EnsureTilemap("Tilemap_Ground_Base", groundBaseTilemap == null ? groundTilemap : groundBaseTilemap, 0);
+        groundVariationTilemap = EnsureTilemap("Tilemap_Ground_Variation", groundVariationTilemap, 4);
+        roadPathTilemap = EnsureTilemap("Tilemap_Road_Path", roadPathTilemap == null ? roadTilemap : roadPathTilemap, 18);
+        roadEdgeTilemap = EnsureTilemap("Tilemap_Road_Edge", roadEdgeTilemap, 19);
+        waterBaseTilemap = EnsureTilemap("Tilemap_Water_Base", waterBaseTilemap == null ? waterTilemap : waterBaseTilemap, 10);
+        waterSurfaceTilemap = EnsureTilemap("Tilemap_Water_Surface", waterSurfaceTilemap, 11);
+        cliffFaceTilemap = EnsureTilemap("Tilemap_Cliff_Face", cliffFaceTilemap, 28);
+        cliffTopTilemap = EnsureTilemap("Tilemap_Cliff_Top", cliffTopTilemap == null ? cliffTilemap : cliffTopTilemap, 40);
+        cliffEdgeTilemap = EnsureTilemap("Tilemap_Cliff_Edge", cliffEdgeTilemap, 44);
+        decorGroundTilemap = EnsureTilemap("Tilemap_Decor_Ground", decorGroundTilemap == null ? decorTilemap : decorGroundTilemap, 60);
+        decorGrassRockSnowTilemap = EnsureTilemap("Tilemap_Decor_GrassRockSnow", decorGrassRockSnowTilemap, 70);
+        propsBehindUnitsTilemap = EnsureTilemap("Tilemap_Props_BehindUnits", propsBehindUnitsTilemap, 82);
+        propsFrontOfUnitsTilemap = EnsureTilemap("Tilemap_Props_FrontOfUnits", propsFrontOfUnitsTilemap == null ? propsTilemap : propsFrontOfUnitsTilemap, 96);
+        shadowAoTilemap = EnsureTilemap("Tilemap_Shadow_AO", shadowAoTilemap, 104);
+        fogMistTilemap = EnsureTilemap("Tilemap_Fog_Mist", fogMistTilemap, 118);
+        gridSubtleTilemap = EnsureTilemap("Tilemap_Grid_Subtle", gridSubtleTilemap == null ? overlayTilemap : gridSubtleTilemap, 120);
         highlightMoveTilemap = EnsureTilemap("Tilemap_Highlight_Move", highlightMoveTilemap, 160);
         highlightAttackTilemap = EnsureTilemap("Tilemap_Highlight_Attack", highlightAttackTilemap, 161);
         highlightDangerTilemap = EnsureTilemap("Tilemap_Highlight_Danger", highlightDangerTilemap, 162);
+        highlightPathArrowTilemap = EnsureTilemap("Tilemap_Highlight_PathArrow", highlightPathArrowTilemap, 163);
+
+        groundTilemap = groundBaseTilemap;
+        roadTilemap = roadPathTilemap;
+        waterTilemap = waterBaseTilemap;
+        cliffTilemap = cliffTopTilemap;
+        decorTilemap = decorGrassRockSnowTilemap;
+        propsTilemap = propsFrontOfUnitsTilemap;
+        overlayTilemap = gridSubtleTilemap;
 
         propsRoot = EnsureChild("PropsRoot", propsRoot);
         lightsRoot = EnsureChild("LightsRoot", lightsRoot);
@@ -123,9 +188,35 @@ public sealed class BattleMapTilemapBinder : MonoBehaviour
             return highlightAttackTilemap;
         case BattleMapHighlightLayer.Danger:
             return highlightDangerTilemap;
+        case BattleMapHighlightLayer.PathArrow:
+            return highlightPathArrowTilemap;
         default:
             return highlightMoveTilemap;
         }
+    }
+
+    public Tilemap[] PaintedTilemaps()
+    {
+        return new[] {
+            backdropBaseTilemap,
+            backdropDistantTilemap,
+            groundBaseTilemap,
+            groundVariationTilemap,
+            roadPathTilemap,
+            roadEdgeTilemap,
+            waterBaseTilemap,
+            waterSurfaceTilemap,
+            cliffFaceTilemap,
+            cliffTopTilemap,
+            cliffEdgeTilemap,
+            decorGroundTilemap,
+            decorGrassRockSnowTilemap,
+            propsBehindUnitsTilemap,
+            propsFrontOfUnitsTilemap,
+            shadowAoTilemap,
+            fogMistTilemap,
+            gridSubtleTilemap,
+        };
     }
 
     private Tilemap EnsureTilemap(string layerName, Tilemap existing, int sortingOrder)
@@ -134,6 +225,10 @@ public sealed class BattleMapTilemapBinder : MonoBehaviour
         {
             Transform child = transform.Find(layerName);
             existing = child == null ? null : child.GetComponent<Tilemap>();
+            if (existing == null && child != null)
+            {
+                existing = child.gameObject.AddComponent<Tilemap>();
+            }
         }
 
         if (existing == null)
@@ -201,11 +296,17 @@ public sealed class BattleMapTilemapBinder : MonoBehaviour
         int maxY = origin.y + Mathf.Max(1, size.y);
         bool foundTile = false;
 
-        ExpandBounds(groundTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
-        ExpandBounds(roadTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
-        ExpandBounds(waterTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
-        ExpandBounds(cliffTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
-        ExpandBounds(decorTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(groundBaseTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(groundVariationTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(roadPathTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(roadEdgeTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(waterBaseTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(waterSurfaceTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(cliffTopTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(cliffFaceTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(cliffEdgeTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(decorGroundTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
+        ExpandBounds(decorGrassRockSnowTilemap, ref minX, ref minY, ref maxX, ref maxY, ref foundTile);
 
         if (!foundTile)
         {
@@ -242,7 +343,55 @@ public sealed class BattleMapTilemapBinder : MonoBehaviour
 
     private TerrainTileData ResolveTerrainTile(Vector3Int cell)
     {
-        TerrainTileData terrainTile = TileDataAt(roadTilemap, cell);
+        TerrainTileData terrainTile = TileDataAt(roadPathTilemap, cell);
+        if (terrainTile != null)
+        {
+            return terrainTile;
+        }
+
+        terrainTile = TileDataAt(cliffTopTilemap, cell);
+        if (terrainTile != null)
+        {
+            return terrainTile;
+        }
+
+        terrainTile = TileDataAt(cliffEdgeTilemap, cell);
+        if (terrainTile != null)
+        {
+            return terrainTile;
+        }
+
+        terrainTile = TileDataAt(cliffFaceTilemap, cell);
+        if (terrainTile != null)
+        {
+            return terrainTile;
+        }
+
+        terrainTile = TileDataAt(waterSurfaceTilemap, cell);
+        if (terrainTile != null)
+        {
+            return terrainTile;
+        }
+
+        terrainTile = TileDataAt(waterBaseTilemap, cell);
+        if (terrainTile != null)
+        {
+            return terrainTile;
+        }
+
+        terrainTile = TileDataAt(groundVariationTilemap, cell);
+        if (terrainTile != null)
+        {
+            return terrainTile;
+        }
+
+        terrainTile = TileDataAt(groundBaseTilemap, cell);
+        if (terrainTile != null)
+        {
+            return terrainTile;
+        }
+
+        terrainTile = TileDataAt(roadTilemap, cell);
         if (terrainTile != null)
         {
             return terrainTile;

@@ -17,7 +17,7 @@ public enum GameDifficulty
     BloodPath // 혈로 - 적 강화, 되돌리기 제한
 }
 
-/// <summary>초기 무공 선택.</summary>
+/// <summary>주인공 전투 계열. 현재 새 게임은 검법으로 고정된다.</summary>
 public enum StartingArt
 {
     Sword,        // 검법

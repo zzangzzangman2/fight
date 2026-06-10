@@ -3,7 +3,7 @@ using UnityEngine;
 namespace JoseonMurimTactics
 {
 /// <summary>
-/// [1] Title — 새 게임 / 이어하기 / 설정 / 종료. 밝은 한지 배경.
+/// Title menu for the full game flow.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class TitleScreenController : MonoBehaviour
@@ -26,24 +26,54 @@ public sealed class TitleScreenController : MonoBehaviour
 
     private void OnGUI()
     {
-        UiTheme.Begin(true);
-        UiTheme.DrawMountains();
+        UiTheme.Begin(false);
+        UiTheme.DrawTitleBackdrop();
+
         float w = Screen.width;
         float h = Screen.height;
         float s = UiTheme.Scale;
 
-        UiTheme.LabelShadow(new Rect(0f, h * 0.13f, w, 104f * s), "白頭天光", UiTheme.Logo);
-        GUI.Label(new Rect(0f, h * 0.27f, w, 50f * s), "조선 무협 SRPG", UiTheme.Title);
-        UiTheme.DrawDivider(w * 0.5f, h * 0.345f, 360f * s);
-        GUI.Label(new Rect(0f, h * 0.365f, w, 30f * s), "― 꺼져가는 천광 ―", UiTheme.BodyCenter);
-        GUI.Label(new Rect(0f, h * 0.405f, w, 26f * s), "백두산 검각 / 소백촌 / 중원 문파의 검은 표식",
-                  UiTheme.SmallMuted);
+        Rect titleBlock = new Rect(w * 0.47f - 280f * s, h * 0.145f, 560f * s, 250f * s);
+        GUIStyle logo = new GUIStyle(UiTheme.Logo) { fontSize = Mathf.RoundToInt(72f * s) };
+        UiTheme.LabelShadow(new Rect(titleBlock.x, titleBlock.y, titleBlock.width, 88f * s), "白頭天光", logo);
 
-        float bw = 320f * s;
-        float bh = 52f * s;
-        float gap = 14f * s;
-        float x = w * 0.5f - bw * 0.5f;
-        float y = h * 0.45f;
+        GUIStyle subtitle = new GUIStyle(UiTheme.Title) { fontSize = Mathf.RoundToInt(34f * s) };
+        subtitle.normal.textColor = UiTheme.GoldBright;
+        GUI.Label(new Rect(titleBlock.x, titleBlock.y + 88f * s, titleBlock.width, 46f * s), "조선 무협 SRPG", subtitle);
+        UiTheme.DrawDivider(titleBlock.center.x, titleBlock.y + 152f * s, 420f * s);
+
+        GUIStyle tag = new GUIStyle(UiTheme.BodyCenter) { fontSize = Mathf.RoundToInt(19f * s) };
+        tag.normal.textColor = UiTheme.InkSoft;
+        GUI.Label(new Rect(titleBlock.x, titleBlock.y + 166f * s, titleBlock.width, 30f * s), "꺼져가는 천광, 다시 드는 검", tag);
+
+        DrawMenu(w, h, s);
+
+        GUIStyle footer = new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.LowerLeft };
+        GUI.Label(new Rect(24f * s, h - 38f * s, w - 48f * s, 26f * s),
+                  "v1.4 무협 UI 흐름 · Enter 선택 / Esc 뒤로 / 방향키 이동", footer);
+
+        if (showLoad)
+        {
+            DrawLoadSlots(w, h, s);
+        }
+
+        if (showSettings)
+        {
+            DrawSettings(w, h, s);
+        }
+    }
+
+    private void DrawMenu(float w, float h, float s)
+    {
+        float bw = Mathf.Clamp(390f * s, 310f, 460f * s);
+        float bh = Mathf.Clamp(54f * s, 42f, 62f * s);
+        float gap = 12f * s;
+        float x = w * 0.47f - bw * 0.5f;
+        float y = h * 0.48f;
+
+        Rect shade = new Rect(x - 22f * s, y - 20f * s, bw + 44f * s,
+                              (bh + gap) * (root.Debug != null && root.Debug.showBattleTestButton ? 6f : 5f) + 28f * s);
+        UiTheme.DrawFill(shade, new Color(0f, 0f, 0f, 0.22f));
 
         if (Button(new Rect(x, y, bw, bh), "새 게임", true))
         {
@@ -52,9 +82,7 @@ public sealed class TitleScreenController : MonoBehaviour
         y += bh + gap;
 
         GUI.enabled = hasSave;
-        string continueText = hasSave && latestSave != null && latestSave.exists
-                                  ? $"이어하기  {latestSave.chapterTitle} / {latestSave.playTimeText}"
-                                  : "이어하기 (저장 없음)";
+        string continueText = hasSave && latestSave != null && latestSave.exists ? "이어하기" : "이어하기  저장 없음";
         if (Button(new Rect(x, y, bw, bh), continueText, false))
         {
             GameSession loaded = root.Save.Load();
@@ -76,7 +104,7 @@ public sealed class TitleScreenController : MonoBehaviour
 
         if (root.Debug != null && root.Debug.showBattleTestButton)
         {
-            if (Button(new Rect(x, y, bw, bh), "전투 시험 [개발용]", false))
+            if (Button(new Rect(x, y, bw, bh), "전투 시험", false))
             {
                 if (root.Debug.allowDebugSessionFactory)
                 {
@@ -100,31 +128,17 @@ public sealed class TitleScreenController : MonoBehaviour
         {
             Application.Quit();
         }
-
-        GUI.Label(new Rect(0f, h - 40f * s, w, 28f * s),
-                  "v1.3 비전투 UI 흐름 · Enter 선택 / Esc 뒤로 / 방향키 이동",
-                  UiTheme.SmallMuted);
-
-        if (showLoad)
-        {
-            DrawLoadSlots(w, h, s);
-        }
-
-        if (showSettings)
-        {
-            DrawSettings(w, h, s);
-        }
     }
 
     private void DrawLoadSlots(float w, float h, float s)
     {
-        float pw = 560f * s;
-        float ph = 400f * s;
+        float pw = Mathf.Min(620f * s, w - 80f * s);
+        float ph = Mathf.Min(430f * s, h - 110f * s);
         Rect panel = new Rect(w * 0.5f - pw * 0.5f, h * 0.5f - ph * 0.5f, pw, ph);
         UiTheme.DrawPanel(panel);
 
         GUI.Label(new Rect(panel.x + 24f * s, panel.y + 18f * s, pw - 48f * s, 34f * s), "불러오기", UiTheme.Heading);
-        float y = panel.y + 66f * s;
+        float y = panel.y + 68f * s;
 
         DrawSlotButton(panel.x + 24f * s, ref y, pw - 48f * s, s, SaveManager.AutoSlot);
         foreach (string slot in SaveManager.ManualSlots)
@@ -132,7 +146,7 @@ public sealed class TitleScreenController : MonoBehaviour
             DrawSlotButton(panel.x + 24f * s, ref y, pw - 48f * s, s, slot);
         }
 
-        float bw = 160f * s;
+        float bw = 150f * s;
         if (Button(new Rect(panel.x + pw - bw - 24f * s, panel.y + ph - 58f * s, bw, 44f * s), "닫기", false))
         {
             showLoad = false;
@@ -154,6 +168,7 @@ public sealed class TitleScreenController : MonoBehaviour
         {
             detail += " · " + slotInfo.versionWarning;
         }
+
         GUI.Label(new Rect(row.x + 14f * s, row.y + 8f * s, row.width - 150f * s, 24f * s), label, UiTheme.Body);
         GUI.Label(new Rect(row.x + 14f * s, row.y + 34f * s, row.width - 150f * s, 22f * s), detail,
                   UiTheme.SmallMuted);
@@ -175,8 +190,8 @@ public sealed class TitleScreenController : MonoBehaviour
 
     private void DrawSettings(float w, float h, float s)
     {
-        float pw = 520f * s;
-        float ph = Mathf.Min(h - 70f * s, 620f * s);
+        float pw = Mathf.Min(560f * s, w - 80f * s);
+        float ph = Mathf.Min(h - 80f * s, 640f * s);
         Rect panel = new Rect(w * 0.5f - pw * 0.5f, h * 0.5f - ph * 0.5f, pw, ph);
         UiTheme.DrawPanel(panel);
 
@@ -194,7 +209,7 @@ public sealed class TitleScreenController : MonoBehaviour
         Slider(0f, ref y, contentW, s, "텍스트 속도", ref settings.textSpeed);
         Slider(0f, ref y, contentW, s, "자동 대화 속도", ref settings.autoTextSpeed);
         Slider(0f, ref y, contentW, s, "주사위 연출", ref settings.diceAnimationSpeed);
-        Slider(0f, ref y, contentW, s, "적 턴 속도", ref settings.enemyPhaseSpeed);
+        Slider(0f, ref y, contentW, s, "적 행동 속도", ref settings.enemyPhaseSpeed);
         Slider(0f, ref y, contentW, s, "UI 크기", ref settings.uiScale, 0.8f, 1.4f);
 
         y += 6f * s;
@@ -215,13 +230,13 @@ public sealed class TitleScreenController : MonoBehaviour
                                                      new[] { "1280x720", "1600x900", "1920x1080" }, 3, UiTheme.Button);
         GUI.EndScrollView();
 
-        float bw = 160f * s;
+        float bw = 150f * s;
         if (Button(new Rect(panel.x + 24f * s, panel.y + ph - 58f * s, bw, 44f * s), "저장", true))
         {
             settings.Save();
             if (root.Notifications != null)
             {
-                root.Notifications.Push("설정 저장", NotificationKind.Success);
+                root.Notifications.Push("설정을 저장했습니다.", NotificationKind.Success);
             }
         }
 

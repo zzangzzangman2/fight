@@ -15,6 +15,7 @@ public sealed class BattleTestController : MonoBehaviour
     public int height = 12;
     public float tileWidth = 1.16f;
     public float tileHeight = 0.62f;
+    public bool useAuthoredSceneMap = true;
     public bool useTilemapBattlefield = true;
     public bool useLegacyDiamondTerrain;
     public bool useCanvasHud = true;
@@ -106,6 +107,7 @@ public sealed class BattleTestController : MonoBehaviour
     private bool showObjectiveOverlay = true;
     private bool showTerrainNames;
     private bool showHudLog = true;
+    private bool scoutMode;
     private string hudNotice;
     private float hudNoticeUntil;
     private BattleCommandMode commandMode = BattleCommandMode.Move;
@@ -148,6 +150,18 @@ public sealed class BattleTestController : MonoBehaviour
                 StartCoroutine(RunEnemyPhase());
             }
 
+            return;
+        }
+
+        if (phaseTurn.IsPlayerPhase && Input.GetKeyDown(KeyCode.S))
+        {
+            ToggleScoutMode();
+            return;
+        }
+
+        if (scoutMode && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)))
+        {
+            ExitScoutMode();
             return;
         }
 
@@ -283,7 +297,7 @@ public sealed class BattleTestController : MonoBehaviour
             GUI.Label(new Rect(34f, 160f, 300f, 22f), $"명령: {CommandLabel(commandMode)}", labelStyle);
         }
 
-        bool playerTurn = phaseTurn.IsPlayerPhase && activeUnit != null &&
+        bool playerTurn = phaseTurn.IsPlayerPhase && !scoutMode && activeUnit != null &&
                           activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
         GUI.enabled = playerTurn;
 
@@ -720,7 +734,7 @@ public sealed class BattleTestController : MonoBehaviour
         SetText(hudForecastText, BuildHudForecastText());
         SetText(hudRosterText, BuildRosterText());
 
-        bool playerTurn = phaseTurn.IsPlayerPhase && activeUnit != null &&
+        bool playerTurn = phaseTurn.IsPlayerPhase && !scoutMode && activeUnit != null &&
                           activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
         SetButtonEnabled(hudMoveButton, playerTurn && activeUnit.CanMove);
         SetButtonEnabled(hudAttackButton, playerTurn && activeUnit.CanUseMainAction);
@@ -924,6 +938,12 @@ public sealed class BattleTestController : MonoBehaviour
         aiQueued = false;
         battleOver = false;
         commandMode = BattleCommandMode.Move;
+        scoutMode = true;
+        showThreatOverlay = true;
+        showElevationOverlay = true;
+        showCoverOverlay = true;
+        showSightOverlay = true;
+        showObjectiveOverlay = true;
         phaseTurn.Reset();
         hoveredTile = null;
         hoveredUnit = null;
@@ -937,6 +957,7 @@ public sealed class BattleTestController : MonoBehaviour
         units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
         CenterCamera();
         EnsureBattleHud();
+        AddLog("[Scout] Scout mode: inspect enemies, hazards, terrain, and move allies onto southern deployment cells.");
 
         AddLog("[체계] 전투 준비 완료.");
         suppressCameraFocus = true;
@@ -1035,8 +1056,9 @@ public sealed class BattleTestController : MonoBehaviour
             phase = phaseTurn.CurrentPhase,
             round = round,
             battleOver = battleOver,
+            scoutMode = scoutMode,
             instruction = BuildHudInstructionText(),
-            objectiveText = $"{MapDisplayName}\n주 목표: 관문 정찰조장 제압\n보조: 협로 엄폐, 고저차, 지형 상호작용 활용\n단축: Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표 / Alt 지형명",
+            objectiveText = BuildHudObjectiveText(),
             unitInfoText = BuildHudUnitInfo(),
             hoverTitle = BuildHudHoverTitle(),
             hoverBody = BuildHudHoverBody(),
@@ -1051,7 +1073,7 @@ public sealed class BattleTestController : MonoBehaviour
             noticeText = Time.time < hudNoticeUntil ? hudNotice : string.Empty
         };
 
-        bool playerTurn = phaseTurn.IsPlayerPhase && activeUnit != null &&
+        bool playerTurn = phaseTurn.IsPlayerPhase && !scoutMode && activeUnit != null &&
                           activeUnit.definition.faction == Faction.Ally && !busy && !battleOver;
         snapshot.canMove = playerTurn && activeUnit.CanMove;
         snapshot.canAttack = playerTurn && activeUnit.CanUseMainAction;
@@ -1079,6 +1101,16 @@ public sealed class BattleTestController : MonoBehaviour
 
         snapshot.logs.AddRange(battleLog);
         return snapshot;
+    }
+
+    private string BuildHudObjectiveText()
+    {
+        if (scoutMode)
+        {
+            return $"{MapDisplayName}\nSCOUT: enemy positions, danger tiles, terrain info, LoS blockers, props.\nSelect ally -> click southern deployment tile to reposition. S/Space starts battle.";
+        }
+
+        return $"{MapDisplayName}\n주 목표: 관문 정찰조장 제압\n보조: 협로 엄폐, 고저차, 지형 상호작용 활용\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
     }
 
     private string BuildHudInstructionText()
@@ -1222,7 +1254,50 @@ public sealed class BattleTestController : MonoBehaviour
 
     public void HudWait()
     {
+        if (scoutMode)
+        {
+            ExitScoutMode();
+            return;
+        }
+
         EndTurn();
+    }
+
+    private void ToggleScoutMode()
+    {
+        if (!phaseTurn.IsPlayerPhase || battleOver || busy)
+        {
+            return;
+        }
+
+        if (scoutMode)
+        {
+            ExitScoutMode();
+            return;
+        }
+
+        scoutMode = true;
+        showThreatOverlay = true;
+        showElevationOverlay = true;
+        showCoverOverlay = true;
+        showSightOverlay = true;
+        commandMode = BattleCommandMode.Move;
+        AddLog("[Scout] 정찰 모드 재개.");
+        RefreshHighlights();
+    }
+
+    private void ExitScoutMode()
+    {
+        if (!scoutMode)
+        {
+            return;
+        }
+
+        scoutMode = false;
+        commandMode = BattleCommandMode.Move;
+        AddLog("[Scout] 정찰 종료. 아군 행동을 시작합니다.");
+        RefreshHighlights();
+        RefreshUnits();
     }
 
     public void HudToggleThreat()
@@ -1262,6 +1337,11 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void CreateTerrain()
     {
+        if (useAuthoredSceneMap && TryCreateAuthoredSceneTerrain())
+        {
+            return;
+        }
+
         if (useTilemapBattlefield && !useLegacyDiamondTerrain)
         {
             CreateTilemapTerrain();
@@ -1269,6 +1349,126 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         CreateLegacyDebugTerrain();
+    }
+
+    private bool TryCreateAuthoredSceneTerrain()
+    {
+        BattleMapSceneController mapController = FindAnyObjectByType<BattleMapSceneController>();
+        if (mapController == null || !mapController.AuthoredProductionMap)
+        {
+            return false;
+        }
+
+        mapController.InitializeRuntime();
+        BattleMapTilemapBinder binder = mapController.Binder;
+        if (binder == null || binder.TacticalOverlay == null || binder.TacticalOverlay.Cells.Count == 0)
+        {
+            return false;
+        }
+
+        tileWidth = mapController.TileWidth;
+        tileHeight = mapController.TileHeight;
+        width = Mathf.Max(16, mapController.Size.x);
+        height = Mathf.Max(12, mapController.Size.y);
+        tiles = new BattleTestTile[width, height];
+
+        BattleTilemapBattlefield authoredBattlefield = binder.GetComponent<BattleTilemapBattlefield>();
+        if (authoredBattlefield == null)
+        {
+            authoredBattlefield = binder.gameObject.AddComponent<BattleTilemapBattlefield>();
+        }
+
+        authoredBattlefield.BindAuthored(binder, tileWidth, tileHeight, diamondSprite, softDiamondSprite, detailSprite,
+                                         dotSprite);
+        tilemapBattlefield = authoredBattlefield;
+
+        Transform terrainRoot = new GameObject("Battlefield_Authored_TacticalOverlay").transform;
+        terrainRoot.SetParent(transform, false);
+
+        foreach (TacticalGridCellData cellData in binder.TacticalOverlay.Cells)
+        {
+            if (cellData == null || !IsInside(cellData.cell))
+            {
+                continue;
+            }
+
+            TerrainProfile profile = TerrainProfileFromAuthoredCell(cellData);
+            CreateAuthoredTacticalCellCollider(terrainRoot, cellData.cell, profile, mapController.CellToWorld(cellData.cell),
+                                               cellData);
+        }
+
+        RegisterAuthoredInteractables(mapController);
+        return true;
+    }
+
+    private TerrainProfile TerrainProfileFromAuthoredCell(TacticalGridCellData data)
+    {
+        bool objective = string.Equals(data.zoneId, "objective", StringComparison.OrdinalIgnoreCase);
+        bool danger = data.hazardType != HazardType.None || data.northEdge == EdgeType.CliffDrop ||
+                      data.eastEdge == EdgeType.CliffDrop || data.southEdge == EdgeType.CliffDrop ||
+                      data.westEdge == EdgeType.CliffDrop;
+        return new TerrainProfile(data.terrainType, Color.white, data.elevation, CoverBonusFromCoverType(data.coverType),
+                                  Mathf.Max(1, data.moveCost), data.walkable && !data.blocksMovement,
+                                  data.blocksLineOfSight, data.isChokePoint, objective, danger,
+                                  string.IsNullOrEmpty(data.laneId) ? "authored" : data.laneId,
+                                  string.IsNullOrEmpty(data.decorSetKey) ? data.displayName : data.decorSetKey);
+    }
+
+    private void CreateAuthoredTacticalCellCollider(Transform parent, Vector2Int cell, TerrainProfile profile,
+                                                    Vector3 worldPosition, TacticalGridCellData cellData)
+    {
+        GameObject tileObject = new GameObject($"AuthoredTacticalCell_{cell.x}_{cell.y}_{profile.terrain}");
+        tileObject.transform.SetParent(parent, false);
+        tileObject.transform.position = worldPosition;
+        tileObject.transform.localScale = new Vector3(tileWidth, tileWidth, 1f);
+
+        PolygonCollider2D collider = tileObject.AddComponent<PolygonCollider2D>();
+        collider.points = new[] { new Vector2(0f, 0.25f), new Vector2(0.5f, 0f), new Vector2(0f, -0.25f),
+                                  new Vector2(-0.5f, 0f) };
+
+        BattleTestTile tile = tileObject.AddComponent<BattleTestTile>();
+        tile.cell = cell;
+        tile.terrain = profile.terrain;
+        tile.elevation = profile.elevation;
+        tile.walkable = profile.walkable;
+        tile.moveCost = profile.moveCost;
+        tile.coverBonus = profile.coverBonus;
+        tile.baseCoverBonus = profile.coverBonus;
+        tile.baseColor = Color.white;
+        tile.blocksLineOfSight = profile.blocksLineOfSight;
+        tile.isChokePoint = profile.isChokePoint;
+        tile.objective = profile.objective;
+        tile.danger = profile.danger;
+        tile.hazardType = cellData == null ? HazardType.None : cellData.hazardType;
+        tile.northEdge = cellData == null ? EdgeType.None : cellData.northEdge;
+        tile.eastEdge = cellData == null ? EdgeType.None : cellData.eastEdge;
+        tile.southEdge = cellData == null ? EdgeType.None : cellData.southEdge;
+        tile.westEdge = cellData == null ? EdgeType.None : cellData.westEdge;
+        tile.laneId = profile.laneId;
+        tile.tacticalNote = profile.tacticalNote;
+        tile.tilemapBattlefield = tilemapBattlefield;
+        tile.nameLabel = CreateTileNameLabel(tileObject.transform, profile);
+        tiles[cell.x, cell.y] = tile;
+    }
+
+    private void RegisterAuthoredInteractables(BattleMapSceneController mapController)
+    {
+        foreach (MapPropView prop in mapController.InteractiveProps())
+        {
+            if (prop == null || !IsInside(prop.cell))
+            {
+                continue;
+            }
+
+            BattleTestInteractableKind kind = BattleTestKindFromInteractableKind(prop.kind);
+            string id = string.IsNullOrEmpty(prop.propId) ? prop.name : prop.propId;
+            string displayName = string.IsNullOrEmpty(prop.displayName) ? prop.name : prop.displayName;
+            BattleTestInteractable interactable = new BattleTestInteractable(id, displayName, kind, prop.cell)
+            {
+                renderer = FindPrimaryPropRenderer(prop.transform)
+            };
+            interactables.Add(interactable);
+        }
     }
 
     private void CreateTilemapTerrain()
@@ -1330,6 +1530,7 @@ public sealed class BattleTestController : MonoBehaviour
         tile.isChokePoint = profile.isChokePoint;
         tile.objective = profile.objective;
         tile.danger = profile.danger;
+        tile.hazardType = HazardTypeForProfile(profile);
         tile.laneId = profile.laneId;
         tile.tacticalNote = profile.tacticalNote;
         tile.tilemapBattlefield = tilemapBattlefield;
@@ -1392,6 +1593,7 @@ public sealed class BattleTestController : MonoBehaviour
                 tile.isChokePoint = profile.isChokePoint;
                 tile.objective = profile.objective;
                 tile.danger = profile.danger;
+                tile.hazardType = HazardTypeForProfile(profile);
                 tile.laneId = profile.laneId;
                 tile.tacticalNote = profile.tacticalNote;
                 tile.terrainRenderer = renderer;
@@ -1561,6 +1763,92 @@ public sealed class BattleTestController : MonoBehaviour
     {
         T component = target.GetComponent<T>();
         return component == null ? target.AddComponent<T>() : component;
+    }
+
+    private static SpriteRenderer FindPrimaryPropRenderer(Transform prop)
+    {
+        if (prop == null)
+        {
+            return null;
+        }
+
+        SpriteRenderer direct = prop.GetComponent<SpriteRenderer>();
+        if (direct != null)
+        {
+            return direct;
+        }
+
+        SpriteRenderer[] renderers = prop.GetComponentsInChildren<SpriteRenderer>(true);
+        foreach (SpriteRenderer renderer in renderers)
+        {
+            if (renderer != null && renderer.gameObject.name != "Grounding Shadow")
+            {
+                return renderer;
+            }
+        }
+
+        return renderers.Length == 0 ? null : renderers[0];
+    }
+
+    private static int CoverBonusFromCoverType(CoverType coverType)
+    {
+        switch (coverType)
+        {
+        case CoverType.Full:
+            return 4;
+        case CoverType.Heavy:
+            return 2;
+        case CoverType.Light:
+            return 1;
+        default:
+            return 0;
+        }
+    }
+
+    private static HazardType HazardTypeForProfile(TerrainProfile profile)
+    {
+        switch (profile.terrain)
+        {
+        case TerrainType.Fire:
+            return HazardType.Fire;
+        case TerrainType.Smoke:
+            return HazardType.Smoke;
+        case TerrainType.Ice:
+            return HazardType.Ice;
+        case TerrainType.ShallowWater:
+            return HazardType.Slippery;
+        case TerrainType.Water:
+        case TerrainType.DeepWater:
+            return HazardType.DeepWater;
+        case TerrainType.Cliff:
+            return profile.danger ? HazardType.Fall : HazardType.None;
+        default:
+            return profile.danger && !profile.walkable ? HazardType.Fall : HazardType.None;
+        }
+    }
+
+    private static BattleTestInteractableKind BattleTestKindFromInteractableKind(InteractableKind kind)
+    {
+        switch (kind)
+        {
+        case InteractableKind.IncenseBurner:
+            return BattleTestInteractableKind.Smoke;
+        case InteractableKind.Lantern:
+        case InteractableKind.OilJar:
+        case InteractableKind.Beacon:
+            return BattleTestInteractableKind.Fire;
+        case InteractableKind.WoodenBridge:
+            return BattleTestInteractableKind.CollapseBridge;
+        case InteractableKind.BambooBundle:
+            return BattleTestInteractableKind.BambooFall;
+        case InteractableKind.RockLantern:
+            return BattleTestInteractableKind.Rockfall;
+        case InteractableKind.SectSignboard:
+        case InteractableKind.Gate:
+            return BattleTestInteractableKind.Objective;
+        default:
+            return BattleTestInteractableKind.Cover;
+        }
     }
 
     private static InteractableKind ResolvePropKind(string id, BattleTestInteractableKind kind)
@@ -2047,7 +2335,7 @@ public sealed class BattleTestController : MonoBehaviour
 
     private Color VaryTerrainColor(Color color, Vector2Int cell)
     {
-        float amount = -0.055f + Stable01(cell, 99) * 0.11f;
+        float amount = -0.028f + Stable01(cell, 99) * 0.056f;
         Color target = amount >= 0f ? Color.white : Color.black;
         return Color.Lerp(color, target, Mathf.Abs(amount));
     }
@@ -2145,6 +2433,9 @@ public sealed class BattleTestController : MonoBehaviour
             CircleCollider2D collider = unitObject.AddComponent<CircleCollider2D>();
             collider.radius = 0.26f;
             collider.offset = new Vector2(0f, 0.28f);
+
+            ShadowBlob shadow = unitObject.AddComponent<ShadowBlob>();
+            shadow.Configure(new Vector2(0.92f, 0.26f), new Color(0.025f, 0.022f, 0.018f, 0.32f), 2940);
 
             BattleTestUnitView view = unitObject.AddComponent<BattleTestUnitView>();
             BattleTestUnit unit = new BattleTestUnit(definition, view);
@@ -2322,6 +2613,17 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (scoutMode)
+        {
+            if (clickedTile != null && TryScoutDeploy(clickedTile))
+            {
+                return;
+            }
+
+            AddLog("[Scout] Select an ally, then click a southern deployment tile.");
+            return;
+        }
+
         if (commandMode == BattleCommandMode.Attack)
         {
             if (clickedUnit != null && clickedUnit.definition.faction != activeUnit.definition.faction)
@@ -2390,6 +2692,53 @@ public sealed class BattleTestController : MonoBehaviour
         RefreshHighlights();
         RefreshUnits();
         FocusCameraOnUnit(unit, 0.24f);
+    }
+
+    private bool TryScoutDeploy(BattleTestTile destination)
+    {
+        if (!scoutMode || activeUnit == null || destination == null)
+        {
+            return false;
+        }
+
+        if (!IsDeploymentCell(destination.cell))
+        {
+            AddLog("[Scout] 남쪽 배치 구역에만 재배치할 수 있습니다.");
+            return false;
+        }
+
+        if (!destination.walkable || UnitAt(destination.cell) != null)
+        {
+            AddLog("[Scout] 해당 배치칸은 사용할 수 없습니다.");
+            return false;
+        }
+
+        activeUnit.cell = destination.cell;
+        if (activeUnit.view != null)
+        {
+            activeUnit.view.transform.position = UnitWorldPosition(destination.cell);
+        }
+
+        AddLog($"[Scout] {activeUnit.definition.displayName} deployment -> ({destination.cell.x},{destination.cell.y}).");
+        RefreshHighlights();
+        RefreshUnits();
+        return true;
+    }
+
+    private bool IsDeploymentCell(Vector2Int cell)
+    {
+        BattleTestTile tile = TileAt(cell);
+        if (tile == null)
+        {
+            return false;
+        }
+
+        if (string.Equals(tile.laneId, "south_deployment", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return cell.y <= 2 && cell.x >= 5 && cell.x <= 13;
     }
 
     private void TryMove(BattleTestUnit unit, BattleTestTile destination)
@@ -2502,7 +2851,7 @@ public sealed class BattleTestController : MonoBehaviour
         BattleTestTile to = TileAt(target.cell);
         string moveName = special ? attacker.definition.specialName : "공격";
         int d20 = random.Next(1, 21);
-        int heightBonus = from != null && to != null && from.elevation > to.elevation ? 2 : 0;
+        int heightBonus = HeightAttackModifier(from, to);
         int attackBonus = attacker.definition.attackBonus + (special ? attacker.definition.specialAttackBonus : 0);
         int attackTotal = d20 + attackBonus + heightBonus;
         int defense = DefenseValue(target, to);
@@ -2527,7 +2876,7 @@ public sealed class BattleTestController : MonoBehaviour
             damage *= 2;
         }
 
-        damage += heightBonus;
+        damage += HeightDamageBonus(heightBonus);
         if (target.guarded)
         {
             damage = Mathf.Max(1, Mathf.CeilToInt(damage * 0.55f));
@@ -2617,6 +2966,7 @@ public sealed class BattleTestController : MonoBehaviour
             if (allowStatus && poisonHit && !target.defeated)
             {
                 target.poisoned = true;
+                CreatePoisonSmoke(target.cell);
                 AddLog($"[상태] {target.definition.displayName} 중독.");
             }
             return true;
@@ -2625,6 +2975,7 @@ public sealed class BattleTestController : MonoBehaviour
             if (allowStatus && freezeHit && !target.defeated)
             {
                 target.chilled = true;
+                FreezeWaterAround(target.cell);
                 AddLog($"[상태] {target.definition.displayName} 둔화.");
             }
             return true;
@@ -2635,7 +2986,11 @@ public sealed class BattleTestController : MonoBehaviour
         case BattleSpecialEffect.BreakGuard:
             target.guarded = false;
             target.marked = true;
-            ResolveAttack(actor, target, true);
+            bool palmHit = ResolveAttack(actor, target, true);
+            if (palmHit && !target.defeated)
+            {
+                TryPushTarget(actor, target, 1, "palm strike");
+            }
             return true;
         default:
             ResolveAttack(actor, target, true);
@@ -2797,6 +3152,37 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         return baseRange;
+    }
+
+    private static int HeightAttackModifier(BattleTestTile fromTile, BattleTestTile toTile)
+    {
+        if (fromTile == null || toTile == null)
+        {
+            return 0;
+        }
+
+        int delta = fromTile.elevation - toTile.elevation;
+        if (delta >= 2)
+        {
+            return 3;
+        }
+
+        if (delta > 0)
+        {
+            return 2;
+        }
+
+        if (delta <= -2)
+        {
+            return -2;
+        }
+
+        return delta < 0 ? -1 : 0;
+    }
+
+    private static int HeightDamageBonus(int heightAttackModifier)
+    {
+        return Mathf.Max(0, heightAttackModifier);
     }
 
     private bool TryInteract(BattleTestUnit actor, BattleTestTile clickedTile)
@@ -3275,7 +3661,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         BattleTestTile from = TileAt(actor.cell);
         BattleTestTile to = TileAt(target.cell);
-        int heightBonus = from != null && to != null && from.elevation > to.elevation ? 2 : 0;
+        int heightBonus = HeightAttackModifier(from, to);
         int terrainBonus = 0;
         int attackBonus = actor.definition.attackBonus + (special ? actor.definition.specialAttackBonus : 0);
         int defense = DefenseValue(target, to);
@@ -3298,8 +3684,9 @@ public sealed class BattleTestController : MonoBehaviour
         string hpAfterText = $"예상 전투 후 체력: {target.hp}-{target.hp}";
         if (attackLike)
         {
-            damageMin = actor.definition.damageMin + (special ? actor.definition.specialPower : 0) + heightBonus;
-            damageMax = actor.definition.damageMax + (special ? actor.definition.specialPower : 0) + heightBonus;
+            int heightDamageBonus = HeightDamageBonus(heightBonus);
+            damageMin = actor.definition.damageMin + (special ? actor.definition.specialPower : 0) + heightDamageBonus;
+            damageMax = actor.definition.damageMax + (special ? actor.definition.specialPower : 0) + heightDamageBonus;
             if (target.guarded)
             {
                 damageMin = Mathf.Max(1, Mathf.CeilToInt(damageMin * 0.55f));
@@ -3377,7 +3764,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         BattleTestTile from = TileAt(defender.cell);
         BattleTestTile to = TileAt(attacker.cell);
-        int heightBonus = from != null && to != null && from.elevation > to.elevation ? 2 : 0;
+        int heightBonus = HeightAttackModifier(from, to);
         int attackBonus =
             defender.definition.attackBonus + (counter.special ? defender.definition.specialAttackBonus : 0);
         int defense = DefenseValue(attacker, to);
@@ -3497,6 +3884,209 @@ public sealed class BattleTestController : MonoBehaviour
                 unit.view.SetDefeated(true);
                 AddLog($"[전투불능] {unit.definition.displayName} 쓰러짐.");
             }
+        }
+    }
+
+    private void DealTerrainDamage(BattleTestUnit unit, int damage, string reason)
+    {
+        if (unit == null || unit.defeated)
+        {
+            return;
+        }
+
+        unit.hp = Mathf.Max(0, unit.hp - damage);
+        AddLog($"[Terrain] {unit.definition.displayName} takes {damage} from {reason}.");
+        if (unit.hp == 0)
+        {
+            unit.defeated = true;
+            unit.view.SetDefeated(true);
+            AddLog($"[Terrain] {unit.definition.displayName} defeated by {reason}.");
+        }
+    }
+
+    private void ApplyPushLandingHazard(BattleTestUnit unit, BattleTestTile tile, string reason)
+    {
+        if (unit == null || tile == null || unit.defeated)
+        {
+            return;
+        }
+
+        if (tile.hazardType == HazardType.DeepWater || tile.terrain == TerrainType.DeepWater)
+        {
+            unit.chilled = true;
+            DealTerrainDamage(unit, 6, reason + " into deep water");
+        }
+        else if (tile.hazardType == HazardType.Ice || tile.hazardType == HazardType.Slippery)
+        {
+            unit.chilled = true;
+            AddLog($"[Terrain] {unit.definition.displayName} loses footing on ice.");
+        }
+    }
+
+    private bool TryPushTarget(BattleTestUnit actor, BattleTestUnit target, int distance, string reason)
+    {
+        if (actor == null || target == null || target.defeated)
+        {
+            return false;
+        }
+
+        Vector2Int direction = PushDirection(actor.cell, target.cell);
+        BattleTestTile currentTile = TileAt(target.cell);
+        for (int i = 0; i < Mathf.Max(1, distance); i++)
+        {
+            Vector2Int nextCell = target.cell + direction;
+            BattleTestTile nextTile = TileAt(nextCell);
+            if (nextTile == null)
+            {
+                DealTerrainDamage(target, FallDamage, reason + " over the edge");
+                return true;
+            }
+
+            if (UnitAt(nextCell) != null)
+            {
+                DealTerrainDamage(target, 3, reason + " collision");
+                return false;
+            }
+
+            if (!nextTile.walkable)
+            {
+                if (nextTile.hazardType == HazardType.DeepWater || nextTile.terrain == TerrainType.DeepWater)
+                {
+                    target.chilled = true;
+                    DealTerrainDamage(target, 6, reason + " into deep water");
+                    return true;
+                }
+
+                if (IsCliffDropToward(currentTile, direction) || nextTile.hazardType == HazardType.Fall)
+                {
+                    DealTerrainDamage(target, FallDamage, reason + " off a cliff");
+                    return true;
+                }
+
+                DealTerrainDamage(target, 3, reason + " into terrain");
+                return false;
+            }
+
+            target.cell = nextCell;
+            if (target.view != null)
+            {
+                target.view.transform.position = UnitWorldPosition(nextCell);
+            }
+
+            ApplyTileEntry(target, nextTile);
+            ApplyPushLandingHazard(target, nextTile, reason);
+            currentTile = nextTile;
+            if (target.defeated)
+            {
+                return true;
+            }
+        }
+
+        AddLog($"[Push] {target.definition.displayName} pushed by {reason}.");
+        RefreshHighlights();
+        RefreshUnits();
+        return true;
+    }
+
+    private static Vector2Int PushDirection(Vector2Int from, Vector2Int to)
+    {
+        Vector2Int delta = to - from;
+        if (Mathf.Abs(delta.x) >= Mathf.Abs(delta.y) && delta.x != 0)
+        {
+            return new Vector2Int(delta.x > 0 ? 1 : -1, 0);
+        }
+
+        if (delta.y != 0)
+        {
+            return new Vector2Int(0, delta.y > 0 ? 1 : -1);
+        }
+
+        return Vector2Int.up;
+    }
+
+    private static bool IsCliffDropToward(BattleTestTile tile, Vector2Int direction)
+    {
+        if (tile == null)
+        {
+            return false;
+        }
+
+        if (direction.x > 0)
+        {
+            return tile.eastEdge == EdgeType.CliffDrop;
+        }
+
+        if (direction.x < 0)
+        {
+            return tile.westEdge == EdgeType.CliffDrop;
+        }
+
+        if (direction.y > 0)
+        {
+            return tile.northEdge == EdgeType.CliffDrop;
+        }
+
+        return tile.southEdge == EdgeType.CliffDrop;
+    }
+
+    private void FreezeWaterAround(Vector2Int center)
+    {
+        int changed = 0;
+        foreach (Vector2Int cell in RadiusCells(center, 1))
+        {
+            BattleTestTile tile = TileAt(cell);
+            if (tile == null)
+            {
+                continue;
+            }
+
+            if (tile.terrain != TerrainType.Water && tile.terrain != TerrainType.ShallowWater &&
+                tile.terrain != TerrainType.DeepWater && tile.hazardType != HazardType.DeepWater &&
+                tile.hazardType != HazardType.Slippery)
+            {
+                continue;
+            }
+
+            tile.terrain = TerrainType.Ice;
+            tile.walkable = true;
+            tile.moveCost = Mathf.Min(Mathf.Max(2, tile.moveCost), 3);
+            tile.hazardType = HazardType.Ice;
+            tile.danger = true;
+            tile.blocksLineOfSight = false;
+            tile.tacticalNote = "Frozen by ice art: walkable, slippery, and vulnerable to knockback.";
+            RefreshTerrainTint(tile);
+            changed++;
+        }
+
+        if (changed > 0)
+        {
+            AddLog($"[Terrain] Ice art froze {changed} water tiles.");
+        }
+    }
+
+    private void CreatePoisonSmoke(Vector2Int center)
+    {
+        int changed = 0;
+        foreach (Vector2Int cell in RadiusCells(center, 1))
+        {
+            BattleTestTile tile = TileAt(cell);
+            if (tile == null || !tile.walkable)
+            {
+                continue;
+            }
+
+            tile.smokeTurns = Mathf.Max(tile.smokeTurns, 2);
+            tile.hazardType = HazardType.Poison;
+            tile.danger = true;
+            tile.blocksLineOfSight = true;
+            tile.tacticalNote = "Poison mist: blocks line of sight and marks the route as dangerous.";
+            RefreshTerrainTint(tile);
+            changed++;
+        }
+
+        if (changed > 0)
+        {
+            AddLog($"[Terrain] Poison mist formed on {changed} tiles.");
         }
     }
 
@@ -3683,6 +4273,11 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         List<string> states = new List<string>();
+        if (tile.hazardType != HazardType.None)
+        {
+            states.Add(tile.hazardType.ToString());
+        }
+
         if (tile.smokeTurns > 0)
         {
             states.Add("연기");
@@ -3988,6 +4583,12 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (scoutMode && mode != BattleCommandMode.Move)
+        {
+            AddLog("[Scout] 정찰 중에는 공격/무공 대신 지형 확인과 배치 변경만 가능합니다.");
+            return;
+        }
+
         if (mode == BattleCommandMode.Move && !activeUnit.CanMove)
         {
             commandMode = DefaultCommandForUnit(activeUnit);
@@ -4210,6 +4811,21 @@ public sealed class BattleTestController : MonoBehaviour
         yield return new Vector2Int(cell.x, cell.y - 1);
     }
 
+    private IEnumerable<Vector2Int> RadiusCells(Vector2Int center, int radius)
+    {
+        for (int y = center.y - radius; y <= center.y + radius; y++)
+        {
+            for (int x = center.x - radius; x <= center.x + radius; x++)
+            {
+                Vector2Int cell = new Vector2Int(x, y);
+                if (GridDistance(center, cell) <= radius)
+                {
+                    yield return cell;
+                }
+            }
+        }
+    }
+
     private void RefreshHighlights()
     {
         ClearHighlights();
@@ -4222,10 +4838,16 @@ public sealed class BattleTestController : MonoBehaviour
         BattleTestTile activeTile = TileAt(activeUnit.cell);
         if (activeTile != null)
         {
-            activeTile.SetHighlight(new Color(1f, 0.76f, 0.18f, 0.62f));
+            activeTile.SetHighlight(new Color(1f, 0.72f, 0.16f, 0.44f));
         }
 
         DrawMapOverlays();
+
+        if (scoutMode)
+        {
+            HighlightDeploymentCells();
+            return;
+        }
 
         if (commandMode == BattleCommandMode.Move && !activeUnit.moved)
         {
@@ -4239,7 +4861,7 @@ public sealed class BattleTestController : MonoBehaviour
                 BattleTestTile tile = TileAt(cell);
                 if (tile != null)
                 {
-                    tile.SetHighlight(new Color(0.25f, 0.58f, 1f, 0.38f));
+                    tile.SetHighlight(new Color(0.24f, 0.56f, 0.92f, 0.28f));
                 }
             }
         }
@@ -4260,7 +4882,7 @@ public sealed class BattleTestController : MonoBehaviour
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
                     {
-                        tile.SetHighlight(new Color(1f, 0.18f, 0.16f, 0.52f));
+                        tile.SetHighlight(new Color(0.95f, 0.18f, 0.14f, 0.36f));
                     }
                 }
             }
@@ -4284,8 +4906,8 @@ public sealed class BattleTestController : MonoBehaviour
                     if (tile != null)
                     {
                         Color color = activeUnit.definition.specialEffect == BattleSpecialEffect.Heal
-                                          ? new Color(0.18f, 1f, 0.62f, 0.48f)
-                                          : new Color(0.72f, 0.28f, 1f, 0.50f);
+                                          ? new Color(0.18f, 0.88f, 0.58f, 0.32f)
+                                          : new Color(0.62f, 0.30f, 0.90f, 0.34f);
                         tile.SetHighlight(color);
                     }
                 }
@@ -4304,8 +4926,24 @@ public sealed class BattleTestController : MonoBehaviour
                 BattleTestTile tile = TileAt(interactable.cell);
                 if (tile != null)
                 {
-                    tile.SetHighlight(new Color(1f, 0.62f, 0.16f, 0.58f));
+                    tile.SetHighlight(new Color(1f, 0.62f, 0.16f, 0.36f));
                 }
+            }
+        }
+    }
+
+    private void HighlightDeploymentCells()
+    {
+        if (tiles == null)
+        {
+            return;
+        }
+
+        foreach (BattleTestTile tile in tiles)
+        {
+            if (tile != null && IsDeploymentCell(tile.cell) && tile.walkable && UnitAt(tile.cell) == null)
+            {
+                tile.SetHighlight(new Color(0.16f, 0.66f, 0.94f, 0.30f));
             }
         }
     }
@@ -4326,33 +4964,33 @@ public sealed class BattleTestController : MonoBehaviour
 
             if (showThreatOverlay && IsInEnemyThreat(tile.cell))
             {
-                tile.SetHighlight(new Color(0.70f, 0.08f, 0.08f, 0.26f));
+                tile.SetHighlight(new Color(0.70f, 0.08f, 0.08f, 0.20f));
             }
 
             if (showElevationOverlay && tile.elevation > 0)
             {
-                float alpha = Mathf.Clamp01(0.18f + tile.elevation * 0.12f);
+                float alpha = Mathf.Clamp01(0.12f + tile.elevation * 0.065f);
                 tile.SetHighlight(new Color(1f, 0.80f, 0.20f, alpha));
             }
 
             if (showCoverOverlay && tile.coverBonus > 0)
             {
-                tile.SetHighlight(new Color(0.24f, 0.62f, 0.46f, 0.34f));
+                tile.SetHighlight(new Color(0.24f, 0.62f, 0.46f, 0.24f));
             }
 
             if (showSightOverlay && tile.blocksLineOfSight)
             {
-                tile.SetHighlight(new Color(0.42f, 0.36f, 0.28f, 0.42f));
+                tile.SetHighlight(new Color(0.42f, 0.36f, 0.28f, 0.28f));
             }
 
             if (showObjectiveOverlay && tile.objective)
             {
-                tile.SetHighlight(new Color(1f, 0.82f, 0.10f, 0.56f));
+                tile.SetHighlight(new Color(1f, 0.80f, 0.14f, 0.34f));
             }
 
             if (tile.danger && !showObjectiveOverlay)
             {
-                tile.SetHighlight(new Color(0.86f, 0.16f, 0.08f, 0.30f));
+                tile.SetHighlight(new Color(0.86f, 0.16f, 0.08f, 0.20f));
             }
         }
     }
@@ -5889,6 +6527,11 @@ public sealed class BattleTestTile : MonoBehaviour
     public bool isChokePoint;
     public bool objective;
     public bool danger;
+    public HazardType hazardType;
+    public EdgeType northEdge;
+    public EdgeType eastEdge;
+    public EdgeType southEdge;
+    public EdgeType westEdge;
     public string laneId;
     public string tacticalNote;
     public TextMesh nameLabel;
@@ -5919,8 +6562,10 @@ public sealed class BattleTestUnitView : MonoBehaviour
     private SpriteRenderer turnMarkerPlate;
     private SpriteRenderer turnMarkerArrow;
     private SpriteRenderer turnMarkerHalo;
+    private SpriteRenderer turnGroundRing;
     private CharacterVisualController visualController;
     private Vector3 turnMarkerBasePosition;
+    private readonly Vector3 groundRingBaseScale = new Vector3(1.56f, 0.46f, 1f);
     private static Sprite turnMarkerPlateSprite;
     private static Sprite turnMarkerArrowSprite;
 
@@ -5949,8 +6594,16 @@ public sealed class BattleTestUnitView : MonoBehaviour
         if (turnMarkerHalo != null)
         {
             Color color = turnMarkerHalo.color;
-            color.a = 0.22f + Mathf.Abs(wave) * 0.20f;
+            color.a = 0.24f + Mathf.Abs(wave) * 0.18f;
             turnMarkerHalo.color = color;
+        }
+
+        if (turnGroundRing != null && turnGroundRing.gameObject.activeSelf)
+        {
+            turnGroundRing.transform.localScale = groundRingBaseScale * (1f + Mathf.Abs(wave) * 0.055f);
+            Color color = turnGroundRing.color;
+            color.a = 0.18f + Mathf.Abs(wave) * 0.16f;
+            turnGroundRing.color = color;
         }
     }
 
@@ -6063,14 +6716,25 @@ public sealed class BattleTestUnitView : MonoBehaviour
         turnMarkerRoot = root.transform;
 
         turnMarkerHalo = CreateMarkerSprite("Turn Halo", GetTurnMarkerPlateSprite(), new Vector3(0f, -0.012f, 0.02f),
-                                            new Vector3(1.52f, 0.54f, 1f),
-                                            new Color(1f, 0.74f, 0.16f, 0.28f), 6098);
+                                            new Vector3(1.92f, 0.68f, 1f),
+                                            new Color(1f, 0.74f, 0.16f, 0.32f), 6098);
         turnMarkerPlate =
-            CreateMarkerSprite("Turn Plate", GetTurnMarkerPlateSprite(), Vector3.zero, new Vector3(1.22f, 0.36f, 1f),
+            CreateMarkerSprite("Turn Plate", GetTurnMarkerPlateSprite(), Vector3.zero, new Vector3(1.56f, 0.46f, 1f),
                                new Color(0.95f, 0.72f, 0.16f, 0.96f), 6100);
         turnMarkerArrow = CreateMarkerSprite("Turn Arrow", GetTurnMarkerArrowSprite(), new Vector3(0f, -0.20f, 0f),
-                                             new Vector3(0.34f, 0.25f, 1f),
+                                             new Vector3(0.48f, 0.34f, 1f),
                                              new Color(0.95f, 0.72f, 0.16f, 0.96f), 6101);
+
+        GameObject ringObject = new GameObject("Current Turn Ground Ring");
+        ringObject.transform.SetParent(transform, false);
+        ringObject.transform.localPosition = new Vector3(0f, -0.30f, 0.03f);
+        ringObject.transform.localScale = groundRingBaseScale;
+        turnGroundRing = ringObject.AddComponent<SpriteRenderer>();
+        turnGroundRing.sprite = GetTurnMarkerPlateSprite();
+        turnGroundRing.color = new Color(1f, 0.72f, 0.16f, 0.24f);
+        turnGroundRing.sortingLayerName = "Default";
+        turnGroundRing.sortingOrder = 4098;
+        turnGroundRing.gameObject.SetActive(false);
 
         GameObject textObject = new GameObject("Turn Marker Text");
         textObject.transform.SetParent(turnMarkerRoot, false);
@@ -6078,8 +6742,8 @@ public sealed class BattleTestUnitView : MonoBehaviour
         turnMarkerText = textObject.AddComponent<TextMesh>();
         turnMarkerText.anchor = TextAnchor.MiddleCenter;
         turnMarkerText.alignment = TextAlignment.Center;
-        turnMarkerText.fontSize = 42;
-        turnMarkerText.characterSize = 0.012f;
+        turnMarkerText.fontSize = 44;
+        turnMarkerText.characterSize = 0.014f;
         turnMarkerText.color = new Color(0.11f, 0.075f, 0.03f, 1f);
         ApplyWorldTextFont(turnMarkerText);
 
@@ -6114,24 +6778,36 @@ public sealed class BattleTestUnitView : MonoBehaviour
 
         bool visible = selected && !Unit.defeated;
         turnMarkerRoot.gameObject.SetActive(visible);
+        if (turnGroundRing != null)
+        {
+            turnGroundRing.gameObject.SetActive(visible);
+        }
+
         if (!visible)
         {
             return;
         }
 
         CharacterVisualData visual = Unit.definition.visual;
-        float markerY = visual == null ? 1.50f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.38f;
+        float markerY = visual == null ? 1.74f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.58f;
         turnMarkerBasePosition = new Vector3(0f, markerY, -0.09f);
         turnMarkerRoot.localPosition = turnMarkerBasePosition;
 
         bool enemy = Unit.definition.faction == Faction.Enemy;
-        Color plate = enemy ? new Color(0.95f, 0.27f, 0.19f, 0.96f) : new Color(0.97f, 0.73f, 0.16f, 0.96f);
+        Color plate = enemy ? new Color(0.92f, 0.20f, 0.16f, 0.98f) : new Color(0.98f, 0.68f, 0.12f, 0.98f);
         Color halo = plate;
-        halo.a = enemy ? 0.28f : 0.32f;
+        halo.a = enemy ? 0.30f : 0.34f;
 
         turnMarkerPlate.color = plate;
         turnMarkerArrow.color = plate;
         turnMarkerHalo.color = halo;
+        if (turnGroundRing != null)
+        {
+            Color ring = plate;
+            ring.a = enemy ? 0.24f : 0.28f;
+            turnGroundRing.color = ring;
+        }
+
         turnMarkerText.text = enemy ? "적 턴" : "현재 턴";
         turnMarkerText.color = enemy ? new Color(1f, 0.95f, 0.86f, 1f) : new Color(0.12f, 0.075f, 0.025f, 1f);
     }
