@@ -22,6 +22,7 @@ public static class BattleMapTilemapSmokeCheck
             throw new MissingReferenceException("BattleTestController not found in BattleTest scene.");
         }
 
+        controller.useAuthoredSceneMap = false;
         controller.useTilemapBattlefield = true;
         controller.useLegacyDiamondTerrain = false;
         controller.mapVariant = BattleTestMapVariant.BaekduMountainSnowfield;
