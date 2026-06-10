@@ -14,7 +14,7 @@ namespace JoseonMurimTactics
 
             CharacterProgressState state = progression.GetSnapshot(characterId);
             string xpText = state.IsMaxLevel ? "MAX" : state.xp + "/" + state.xpToNext;
-            return state.displayName + "  Lv." + state.level + "  " + state.realmName + "  XP " + xpText + "  무공점 " + state.martialPoints;
+            return state.displayName + " Lv." + state.level + " " + state.realmName + " XP " + xpText + " 무공점 " + state.martialPoints;
         }
 
         public static string FormatDetailed(ProgressionService progression, string characterId)
@@ -52,6 +52,32 @@ namespace JoseonMurimTactics
             for (int i = 0; i < CharacterGrowthCatalog.CorePartyIds.Length; i++)
             {
                 sb.AppendLine(FormatCharacterLine(progression, CharacterGrowthCatalog.CorePartyIds[i]));
+            }
+
+            return sb.ToString();
+        }
+
+        public static string FormatRewardGraphLine(CharacterReward reward)
+        {
+            if (reward == null)
+            {
+                return string.Empty;
+            }
+
+            string before = reward.beforeXpToNext <= 0 ? "MAX" : reward.beforeXp + "/" + reward.beforeXpToNext;
+            string after = reward.afterXpToNext <= 0 ? "MAX" : reward.afterXp + "/" + reward.afterXpToNext;
+            string level = reward.beforeLevel == reward.afterLevel ? "Lv." + reward.afterLevel : "Lv." + reward.beforeLevel + "→" + reward.afterLevel;
+            return reward.displayName + " " + level + " XP +" + reward.appliedXp + " (" + before + "→" + after + ")";
+        }
+
+        public static string FormatXpBar(float progress01, int width)
+        {
+            int safeWidth = Math.Max(4, width);
+            int filled = Math.Max(0, Math.Min(safeWidth, (int)Math.Round(progress01 * safeWidth)));
+            StringBuilder sb = new StringBuilder(safeWidth);
+            for (int i = 0; i < safeWidth; i++)
+            {
+                sb.Append(i < filled ? '■' : '□');
             }
 
             return sb.ToString();

@@ -46,11 +46,7 @@ namespace JoseonMurimTactics
             CampaignArcInfo arc = CampaignArcCatalog.GetById(tuning.campaignArcId);
             ProgressionService progression = new ProgressionService(session);
 
-            List<string> participants = ResolveParticipants(definition);
-            if (participants.Count <= 0)
-            {
-                participants.AddRange(CharacterGrowthCatalog.CorePartyIds);
-            }
+            List<string> participants = BattleDeploymentService.ResolveRewardParticipants(session, definition);
 
             int partyAverage = AverageLevel(progression, participants);
             float repeatMultiplier = tuning.repeatable ? GetRepeatMultiplier(session, tuning) : 1f;
@@ -63,6 +59,9 @@ namespace JoseonMurimTactics
             bundle.factionId = tuning.factionId;
             bundle.recommendedLevel = tuning.recommendedLevel;
             bundle.partyAverageLevel = partyAverage;
+            bundle.deployedMemberCount = participants.Count;
+            bundle.usedExplicitDeployment = BattleDeploymentService.HasExplicitDeployment(session, definition);
+            bundle.deploymentBattleId = BattleDeploymentService.ActiveBattleId(session);
             bundle.won = result.Won;
             bundle.repeatMultiplier = repeatMultiplier;
             bundle.overlevelMultiplier = overlevelMultiplier;
@@ -102,6 +101,7 @@ namespace JoseonMurimTactics
                 CharacterReward reward = new CharacterReward();
                 reward.characterId = characterId;
                 reward.displayName = CharacterGrowthCatalog.DisplayName(characterId);
+                reward.deployed = true;
                 reward.baseXp = baseXp;
                 reward.finalXp = finalXp;
                 reward.masteryAmount = Math.Max(0, (int)Math.Round(tuning.masteryAmount * repeatMultiplier * resultMultiplier));
@@ -125,7 +125,7 @@ namespace JoseonMurimTactics
             }
 
             string title = definition != null && !string.IsNullOrEmpty(definition.title) ? definition.title : bundle.battleId;
-            bundle.summaryLines.Add(title + " 성장 보상: 평균 Lv." + partyAverage + ", 권장 Lv." + tuning.recommendedLevel + ", 반복 x" + repeatMultiplier.ToString("0.##") + ", 오버레벨 x" + overlevelMultiplier.ToString("0.##"));
+            bundle.summaryLines.Add(title + " 성장 보상: 출진 " + participants.Count + "명만 적용, 평균 Lv." + partyAverage + ", 권장 Lv." + tuning.recommendedLevel + ", 반복 x" + repeatMultiplier.ToString("0.##") + ", 오버레벨 x" + overlevelMultiplier.ToString("0.##"));
             return bundle;
         }
 
@@ -333,6 +333,8 @@ namespace JoseonMurimTactics
             return t;
         }
 
+        // v1.3부터 실제 보상 참여자는 BattleDeploymentService.ResolveRewardParticipants를 사용한다.
+        // 이 함수는 예전 저장/외부 도구 호환용으로만 남긴다.
         private static List<string> ResolveParticipants(BattleDefinition definition)
         {
             List<string> participants = new List<string>();
