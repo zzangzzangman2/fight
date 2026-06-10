@@ -31,16 +31,24 @@ public static class BattleMapTilemapSmokeCheck
 
         GameObject battlefield = GameObject.Find("Battlefield_Tilemap");
         Require(battlefield != null, "Battlefield_Tilemap was not created.");
-        Require(GameObject.Find("Tilemap_Ground") != null, "Tilemap_Ground was not created.");
-        Require(GameObject.Find("Tilemap_Road") != null, "Tilemap_Road was not created.");
-        Require(GameObject.Find("Tilemap_Cliff") != null, "Tilemap_Cliff was not created.");
-        Require(GameObject.Find("Tilemap_Water") != null, "Tilemap_Water was not created.");
-        Require(GameObject.Find("Tilemap_Decor") != null, "Tilemap_Decor was not created.");
-        Require(GameObject.Find("Tilemap_Props") != null, "Tilemap_Props was not created.");
-        Require(GameObject.Find("Tilemap_Overlay") != null, "Tilemap_Overlay was not created.");
-        Require(GameObject.Find("Tilemap_Highlight_Move") != null, "Tilemap_Highlight_Move was not created.");
-        Require(GameObject.Find("Tilemap_Highlight_Attack") != null, "Tilemap_Highlight_Attack was not created.");
-        Require(GameObject.Find("Tilemap_Highlight_Danger") != null, "Tilemap_Highlight_Danger was not created.");
+        Tilemap groundBase = RequireTilemap("Tilemap_Ground_Base");
+        Tilemap groundVariation = RequireTilemap("Tilemap_Ground_Variation");
+        Tilemap roadPath = RequireTilemap("Tilemap_Road_Path");
+        Tilemap roadEdge = RequireTilemap("Tilemap_Road_Edge");
+        Tilemap cliffTop = RequireTilemap("Tilemap_Cliff_Top");
+        Tilemap cliffFace = RequireTilemap("Tilemap_Cliff_Face");
+        RequireTilemap("Tilemap_Cliff_Edge");
+        Tilemap waterBase = RequireTilemap("Tilemap_Water_Base");
+        Tilemap waterSurface = RequireTilemap("Tilemap_Water_Surface");
+        RequireTilemap("Tilemap_Decor_Ground");
+        RequireTilemap("Tilemap_Decor_GrassRockSnow");
+        RequireTilemap("Tilemap_Props_BehindUnits");
+        RequireTilemap("Tilemap_Props_FrontOfUnits");
+        RequireTilemap("Tilemap_Grid_Subtle");
+        RequireTilemap("Tilemap_Highlight_Move");
+        RequireTilemap("Tilemap_Highlight_Attack");
+        RequireTilemap("Tilemap_Highlight_Danger");
+        RequireTilemap("Tilemap_Highlight_PathArrow");
         Require(GameObject.Find("PropsRoot") != null, "PropsRoot was not created.");
         Require(GameObject.Find("LightsRoot") != null, "LightsRoot was not created.");
         SpriteRenderer paintedBackdrop = GameObject.Find("Painted Map Backdrop")?.GetComponent<SpriteRenderer>();
@@ -57,12 +65,11 @@ public static class BattleMapTilemapSmokeCheck
         Require(overlay.Cells.Count == controller.width * controller.height,
                 $"TacticalGridOverlay expected {controller.width * controller.height} cells, got {overlay.Cells.Count}.");
 
-        Tilemap ground = GameObject.Find("Tilemap_Ground").GetComponent<Tilemap>();
-        Tilemap road = GameObject.Find("Tilemap_Road").GetComponent<Tilemap>();
-        Tilemap cliff = GameObject.Find("Tilemap_Cliff").GetComponent<Tilemap>();
-        Tilemap water = GameObject.Find("Tilemap_Water").GetComponent<Tilemap>();
-        Require(ground.GetUsedTilesCount() + road.GetUsedTilesCount() + cliff.GetUsedTilesCount() +
-                water.GetUsedTilesCount() > 0, "No terrain tiles were assigned.");
+        Require(groundBase.GetUsedTilesCount() + groundVariation.GetUsedTilesCount() +
+                roadPath.GetUsedTilesCount() + roadEdge.GetUsedTilesCount() +
+                cliffTop.GetUsedTilesCount() + cliffFace.GetUsedTilesCount() +
+                waterBase.GetUsedTilesCount() + waterSurface.GetUsedTilesCount() > 0,
+                "No terrain tiles were assigned.");
         Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
                 "Expected generated interactable props to carry MapPropView metadata.");
         VerifyBlockedMapCells(controller);
@@ -70,6 +77,13 @@ public static class BattleMapTilemapSmokeCheck
 
         CleanupGeneratedChildren(controller.transform);
         Debug.Log("[BattleMapTilemapSmokeCheck] BattleTest Tilemap battlefield smoke check passed.");
+    }
+
+    private static Tilemap RequireTilemap(string name)
+    {
+        Tilemap tilemap = GameObject.Find(name)?.GetComponent<Tilemap>();
+        Require(tilemap != null, $"{name} was not created.");
+        return tilemap;
     }
 
     private static void VerifyBlockedMapCells(BattleTestController controller)
