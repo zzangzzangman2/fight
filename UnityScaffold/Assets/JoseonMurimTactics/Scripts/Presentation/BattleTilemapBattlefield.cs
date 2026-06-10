@@ -627,7 +627,7 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
                 float edge = Mathf.Clamp01((1f - d) * 26f);
                 float border = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - d) * 9f));
-                float alpha = Mathf.Lerp(0.62f, 1f, border) * edge;
+                float alpha = Mathf.Lerp(0.26f, 0.58f, border) * edge;
                 texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
             }
         }

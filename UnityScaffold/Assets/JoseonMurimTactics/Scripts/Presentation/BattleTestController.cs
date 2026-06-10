@@ -171,7 +171,7 @@ public sealed class BattleTestController : MonoBehaviour
     private bool showElevationOverlay;
     private bool showCoverOverlay;
     private bool showSightOverlay;
-    private bool showObjectiveOverlay = true;
+    private bool showObjectiveOverlay;
     private bool showTerrainNames;
     private bool showHudLog = true;
     private bool scoutMode;
@@ -467,7 +467,7 @@ public sealed class BattleTestController : MonoBehaviour
             SetCommandMode(BattleCommandMode.Move);
         }
 
-        GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
+        GUI.enabled = playerTurn && activeUnit != null && activeUnit.CanUseMainAction;
         if (GUI.Button(new Rect(112f, 192f, 70f, 28f), "공격"))
         {
             SetCommandMode(BattleCommandMode.Attack);
@@ -479,13 +479,13 @@ public sealed class BattleTestController : MonoBehaviour
             SetCommandMode(BattleCommandMode.Skill);
         }
 
-        GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted;
+        GUI.enabled = playerTurn && activeUnit != null && CanGuard(activeUnit);
         if (GUI.Button(new Rect(268f, 192f, 70f, 28f), "방어"))
         {
             GuardActiveUnit();
         }
 
-        GUI.enabled = playerTurn && activeUnit != null && !activeUnit.acted && HasUsableInteractable(activeUnit);
+        GUI.enabled = playerTurn && activeUnit != null && CanUseTerrainCommand(activeUnit);
         if (GUI.Button(new Rect(34f, 230f, 92f, 30f), "지형"))
         {
             SetCommandMode(BattleCommandMode.Interact);
@@ -792,7 +792,7 @@ public sealed class BattleTestController : MonoBehaviour
         rect.anchoredPosition = anchoredPosition;
         rect.sizeDelta = sizeDelta;
         Image image = panel.GetComponent<Image>();
-        image.color = new Color(0.09f, 0.085f, 0.075f, 0.86f);
+        image.color = new Color(0.045f, 0.052f, 0.062f, 0.86f);
         return rect;
     }
 
@@ -810,7 +810,7 @@ public sealed class BattleTestController : MonoBehaviour
         uiText.fontSize = Mathf.RoundToInt(size);
         uiText.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
         uiText.alignment = alignment;
-        uiText.color = bold ? new Color(0.96f, 0.90f, 0.78f, 1f) : new Color(0.88f, 0.84f, 0.74f, 1f);
+        uiText.color = bold ? new Color(0.90f, 0.96f, 1f, 1f) : new Color(0.78f, 0.84f, 0.90f, 1f);
         uiText.horizontalOverflow = HorizontalWrapMode.Wrap;
         uiText.verticalOverflow = VerticalWrapMode.Truncate;
         uiText.raycastTarget = false;
@@ -826,24 +826,24 @@ public sealed class BattleTestController : MonoBehaviour
         SetTopLeft(rect, frame);
 
         Image image = buttonObject.GetComponent<Image>();
-        image.color = new Color(0.18f, 0.16f, 0.13f, 0.96f);
+        image.color = new Color(0.075f, 0.095f, 0.115f, 0.96f);
 
         Button button = buttonObject.GetComponent<Button>();
         button.targetGraphic = image;
         button.transition = Selectable.Transition.ColorTint;
         ColorBlock colors = button.colors;
-        colors.normalColor = new Color(0.18f, 0.16f, 0.13f, 0.96f);
-        colors.highlightedColor = new Color(0.33f, 0.28f, 0.20f, 1f);
-        colors.selectedColor = new Color(0.50f, 0.36f, 0.17f, 1f);
-        colors.pressedColor = new Color(0.62f, 0.42f, 0.18f, 1f);
-        colors.disabledColor = new Color(0.12f, 0.115f, 0.10f, 0.55f);
+        colors.normalColor = new Color(0.075f, 0.095f, 0.115f, 0.96f);
+        colors.highlightedColor = new Color(0.13f, 0.18f, 0.22f, 1f);
+        colors.selectedColor = new Color(0.16f, 0.42f, 0.58f, 1f);
+        colors.pressedColor = new Color(0.20f, 0.55f, 0.70f, 1f);
+        colors.disabledColor = new Color(0.05f, 0.058f, 0.066f, 0.55f);
         colors.fadeDuration = 0.08f;
         button.colors = colors;
         button.onClick.AddListener(() => action());
 
         Text text = CreateHudText(rect, "라벨", new Rect(0f, 4f, frame.width, frame.height - 8f), label, 14f,
                                       TextAnchor.MiddleCenter, true);
-        text.color = new Color(0.98f, 0.93f, 0.82f, 1f);
+        text.color = new Color(0.90f, 0.96f, 1f, 1f);
 
         if (name == "이동" || name == "공격" || name == "무공" || name == "지형")
         {
@@ -900,9 +900,9 @@ public sealed class BattleTestController : MonoBehaviour
         SetButtonEnabled(hudMoveButton, playerTurn && activeUnit.CanMove);
         SetButtonEnabled(hudAttackButton, playerTurn && activeUnit.CanUseMainAction);
         SetButtonEnabled(hudSkillButton, playerTurn && CanUseSpecial(activeUnit));
-        SetButtonEnabled(hudGuardButton, playerTurn && activeUnit.CanUseMainAction);
+        SetButtonEnabled(hudGuardButton, playerTurn && CanGuard(activeUnit));
         SetButtonEnabled(hudInteractButton,
-                         playerTurn && activeUnit.CanUseMainAction && HasUsableInteractable(activeUnit));
+                         playerTurn && CanUseTerrainCommand(activeUnit));
         SetButtonEnabled(hudPhaseEndButton, phaseTurn.IsPlayerPhase && !busy && !battleOver);
         SetButtonEnabled(hudResetButton, true);
         RefreshCommandButtonState(hudMoveButton, commandMode == BattleCommandMode.Move && playerTurn);
@@ -1079,7 +1079,7 @@ public sealed class BattleTestController : MonoBehaviour
         Image image = button.GetComponent<Image>();
         if (image != null && button.interactable)
         {
-            image.color = selected ? new Color(0.56f, 0.39f, 0.18f, 1f) : new Color(0.18f, 0.16f, 0.13f, 0.96f);
+            image.color = selected ? new Color(0.16f, 0.42f, 0.58f, 1f) : new Color(0.075f, 0.095f, 0.115f, 0.96f);
         }
     }
 
@@ -1105,7 +1105,7 @@ public sealed class BattleTestController : MonoBehaviour
         showElevationOverlay = false;
         showCoverOverlay = false;
         showSightOverlay = false;
-        showObjectiveOverlay = true;
+        showObjectiveOverlay = false;
         phaseTurn.Reset();
         hoveredTile = null;
         hoveredUnit = null;
@@ -1635,8 +1635,8 @@ public sealed class BattleTestController : MonoBehaviour
         snapshot.canMove = playerTurn && activeUnit.CanMove;
         snapshot.canAttack = playerTurn && activeUnit.CanUseMainAction;
         snapshot.canSkill = playerTurn && CanUseSpecial(activeUnit);
-        snapshot.canGuard = playerTurn && activeUnit.CanUseMainAction;
-        snapshot.canTerrain = playerTurn && activeUnit.CanUseMainAction && HasUsableInteractable(activeUnit);
+        snapshot.canGuard = playerTurn && CanGuard(activeUnit);
+        snapshot.canTerrain = playerTurn && CanUseTerrainCommand(activeUnit);
         snapshot.canWait = phaseTurn.IsPlayerPhase && !busy && !battleOver;
 
         BuildHudForecast(snapshot);
@@ -1706,7 +1706,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (!activeUnit.CanMove && activeUnit.CanUseMainAction && commandMode == BattleCommandMode.Attack)
         {
-            return "이동 완료. 이제 공격, 무공, 지형 활용, 방어, 대기만 가능합니다.";
+            return "이동 완료. 이제 공격하거나 대기만 할 수 있습니다.";
         }
 
         switch (commandMode)
@@ -1718,7 +1718,7 @@ public sealed class BattleTestController : MonoBehaviour
         case BattleCommandMode.Interact:
             return "금색 지형 오브젝트를 활용하세요. 향로, 등불, 밧줄, 바위를 전술에 이용할 수 있습니다.";
         default:
-            return "파란 칸은 이동 가능 범위입니다. 이동 후 공격, 무공, 방어, 지형 활용으로 행동을 마무리하세요.";
+            return "파란 칸은 이동 가능 범위입니다. 이동을 확정하면 공격 또는 대기만 남습니다.";
         }
     }
 
@@ -1855,7 +1855,7 @@ public sealed class BattleTestController : MonoBehaviour
         showElevationOverlay = false;
         showCoverOverlay = false;
         showSightOverlay = false;
-        showObjectiveOverlay = true;
+        showObjectiveOverlay = false;
         commandMode = BattleCommandMode.Move;
         AddLog("[정찰] 정찰 모드 재개.");
         RefreshHighlights();
@@ -3438,6 +3438,11 @@ public sealed class BattleTestController : MonoBehaviour
         unit.SpendMovement(reachable[destination.cell]);
         ApplyTileEntry(unit, destination);
         commandMode = DefaultCommandForUnit(unit);
+        if (unit.definition.faction == Faction.Ally)
+        {
+            ShowHudNotice("이동 완료: 공격 또는 대기");
+        }
+
         if (Application.isPlaying)
         {
             StartCoroutine(AnimateMove(unit, path));
@@ -4196,6 +4201,12 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
+        if (actor.moved)
+        {
+            AddLog("[행동] 이동 후에는 공격 또는 대기만 가능합니다.");
+            return false;
+        }
+
         BattleTestInteractable interactable = FindUsableInteractable(actor, clickedTile.cell);
         if (interactable == null)
         {
@@ -4279,8 +4290,14 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void GuardActiveUnit()
     {
-        if (activeUnit == null || !activeUnit.CanUseMainAction || activeUnit.definition.faction != Faction.Ally)
+        if (activeUnit == null || activeUnit.definition.faction != Faction.Ally)
         {
+            return;
+        }
+
+        if (!CanGuard(activeUnit))
+        {
+            AddLog("[행동] 이동 후에는 공격 또는 대기만 가능합니다.");
             return;
         }
 
@@ -4431,7 +4448,13 @@ public sealed class BattleTestController : MonoBehaviour
                 continue;
             }
 
-            int desiredRange = CanUseSpecial(activeUnit) ? EffectiveSpecialRange(activeUnit) : EffectiveAttackRange(activeUnit);
+            bool specialReadyWithoutMoving = CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) &&
+                                             GridDistance(activeUnit.cell, target.cell) <=
+                                             EffectiveSpecialRange(activeUnit) &&
+                                             (!IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
+                                              EffectiveSpecialRange(activeUnit) <= 1 ||
+                                              HasLineOfSight(activeUnit.cell, target.cell));
+            int desiredRange = specialReadyWithoutMoving ? EffectiveSpecialRange(activeUnit) : EffectiveAttackRange(activeUnit);
             if ((GridDistance(activeUnit.cell, target.cell) > desiredRange ||
                  (desiredRange > 1 && !HasLineOfSight(activeUnit.cell, target.cell))) &&
                 !activeUnit.moved)
@@ -4533,7 +4556,7 @@ public sealed class BattleTestController : MonoBehaviour
                 score -= 12;
             }
 
-            int range = CanUseSpecial(unit) ? EffectiveSpecialRange(unit, tile) : EffectiveAttackRange(unit, tile);
+            int range = EffectiveAttackRange(unit, tile);
             if (distance <= range && (range <= 1 || HasLineOfSight(pair.Key, targetCell)))
             {
                 score += 18;
@@ -4647,8 +4670,18 @@ public sealed class BattleTestController : MonoBehaviour
 
     private bool CanUseSpecial(BattleTestUnit unit)
     {
-        return unit != null && unit.CanUseMainAction && unit.inner >= unit.definition.specialCost &&
+        return unit != null && !unit.moved && unit.CanUseMainAction && unit.inner >= unit.definition.specialCost &&
                unit.specialCooldownLeft <= 0 && unit.definition.specialEffect != BattleSpecialEffect.None;
+    }
+
+    private bool CanGuard(BattleTestUnit unit)
+    {
+        return unit != null && !unit.moved && unit.CanUseMainAction;
+    }
+
+    private bool CanUseTerrainCommand(BattleTestUnit unit)
+    {
+        return unit != null && !unit.moved && unit.CanUseMainAction && HasUsableInteractable(unit);
     }
 
     private bool IsValidSpecialTarget(BattleTestUnit actor, BattleTestUnit target)
@@ -4855,6 +4888,11 @@ public sealed class BattleTestController : MonoBehaviour
         if (unit == null)
         {
             return "행동할 유닛이 없습니다.";
+        }
+
+        if (unit.moved)
+        {
+            return "이동 후에는 공격 또는 대기만 가능합니다.";
         }
 
         if (!unit.CanUseMainAction)
@@ -5696,13 +5734,19 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (activeUnit.moved && (mode == BattleCommandMode.Skill || mode == BattleCommandMode.Interact))
+        {
+            AddLog("[UI] 이동 후에는 공격 또는 대기만 가능합니다.");
+            return;
+        }
+
         if (mode == BattleCommandMode.Skill && !CanUseSpecial(activeUnit))
         {
             AddLog("[UI] 지금 사용할 수 있는 무공이 없습니다.");
             return;
         }
 
-        if (mode == BattleCommandMode.Interact && (activeUnit.acted || !HasUsableInteractable(activeUnit)))
+        if (mode == BattleCommandMode.Interact && !CanUseTerrainCommand(activeUnit))
         {
             AddLog("[UI] 사용할 수 있는 지형지물이 없습니다.");
             return;
@@ -5729,7 +5773,7 @@ public sealed class BattleTestController : MonoBehaviour
             return BattleCommandMode.Attack;
         }
 
-        return BattleCommandMode.Move;
+        return BattleCommandMode.Attack;
     }
 
     private List<BattleTestUnit> GetTurnQueuePreview(int count)
@@ -6017,7 +6061,7 @@ public sealed class BattleTestController : MonoBehaviour
             HighlightDeploymentCells();
             if (activeTile != null)
             {
-                activeTile.SetHighlight(new Color(1f, 0.80f, 0.22f, 0.66f));
+                activeTile.SetHighlight(new Color(0.26f, 0.78f, 1f, 0.34f));
             }
 
             return;
@@ -6044,7 +6088,7 @@ public sealed class BattleTestController : MonoBehaviour
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
                     {
-                        tile.SetHighlight(new Color(1f, 0.27f, 0.22f, 0.62f));
+                        tile.SetHighlight(new Color(1f, 0.25f, 0.20f, 0.42f));
                     }
                 }
             }
@@ -6068,15 +6112,15 @@ public sealed class BattleTestController : MonoBehaviour
                     if (tile != null)
                     {
                         Color color = activeUnit.definition.specialEffect == BattleSpecialEffect.Heal
-                                          ? new Color(0.28f, 0.92f, 0.55f, 0.55f)
-                                          : new Color(0.74f, 0.40f, 1f, 0.58f);
+                                          ? new Color(0.28f, 0.92f, 0.55f, 0.36f)
+                                          : new Color(0.74f, 0.40f, 1f, 0.38f);
                         tile.SetHighlight(color);
                     }
                 }
             }
         }
 
-        if (commandMode == BattleCommandMode.Interact && !activeUnit.acted)
+        if (commandMode == BattleCommandMode.Interact && CanUseTerrainCommand(activeUnit))
         {
             foreach (BattleTestInteractable interactable in interactables)
             {
@@ -6088,20 +6132,21 @@ public sealed class BattleTestController : MonoBehaviour
                 BattleTestTile tile = TileAt(interactable.cell);
                 if (tile != null)
                 {
-                    tile.SetHighlight(new Color(1f, 0.70f, 0.18f, 0.60f));
+                    tile.SetHighlight(new Color(1f, 0.70f, 0.18f, 0.38f));
                 }
             }
         }
 
-        if (activeTile != null)
+        if (activeTile != null && movementPreview)
         {
-            activeTile.SetHighlight(new Color(1f, 0.82f, 0.25f, 0.68f));
+            activeTile.SetHighlight(new Color(0.26f, 0.78f, 1f, 0.30f));
         }
     }
 
     private bool IsMovementPreviewActive()
     {
-        return activeUnit != null && !activeUnit.defeated && commandMode == BattleCommandMode.Move && !activeUnit.moved;
+        return !scoutMode && activeUnit != null && !activeUnit.defeated &&
+               commandMode == BattleCommandMode.Move && activeUnit.CanMove;
     }
 
     private void HighlightMoveReachability(BattleTestUnit unit)
@@ -6117,7 +6162,7 @@ public sealed class BattleTestController : MonoBehaviour
                 BattleTestTile tile = TileAt(cell);
                 if (tile != null)
                 {
-                    float alpha = Mathf.Lerp(0.60f, 0.44f, pair.Value / (float)Mathf.Max(1, EffectiveMoveRange(unit)));
+                    float alpha = Mathf.Lerp(0.34f, 0.22f, pair.Value / (float)Mathf.Max(1, EffectiveMoveRange(unit)));
                     tile.SetHighlight(new Color(0.30f, 0.60f, 1f, alpha));
                 }
             }
@@ -6144,7 +6189,7 @@ public sealed class BattleTestController : MonoBehaviour
             BattleTestTile tile = TileAt(cell);
             if (tile != null)
             {
-                tile.SetHighlight(new Color(1f, 0.30f, 0.24f, 0.42f));
+                tile.SetHighlight(new Color(1f, 0.30f, 0.24f, 0.20f));
             }
         }
     }
@@ -6160,7 +6205,7 @@ public sealed class BattleTestController : MonoBehaviour
         {
             if (tile != null && IsDeploymentCell(tile.cell) && tile.walkable && UnitAt(tile.cell) == null)
             {
-                tile.SetHighlight(new Color(0.30f, 0.60f, 1f, 0.50f));
+                tile.SetHighlight(new Color(0.30f, 0.60f, 1f, 0.32f));
             }
         }
     }
@@ -6200,12 +6245,12 @@ public sealed class BattleTestController : MonoBehaviour
                 tile.SetHighlight(new Color(0.55f, 0.45f, 0.32f, 0.36f));
             }
 
-            if (showObjectiveOverlay && tile.objective)
+            if (!movementPreview && showObjectiveOverlay && tile.objective)
             {
-                tile.SetHighlight(new Color(1f, 0.80f, 0.16f, 0.45f));
+                tile.SetHighlight(new Color(1f, 0.80f, 0.16f, 0.28f));
             }
 
-            if (!movementPreview && tile.danger && !showObjectiveOverlay)
+            if (!movementPreview && showThreatOverlay && tile.danger)
             {
                 tile.SetHighlight(new Color(0.92f, 0.18f, 0.10f, 0.26f));
             }
@@ -8796,7 +8841,7 @@ public sealed class BattleTestUnit
     public void SpendMovement(int cost)
     {
         moved = true;
-        actions.movementLeft = Mathf.Max(0, actions.movementLeft - Mathf.Max(0, cost));
+        actions.movementLeft = 0;
     }
 
     public void SpendMainAction()

@@ -178,9 +178,16 @@ public static class BattleMapTilemapSmokeCheck
 
         InvokePrivate(controller, "TryMove", first, destination);
         Require(first.moved, "Moved ally should be marked as moved.");
+        Require(first.actions.movementLeft == 0, "Committed movement should spend all remaining movement.");
         Require(!first.CanMove, "Moved ally should not be able to move again.");
         Require(GetPrivate<BattleCommandMode>(controller, "commandMode") != BattleCommandMode.Move,
                 "Moved ally should leave move command mode.");
+        BattleHudSnapshot postMoveHud = (BattleHudSnapshot)InvokePrivate(controller, "CreateHudSnapshot");
+        Require(!postMoveHud.canMove, "HUD should disable Move after a unit has moved.");
+        Require(postMoveHud.canAttack, "HUD should keep Attack available after moving.");
+        Require(!postMoveHud.canSkill, "HUD should disable Skill after moving.");
+        Require(!postMoveHud.canGuard, "HUD should disable Guard after moving.");
+        Require(!postMoveHud.canTerrain, "HUD should disable terrain interaction after moving.");
         VerifyTacticalCameraFocus(controller, first);
 
         InvokePrivate(controller, "SetCommandMode", BattleCommandMode.Move);

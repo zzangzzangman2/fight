@@ -9,14 +9,14 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleHUDController : MonoBehaviour
 {
-    private static readonly Color PanelBg = new Color(0.07f, 0.065f, 0.055f, 0.82f);
-    private static readonly Color PanelStrong = new Color(0.045f, 0.042f, 0.036f, 0.90f);
-    private static readonly Color PanelSoft = new Color(0.12f, 0.105f, 0.075f, 0.76f);
-    private static readonly Color Ink = new Color(0.94f, 0.89f, 0.76f, 1f);
-    private static readonly Color Muted = new Color(0.72f, 0.68f, 0.56f, 0.84f);
-    private static readonly Color Gold = new Color(0.86f, 0.63f, 0.18f, 0.96f);
-    private static readonly Color ButtonBg = new Color(0.22f, 0.18f, 0.10f, 0.90f);
-    private static readonly Color Disabled = new Color(0.18f, 0.17f, 0.14f, 0.58f);
+    private static readonly Color PanelBg = new Color(0.035f, 0.045f, 0.055f, 0.84f);
+    private static readonly Color PanelStrong = new Color(0.025f, 0.032f, 0.040f, 0.92f);
+    private static readonly Color PanelSoft = new Color(0.060f, 0.080f, 0.100f, 0.76f);
+    private static readonly Color Ink = new Color(0.88f, 0.95f, 1f, 1f);
+    private static readonly Color Muted = new Color(0.55f, 0.65f, 0.72f, 0.84f);
+    private static readonly Color Gold = new Color(0.16f, 0.58f, 0.78f, 0.96f);
+    private static readonly Color ButtonBg = new Color(0.070f, 0.095f, 0.120f, 0.90f);
+    private static readonly Color Disabled = new Color(0.050f, 0.058f, 0.066f, 0.58f);
 
     private BattleTestController owner;
     private Canvas canvas;
@@ -189,7 +189,7 @@ public sealed class BattleHUDController : MonoBehaviour
 
         dicePopupPanel = Panel("전술 알림", root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                                new Vector2(420f, 104f), new Vector2(0f, 122f),
-                               new Color(0.72f, 0.48f, 0.12f, 0.92f));
+                               new Color(0.06f, 0.30f, 0.42f, 0.94f));
         dicePopupText = MakeText("dice popup text", dicePopupPanel, StretchMin(), StretchMax(), new Vector2(14f, 8f),
                                  new Vector2(-14f, -8f), 22, FontStyle.Bold, TextAnchor.MiddleCenter);
         dicePopupPanel.gameObject.SetActive(false);
@@ -263,9 +263,10 @@ public sealed class BattleHUDController : MonoBehaviour
         Button button = commandButtons[index];
         Image image = button.GetComponent<Image>();
         button.interactable = enabled;
-        image.color = active ? Gold : enabled ? ButtonBg : Disabled;
+        bool activeEnabled = active && enabled;
+        image.color = activeEnabled ? Gold : enabled ? ButtonBg : Disabled;
         commandLabels[index].text = label;
-        commandLabels[index].color = enabled ? active ? new Color(0.09f, 0.075f, 0.045f, 1f) : Ink : Muted;
+        commandLabels[index].color = enabled ? activeEnabled ? new Color(0.02f, 0.04f, 0.05f, 1f) : Ink : Muted;
     }
 
     private void UpdateForecast(BattleHudSnapshot snapshot)
@@ -311,7 +312,7 @@ public sealed class BattleHUDController : MonoBehaviour
             label.text = unit.definition.displayName + "  HP " + unit.hp + "/" + unit.definition.maxHp +
                          "\n내공 " + unit.inner + "/" + unit.definition.maxInner + "  " + status;
             bool isActiveUnit = unit == snapshot.activeUnit;
-            label.color = unit.defeated ? Muted : isActiveUnit ? new Color(0.09f, 0.075f, 0.045f, 1f) : Ink;
+            label.color = unit.defeated ? Muted : isActiveUnit ? new Color(0.02f, 0.04f, 0.05f, 1f) : Ink;
             button.interactable = snapshot.selectableUnits.Contains(unit);
             button.GetComponent<Image>().color = isActiveUnit
                                                       ? Gold
@@ -375,7 +376,7 @@ public sealed class BattleHUDController : MonoBehaviour
         image.raycastTarget = true;
 
         Outline outline = panelObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.60f, 0.44f, 0.16f, 0.34f);
+        outline.effectColor = new Color(0.20f, 0.46f, 0.62f, 0.28f);
         outline.effectDistance = new Vector2(1f, -1f);
         return rect;
     }
