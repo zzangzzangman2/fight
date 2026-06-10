@@ -70,57 +70,47 @@ public sealed class DialogueController
             SetQuickMessage("선택지는 직접 골라주세요.");
         }
 
-        float margin = Mathf.Clamp(38f * s, 22f, 58f * s);
-        float wantedH = hasChoices ? 360f * s : 230f * s;
-        float minH = hasChoices ? screenH * 0.34f : screenH * 0.22f;
-        float maxH = hasChoices ? screenH * 0.50f : screenH * 0.32f;
-        float boxH = Mathf.Clamp(wantedH, minH, maxH);
-        Rect box = new Rect(margin, screenH - boxH - margin, screenW - margin * 2f, boxH);
-        Rect inner = new Rect(box.x + 42f * s, box.y + 58f * s, box.width - 84f * s, box.height - 104f * s);
+        // 모바일 미연시식 레이아웃: 전신 일러 위로 하단 투명 그라데이션이 깔리고,
+        // 그 위에 이름+소속 태그, 빛나는 구분선, 본문이 프레임 없이 얹힌다.
+        float shadeH = screenH * (hasChoices ? 0.46f : 0.40f);
 
-        float portraitSize = Mathf.Clamp(210f * s, 128f, Mathf.Min(270f * s, screenH * 0.34f));
-        float portraitReserve = hasSpeaker && screenW > 820f ? Mathf.Min(portraitSize * 0.44f, box.width * 0.22f) : 0f;
-        inner.width -= portraitReserve;
+        DrawStanding(screenW, screenH);
+        UiTheme.DrawBottomShade(new Rect(0f, screenH - shadeH * 1.3f, screenW, shadeH * 1.3f));
 
-        DrawCinematicShade(screenW, screenH, s);
+        float textX = screenW * 0.055f;
+        float textW = screenW * 0.84f;
+        float bodyY = screenH - shadeH + 24f * s;
         if (hasSpeaker)
         {
-            DrawPortrait(box, portraitSize, s);
+            bodyY = DrawNameRow(textX, screenH - shadeH + 14f * s, textW, s);
         }
-
-        DrawDialogueFrame(box, s);
-        DrawNamePlate(box, s);
 
         string line = VisibleLine(settings);
         bool complete = IsLineComplete();
-        GUIStyle bodyStyle = DialogueBodyStyle(s);
-        GUI.Label(inner, line, bodyStyle);
-
-        if (complete)
-        {
-            DrawAdvanceHint(box, s);
-        }
+        Rect bodyRect = new Rect(textX, bodyY, textW, screenH - bodyY - 36f * s);
+        UiTheme.LabelShadow(bodyRect, line, DialogueBodyStyle(s));
 
         if (!string.IsNullOrEmpty(LastEffect))
         {
-            GUI.Label(new Rect(box.x + 38f * s, box.yMax - 44f * s, box.width * 0.56f, 24f * s), LastEffect,
-                      UiTheme.SmallMuted);
+            GUI.Label(new Rect(textX, screenH - 32f * s, screenW * 0.6f, 24f * s), LastEffect, UiTheme.SmallMuted);
+        }
+
+        if (complete && !hasChoices)
+        {
+            DrawContinueIndicator(screenW, screenH, s, effectiveAuto, skipMode);
         }
 
         if (hasChoices && complete)
         {
-            DrawChoices(box, inner, s, settings);
-        }
-        else
-        {
-            DrawAdvanceButton(box, s, complete, effectiveAuto, skipMode);
+            DrawChoices(screenW, screenH, s, settings);
         }
 
-        DrawQuickBar(screenW, screenH, box, s, settings);
-        DrawQuickPanel(screenW, screenH, box, s);
-        DrawQuickMessage(box, s);
+        DrawQuickBar(screenW, s, settings);
+        DrawQuickPanel(screenW, screenH, s);
+        DrawQuickMessage(screenW, s);
 
         HandleAutoAdvance(settings, complete, effectiveAuto);
+        DrawTapCatcher(screenW, screenH, s, hasChoices, complete);
     }
 
     private void PrepareCurrentNode()
@@ -245,98 +235,146 @@ public sealed class DialogueController
         return visibleChars >= CurrentLineLength();
     }
 
-    private void DrawDialogueFrame(Rect box, float s)
+    /// <summary>이름 옆 소속/직함 태그 폴백. 제작 manifest를 거치지 않는 C# 폴백 대사용.</summary>
+    private static readonly Dictionary<string, string> FallbackSpeakerTitles = new Dictionary<string, string>
     {
-        Rect shadow = new Rect(box.x + 8f * s, box.y + 10f * s, box.width, box.height);
-        UiTheme.DrawFill(shadow, new Color(0f, 0f, 0f, 0.38f));
+        { "박성준", "백두천광검문 소문주" },
+        { "박무겸", "백두천광검문 문주" },
+        { "연옥", "백두천광검문 사범" },
+        { "초희", "소백촌 약방" },
+        { "윤서화", "해동문 예검수" },
+        { "백련", "설악창문 의술" },
+        { "한비연", "흑립방" },
+        { "도아린", "파산권문" },
+    };
 
-        UiTheme.DrawPanel(box);
+    private static readonly Dictionary<string, Texture2D> StandingCache = new Dictionary<string, Texture2D>();
 
-        Rect fill = new Rect(box.x + 10f * s, box.y + 10f * s, box.width - 20f * s, box.height - 20f * s);
-        UiTheme.DrawFill(fill, new Color(0.020f, 0.032f, 0.032f, 0.95f));
-
-        Rect topBand = new Rect(box.x + 12f * s, box.y + 12f * s, box.width - 24f * s, 30f * s);
-        UiTheme.DrawFill(topBand, new Color(0.010f, 0.052f, 0.056f, 0.86f));
-        UiTheme.DrawFill(new Rect(topBand.x, topBand.yMax - 2f * s, topBand.width, 2f * s),
-                         new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.72f));
-        UiTheme.DrawFill(new Rect(box.x + 24f * s, box.yMax - 18f * s, box.width - 48f * s, 1.5f * s),
-                         new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.55f));
-
-        Rect breath = new Rect(fill.x + 14f * s, fill.y + 48f * s, fill.width - 28f * s, 1f * s);
-        UiTheme.DrawFill(breath, new Color(1f, 1f, 1f, 0.06f));
-    }
-
-    private void DrawNamePlate(Rect box, float s)
+    private string SpeakerTitle()
     {
-        string name = string.IsNullOrEmpty(current.speakerName) ? "서술" : current.speakerName;
-        float plateW = Mathf.Clamp(96f * s + name.Length * 22f * s, 138f * s, 292f * s);
-        Rect plate = new Rect(box.x + 42f * s, box.y - 15f * s, plateW, 42f * s);
-
-        UiTheme.DrawFill(new Rect(plate.x + 6f * s, plate.y + 7f * s, plate.width, plate.height),
-                         new Color(0f, 0f, 0f, 0.34f));
-        UiTheme.DrawFill(plate, new Color(0.010f, 0.020f, 0.024f, 0.98f));
-        UiTheme.DrawFill(new Rect(plate.x + 4f * s, plate.y + 4f * s, plate.width - 8f * s, plate.height - 8f * s),
-                         new Color(0.055f, 0.030f, 0.052f, 0.94f));
-        UiTheme.DrawFill(new Rect(plate.x + 10f * s, plate.yMax - 7f * s, plate.width - 20f * s, 2f * s),
-                         new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.78f));
-
-        GUIStyle nameStyle =
-            new GUIStyle(UiTheme.Speaker) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.RoundToInt(22f * s) };
-        nameStyle.normal.textColor = UiTheme.Ink;
-        GUI.Label(plate, name, nameStyle);
-    }
-
-    private void DrawPortrait(Rect box, float size, float s)
-    {
-        Rect frame = new Rect(box.xMax - size - 30f * s, box.y - size + 70f * s, size, size);
-        UiTheme.DrawPanel(frame, true);
-
-        Rect inner = new Rect(frame.x + 14f * s, frame.y + 14f * s, frame.width - 28f * s, frame.height - 28f * s);
-        UiTheme.DrawFill(inner, new Color(0.055f, 0.070f, 0.068f, 0.94f));
-        UiTheme.DrawFill(new Rect(inner.x, inner.y, inner.width, 24f * s), new Color(0.020f, 0.050f, 0.054f, 0.82f));
-
-        float seal = Mathf.Min(inner.width, inner.height) * 0.58f;
-        Rect sealRect = new Rect(inner.center.x - seal * 0.5f, inner.center.y - seal * 0.55f, seal, seal);
-        UiTheme.DrawSeal(sealRect, SpeakerGlyph(), -6f);
-
-        GUIStyle caption =
-            new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-        caption.normal.textColor = UiTheme.GoldBright;
-        GUI.Label(new Rect(inner.x + 6f * s, inner.yMax - 36f * s, inner.width - 12f * s, 28f * s), current.speakerName,
-                  caption);
-    }
-
-    private string SpeakerGlyph()
-    {
-        if (string.IsNullOrEmpty(current.speakerName))
+        if (!string.IsNullOrEmpty(current.speakerTitle))
         {
-            return "記";
+            return current.speakerTitle;
         }
 
-        return current.speakerName.Substring(0, 1);
+        return !string.IsNullOrEmpty(current.speakerName) &&
+                       FallbackSpeakerTitles.TryGetValue(current.speakerName, out string title)
+                   ? title
+                   : null;
     }
 
-    private void DrawChoices(Rect box, Rect inner, float s, GameSettings settings)
+    /// <summary>좌측 하단 정렬 전신/스탠딩 일러. portraitResource가 비어 있으면 아무것도 그리지 않는다.</summary>
+    private void DrawStanding(float screenW, float screenH)
     {
-        float y = inner.y + Mathf.Min(96f * s, inner.height * 0.42f);
-        float bh = Mathf.Clamp(46f * s, 34f, 58f * s);
-        float gap = 9f * s;
-        GUIStyle choiceStyle = new GUIStyle(UiTheme.Button) { alignment = TextAnchor.MiddleLeft,
-                                                              fontSize = Mathf.RoundToInt(19f * s), wordWrap = true };
-        choiceStyle.padding = new RectOffset(Mathf.RoundToInt(20f * s), Mathf.RoundToInt(14f * s), 6, 6);
+        string resource = current.portraitResource;
+        if (string.IsNullOrEmpty(resource))
+        {
+            return;
+        }
 
-        for (int i = 0; i < current.choices.Count; i++)
+        if (!StandingCache.TryGetValue(resource, out Texture2D tex))
+        {
+            tex = Resources.Load<Texture2D>(resource);
+            if (tex == null)
+            {
+                Sprite sprite = Resources.Load<Sprite>(resource);
+                tex = sprite != null ? sprite.texture : null;
+            }
+
+            StandingCache[resource] = tex; // 실패도 캐시해 매 프레임 재시도를 막는다.
+        }
+
+        if (tex == null)
+        {
+            return;
+        }
+
+        float h = screenH * 0.94f;
+        float w = h * (tex.width / (float)Mathf.Max(1, tex.height));
+        GUI.DrawTexture(new Rect(screenW * 0.04f, screenH - h, w, h), tex, ScaleMode.ScaleToFit);
+    }
+
+    /// <summary>이름(흰색 대형) + 소속 태그(하늘색) + 빛나는 구분선. 본문 시작 y를 돌려준다.</summary>
+    private float DrawNameRow(float x, float y, float width, float s)
+    {
+        string name = current.speakerName;
+        GUIStyle nameStyle = new GUIStyle(UiTheme.Speaker)
+        {
+            fontSize = Mathf.RoundToInt(31f * s),
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.LowerLeft
+        };
+        nameStyle.normal.textColor = Color.white;
+        float nameH = 42f * s;
+        UiTheme.LabelShadow(new Rect(x, y, width * 0.6f, nameH), name, nameStyle);
+
+        string title = SpeakerTitle();
+        if (!string.IsNullOrEmpty(title))
+        {
+            GUIStyle tagStyle = new GUIStyle(UiTheme.Small)
+            {
+                fontSize = Mathf.RoundToInt(17f * s),
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.LowerLeft
+            };
+            tagStyle.normal.textColor = UiTheme.SkyAccent;
+            float nameW = nameStyle.CalcSize(new GUIContent(name)).x;
+            UiTheme.LabelShadow(new Rect(x + nameW + 14f * s, y, width - nameW - 18f * s, nameH - 4f * s), title,
+                                tagStyle);
+        }
+
+        float lineY = y + nameH + 8f * s;
+        UiTheme.DrawFill(new Rect(x - 2f * s, lineY - 1.5f * s, width, 4.5f * s),
+                         new Color(UiTheme.SkyAccent.r, UiTheme.SkyAccent.g, UiTheme.SkyAccent.b, 0.10f));
+        UiTheme.DrawFill(new Rect(x - 2f * s, lineY, width, 1.5f * s), new Color(1f, 1f, 1f, 0.50f));
+        UiTheme.DrawFill(new Rect(x - 2f * s, lineY, width * 0.22f, 2f * s),
+                         new Color(UiTheme.SkyAccent.r, UiTheme.SkyAccent.g, UiTheme.SkyAccent.b, 0.92f));
+        return lineY + 15f * s;
+    }
+
+    /// <summary>화면 중앙에 떠 있는 반투명 선택지 카드 스택.</summary>
+    private void DrawChoices(float screenW, float screenH, float s, GameSettings settings)
+    {
+        float w = Mathf.Min(760f * s, screenW * 0.58f);
+        float x = (screenW - w) * 0.5f;
+        float bh = Mathf.Clamp(54f * s, 42f, 66f * s);
+        float gap = 12f * s;
+        int count = current.choices.Count;
+        float y = Mathf.Max(84f * s, screenH * 0.52f - (bh + gap) * count);
+
+        GUIStyle choiceStyle = new GUIStyle(UiTheme.Body)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = Mathf.RoundToInt(19f * s),
+            fontStyle = FontStyle.Bold,
+            wordWrap = false
+        };
+
+        for (int i = 0; i < count; i++)
         {
             DialogueChoice c = current.choices[i];
             string prefix = c.disposition.HasValue ? $"[{StoryEnumLabels.Label(c.disposition.Value)}] " : string.Empty;
             string preview = settings.choiceEffectPreview ? PreviewEffects(c) : string.Empty;
-            string label = $"{ChoiceMark(i)}  {prefix}{c.text}";
+            string label = $"{prefix}{c.text}";
             if (!string.IsNullOrEmpty(preview))
             {
-                label += $"  ({preview})";
+                label += $"  <size={Mathf.RoundToInt(14f * s)}>({preview})</size>";
             }
 
-            if (GUI.Button(new Rect(inner.x, y, inner.width, bh), label, choiceStyle))
+            Rect rect = new Rect(x, y, w, bh);
+            bool hover = Event.current != null && rect.Contains(Event.current.mousePosition);
+            UiTheme.DrawFill(new Rect(rect.x + 3f * s, rect.y + 4f * s, rect.width, rect.height),
+                             new Color(0f, 0f, 0f, 0.30f));
+            UiTheme.DrawFill(rect, hover ? new Color(0.075f, 0.190f, 0.300f, 0.94f)
+                                         : new Color(0.022f, 0.062f, 0.110f, 0.84f));
+            UiTheme.DrawFill(new Rect(rect.x, rect.y, 4f * s, rect.height),
+                             new Color(UiTheme.SkyAccent.r, UiTheme.SkyAccent.g, UiTheme.SkyAccent.b,
+                                       hover ? 1f : 0.72f));
+            UiTheme.DrawFill(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), new Color(1f, 1f, 1f, 0.14f));
+
+            choiceStyle.normal.textColor = hover ? Color.white : new Color(0.88f, 0.93f, 0.98f, 1f);
+            GUI.Label(rect, label, choiceStyle);
+            if (GUI.Button(rect, GUIContent.none, GUIStyle.none))
             {
                 Choose(c);
                 return;
@@ -346,35 +384,64 @@ public sealed class DialogueController
         }
     }
 
-    private void DrawAdvanceButton(Rect box, float s, bool complete, bool autoDialogue, bool skipping)
+    /// <summary>본문 우하단 깜빡이는 진행 표시(▼). AUTO/SKIP 상태면 라벨로 대체.</summary>
+    private void DrawContinueIndicator(float screenW, float screenH, float s, bool autoDialogue, bool skipping)
     {
-        float bw = 168f * s;
-        Rect button = new Rect(box.xMax - 40f * s - bw, box.yMax - 58f * s, bw, 42f * s);
-        string nextLabel = complete ? "계속" : "전체 표시";
-        if (GUI.Button(button, nextLabel, UiTheme.ButtonPrimary))
+        Rect rect = new Rect(screenW * 0.895f, screenH - 56f * s, screenW * 0.09f, 32f * s);
+        GUIStyle style = new GUIStyle(UiTheme.Small)
+        {
+            alignment = TextAnchor.MiddleRight,
+            fontStyle = FontStyle.Bold,
+            fontSize = Mathf.RoundToInt(18f * s)
+        };
+
+        if (skipping || autoDialogue)
+        {
+            style.normal.textColor = new Color(UiTheme.SkyAccent.r, UiTheme.SkyAccent.g, UiTheme.SkyAccent.b, 0.85f);
+            GUI.Label(rect, skipping ? "▶▶ SKIP" : "AUTO", style);
+            return;
+        }
+
+        float alpha = Mathf.Lerp(0.25f, 0.95f, Mathf.PingPong(Time.unscaledTime * 1.6f, 1f));
+        style.fontSize = Mathf.RoundToInt(21f * s);
+        style.normal.textColor = new Color(UiTheme.SkyAccent.r, UiTheme.SkyAccent.g, UiTheme.SkyAccent.b, alpha);
+        GUI.Label(rect, "▼", style);
+    }
+
+    /// <summary>화면 아무 곳이나 눌러 진행. 다른 버튼/패널이 먼저 이벤트를 소비하도록 마지막에 그린다.</summary>
+    private void DrawTapCatcher(float screenW, float screenH, float s, bool hasChoices, bool complete)
+    {
+        if (hasChoices && complete)
+        {
+            return;
+        }
+
+        if (quickPanel != QuickPanel.None)
+        {
+            return;
+        }
+
+        Rect zone = new Rect(0f, 64f * s, screenW, screenH - 64f * s);
+        if (GUI.Button(zone, GUIContent.none, GUIStyle.none))
         {
             ActivatePrimary();
         }
-
-        GUIStyle hint = new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleRight };
-        string hintText = skipping ? "빨리감기" : autoDialogue && complete && !current.HasChoices ? "자동 진행" : "Space / Enter";
-        GUI.Label(new Rect(button.x - 180f * s, button.y + 8f * s, 168f * s, 24f * s), hintText, hint);
     }
 
-    private void DrawQuickBar(float screenW, float screenH, Rect box, float s, GameSettings settings)
+    /// <summary>우상단 반투명 칩 바(LOG/SAVE/LOAD/AUTO/SKIP) — 모바일 미연시식 배치.</summary>
+    private void DrawQuickBar(float screenW, float s, GameSettings settings)
     {
-        float gap = Mathf.Max(4f, 6f * s);
-        float bw = Mathf.Max(54f, 68f * s);
-        float bh = Mathf.Max(24f, 30f * s);
+        float gap = Mathf.Max(5f, 8f * s);
+        float bw = Mathf.Max(56f, 72f * s);
+        float bh = Mathf.Max(26f, 34f * s);
         float total = bw * 5f + gap * 4f;
-        if (total > screenW - 20f)
+        if (total > screenW - 24f)
         {
-            bw = Mathf.Max(42f, (screenW - 20f - gap * 4f) / 5f);
+            bw = Mathf.Max(44f, (screenW - 24f - gap * 4f) / 5f);
             total = bw * 5f + gap * 4f;
         }
 
-        Rect bar = new Rect(Mathf.Max(10f, box.xMax - total), Mathf.Min(screenH - bh - 5f, box.yMax + 6f * s), total,
-                            bh);
+        Rect bar = new Rect(Mathf.Max(12f, screenW - 22f * s - total), 16f * s, total, bh);
         float x = bar.x;
         if (QuickButton(new Rect(x, bar.y, bw, bh), "LOG", quickPanel == QuickPanel.Log, s))
         {
@@ -420,15 +487,25 @@ public sealed class DialogueController
 
     private bool QuickButton(Rect rect, string label, bool active, float s)
     {
-        GUIStyle style = new GUIStyle(active ? UiTheme.ButtonPrimary : UiTheme.Button)
+        bool hover = Event.current != null && rect.Contains(Event.current.mousePosition);
+        Color bg = active ? new Color(0.110f, 0.360f, 0.560f, 0.94f)
+                          : new Color(0.018f, 0.050f, 0.092f, hover ? 0.88f : 0.62f);
+        UiTheme.DrawFill(rect, bg);
+        UiTheme.DrawFill(new Rect(rect.x, rect.yMax - 2f, rect.width, 2f),
+                         active ? UiTheme.SkyAccent : new Color(1f, 1f, 1f, hover ? 0.30f : 0.14f));
+
+        GUIStyle style = new GUIStyle(UiTheme.Small)
         {
-            fontSize = Mathf.Max(11, Mathf.RoundToInt(14f * s)),
-            padding = new RectOffset(4, 4, 3, 3)
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold,
+            fontSize = Mathf.Max(11, Mathf.RoundToInt(14f * s))
         };
-        return GUI.Button(rect, label, style);
+        style.normal.textColor = active ? Color.white : new Color(0.80f, 0.87f, 0.94f, 1f);
+        GUI.Label(rect, label, style);
+        return GUI.Button(rect, GUIContent.none, GUIStyle.none);
     }
 
-    private void DrawQuickPanel(float screenW, float screenH, Rect box, float s)
+    private void DrawQuickPanel(float screenW, float screenH, float s)
     {
         if (quickPanel == QuickPanel.None)
         {
@@ -442,8 +519,7 @@ public sealed class DialogueController
         width = Mathf.Max(360f, width);
         float minHeight = quickPanel == QuickPanel.Load ? 360f : quickPanel == QuickPanel.Save ? 310f : 300f;
         height = Mathf.Min(Mathf.Max(minHeight, height), screenH - 90f * s);
-        Rect panel = new Rect(screenW - width - 42f * s, Mathf.Max(70f * s, box.y - height - 16f * s), width,
-                              height);
+        Rect panel = new Rect(screenW - width - 22f * s, 60f * s, width, height);
         if (panel.x < 18f * s)
         {
             panel.x = 18f * s;
@@ -600,18 +676,20 @@ public sealed class DialogueController
         }
     }
 
-    private void DrawQuickMessage(Rect box, float s)
+    private void DrawQuickMessage(float screenW, float s)
     {
         if (quickMessageTimer <= 0f || string.IsNullOrEmpty(quickMessage))
         {
             return;
         }
 
-        float w = Mathf.Min(320f * s, box.width * 0.42f);
-        Rect toast = new Rect(box.xMax - w - 40f * s, box.y - 64f * s, w, 38f * s);
-        UiTheme.DrawFill(toast, new Color(UiTheme.Ink.r, UiTheme.Ink.g, UiTheme.Ink.b, 0.72f));
+        float w = Mathf.Min(340f * s, screenW * 0.42f);
+        Rect toast = new Rect((screenW - w) * 0.5f, 64f * s, w, 38f * s);
+        UiTheme.DrawFill(toast, new Color(0.018f, 0.050f, 0.092f, 0.88f));
+        UiTheme.DrawFill(new Rect(toast.x, toast.yMax - 2f, toast.width, 2f),
+                         new Color(UiTheme.SkyAccent.r, UiTheme.SkyAccent.g, UiTheme.SkyAccent.b, 0.85f));
         GUIStyle style = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-        style.normal.textColor = UiTheme.Ink;
+        style.normal.textColor = Color.white;
         GUI.Label(toast, quickMessage, style);
     }
 
@@ -671,48 +749,13 @@ public sealed class DialogueController
         return slot == SaveManager.AutoSlot ? "자동" : "수동 " + slot;
     }
 
-    private void DrawAdvanceHint(Rect box, float s)
-    {
-        float alpha = Mathf.Lerp(0.35f, 0.78f, Mathf.PingPong(Time.unscaledTime * 1.45f, 1f));
-        Rect hint = new Rect(box.xMax - 106f * s, box.yMax - 92f * s, 38f * s, 24f * s);
-        GUIStyle style = new GUIStyle(UiTheme.SmallMuted)
-        {
-            alignment = TextAnchor.MiddleCenter,
-            fontSize = Mathf.RoundToInt(20f * s)
-        };
-        style.normal.textColor = new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, alpha);
-        GUI.Label(hint, "...", style);
-    }
-
-    private static void DrawCinematicShade(float screenW, float screenH, float s)
-    {
-        UiTheme.DrawFill(new Rect(0f, screenH - 16f * s, screenW, 16f * s), new Color(0f, 0f, 0f, 0.38f));
-    }
-
     private static GUIStyle DialogueBodyStyle(float s)
     {
         GUIStyle style =
             new GUIStyle(UiTheme.Body) { fontSize = Mathf.RoundToInt(23f * s), alignment = TextAnchor.UpperLeft,
                                          wordWrap = true, richText = true };
-        style.normal.textColor = UiTheme.Ink;
+        style.normal.textColor = new Color(0.965f, 0.978f, 1f, 1f);
         return style;
-    }
-
-    private static string ChoiceMark(int index)
-    {
-        switch (index)
-        {
-        case 0:
-            return "一";
-        case 1:
-            return "二";
-        case 2:
-            return "三";
-        case 3:
-            return "四";
-        default:
-            return (index + 1).ToString();
-        }
     }
 
     private void Choose(DialogueChoice c)

@@ -24,6 +24,7 @@ public static class UiTheme
     public static readonly Color SealRed = new Color(0.760f, 0.205f, 0.145f, 1f);
     public static readonly Color Gold = new Color(0.835f, 0.625f, 0.250f, 1f);
     public static readonly Color GoldBright = new Color(0.960f, 0.780f, 0.360f, 1f);
+    public static readonly Color SkyAccent = new Color(0.290f, 0.760f, 0.955f, 1f); // 대화 이름표/소속 태그 강조색
     private static readonly Color DeepInk = new Color(0.006f, 0.010f, 0.012f, 1f);
 
     private static bool built;
@@ -39,6 +40,7 @@ public static class UiTheme
     private static Texture2D texSeal;
     private static Texture2D texPanelFill;
     private static Texture2D texShadow;
+    private static Texture2D texBottomShade;
     private static Texture2D texBtn;
     private static Texture2D texBtnHover;
     private static Texture2D texBtnActive;
@@ -121,6 +123,13 @@ public static class UiTheme
     {
         EnsureStyles();
         GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), texVignette, ScaleMode.StretchToFill);
+    }
+
+    /// <summary>위는 투명, 아래로 갈수록 어두워지는 그라데이션. 대화 오버레이(스탠딩 일러 위에 글이 얹히는 방식)용.</summary>
+    public static void DrawBottomShade(Rect rect)
+    {
+        EnsureStyles();
+        GUI.DrawTexture(rect, texBottomShade, ScaleMode.StretchToFill);
     }
 
     // ----- 패널 -----
@@ -263,6 +272,7 @@ public static class UiTheme
         texSeal = SealTex(72);
         texPanelFill = VerticalGradient(new Color(0.100f, 0.122f, 0.116f, 0.98f), HanjiPanel, 64);
         texShadow = Solid(new Color(0f, 0f, 0f, 0.42f));
+        texBottomShade = VerticalGradient(new Color(0.008f, 0.020f, 0.038f, 0f), new Color(0.008f, 0.020f, 0.038f, 0.94f), 160);
 
         texBtn = Bordered(new Color(0.075f, 0.092f, 0.088f, 0.96f), new Color(0.300f, 0.240f, 0.130f, 1f), 12, 2);
         texBtnHover = Bordered(new Color(0.100f, 0.160f, 0.148f, 0.98f), Gold, 12, 2);
@@ -308,9 +318,12 @@ public static class UiTheme
 
     private static Font LoadKoreanFont()
     {
-        string[] candidates = { "Malgun Gothic", "맑은 고딕",    "MalgunGothic", "Noto Sans CJK KR",
-                                "NanumGothic",   "Nanum Gothic", "Gulim",        "굴림",
-                                "Dotum",         "돋움",         "Batang",       "Arial Unicode MS" };
+        // 둥근 계열(모바일 미연시풍 대화 폰트 느낌)을 먼저 시도하고, 없으면 맑은 고딕 계열로 내려간다.
+        string[] candidates = { "NanumSquareRound", "NanumSquareRoundOTF", "나눔스퀘어라운드", "NanumSquare",
+                                "Noto Sans KR",     "Pretendard",          "Malgun Gothic",    "맑은 고딕",
+                                "MalgunGothic",     "Noto Sans CJK KR",    "NanumGothic",      "Nanum Gothic",
+                                "Gulim",            "굴림",                "Dotum",            "돋움",
+                                "Batang",           "Arial Unicode MS" };
 
         Font f = null;
         try

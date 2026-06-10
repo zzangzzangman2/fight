@@ -25,8 +25,13 @@ public static class AuthoringDialogueAdapter
         IReadOnlyList<AuthoringDialogueNode> nodes = scene.nodes;
         foreach (AuthoringDialogueNode source in nodes)
         {
-            DialogueNode node = new DialogueNode(source.nodeId, ResolveSpeakerName(manifest, source), source.line,
+            AuthoringCharacter character = manifest != null ? manifest.FindCharacter(source.speakerId) : null;
+            DialogueNode node = new DialogueNode(source.nodeId, ResolveSpeakerName(character, source), source.line,
                                                  source.nextNodeId, source.speakerId);
+            node.speakerTitle = ResolveSpeakerTitle(character);
+            node.portraitResource = !string.IsNullOrEmpty(source.portraitResource)
+                                        ? source.portraitResource
+                                        : character != null ? character.portraitResource : null;
 
             foreach (AuthoringDialogueChoice choiceSource in source.choices)
             {
@@ -56,15 +61,24 @@ public static class AuthoringDialogueAdapter
         return script;
     }
 
-    private static string ResolveSpeakerName(AuthoringContentManifest manifest, AuthoringDialogueNode node)
+    private static string ResolveSpeakerName(AuthoringCharacter character, AuthoringDialogueNode node)
     {
         if (!string.IsNullOrEmpty(node.speakerName))
         {
             return node.speakerName;
         }
 
-        AuthoringCharacter character = manifest != null ? manifest.FindCharacter(node.speakerId) : null;
         return character == null ? string.Empty : character.displayName;
+    }
+
+    private static string ResolveSpeakerTitle(AuthoringCharacter character)
+    {
+        if (character == null)
+        {
+            return null;
+        }
+
+        return !string.IsNullOrEmpty(character.sectName) ? character.sectName : character.role;
     }
 
     private static HeroDisposition? ToDisposition(int value)
