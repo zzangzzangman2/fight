@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace JoseonMurimTactics
@@ -160,6 +161,36 @@ public sealed class BattleResultController : MonoBehaviour
             GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), $"※ {CompanionCatalog.Name(id)} 부상",
                       UiTheme.Small);
             y += 28f * s;
+        }
+
+        // 장기 성장 요약 — ProgressionBattleRewardBridge가 specialFlags에 남긴 progression: 항목.
+        List<string> growthLines = new List<string>();
+        foreach (string flag in result.specialFlags)
+        {
+            if (!string.IsNullOrEmpty(flag) && flag.StartsWith("progression:"))
+            {
+                growthLines.Add(flag.Substring("progression:".Length));
+            }
+        }
+
+        if (growthLines.Count > 0)
+        {
+            y += 10f * s;
+            GUI.Label(new Rect(lx, y, lw, 32f * s), "성장", UiTheme.Heading);
+            y += 38f * s;
+            int shown = Mathf.Min(growthLines.Count, 6);
+            for (int i = 0; i < shown; i++)
+            {
+                GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), "· " + growthLines[i], UiTheme.Small);
+                y += 28f * s;
+            }
+
+            if (growthLines.Count > shown)
+            {
+                GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), $"외 {growthLines.Count - shown}건 (저장됨)",
+                          UiTheme.SmallMuted);
+                y += 28f * s;
+            }
         }
 
         // 오른쪽: 변화/소문

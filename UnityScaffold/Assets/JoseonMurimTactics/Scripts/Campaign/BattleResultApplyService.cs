@@ -81,6 +81,11 @@ public sealed class BattleResultApplyService
         }
 
         root.Quests.ResolveBattle(result, definition);
+
+        // Long campaign progression add-on: Lv50, 경지, 무공 숙련, 동료 유대, 세력 정복도.
+        // 은전/아이템/평판은 위에서 이미 지급했으므로 성장 계열 보상만 처리한다.
+        ProgressionBattleRewardBridge.Apply(root, result, definition, alreadyCompletedMission);
+
         if (definition != null && !string.IsNullOrEmpty(definition.questId))
         {
             root.Session.missionAttempts[definition.questId] =
