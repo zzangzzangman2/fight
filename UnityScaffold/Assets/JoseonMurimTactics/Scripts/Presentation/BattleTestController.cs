@@ -1313,21 +1313,23 @@ public sealed class BattleTestController : MonoBehaviour
             allyIndex++;
         }
 
-        BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
+        BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "bandit_guard_1") ??
+                                        FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
                                         FindFirstDefinition(baseDefinitions, Faction.Enemy);
-        BattleTestUnitDefinition spear = FindDefinition(baseDefinitions, "iron_wolf_spear_1") ?? guard;
-        BattleTestUnitDefinition captain = FindDefinition(baseDefinitions, "iron_wolf_captain") ?? guard;
+        BattleTestUnitDefinition scout = FindDefinition(baseDefinitions, "bandit_scout_1") ?? guard;
+        BattleTestUnitDefinition captain = FindDefinition(baseDefinitions, "bandit_captain") ??
+                                           FindDefinition(baseDefinitions, "iron_wolf_captain") ?? guard;
 
         result.Add(BanditUnit(guard, "bandit_cutthroat_1", "흑립방 칼잡이", new Vector2Int(7, 8),
                               "흑립방 산도적", "흙먼지", "도", 26, 3, 13, 14, 4, 1, 5, 13, 4, 8, "난도질", 1,
                               1, 2, 3, 1, BattleSpecialEffect.Strike));
-        result.Add(BanditUnit(spear, "bandit_spear_1", "벌목길 창수", new Vector2Int(10, 7),
+        result.Add(BanditUnit(guard, "bandit_spear_1", "벌목길 창수", new Vector2Int(10, 7),
                               "흑립방 산도적", "거친 바람", "장창", 28, 3, 12, 13, 4, 2, 5, 13, 4, 8, "밀쳐 찌르기",
                               2, 1, 2, 3, 1, BattleSpecialEffect.BreakGuard));
-        result.Add(BanditUnit(guard, "bandit_slinger_1", "망루 투석꾼", new Vector2Int(13, 8),
+        result.Add(BanditUnit(scout, "bandit_slinger_1", "망루 투석꾼", new Vector2Int(13, 8),
                               "흑립방 산도적", "돌가루", "투석끈", 22, 2, 14, 15, 4, 3, 4, 12, 3, 6, "흙먼지 던지기",
                               3, 1, 2, 0, 0, BattleSpecialEffect.Mark));
-        result.Add(BanditUnit(spear, "bandit_trapper_1", "덫지기", new Vector2Int(4, 7),
+        result.Add(BanditUnit(guard, "bandit_trapper_1", "덫지기", new Vector2Int(4, 7),
                               "흑립방 산도적", "독", "단검", 24, 3, 15, 16, 5, 1, 5, 12, 3, 7, "독묻은 쇠못",
                               2, 1, 2, 3, 1, BattleSpecialEffect.Poison));
         result.Add(BanditUnit(captain, "bandit_boss_gwakchil", "흑립방 두목 곽칠", new Vector2Int(8, 10),

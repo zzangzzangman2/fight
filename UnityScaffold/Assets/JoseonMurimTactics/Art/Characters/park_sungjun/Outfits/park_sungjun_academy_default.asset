@@ -25,7 +25,10 @@ MonoBehaviour:
   hitPoseSprite: {fileID: 21300000, guid: f756648b10155c54ab35be8bf7b912d5, type: 3}
   defeatedPoseSprite: {fileID: 21300000, guid: a2e19f9bc11824f4391ed898c7441f84, type: 3}
   actedPoseSprite: {fileID: 21300000, guid: 7a0ed06107069e041913a9dec3bab96d, type: 3}
-  idleFrames: []
+  idleFrames:
+  - {fileID: 21300000, guid: f0e0929d060fd0d43be2a6ba3d3b463a, type: 3}
+  - {fileID: 21300000, guid: e7a3b64a340dbc245bb198d66a00c72a, type: 3}
+  - {fileID: 21300000, guid: d0706cb7b80f1ec4db78d2a8158520b4, type: 3}
   moveFrames:
   - {fileID: 21300000, guid: b8b8722bdc5ae2948ada7a93ce3824fb, type: 3}
   - {fileID: 21300000, guid: 49e14c07f9dfd8244b4af3c0b19c8e8d, type: 3}
@@ -38,8 +41,15 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 678f9cddf9c94ac408de55887ae67e07, type: 3}
   - {fileID: 21300000, guid: 29898c06a5c880d44bbfbd6b8858152a, type: 3}
   - {fileID: 21300000, guid: d83c0e50a5800834d9eb03c0bac043b6, type: 3}
-  skillFrames: []
-  hitFrames: []
+  skillFrames:
+  - {fileID: 21300000, guid: d771af9ff8feac549851428fa97abab1, type: 3}
+  - {fileID: 21300000, guid: baa9f31d176b261418f0afd3ec5ded1a, type: 3}
+  - {fileID: 21300000, guid: f85ea632b2d72ed42ab9a52770c0fdc4, type: 3}
+  - {fileID: 21300000, guid: 9c56e0715605da04981a5a1b90944e18, type: 3}
+  hitFrames:
+  - {fileID: 21300000, guid: f756648b10155c54ab35be8bf7b912d5, type: 3}
+  - {fileID: 21300000, guid: 9322df3055aa3c24db78f01e1247bdea, type: 3}
+  - {fileID: 21300000, guid: 99d73241c3fd5ac46bcbc28b5e2a911e, type: 3}
   useLayeredSprites: 0
   baseBodyLayer: {fileID: 0}
   outfitLayer: {fileID: 0}

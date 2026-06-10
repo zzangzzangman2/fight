@@ -16,10 +16,13 @@ public static class TeamCharacterAssetBuilder
     private const string CharacterAssetFolder = Root + "/ScriptableObjects/Characters";
     private const string WeaponAssetFolder = Root + "/ScriptableObjects/Weapons";
     private const string UnitPrefabFolder = Root + "/Prefabs/Units";
+    private const string EnemyCharacterRoot = CharacterRoot + "/Enemies";
     private const float PosePixelsPerUnit = 420f;
     private const float PortraitPixelsPerUnit = 420f;
     private const float IconPixelsPerUnit = 220f;
+    private const float EnemyPosePixelsPerUnit = 384f;
     private static readonly Vector2 BattlePosePivot = new Vector2(0.5f, 32f / 384f);
+    private static readonly Vector2 EnemyPosePivot = new Vector2(0.5f, 0.03f);
 
     private static readonly Spec[] Team = {
         new Spec("park_sungjun", "박성준", "백두 루멘오더", 17, "ENFJ", "빛", "검",
@@ -50,6 +53,15 @@ public static class TeamCharacterAssetBuilder
                  new Color(0.58f, 0.30f, 0.92f, 1f), new Color(0.46f, 1f, 0.22f, 1f),
                  new Vector2Int(13, 8), 27, 4, 16, 17, 5, 3, 6, 13, 4, 8, "흑련독침", 3, 1, 2, 3, 2,
                  BattleSpecialEffect.Poison)
+    };
+
+    private static readonly EnemySpec[] BanditEnemies = {
+        new EnemySpec("enemy_black_hat_swordsman", "Black Hat Swordsman", WeaponType.Sword,
+                      new Color(0.78f, 0.26f, 0.16f, 1f), new Color(0.12f, 0.10f, 0.09f, 1f)),
+        new EnemySpec("enemy_black_hat_archer", "Black Hat Archer", WeaponType.Staff,
+                      new Color(0.72f, 0.21f, 0.14f, 1f), new Color(0.18f, 0.14f, 0.10f, 1f)),
+        new EnemySpec("enemy_black_hat_boss_gwakchil", "Black Hat Boss Gwakchil", WeaponType.Dao,
+                      new Color(0.88f, 0.18f, 0.12f, 1f), new Color(0.26f, 0.20f, 0.15f, 1f))
     };
 
     [MenuItem("Joseon Murim Tactics/Combat/Rebuild Six Character Team Assets")]
@@ -167,6 +179,11 @@ public static class TeamCharacterAssetBuilder
             EditorUtility.SetDirty(combatVisual);
         }
 
+        foreach (EnemySpec enemy in BanditEnemies)
+        {
+            RebuildEnemyVisualAssets(enemy);
+        }
+
         RebuildBattleTestSceneUnits();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -181,13 +198,16 @@ public static class TeamCharacterAssetBuilder
             units.Add(Unit(spec, Faction.Ally, spec.startCell, GetVisual(spec.id)));
         }
 
-        units.Add(Unit("bandit_guard_1", "흑립방 칼잡이", Faction.Enemy, GetVisual("do_arin"), new Vector2Int(6, 2),
+        units.Add(Unit("bandit_guard_1", "흑립방 칼잡이", Faction.Enemy,
+                       GetEnemyVisual("enemy_black_hat_swordsman", "do_arin"), new Vector2Int(6, 2),
                        "흑립방", 24, "ISTJ", "화약", "도", "거칠고 위협적인 말투", 30, 3, 12, 12, 4, 1, 5, 14, 5,
                        8, "난도질", 1, 1, 2, 4, 1, BattleSpecialEffect.Strike));
-        units.Add(Unit("bandit_scout_1", "흑립방 암수", Faction.Enemy, GetVisual("han_biyeon"), new Vector2Int(9, 2),
+        units.Add(Unit("bandit_scout_1", "흑립방 암수", Faction.Enemy,
+                       GetEnemyVisual("enemy_black_hat_archer", "han_biyeon"), new Vector2Int(9, 2),
                        "흑립방", 22, "ISTP", "독", "암기", "낮게 비웃는 말투", 26, 3, 16, 16, 5, 3, 5, 13, 4,
                        7, "비침", 3, 1, 2, 3, 2, BattleSpecialEffect.Poison));
-        units.Add(Unit("bandit_captain", "흑립방 두목 곽칠", Faction.Enemy, GetVisual("jin_seoyul"), new Vector2Int(12, 3),
+        units.Add(Unit("bandit_captain", "흑립방 두목 곽칠", Faction.Enemy,
+                       GetEnemyVisual("enemy_black_hat_boss_gwakchil", "jin_seoyul"), new Vector2Int(12, 3),
                        "흑립방", 31, "ENTJ", "압박", "철봉", "거칠고 얕보는 말투", 38, 4, 13, 13, 4, 2, 7, 16, 6,
                        11, "흑랑표식", 4, 1, 2, 0, 0, BattleSpecialEffect.Mark));
         return units.ToArray();
@@ -237,6 +257,84 @@ public static class TeamCharacterAssetBuilder
         EditorSceneManager.SaveScene(scene, BattleTestSceneLauncher.ScenePath);
     }
 
+    private static void RebuildEnemyVisualAssets(EnemySpec enemy)
+    {
+        EnsureEnemyCharacterFolders(enemy);
+        ConfigureEnemySpriteImporters(enemy);
+
+        Sprite idle = EnsureEnemySprite(EnemyPosePath(enemy.id, "idle"), EnemyPosePixelsPerUnit, true, true);
+        Sprite move = EnsureEnemySprite(EnemyPosePath(enemy.id, "move"), EnemyPosePixelsPerUnit, true, true);
+        Sprite attack = EnsureEnemySprite(EnemyPosePath(enemy.id, "attack"), EnemyPosePixelsPerUnit, true, true);
+        Sprite skill = EnsureEnemySprite(EnemyPosePath(enemy.id, "skill"), EnemyPosePixelsPerUnit, true, true);
+        Sprite hit = EnsureEnemySprite(EnemyPosePath(enemy.id, "hit"), EnemyPosePixelsPerUnit, true, true);
+        Sprite defeated = EnsureEnemySprite(EnemyPosePath(enemy.id, "defeated"), EnemyPosePixelsPerUnit, true, true);
+        Sprite acted = EnsureEnemySprite(EnemyPosePath(enemy.id, "acted"), EnemyPosePixelsPerUnit, true, true);
+        Sprite portrait = EnsureEnemySprite(EnemyPortraitPath(enemy.id), PortraitPixelsPerUnit, false, false);
+        if (portrait == null)
+        {
+            portrait = idle;
+        }
+
+        CharacterOutfitData outfit = LoadOrCreate<CharacterOutfitData>(EnemyOutfitPath(enemy.id));
+        outfit.outfitId = enemy.id + "_default";
+        outfit.displayName = enemy.displayName + " Default";
+        outfit.fullBodySprite = idle;
+        outfit.idlePoseSprite = idle;
+        outfit.movePoseSprite = move;
+        outfit.attackPoseSprite = attack;
+        outfit.skillPoseSprite = skill;
+        outfit.hitPoseSprite = hit;
+        outfit.defeatedPoseSprite = defeated;
+        outfit.actedPoseSprite = acted;
+        outfit.idleFrames = CollectEnemyPoseFrames(enemy.id, "idle", idle);
+        outfit.moveFrames = CollectEnemyPoseFrames(enemy.id, "move", move);
+        outfit.attackFrames = CollectEnemyPoseFrames(enemy.id, "attack", attack);
+        outfit.skillFrames = CollectEnemyPoseFrames(enemy.id, "skill", skill);
+        outfit.hitFrames = CollectEnemyPoseFrames(enemy.id, "hit", hit);
+        outfit.bustSprite = portrait;
+        outfit.portraitSprite = portrait;
+        outfit.faceIconSprite = portrait;
+        outfit.useLayeredSprites = false;
+        EditorUtility.SetDirty(outfit);
+
+        CharacterVisualData visual = LoadOrCreate<CharacterVisualData>(EnemyVisualDataPath(enemy.id));
+        visual.visualId = enemy.id;
+        visual.fullBodySprite = idle;
+        visual.idlePoseSprite = idle;
+        visual.movePoseSprite = move;
+        visual.attackPoseSprite = attack;
+        visual.skillPoseSprite = skill;
+        visual.hitPoseSprite = hit;
+        visual.defeatedPoseSprite = defeated;
+        visual.actedPoseSprite = acted;
+        visual.idleFrames = outfit.idleFrames;
+        visual.moveFrames = outfit.moveFrames;
+        visual.attackFrames = outfit.attackFrames;
+        visual.skillFrames = outfit.skillFrames;
+        visual.hitFrames = outfit.hitFrames;
+        visual.bustSprite = portrait;
+        visual.portraitSprite = portrait;
+        visual.faceIconSprite = portrait;
+        visual.defaultOutfit = outfit;
+        visual.outfitOptions = new[] { outfit };
+        visual.defaultWeaponType = enemy.weaponType;
+        visual.weaponAnimationSet = null;
+        visual.heightInTiles = 1.10f;
+        visual.spriteOffset = new Vector2(0f, 0.04f);
+        visual.moveSecondsPerTile = 0.24f;
+        visual.moveSettleTime = 0.08f;
+        visual.moveLeanDegrees = 4f;
+        visual.attackLunge = 0.13f;
+        visual.skillPulseScale = 0.08f;
+        visual.hitRecoil = 0.10f;
+        visual.shadowWidth = 0.74f;
+        visual.shadowHeight = 0.18f;
+        visual.selectedTint = Color.Lerp(Color.white, enemy.primary, 0.34f);
+        visual.hitTint = Color.Lerp(new Color(1f, 0.52f, 0.44f, 1f), enemy.primary, 0.22f);
+        visual.guardTint = Color.Lerp(Color.white, enemy.secondary, 0.35f);
+        EditorUtility.SetDirty(visual);
+    }
+
     private static void EnsureFolders()
     {
         EnsureFolder(Root + "/Animations");
@@ -246,6 +344,7 @@ public static class TeamCharacterAssetBuilder
         EnsureFolder(WeaponAssetFolder);
         EnsureFolder(Root + "/Prefabs");
         EnsureFolder(UnitPrefabFolder);
+        EnsureFolder(UnitPrefabFolder + "/Enemies");
         EnsureFolder(Root + "/Docs");
     }
 
@@ -258,6 +357,13 @@ public static class TeamCharacterAssetBuilder
         EnsureFolder(CharacterRoot + "/" + spec.id + "/VisualData");
         EnsureFolder(CharacterRoot + "/" + spec.id + "/Outfits");
         EnsureFolder(AnimationRoot + "/" + spec.id);
+    }
+
+    private static void EnsureEnemyCharacterFolders(EnemySpec enemy)
+    {
+        EnsureFolder(EnemyCharacterRoot + "/" + enemy.id);
+        EnsureFolder(EnemyCharacterRoot + "/" + enemy.id + "/VisualData");
+        EnsureFolder(EnemyCharacterRoot + "/" + enemy.id + "/Outfits");
     }
 
     private static void EnsureFolder(string folder)
@@ -292,6 +398,23 @@ public static class TeamCharacterAssetBuilder
         ConfigurePoseFrameImporters(spec, "attack");
         ConfigurePoseFrameImporters(spec, "skill");
         ConfigurePoseFrameImporters(spec, "hit");
+    }
+
+    private static void ConfigureEnemySpriteImporters(EnemySpec enemy)
+    {
+        EnsureEnemySprite(EnemyPosePath(enemy.id, "idle"), EnemyPosePixelsPerUnit, true, true);
+        EnsureEnemySprite(EnemyPosePath(enemy.id, "move"), EnemyPosePixelsPerUnit, true, true);
+        EnsureEnemySprite(EnemyPosePath(enemy.id, "attack"), EnemyPosePixelsPerUnit, true, true);
+        EnsureEnemySprite(EnemyPosePath(enemy.id, "skill"), EnemyPosePixelsPerUnit, true, true);
+        EnsureEnemySprite(EnemyPosePath(enemy.id, "hit"), EnemyPosePixelsPerUnit, true, true);
+        EnsureEnemySprite(EnemyPosePath(enemy.id, "defeated"), EnemyPosePixelsPerUnit, true, true);
+        EnsureEnemySprite(EnemyPosePath(enemy.id, "acted"), EnemyPosePixelsPerUnit, true, true);
+        EnsureEnemySprite(EnemyPortraitPath(enemy.id), PortraitPixelsPerUnit, false, false);
+        ConfigureEnemyPoseFrameImporters(enemy.id, "idle");
+        ConfigureEnemyPoseFrameImporters(enemy.id, "move");
+        ConfigureEnemyPoseFrameImporters(enemy.id, "attack");
+        ConfigureEnemyPoseFrameImporters(enemy.id, "skill");
+        ConfigureEnemyPoseFrameImporters(enemy.id, "hit");
     }
 
     private static Sprite EnsureSprite(string path, float pixelsPerUnit)
@@ -368,6 +491,80 @@ public static class TeamCharacterAssetBuilder
         return sprite;
     }
 
+    private static Sprite EnsureEnemySprite(string path, float pixelsPerUnit, bool useEnemyPivot, bool warnMissing)
+    {
+        TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer != null)
+        {
+            bool dirty = false;
+            if (importer.textureType != TextureImporterType.Sprite)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                dirty = true;
+            }
+
+            if (importer.spriteImportMode != SpriteImportMode.Single)
+            {
+                importer.spriteImportMode = SpriteImportMode.Single;
+                dirty = true;
+            }
+
+            if (!Mathf.Approximately(importer.spritePixelsPerUnit, pixelsPerUnit))
+            {
+                importer.spritePixelsPerUnit = pixelsPerUnit;
+                dirty = true;
+            }
+
+            if (importer.mipmapEnabled)
+            {
+                importer.mipmapEnabled = false;
+                dirty = true;
+            }
+
+            if (!importer.alphaIsTransparency)
+            {
+                importer.alphaIsTransparency = true;
+                dirty = true;
+            }
+
+            if (useEnemyPivot)
+            {
+                TextureImporterSettings settings = new TextureImporterSettings();
+                importer.ReadTextureSettings(settings);
+                if (settings.spriteAlignment != (int)SpriteAlignment.Custom)
+                {
+                    settings.spriteAlignment = (int)SpriteAlignment.Custom;
+                    importer.SetTextureSettings(settings);
+                    dirty = true;
+                }
+
+                if (importer.spritePivot != EnemyPosePivot)
+                {
+                    importer.spritePivot = EnemyPosePivot;
+                    dirty = true;
+                }
+            }
+
+            if (dirty)
+            {
+                importer.SaveAndReimport();
+            }
+        }
+
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (sprite == null)
+        {
+            sprite = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();
+        }
+
+        if (sprite == null && warnMissing)
+        {
+            Debug.LogWarning("[TeamCharacterAssetBuilder] Enemy sprite could not be loaded: " + path);
+        }
+
+        return sprite;
+    }
+
     private static AnimationClip SaveClip(Spec spec, string name, float duration, bool loop, float yAmplitude,
                                           float zRotation)
     {
@@ -423,6 +620,12 @@ public static class TeamCharacterAssetBuilder
     private static CharacterVisualData GetVisual(string id)
     {
         return AssetDatabase.LoadAssetAtPath<CharacterVisualData>(CharacterRoot + "/" + id + "/VisualData/" + id + "_visual.asset");
+    }
+
+    private static CharacterVisualData GetEnemyVisual(string id, string fallbackTeamId)
+    {
+        CharacterVisualData visual = AssetDatabase.LoadAssetAtPath<CharacterVisualData>(EnemyVisualDataPath(id));
+        return visual != null ? visual : GetVisual(fallbackTeamId);
     }
 
     private static BattleTestUnitDefinition Unit(Spec spec, Faction faction, Vector2Int startCell,
@@ -481,11 +684,26 @@ public static class TeamCharacterAssetBuilder
         return CharacterRoot + "/" + spec.id + "/Sprites/" + spec.id + "_" + pose + ".png";
     }
 
+    private static string EnemyPosePath(string id, string pose)
+    {
+        return EnemyCharacterRoot + "/" + id + "/" + id + "_" + pose + ".png";
+    }
+
+    private static string EnemyPortraitPath(string id)
+    {
+        return Root + "/Art/Portraits/Enemies/" + id + "_portrait.png";
+    }
+
     private const int MaxPoseFrames = 8;
 
     private static string PoseFramePath(Spec spec, string pose, int frame)
     {
         return CharacterRoot + "/" + spec.id + "/Sprites/" + spec.id + "_" + pose + "_" + frame + ".png";
+    }
+
+    private static string EnemyPoseFramePath(string id, string pose, int frame)
+    {
+        return EnemyCharacterRoot + "/" + id + "/" + id + "_" + pose + "_" + frame + ".png";
     }
 
     private static void ConfigurePoseFrameImporters(Spec spec, string pose)
@@ -499,6 +717,20 @@ public static class TeamCharacterAssetBuilder
             }
 
             EnsureSprite(path, PosePixelsPerUnit);
+        }
+    }
+
+    private static void ConfigureEnemyPoseFrameImporters(string id, string pose)
+    {
+        for (int frame = 2; frame <= MaxPoseFrames; frame++)
+        {
+            string path = EnemyPoseFramePath(id, pose, frame);
+            if (AssetImporter.GetAtPath(path) == null)
+            {
+                break;
+            }
+
+            EnsureEnemySprite(path, EnemyPosePixelsPerUnit, true, true);
         }
     }
 
@@ -532,6 +764,34 @@ public static class TeamCharacterAssetBuilder
         return frames.Count >= 2 ? frames.ToArray() : null;
     }
 
+    private static Sprite[] CollectEnemyPoseFrames(string id, string pose, Sprite baseSprite)
+    {
+        if (baseSprite == null)
+        {
+            return null;
+        }
+
+        List<Sprite> frames = new List<Sprite> { baseSprite };
+        for (int frame = 2; frame <= MaxPoseFrames; frame++)
+        {
+            string path = EnemyPoseFramePath(id, pose, frame);
+            if (AssetImporter.GetAtPath(path) == null)
+            {
+                break;
+            }
+
+            Sprite sprite = EnsureEnemySprite(path, EnemyPosePixelsPerUnit, true, true);
+            if (sprite == null)
+            {
+                break;
+            }
+
+            frames.Add(sprite);
+        }
+
+        return frames.Count >= 2 ? frames.ToArray() : null;
+    }
+
     private static string VisualDataPath(Spec spec)
     {
         return CharacterRoot + "/" + spec.id + "/VisualData/" + spec.id + "_visual.asset";
@@ -545,6 +805,16 @@ public static class TeamCharacterAssetBuilder
     private static string CombatVisualPath(Spec spec)
     {
         return CharacterAssetFolder + "/" + spec.id + "_combat_visual.asset";
+    }
+
+    private static string EnemyVisualDataPath(string id)
+    {
+        return EnemyCharacterRoot + "/" + id + "/VisualData/" + id + "_visual.asset";
+    }
+
+    private static string EnemyOutfitPath(string id)
+    {
+        return EnemyCharacterRoot + "/" + id + "/Outfits/" + id + "_default.asset";
     }
 
     private static string WeaponSetPath(Spec spec)
@@ -622,6 +892,24 @@ public static class TeamCharacterAssetBuilder
             this.specialPower = specialPower;
             this.specialAttackBonus = specialAttackBonus;
             this.specialEffect = specialEffect;
+        }
+    }
+
+    private sealed class EnemySpec
+    {
+        public readonly string id;
+        public readonly string displayName;
+        public readonly WeaponType weaponType;
+        public readonly Color primary;
+        public readonly Color secondary;
+
+        public EnemySpec(string id, string displayName, WeaponType weaponType, Color primary, Color secondary)
+        {
+            this.id = id;
+            this.displayName = displayName;
+            this.weaponType = weaponType;
+            this.primary = primary;
+            this.secondary = secondary;
         }
     }
 }

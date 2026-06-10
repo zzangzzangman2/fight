@@ -330,7 +330,7 @@ MonoBehaviour:
   - id: bandit_guard_1
     displayName: "\uD751\uB9BD\uBC29 \uCE7C\uC7A1\uC774"
     faction: 1
-    visual: {fileID: 11400000, guid: 2de93c0011812964a902c7b0b67f7a8c, type: 2}
+    visual: {fileID: 11400000, guid: 8cbb4002d5284a54fb61e26119b0e252, type: 2}
     startCell: {x: 6, y: 2}
     sectName: "\uD751\uB9BD\uBC29"
     age: 24
@@ -358,7 +358,7 @@ MonoBehaviour:
   - id: bandit_scout_1
     displayName: "\uD751\uB9BD\uBC29 \uC554\uC218"
     faction: 1
-    visual: {fileID: 11400000, guid: b3e2849120920b44b87c6353a2665b4a, type: 2}
+    visual: {fileID: 11400000, guid: bddaf89d493008241a723e236242d949, type: 2}
     startCell: {x: 9, y: 2}
     sectName: "\uD751\uB9BD\uBC29"
     age: 22
@@ -386,7 +386,7 @@ MonoBehaviour:
   - id: bandit_captain
     displayName: "\uD751\uB9BD\uBC29 \uB450\uBAA9 \uACFD\uCE60"
     faction: 1
-    visual: {fileID: 11400000, guid: f33b94466f4b6ed48a7a2b8ebca61610, type: 2}
+    visual: {fileID: 11400000, guid: 9d77e3ecf93d8f846ad50df597f5e57f, type: 2}
     startCell: {x: 12, y: 3}
     sectName: "\uD751\uB9BD\uBC29"
     age: 31

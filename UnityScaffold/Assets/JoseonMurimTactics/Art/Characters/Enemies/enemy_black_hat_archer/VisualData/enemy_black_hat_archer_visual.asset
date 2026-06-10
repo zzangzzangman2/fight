@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95fb2a208870457687ddbb0bb4f0dd12, type: 3}
+  m_Name: enemy_black_hat_archer_visual
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualData
+  visualId: enemy_black_hat_archer
+  fullBodySprite: {fileID: 21300000, guid: 0a7a8667b127c8a40b77077a7bcaeea6, type: 3}
+  bustSprite: {fileID: 21300000, guid: 0a7a8667b127c8a40b77077a7bcaeea6, type: 3}
+  portraitSprite: {fileID: 21300000, guid: 0a7a8667b127c8a40b77077a7bcaeea6, type: 3}
+  faceIconSprite: {fileID: 21300000, guid: 0a7a8667b127c8a40b77077a7bcaeea6, type: 3}
+  animatorController: {fileID: 0}
+  idlePoseSprite: {fileID: 21300000, guid: 0a7a8667b127c8a40b77077a7bcaeea6, type: 3}
+  movePoseSprite: {fileID: 21300000, guid: 78250c7f520965b42a09a1345db7028c, type: 3}
+  attackPoseSprite: {fileID: 21300000, guid: 230396744166e2e4b8c8bc989c2911c3, type: 3}
+  skillPoseSprite: {fileID: 21300000, guid: 496c5fb7c279b1e458577852ee1ed745, type: 3}
+  hitPoseSprite: {fileID: 21300000, guid: 133966766bc47384490c42bc1d63a0b0, type: 3}
+  defeatedPoseSprite: {fileID: 21300000, guid: c740b50245dfcca4888195a05c1d02b3, type: 3}
+  actedPoseSprite: {fileID: 21300000, guid: 3d6b65f37e8373c4e94e52e9a5f7b12d, type: 3}
+  idleFrames: []
+  moveFrames: []
+  attackFrames: []
+  skillFrames: []
+  hitFrames: []
+  idleFrameRate: 4
+  defaultOutfit: {fileID: 11400000, guid: 4aba1a09b54760143ba0f3a2f8f35b9d, type: 2}
+  outfitOptions:
+  - {fileID: 11400000, guid: 4aba1a09b54760143ba0f3a2f8f35b9d, type: 2}
+  defaultWeaponType: 6
+  weaponAnimationSet: {fileID: 0}
+  heightInTiles: 1.1
+  spriteOffset: {x: 0, y: 0.04}
+  sortingOffset: 0
+  idleAmplitude: 0.035
+  idleSpeed: 1
+  breathingScale: 0.015
+  shadowWidth: 0.74
+  shadowHeight: 0.18
+  normalTint: {r: 1, g: 1, b: 1, a: 1}
+  selectedTint: {r: 0.9048, g: 0.7314, b: 0.7076, a: 1}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
+  hitTint: {r: 0.93840003, g: 0.4518, b: 0.374, a: 1}
+  guardTint: {r: 0.713, g: 0.699, b: 0.685, a: 1}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}
+  moveSecondsPerTile: 0.24
+  moveSettleTime: 0.08
+  moveLeanDegrees: 4
+  attackLunge: 0.13
+  skillPulseScale: 0.08
+  hitRecoil: 0.1
