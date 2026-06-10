@@ -9,7 +9,6 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleTilemapBattlefield : MonoBehaviour
 {
-    private const bool UsePaintedGroundBackdrop = true;
     // Floor sprites use (rows - (x+y)) * RowStride + slot. Floor slots stay below 26,
     // props use 28, units 30. Highlights sit on 26: above the floor of
     // their own row, clipped by nearer rows, under standing units and props.
@@ -46,6 +45,7 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
     public Tilemap HighlightDangerTilemap { get; private set; }
     public TacticalGridOverlay TacticalOverlay { get; private set; }
     public Transform CellColliderRoot { get; private set; }
+    public bool UsePaintedGroundBackdrop { get; set; }
 
     public void Initialize(int width, int height, float tileWidth, float tileHeight, Sprite fallbackSprite,
                            Sprite softSprite, Sprite detail, Sprite dot)
@@ -137,11 +137,16 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         TerrainTileData tile = GetOrCreateTerrainTile(terrainType, sprite, moveCost, walkable, blocksLineOfSight,
                                                       isChokePoint, elevation, coverBonus, danger);
         Vector3Int tileCell = ToTilemapCell(cell);
-        layer.SetTile(tileCell, tile);
-        layer.SetTileFlags(tileCell, TileFlags.None);
-        layer.SetColor(tileCell, UsePaintedGroundBackdrop
-                                     ? PaintedGroundTileColor(terrainType, objective, danger, coverBonus)
-                                     : tile.sprite == fallbackDiamond ? baseColor : Color.white);
+        if (UsePaintedGroundBackdrop)
+        {
+            layer.SetTile(tileCell, null);
+        }
+        else
+        {
+            layer.SetTile(tileCell, tile);
+            layer.SetTileFlags(tileCell, TileFlags.None);
+            layer.SetColor(tileCell, tile.sprite == fallbackDiamond ? baseColor : Color.white);
+        }
 
         SetSubtleOverlay(cell, terrainType, elevation, coverBonus, objective, danger);
         TacticalOverlay.SetCell(new TacticalGridCellData
@@ -266,6 +271,21 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
     public void SetTerrainTint(Vector2Int cell, TerrainType terrainType, Color color)
     {
+        if (UsePaintedGroundBackdrop)
+        {
+            Vector3Int overlayCell = ToTilemapCell(cell);
+            if (color.a <= 0.01f)
+            {
+                OverlayTilemap.SetTile(overlayCell, null);
+                return;
+            }
+
+            OverlayTilemap.SetTile(overlayCell, overlayTile);
+            OverlayTilemap.SetTileFlags(overlayCell, TileFlags.None);
+            OverlayTilemap.SetColor(overlayCell, color);
+            return;
+        }
+
         Tilemap layer = LayerForTerrain(terrainType);
         Vector3Int tileCell = ToTilemapCell(cell);
         if (!layer.HasTile(tileCell))
@@ -358,6 +378,11 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
     private void SetSubtleOverlay(Vector2Int cell, TerrainType terrainType, int elevation, int coverBonus,
                                   bool objective, bool danger)
     {
+        if (UsePaintedGroundBackdrop)
+        {
+            return;
+        }
+
         Color color = Color.clear;
         if (objective)
         {
@@ -387,8 +412,13 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         OverlayTilemap.SetColor(tileCell, color);
     }
 
-    private static Color PaintedGroundTileColor(TerrainType terrainType, bool objective, bool danger, int coverBonus)
+    private Color PaintedGroundTileColor(TerrainType terrainType, bool objective, bool danger, int coverBonus)
     {
+        if (UsePaintedGroundBackdrop)
+        {
+            return Color.clear;
+        }
+
         float alpha = 0.035f;
         switch (terrainType)
         {
@@ -601,12 +631,12 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
     private static Sprite CreateHighlightDiamondSprite()
     {
-        // Fire Emblem style movement tile: even translucent fill with a crisp brighter
-        // border, sized to one grid cell (1.16 x 0.62 world) with a small inset so
-        // adjacent highlighted cells keep a visible seam.
+        // Movement tiles need readable cell separation on painted backgrounds:
+        // a low-alpha fill prevents wide bands, while the rim keeps each tile clear.
         const int textureWidth = 232;
         const int textureHeight = 124;
-        const float inset = 0.94f;
+        const float inset = 0.88f;
+        const float worldWidth = 0.92f;
         Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
         texture.name = "BattleHighlightCell";
         texture.wrapMode = TextureWrapMode.Clamp;
@@ -626,15 +656,15 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
                 }
 
                 float edge = Mathf.Clamp01((1f - d) * 26f);
-                float border = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - d) * 9f));
-                float alpha = Mathf.Lerp(0.26f, 0.58f, border) * edge;
+                float border = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - d) * 12f));
+                float alpha = Mathf.Lerp(0.10f, 0.78f, border) * edge;
                 texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
             }
         }
 
         texture.Apply();
         return Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight), new Vector2(0.5f, 0.5f),
-                             textureWidth / 1.16f);
+                             textureWidth / worldWidth);
     }
 
     private Vector3 CellToWorld(Vector2Int cell)

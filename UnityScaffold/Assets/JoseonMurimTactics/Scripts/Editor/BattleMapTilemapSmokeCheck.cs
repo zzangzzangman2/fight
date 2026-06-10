@@ -65,11 +65,12 @@ public static class BattleMapTilemapSmokeCheck
         Require(overlay.Cells.Count == controller.width * controller.height,
                 $"TacticalGridOverlay expected {controller.width * controller.height} cells, got {overlay.Cells.Count}.");
 
-        Require(groundBase.GetUsedTilesCount() + groundVariation.GetUsedTilesCount() +
-                roadPath.GetUsedTilesCount() + roadEdge.GetUsedTilesCount() +
-                cliffTop.GetUsedTilesCount() + cliffFace.GetUsedTilesCount() +
-                waterBase.GetUsedTilesCount() + waterSurface.GetUsedTilesCount() > 0,
-                "No terrain tiles were assigned.");
+        int visibleTerrainTiles = groundBase.GetUsedTilesCount() + groundVariation.GetUsedTilesCount() +
+                                  roadPath.GetUsedTilesCount() + roadEdge.GetUsedTilesCount() +
+                                  cliffTop.GetUsedTilesCount() + cliffFace.GetUsedTilesCount() +
+                                  waterBase.GetUsedTilesCount() + waterSurface.GetUsedTilesCount();
+        Require(visibleTerrainTiles == 0,
+                "Painted battle map should keep terrain tilemaps empty so runtime tints do not band the backdrop.");
         Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
                 "Expected generated interactable props to carry MapPropView metadata.");
         VerifyBlockedMapCells(controller);
@@ -163,6 +164,7 @@ public static class BattleMapTilemapSmokeCheck
         InvokePrivate(controller, "BeginPlayerPhase");
 
         List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        VerifyUnitAnchorsAndPropOverlap(controller, units);
         BattleTestUnit first = GetPrivate<BattleTestUnit>(controller, "activeUnit");
         Require(first != null && first.definition.faction == Faction.Ally, "Expected an active ally after player phase begins.");
         Require(first.CanMove, "First active ally should be able to move before moving.");
@@ -474,6 +476,30 @@ public static class BattleMapTilemapSmokeCheck
         Vector2 unitPoint = new Vector2(unitWorld.x, unitWorld.y);
         Require(Vector2.Distance(cameraPoint, unitPoint) <= tacticalSize + 1.5f,
                 "Camera should keep the focused unit inside the tactical view.");
+    }
+
+    private static void VerifyUnitAnchorsAndPropOverlap(BattleTestController controller, List<BattleTestUnit> units)
+    {
+        List<BattleTestInteractable> interactables =
+            GetPrivate<List<BattleTestInteractable>>(controller, "interactables");
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit == null || unit.definition == null || unit.definition.faction != Faction.Ally)
+            {
+                continue;
+            }
+
+            Vector3 unitWorld = (Vector3)InvokePrivate(controller, "UnitWorldPosition", unit.cell);
+            Vector3 gridWorld = (Vector3)InvokePrivate(controller, "GridToWorld", unit.cell);
+            Require(Vector3.Distance(unitWorld, gridWorld) <= 0.001f,
+                    $"{unit.definition.displayName} should be grounded at the tactical cell center.");
+
+            foreach (BattleTestInteractable interactable in interactables)
+            {
+                Require(interactable == null || interactable.cell != unit.cell,
+                        $"{unit.definition.displayName} should not spawn on interactable {interactable?.id}.");
+            }
+        }
     }
 
     private static BattleTestUnit FindUnit(List<BattleTestUnit> units, string id)

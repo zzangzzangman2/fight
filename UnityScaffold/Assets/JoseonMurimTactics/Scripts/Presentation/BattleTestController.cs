@@ -2056,6 +2056,7 @@ public sealed class BattleTestController : MonoBehaviour
         tilemapBattlefield = terrainRoot.gameObject.AddComponent<BattleTilemapBattlefield>();
         tilemapBattlefield.Initialize(width, height, tileWidth, tileHeight, diamondSprite, softDiamondSprite,
                                       detailSprite, dotSprite);
+        tilemapBattlefield.UsePaintedGroundBackdrop = paintedMapBackdropSprite != null;
 
         CreateMapBackdrop(terrainRoot);
         CreateMapAtmosphere(terrainRoot);
@@ -2259,7 +2260,7 @@ public sealed class BattleTestController : MonoBehaviour
         AddInteractable(propRoot, "baekdu_snow_boulder", "현무암 눈바위", BattleTestInteractableKind.Rockfall,
                         new Vector2Int(11, 8), new Color(0.66f, 0.68f, 0.66f, 1f));
         AddInteractable(propRoot, "baekdu_snowdrift_cover", "쌓인 눈더미", BattleTestInteractableKind.Cover,
-                        new Vector2Int(5, 8), new Color(0.82f, 0.88f, 0.92f, 1f));
+                        new Vector2Int(4, 7), new Color(0.82f, 0.88f, 0.92f, 1f));
         AddInteractable(propRoot, "baekdu_frozen_stone_lantern", "얼어붙은 석등", BattleTestInteractableKind.Rockfall,
                         new Vector2Int(9, 9), new Color(0.62f, 0.60f, 0.55f, 1f));
         AddInteractable(propRoot, "baekdu_frozen_rope_posts", "얼어붙은 밧줄 말뚝",
@@ -2348,7 +2349,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         GameObject propObject = new GameObject(displayName);
         propObject.transform.SetParent(parent, false);
-        propObject.transform.position = GridToWorld(cell) + new Vector3(0f, 0.13f, -0.04f);
+        propObject.transform.position = GridToWorld(cell) + new Vector3(0f, -0.02f, -0.04f);
 
         SpriteRenderer renderer = propObject.AddComponent<SpriteRenderer>();
         Sprite propSprite = GetInteractableSprite(id, kind);
@@ -2676,21 +2677,20 @@ public sealed class BattleTestController : MonoBehaviour
             float spriteHeight = Mathf.Max(0.01f, paintedMapBackdropSprite.bounds.size.y);
             float uniformScale = Mathf.Max(playableWidth / spriteWidth, playableHeight / spriteHeight);
             backdrop.transform.localScale = Vector3.one * uniformScale;
+            return;
         }
-        else
-        {
-            backdrop.transform.position = center + new Vector3(0f, -0.18f, 0.08f);
-            backdrop.transform.localScale = new Vector3(width * tileWidth * 2.40f, height * tileHeight * 2.80f, 1f);
-            backdrop.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
-            renderer.sprite = detailSprite;
-            renderer.color = new Color(0.18f, 0.27f, 0.23f, 0.82f);
-            renderer.sortingOrder = -80;
-        }
+
+        backdrop.transform.position = center + new Vector3(0f, -0.18f, 0.08f);
+        backdrop.transform.localScale = new Vector3(width * tileWidth * 2.40f, height * tileHeight * 2.80f, 1f);
+        backdrop.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+        renderer.sprite = detailSprite;
+        renderer.color = new Color(0.18f, 0.27f, 0.23f, 0.82f);
+        renderer.sortingOrder = -80;
 
         CreateAtmosphereSprite(terrainRoot, "Dawn Mountain Sky Wash", softDiamondSprite,
                                center + new Vector3(0f, 1.35f, 0.10f),
                                new Vector3(width * tileWidth * 2.85f, height * tileHeight * 3.15f, 1f), 45f,
-                               new Color(0.36f, 0.50f, 0.50f, 0.34f), -92);
+                               new Color(0.36f, 0.50f, 0.50f, 0.05f), -92);
         CreateAtmosphereSprite(terrainRoot, "Far Baekdu Ridge", mountainRidgeSprite,
                                center + new Vector3(-0.80f, 2.55f, 0.04f), new Vector3(3.35f, 1.35f, 1f), 0f,
                                new Color(0.25f, 0.36f, 0.32f, 0.66f), -76);
@@ -2707,6 +2707,11 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void CreateMapAtmosphere(Transform terrainRoot)
     {
+        if (paintedMapBackdropSprite != null)
+        {
+            return;
+        }
+
         Transform atmosphereRoot = new GameObject("Painted Atmosphere").transform;
         atmosphereRoot.SetParent(terrainRoot, false);
 
@@ -2743,20 +2748,20 @@ public sealed class BattleTestController : MonoBehaviour
     private void CreateBaekduSnowfieldAtmosphere(Transform atmosphereRoot)
     {
         CreateZoneWash(atmosphereRoot, "Dense Snow Pine Wash", new Vector2Int(1, 8), new Vector2(4.20f, 4.80f),
-                       -14f, new Color(0.04f, 0.18f, 0.16f, 0.18f), 1120, true);
+                       -14f, new Color(0.04f, 0.18f, 0.16f, 0.035f), 1120, true);
         CreateZoneWash(atmosphereRoot, "Frozen Stream Wash", new Vector2Int(7, 3), new Vector2(5.30f, 2.20f),
-                       8f, new Color(0.22f, 0.58f, 0.76f, 0.18f), 1121, true);
+                       8f, new Color(0.22f, 0.58f, 0.76f, 0.035f), 1121, true);
         CreateZoneWash(atmosphereRoot, "Basalt Cliff Wash", new Vector2Int(7, 10), new Vector2(6.10f, 2.40f),
-                       0f, new Color(0.08f, 0.10f, 0.13f, 0.22f), 1122, true);
+                       0f, new Color(0.08f, 0.10f, 0.13f, 0.03f), 1122, true);
         CreateZoneWash(atmosphereRoot, "Hot Spring Steam Wash", new Vector2Int(12, 8), new Vector2(3.40f, 2.35f),
-                       -8f, new Color(0.78f, 0.92f, 0.86f, 0.24f), 1123, false);
+                       -8f, new Color(0.78f, 0.92f, 0.86f, 0.055f), 1123, false);
         CreateMistBand(atmosphereRoot, "Snow Drift Mist", new Vector2Int(4, 7), new Vector3(-0.18f, 0.06f, -0.03f),
-                       new Vector3(4.80f, 0.38f, 1f), -16f, new Color(0.82f, 0.88f, 0.92f, 0.15f), 1240);
+                       new Vector3(2.20f, 0.20f, 1f), -16f, new Color(0.82f, 0.88f, 0.92f, 0.035f), 1240);
         CreateMistBand(atmosphereRoot, "Hot Spring Vapor", new Vector2Int(12, 8), new Vector3(0.10f, 0.13f, -0.03f),
-                       new Vector3(2.70f, 0.34f, 1f), 18f, new Color(0.82f, 0.95f, 0.90f, 0.20f), 1241);
-        CreateGlow(atmosphereRoot, "Hot Spring Glow", new Vector2Int(12, 8), new Color(0.82f, 0.95f, 0.86f, 0.22f),
+                       new Vector3(1.75f, 0.22f, 1f), 18f, new Color(0.82f, 0.95f, 0.90f, 0.055f), 1241);
+        CreateGlow(atmosphereRoot, "Hot Spring Glow", new Vector2Int(12, 8), new Color(0.82f, 0.95f, 0.86f, 0.12f),
                    1.12f, 1360);
-        CreateGlow(atmosphereRoot, "Summit Marker Halo", new Vector2Int(13, 9), new Color(1f, 0.86f, 0.48f, 0.16f),
+        CreateGlow(atmosphereRoot, "Summit Marker Halo", new Vector2Int(13, 9), new Color(1f, 0.86f, 0.48f, 0.10f),
                    1.02f, 1361);
     }
 
@@ -5533,25 +5538,25 @@ public sealed class BattleTestController : MonoBehaviour
     {
         if (tile.fireTurns > 0)
         {
-            return new Color(0.72f, 0.20f, 0.12f, 1f);
+            return new Color(1f, 0.30f, 0.16f, 0.18f);
         }
 
         if (tile.smokeTurns > 0)
         {
-            return new Color(0.54f, 0.54f, 0.50f, 1f);
+            return new Color(0.64f, 0.70f, 0.74f, 0.15f);
         }
 
         if (!tile.walkable && tile.danger)
         {
-            return new Color(0.12f, 0.22f, 0.26f, 1f);
+            return new Color(0.92f, 0.18f, 0.12f, 0.12f);
         }
 
         if (tile.extraCover)
         {
-            return new Color(0.44f, 0.29f, 0.17f, 1f);
+            return new Color(0.30f, 0.78f, 0.45f, 0.12f);
         }
 
-        return Color.white;
+        return Color.clear;
     }
 
     private string UnitStatusText(BattleTestUnit unit)
@@ -6145,14 +6150,16 @@ public sealed class BattleTestController : MonoBehaviour
 
     private bool IsMovementPreviewActive()
     {
-        return !scoutMode && activeUnit != null && !activeUnit.defeated &&
-               commandMode == BattleCommandMode.Move && activeUnit.CanMove;
+        return phaseTurn.IsPlayerPhase && !scoutMode && activeUnit != null && !activeUnit.defeated &&
+               activeUnit.definition.faction == Faction.Ally && commandMode == BattleCommandMode.Move &&
+               activeUnit.CanMove && !battleOver;
     }
 
     private void HighlightMoveReachability(BattleTestUnit unit)
     {
         Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
         HashSet<Vector2Int> boundary = new HashSet<Vector2Int>();
+        int moveRange = Mathf.Max(1, EffectiveMoveRange(unit));
 
         foreach (KeyValuePair<Vector2Int, int> pair in reachable)
         {
@@ -6162,8 +6169,9 @@ public sealed class BattleTestController : MonoBehaviour
                 BattleTestTile tile = TileAt(cell);
                 if (tile != null)
                 {
-                    float alpha = Mathf.Lerp(0.34f, 0.22f, pair.Value / (float)Mathf.Max(1, EffectiveMoveRange(unit)));
-                    tile.SetHighlight(new Color(0.30f, 0.60f, 1f, alpha));
+                    float costRatio = Mathf.Clamp01(pair.Value / (float)moveRange);
+                    float alpha = Mathf.Lerp(0.62f, 0.48f, costRatio);
+                    tile.SetHighlight(new Color(0.06f, 0.48f, 1f, alpha));
                 }
             }
 
@@ -6180,7 +6188,10 @@ public sealed class BattleTestController : MonoBehaviour
                     continue;
                 }
 
-                boundary.Add(neighbor);
+                if (ShouldShowMoveBoundary(unit, neighbor))
+                {
+                    boundary.Add(neighbor);
+                }
             }
         }
 
@@ -6189,9 +6200,27 @@ public sealed class BattleTestController : MonoBehaviour
             BattleTestTile tile = TileAt(cell);
             if (tile != null)
             {
-                tile.SetHighlight(new Color(1f, 0.30f, 0.24f, 0.20f));
+                tile.SetHighlight(new Color(1f, 0.16f, 0.13f, 0.74f));
             }
         }
+    }
+
+    private bool ShouldShowMoveBoundary(BattleTestUnit unit, Vector2Int boundaryCell)
+    {
+        if (unit == null || boundaryCell == unit.cell)
+        {
+            return false;
+        }
+
+        Vector3 fromUnit = GridToWorld(boundaryCell) - GridToWorld(unit.cell);
+        if (fromUnit.sqrMagnitude <= 0.0001f)
+        {
+            return false;
+        }
+
+        // Screen-up and side edges only. Bottom/back edges stay unmarked so the
+        // preview reads as blue movement area with a red forward boundary.
+        return fromUnit.y >= -(tileHeight * 0.35f);
     }
 
     private void HighlightDeploymentCells()
@@ -6529,9 +6558,7 @@ public sealed class BattleTestController : MonoBehaviour
 
     private Vector3 UnitWorldPosition(Vector2Int cell)
     {
-        Vector3 position = GridToWorld(cell);
-        position.y += 0.18f;
-        return position;
+        return GridToWorld(cell);
     }
 
     private IEnumerator PlayMapIntro()
