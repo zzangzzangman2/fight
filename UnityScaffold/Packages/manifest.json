@@ -1,12 +1,12 @@
 {
   "dependencies": {
-    "com.unity.2d.animation": "13.0.0",
-    "com.unity.2d.psdimporter": "12.0.0",
-    "com.unity.2d.spriteshape": "13.0.0",
-    "com.unity.2d.tilemap.extras": "6.0.0",
-    "com.unity.render-pipelines.universal": "17.0.4",
+    "com.unity.2d.animation": "14.0.4",
+    "com.unity.2d.psdimporter": "13.0.3",
+    "com.unity.2d.spriteshape": "14.0.1",
+    "com.unity.2d.tilemap.extras": "7.0.1",
     "com.unity.cinemachine": "3.1.2",
-    "com.unity.timeline": "1.8.7",
+    "com.unity.render-pipelines.universal": "17.4.0",
+    "com.unity.timeline": "1.8.12",
     "com.unity.ugui": "2.0.0"
   }
 }

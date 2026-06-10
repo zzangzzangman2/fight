@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7766259176870064965}
   - component: {fileID: 6209862397950465069}
-  - component: {fileID: 7713631923474105533}
+  - component: {fileID: 5212374032533165446}
   m_Layer: 0
   m_Name: baek_ryeon_unit
   m_TagString: Untagged
@@ -43,7 +43,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a899d2a461c944eea7d3b05bb8e05dac, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualController
   visual: {fileID: 11400000, guid: c77c023609474414284dae0354ceec2d, type: 2}
   outfitOverride: {fileID: 0}
@@ -62,7 +62,7 @@ MonoBehaviour:
   animator: {fileID: 0}
   sortingLayerName: Characters
   baseSortingOrder: 1000
---- !u!114 &7713631923474105533
+--- !u!114 &5212374032533165446
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -72,5 +72,5 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 0}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestUnitView
