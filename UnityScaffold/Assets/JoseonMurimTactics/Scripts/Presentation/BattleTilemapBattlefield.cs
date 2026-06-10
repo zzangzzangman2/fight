@@ -10,6 +10,7 @@ namespace JoseonMurimTactics
 public sealed class BattleTilemapBattlefield : MonoBehaviour
 {
     private const float HighlightAlphaScale = 0.58f;
+    private const bool UsePaintedGroundBackdrop = true;
 
     private readonly Dictionary<string, TerrainTileData> terrainTiles = new Dictionary<string, TerrainTileData>();
     private readonly Dictionary<TerrainType, Tilemap> terrainLayerLookup = new Dictionary<TerrainType, Tilemap>();
@@ -90,7 +91,9 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         Vector3Int tileCell = ToTilemapCell(cell);
         layer.SetTile(tileCell, tile);
         layer.SetTileFlags(tileCell, TileFlags.None);
-        layer.SetColor(tileCell, tile.sprite == fallbackDiamond ? baseColor : Color.white);
+        layer.SetColor(tileCell, UsePaintedGroundBackdrop
+                                     ? PaintedGroundTileColor(terrainType, objective, danger, coverBonus)
+                                     : tile.sprite == fallbackDiamond ? baseColor : Color.white);
 
         SetSubtleOverlay(cell, terrainType, elevation, coverBonus, objective, danger);
         TacticalOverlay.SetCell(new TacticalGridCellData
@@ -284,19 +287,19 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         Color color = Color.clear;
         if (objective)
         {
-            color = new Color(1f, 0.78f, 0.28f, 0.18f);
+            color = new Color(1f, 0.78f, 0.28f, 0.10f);
         }
         else if (danger || terrainType == TerrainType.Cliff || terrainType == TerrainType.DeepWater)
         {
-            color = new Color(0.72f, 0.16f, 0.10f, 0.10f);
+            color = new Color(0.72f, 0.16f, 0.10f, 0.045f);
         }
         else if (coverBonus >= 2)
         {
-            color = new Color(0.18f, 0.48f, 0.26f, 0.08f);
+            color = new Color(0.18f, 0.48f, 0.26f, 0.030f);
         }
         else if (elevation > 0)
         {
-            color = new Color(0.95f, 0.76f, 0.34f, Mathf.Clamp01(0.055f + elevation * 0.025f));
+            color = new Color(0.95f, 0.76f, 0.34f, 0.018f);
         }
 
         if (color.a <= 0.01f)
@@ -308,6 +311,53 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         OverlayTilemap.SetTile(tileCell, overlayTile);
         OverlayTilemap.SetTileFlags(tileCell, TileFlags.None);
         OverlayTilemap.SetColor(tileCell, color);
+    }
+
+    private static Color PaintedGroundTileColor(TerrainType terrainType, bool objective, bool danger, int coverBonus)
+    {
+        float alpha = 0.035f;
+        switch (terrainType)
+        {
+        case TerrainType.ShallowWater:
+        case TerrainType.DeepWater:
+        case TerrainType.Water:
+        case TerrainType.Ice:
+            alpha = 0.075f;
+            break;
+        case TerrainType.Cliff:
+        case TerrainType.Wall:
+        case TerrainType.Rubble:
+            alpha = 0.070f;
+            break;
+        case TerrainType.Road:
+        case TerrainType.Bridge:
+        case TerrainType.Gate:
+        case TerrainType.ShrineFloor:
+            alpha = 0.050f;
+            break;
+        case TerrainType.Fire:
+        case TerrainType.Trap:
+            alpha = 0.145f;
+            break;
+        case TerrainType.Smoke:
+            alpha = 0.105f;
+            break;
+        }
+
+        if (objective)
+        {
+            alpha = Mathf.Max(alpha, 0.085f);
+        }
+        else if (danger)
+        {
+            alpha = Mathf.Max(alpha, 0.095f);
+        }
+        else if (coverBonus >= 3)
+        {
+            alpha = Mathf.Max(alpha, 0.050f);
+        }
+
+        return new Color(1f, 1f, 1f, alpha);
     }
 
     private void CreateLightingRig(int width, int height)

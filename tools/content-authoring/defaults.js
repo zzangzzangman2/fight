@@ -113,20 +113,6 @@ window.JOSEON_AUTHORING_DEFAULTS = {
       "resourcePath": "WorldMap/joseon_murim_game_map",
       "previewUrl": "/resources/WorldMap/joseon_murim_game_map.png",
       "notes": "통합 월드맵"
-    },
-    {
-      "id": "jido_1",
-      "title": "전략 지도 1",
-      "resourcePath": "WorldMap/jido_1",
-      "previewUrl": "/resources/WorldMap/jido_1.png",
-      "notes": "기존 테스트 지도"
-    },
-    {
-      "id": "jido_2",
-      "title": "전략 지도 2",
-      "resourcePath": "WorldMap/jido_2",
-      "previewUrl": "/resources/WorldMap/jido_2.png",
-      "notes": "기존 테스트 지도"
     }
   ],
   "portraits": [],

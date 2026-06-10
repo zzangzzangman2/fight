@@ -25,6 +25,7 @@ public sealed class BattleTestController : MonoBehaviour
     private const int FireInteractDamage = 4;
     private const int FallDamage = 10;
     private const int HighGroundRangeBonusElevation = 2;
+    private const string PaintedBattleMapResource = "MapAssets/Backgrounds/baekdu_snow_gate_srpg_ground";
     private const string MapDisplayName = "백두산 설문 관문전";
     private const string MapConcept =
         "중앙 1칸 협로, 좌측 설죽림 우회로, 우측 절벽 고지, 얼어붙은 여울과 붕괴 가능한 다리 밧줄을 쓰는 대표 수작업 전장";
@@ -42,6 +43,7 @@ public sealed class BattleTestController : MonoBehaviour
     private Sprite dotSprite;
     private Sprite mountainRidgeSprite;
     private Sprite pineSilhouetteSprite;
+    private Sprite paintedMapBackdropSprite;
     private BattleTilemapBattlefield tilemapBattlefield;
     private Coroutine mapIntroCoroutine;
     private bool mapAssetSpritesLoaded;
@@ -1645,14 +1647,31 @@ public sealed class BattleTestController : MonoBehaviour
         Vector3 left = GridToWorld(new Vector2Int(0, height - 1));
         Vector3 right = GridToWorld(new Vector2Int(width - 1, 0));
         Vector3 center = (min + max + left + right) * 0.25f;
-        backdrop.transform.position = center + new Vector3(0f, -0.18f, 0.08f);
-        backdrop.transform.localScale = new Vector3(width * tileWidth * 2.40f, height * tileHeight * 2.80f, 1f);
-        backdrop.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
 
         SpriteRenderer renderer = backdrop.AddComponent<SpriteRenderer>();
-        renderer.sprite = detailSprite;
-        renderer.color = new Color(0.18f, 0.27f, 0.23f, 0.82f);
-        renderer.sortingOrder = -80;
+        if (paintedMapBackdropSprite != null)
+        {
+            backdrop.transform.position = center + new Vector3(0f, 0.25f, 0.12f);
+            renderer.sprite = paintedMapBackdropSprite;
+            renderer.color = new Color(1f, 0.98f, 0.92f, 1f);
+            renderer.sortingOrder = -96;
+
+            float playableWidth = Mathf.Abs(right.x - left.x) + tileWidth * 4.30f;
+            float playableHeight = Mathf.Abs(max.y - min.y) + tileHeight * 4.10f;
+            float spriteWidth = Mathf.Max(0.01f, paintedMapBackdropSprite.bounds.size.x);
+            float spriteHeight = Mathf.Max(0.01f, paintedMapBackdropSprite.bounds.size.y);
+            float uniformScale = Mathf.Max(playableWidth / spriteWidth, playableHeight / spriteHeight);
+            backdrop.transform.localScale = Vector3.one * uniformScale;
+        }
+        else
+        {
+            backdrop.transform.position = center + new Vector3(0f, -0.18f, 0.08f);
+            backdrop.transform.localScale = new Vector3(width * tileWidth * 2.40f, height * tileHeight * 2.80f, 1f);
+            backdrop.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+            renderer.sprite = detailSprite;
+            renderer.color = new Color(0.18f, 0.27f, 0.23f, 0.82f);
+            renderer.sortingOrder = -80;
+        }
 
         CreateAtmosphereSprite(terrainRoot, "Dawn Mountain Sky Wash", softDiamondSprite,
                                center + new Vector3(0f, 1.35f, 0.10f),
@@ -4709,6 +4728,7 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         mapAssetSpritesLoaded = true;
+        paintedMapBackdropSprite = Resources.Load<Sprite>(PaintedBattleMapResource);
         terrainAssetSprites[TerrainType.Plain] = LoadMapSprite("Tiles/plain_moss");
         terrainAssetSprites[TerrainType.Hill] = LoadMapSprite("Tiles/hill_moss");
         terrainAssetSprites[TerrainType.Stone] = LoadMapSprite("Tiles/stone_courtyard");

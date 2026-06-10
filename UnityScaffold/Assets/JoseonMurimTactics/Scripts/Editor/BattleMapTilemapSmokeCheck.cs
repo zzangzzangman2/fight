@@ -40,6 +40,9 @@ public static class BattleMapTilemapSmokeCheck
         Require(GameObject.Find("Tilemap_Highlight_Danger") != null, "Tilemap_Highlight_Danger was not created.");
         Require(GameObject.Find("PropsRoot") != null, "PropsRoot was not created.");
         Require(GameObject.Find("LightsRoot") != null, "LightsRoot was not created.");
+        SpriteRenderer paintedBackdrop = GameObject.Find("Painted Map Backdrop")?.GetComponent<SpriteRenderer>();
+        Require(paintedBackdrop != null && paintedBackdrop.sprite != null,
+                "Painted battle map backdrop sprite was not loaded.");
 
         BattleMapTilemapBinder binder = battlefield.GetComponent<BattleMapTilemapBinder>();
         Require(binder != null, "BattleMapTilemapBinder was not created.");

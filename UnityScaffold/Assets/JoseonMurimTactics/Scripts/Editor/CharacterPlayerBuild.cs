@@ -9,9 +9,6 @@ namespace JoseonMurimTactics.Editor
 {
 public static class CharacterPlayerBuild
 {
-    private const string PreviewScenePath = "Assets/JoseonMurimTactics/Scenes/CharacterAssetPreview.unity";
-    private const string PreviewBuildFolder = "Builds/CharacterAssetPreview";
-    private const string PreviewExeName = "JoseonMurimTacticsPreview.exe";
     private const string BattleBuildFolder = "Builds/BattleTest";
     private const string BattleExeName = "JoseonMurimTacticsBattleTest.exe";
     private const string GameBuildFolder = "Builds/Windows";
@@ -42,12 +39,6 @@ public static class CharacterPlayerBuild
     public static void BuildWindowsBattleTestCurrentScene()
     {
         BuildWindowsPlayer(BattleTestSceneLauncher.ScenePath, BattleBuildFolder, BattleExeName);
-    }
-
-    public static void BuildWindowsPreview()
-    {
-        EnsurePreviewScene();
-        BuildWindowsPlayer(PreviewScenePath, PreviewBuildFolder, PreviewExeName);
     }
 
     private static void BuildWindowsPlayer(string scenePath, string buildFolder, string exeName)
@@ -87,16 +78,6 @@ public static class CharacterPlayerBuild
         }
 
         return scenes.ToArray();
-    }
-
-    private static void EnsurePreviewScene()
-    {
-        if (AssetDatabase.LoadAssetAtPath<SceneAsset>(PreviewScenePath) != null)
-        {
-            return;
-        }
-
-        CharacterPreviewLauncher.RebuildPreviewScene();
     }
 }
 }

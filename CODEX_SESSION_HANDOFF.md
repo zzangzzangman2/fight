@@ -70,9 +70,7 @@ Remote verification:
 - Added `RumorData`.
 - Added `SceneBuildValidator`.
 - Improved mission board, battle prep, battle result, and world map noncombat UI.
-- Added world map resource images:
-  - `jido_1.png`
-  - `jido_2.png`
+- Added temporary world map resource images for the noncombat UI pass.
 
 ## Important Constraints Followed
 

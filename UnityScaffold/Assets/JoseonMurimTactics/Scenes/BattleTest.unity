@@ -156,7 +156,7 @@ MonoBehaviour:
   - id: park_sungjun
     displayName: 박성준
     faction: 0
-    visual: {fileID: 11400000, guid: 9948b7b7d57a799499e4d9708403d3a3, type: 2}
+    visual: {fileID: 11400000, guid: 24d2a678d40883fa1f2c992f5ee23586, type: 2}
     startCell: {x: 7, y: 8}
     sectName: 백두산 백두검문
     age: 17
@@ -184,7 +184,7 @@ MonoBehaviour:
   - id: baek_ryeon
     displayName: 백련
     faction: 0
-    visual: {fileID: 11400000, guid: 38b7f3b666375ee48abf638e378de30b, type: 2}
+    visual: {fileID: 11400000, guid: e2f9bfa06a421ed0801dfcab12e62fcd, type: 2}
     startCell: {x: 6, y: 9}
     sectName: 강원 설악창문
     age: 17
@@ -212,7 +212,7 @@ MonoBehaviour:
   - id: do_arin
     displayName: 도아린
     faction: 0
-    visual: {fileID: 11400000, guid: 32a10d022a4280041aa7a67b6a004cf3, type: 2}
+    visual: {fileID: 11400000, guid: bb014a386f3600589a86a20cc7f5c441, type: 2}
     startCell: {x: 8, y: 8}
     sectName: 경상 화왕도문
     age: 16
@@ -240,7 +240,7 @@ MonoBehaviour:
   - id: jin_seoyul
     displayName: 진서율
     faction: 0
-    visual: {fileID: 11400000, guid: a16d4e93f0c64f23b5ac5771b6b1f0cb, type: 2}
+    visual: {fileID: 11400000, guid: 7f1a763097089996c20b6c46f9367093, type: 2}
     startCell: {x: 10, y: 8}
     sectName: 경성 천뢰봉문
     age: 15
@@ -268,7 +268,7 @@ MonoBehaviour:
   - id: seo_a
     displayName: 신서아
     faction: 0
-    visual: {fileID: 11400000, guid: d394e6b7a4f3404097dd5e1a2dd56916, type: 2}
+    visual: {fileID: 11400000, guid: b8332b8583947925754c36f3ebc60e8e, type: 2}
     startCell: {x: 4, y: 8}
     sectName: 전라도 남원 화접풍류문
     age: 13
@@ -296,7 +296,7 @@ MonoBehaviour:
   - id: han_biyeon
     displayName: 한비연
     faction: 0
-    visual: {fileID: 11400000, guid: 6cf8cd629b303de4f808c197acb50ebf, type: 2}
+    visual: {fileID: 11400000, guid: b1a7ac4054895e811cf8b22f95691ff7, type: 2}
     startCell: {x: 2, y: 7}
     sectName: 황해도 구월산 흑련암문
     age: 17

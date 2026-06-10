@@ -24,20 +24,15 @@ C:\Users\sjpark\Downloads\joseon-murim-tactics\UnityScaffold
 
 ## 캐릭터 에셋
 
-Random Chat 계열의 Unity 2D/VN급 캐릭터 문법을 기준으로, HTML placeholder가 아니라 Unity에서 바로 물릴 수 있는 full-body PNG를 추가했습니다.
+현재 전투 테스트는 SchoolCombat 캐릭터 시각 에셋만 사용합니다.
 
 ```text
 Assets/JoseonMurimTactics/Art/Characters
- ├─ Source/adult_murim_lineup_chroma.png
- ├─ Sprites/adult_murim_lineup_alpha.png
- └─ Sprites/Individuals/*_fullbody.png
+ ├─ Sprites/SchoolCombatIndividuals/*.png
+ └─ VisualData/SchoolCombat/*_visual.asset
 ```
 
-각 유닛은 `CombatantData.visual`에 `CharacterVisualData`를 연결하고, 프리팹에는 `CharacterVisualController`를 붙입니다. 컨트롤러가 스프라이트 스케일, 그림자, 선택 링, 숨쉬는 idle 모션, y축 깊이 정렬을 처리합니다.
-
-## 바로 보기
-
-저장소 루트의 `play-unity-asset-preview.cmd`를 실행하면 Unity가 이 프로젝트를 열고 `Assets/JoseonMurimTactics/Scenes/CharacterAssetPreview.unity`를 Play Mode로 띄웁니다.
+각 유닛은 `CharacterVisualData`를 통해 `CharacterVisualController`에 연결됩니다. 구 full-body preview 전용 씬과 스크립트는 더 이상 사용하지 않습니다.
 
 ## 다음 작업
 
