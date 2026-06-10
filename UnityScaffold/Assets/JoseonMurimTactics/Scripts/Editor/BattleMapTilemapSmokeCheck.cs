@@ -78,6 +78,12 @@ public static class BattleMapTilemapSmokeCheck
 
         CleanupGeneratedChildren(controller.transform);
         VerifyBanditLairFreeTimeMap(controller);
+        VerifyWildlifeFreeTimeMap(controller, HubController.WolfPassBattleId, BattleTestMapVariant.WolfPass,
+                                  "wolf_alpha");
+        VerifyWildlifeFreeTimeMap(controller, HubController.TigerRavineBattleId, BattleTestMapVariant.TigerRavine,
+                                  "tiger_boss_sangun");
+        VerifyWildlifeFreeTimeMap(controller, HubController.LeopardCliffBattleId, BattleTestMapVariant.LeopardCliff,
+                                  "leopard_boss_shadow");
         Debug.Log("[BattleMapTilemapSmokeCheck] BattleTest Tilemap battlefield smoke check passed.");
     }
 
@@ -302,6 +308,145 @@ public static class BattleMapTilemapSmokeCheck
                 "Bandit palisade wall should not appear in reachable tiles.");
         Require(!reachable.ContainsKey(new Vector2Int(4, 4)),
                 "Bandit deep ditch should not appear in reachable tiles.");
+    }
+
+    private static void VerifyWildlifeFreeTimeMap(BattleTestController controller, string battleId,
+                                                  BattleTestMapVariant expectedVariant, string bossId)
+    {
+        BattleEntryAdapter.SetPendingBattle(battleId);
+        SetPrivate(controller, "mapAssetSpritesLoaded", false);
+        InvokePrivate(controller, "ApplyBattleEntryConfiguration");
+        BattleEntryAdapter.Clear();
+        Require(controller.mapVariant == expectedVariant,
+                $"{battleId} should select the {expectedVariant} map variant.");
+
+        GetPrivate<List<BattleTestUnit>>(controller, "units").Clear();
+        GetPrivate<List<BattleTestInteractable>>(controller, "interactables").Clear();
+        InvokePrivate(controller, "EnsureMapVisualSprites");
+        InvokePrivate(controller, "CreateTerrain");
+        Require(GameObject.Find("Battlefield_Tilemap") != null, $"{expectedVariant} tilemap battlefield was not created.");
+        RequireTilemap("Tilemap_Ground_Base");
+        RequireTilemap("Tilemap_Road_Path");
+        RequireTilemap("Tilemap_Cliff_Top");
+        RequireTilemap("Tilemap_Water_Base");
+        RequireTilemap("Tilemap_Highlight_Move");
+        Require(GameObject.Find("PropsRoot") != null, $"{expectedVariant} props root was not created.");
+        Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
+                $"{expectedVariant} should generate interactable prop metadata.");
+
+        switch (expectedVariant)
+        {
+        case BattleTestMapVariant.WolfPass:
+            VerifyWolfPassTerrainRules(controller);
+            break;
+        case BattleTestMapVariant.TigerRavine:
+            VerifyTigerRavineTerrainRules(controller);
+            break;
+        case BattleTestMapVariant.LeopardCliff:
+            VerifyLeopardCliffTerrainRules(controller);
+            break;
+        }
+
+        InvokePrivate(controller, "SpawnUnits");
+        List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        Require(FindUnit(units, bossId) != null, $"Expected {bossId} boss unit for {expectedVariant}.");
+        Require(FindUnit(units, "iron_wolf_captain") == null,
+                $"{expectedVariant} should not spawn the main-story captain.");
+        VerifyWildlifeBlockedCellsStayUnreachable(controller, units, expectedVariant);
+
+        CleanupGeneratedChildren(controller.transform);
+    }
+
+    private static void VerifyWolfPassTerrainRules(BattleTestController controller)
+    {
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        RequireBlocked(tiles, new Vector2Int(0, 6), "wolf pass outer forest wall");
+        RequireBlocked(tiles, new Vector2Int(2, 9), "wolf pass birch blocker");
+        RequireBlocked(tiles, new Vector2Int(4, 6), "wolf pass fallen log blocker");
+        RequireBlocked(tiles, new Vector2Int(13, 10), "wolf pass den rock wall");
+
+        BattleTestTile bridge = RequireTile(tiles, new Vector2Int(7, 4), "wolf pass creek bridge");
+        BattleTestTile shallow = RequireTile(tiles, new Vector2Int(5, 4), "wolf pass shallow creek");
+        BattleTestTile slope = RequireTile(tiles, new Vector2Int(11, 6), "wolf pass ridge slope");
+        BattleTestTile ridge = RequireTile(tiles, new Vector2Int(11, 7), "wolf pass eastern ridge");
+        BattleTestTile den = RequireTile(tiles, new Vector2Int(12, 10), "wolf pass den objective");
+
+        Require(bridge.walkable && bridge.moveCost == 1, "Wolf pass bridge should be the fast creek crossing.");
+        Require(shallow.walkable && shallow.moveCost == 3 && shallow.danger,
+                "Wolf pass shallow creek should be slow, passable, and dangerous.");
+        Require(ridge.walkable && ridge.elevation == 2, "Wolf pass ridge should be walkable elevation 2.");
+        Require(den.walkable && den.objective && den.elevation == 2,
+                "Wolf pass den should be a walkable objective on high ground.");
+        Require(StepMoveCost(controller, slope, ridge) == ridge.moveCost + 1,
+                "Wolf pass ridge climb should add one elevation cost.");
+        Require(StepMoveCost(controller, bridge, tiles[6, 4]) == int.MaxValue,
+                "Wolf pass bridge should not leak into the deep creek.");
+    }
+
+    private static void VerifyTigerRavineTerrainRules(BattleTestController controller)
+    {
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        RequireBlocked(tiles, new Vector2Int(0, 6), "tiger ravine outer cliff wall");
+        RequireBlocked(tiles, new Vector2Int(6, 8), "tiger ravine central cliff wall");
+        RequireBlocked(tiles, new Vector2Int(9, 4), "tiger ravine boulder blocker");
+        RequireBlocked(tiles, new Vector2Int(10, 5), "tiger ravine collapsed boulder");
+
+        BattleTestTile reed = RequireTile(tiles, new Vector2Int(4, 6), "tiger ravine reed cover");
+        BattleTestTile slope = RequireTile(tiles, new Vector2Int(12, 8), "tiger ravine rock shelf slope");
+        BattleTestTile high = RequireTile(tiles, new Vector2Int(13, 8), "tiger ravine H3 shelf");
+        BattleTestTile villagers = RequireTile(tiles, new Vector2Int(14, 9), "tiger ravine villagers objective");
+
+        Require(reed.walkable && reed.moveCost == 2 && reed.coverBonus >= 2 && reed.blocksLineOfSight,
+                "Tiger ravine reeds should be slow cover that blocks sight.");
+        Require(slope.walkable && slope.elevation == 2, "Tiger ravine shelf slope should be elevation 2.");
+        Require(high.walkable && high.elevation == 3, "Tiger ravine high shelf should be elevation 3.");
+        Require(villagers.walkable && villagers.objective && villagers.elevation == 3,
+                "Tiger ravine villagers objective should sit on H3 high ground.");
+        Require(StepMoveCost(controller, slope, high) == high.moveCost + 1,
+                "Tiger ravine H3 climb should add one elevation cost.");
+        Require(StepMoveCost(controller, tiles[5, 8], tiles[6, 8]) == int.MaxValue,
+                "Tiger ravine central cliff wall should block adjacent movement.");
+    }
+
+    private static void VerifyLeopardCliffTerrainRules(BattleTestController controller)
+    {
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        RequireBlocked(tiles, new Vector2Int(7, 5), "leopard cliff gap");
+        RequireBlocked(tiles, new Vector2Int(2, 8), "leopard cliff bamboo blocker");
+        RequireBlocked(tiles, new Vector2Int(12, 5), "leopard cliff rock drop");
+        RequireBlocked(tiles, new Vector2Int(14, 10), "leopard cliff upper rock blocker");
+
+        BattleTestTile bridge = RequireTile(tiles, new Vector2Int(8, 5), "leopard cliff rope bridge");
+        BattleTestTile bamboo = RequireTile(tiles, new Vector2Int(4, 7), "leopard cliff bamboo path");
+        BattleTestTile slope = RequireTile(tiles, new Vector2Int(13, 7), "leopard cliff shelf slope");
+        BattleTestTile high = RequireTile(tiles, new Vector2Int(13, 8), "leopard cliff H3 shelf");
+        BattleTestTile herbs = RequireTile(tiles, new Vector2Int(14, 8), "leopard cliff herb objective");
+
+        Require(bridge.walkable && bridge.moveCost == 1, "Leopard cliff rope bridge should be the fast crossing.");
+        Require(bamboo.walkable && bamboo.moveCost == 2 && bamboo.coverBonus >= 2 && bamboo.blocksLineOfSight,
+                "Leopard cliff bamboo path should be slow sight-blocking cover.");
+        Require(high.walkable && high.elevation == 3, "Leopard cliff herb shelf should be elevation 3.");
+        Require(herbs.walkable && herbs.objective && herbs.elevation == 3,
+                "Leopard cliff herb objective should sit on H3 high ground.");
+        Require(StepMoveCost(controller, slope, high) == high.moveCost + 1,
+                "Leopard cliff H3 climb should add one elevation cost.");
+        Require(StepMoveCost(controller, bridge, tiles[7, 5]) == int.MaxValue,
+                "Leopard cliff rope bridge should not leak into the chasm.");
+    }
+
+    private static void VerifyWildlifeBlockedCellsStayUnreachable(BattleTestController controller,
+                                                                  List<BattleTestUnit> units,
+                                                                  BattleTestMapVariant variant)
+    {
+        BattleTestUnit hanBiyeon = FindUnit(units, "han_biyeon");
+        Require(hanBiyeon != null, $"Expected Han Biyeon in {variant} test roster.");
+        Dictionary<Vector2Int, int> reachable =
+            (Dictionary<Vector2Int, int>)InvokePrivate(controller, "GetReachableCells", hanBiyeon);
+
+        Vector2Int blocked = variant == BattleTestMapVariant.WolfPass ? new Vector2Int(9, 4) :
+                             variant == BattleTestMapVariant.TigerRavine ? new Vector2Int(10, 5) :
+                             new Vector2Int(6, 5);
+        Require(!reachable.ContainsKey(blocked), $"{variant} blocked cell {blocked} should not be reachable.");
     }
 
     private static void VerifyTacticalCameraFocus(BattleTestController controller, BattleTestUnit focusUnit)

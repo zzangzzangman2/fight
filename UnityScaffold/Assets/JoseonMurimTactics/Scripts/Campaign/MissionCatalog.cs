@@ -189,6 +189,78 @@ namespace JoseonMurimTactics
             banditLair.rewardPreview.Add("마을 신뢰 +1");
             list.Add(banditLair);
 
+            MissionInfo wolfPass = new MissionInfo
+            {
+                id = "MISSION_FREE_SOBAEK_WOLF_PASS",
+                title = "소백촌 늑대 고개 방어",
+                location = "소백촌 북동쪽 자작나무 고개",
+                battleId = HubController.WolfPassBattleId,
+                recommendedLevel = 1,
+                enemyFaction = "굶주린 늑대 무리",
+                difficulty = "평이",
+                summary = "방목민과 나무꾼들이 늑대에게 길을 빼앗겼다. 얕은 개울과 쓰러진 통나무, 동쪽 능선을 이용해 늑대 무리를 몰아내고 북쪽 굴을 봉쇄해야 한다.",
+                victoryConditionShort = "늑대 우두머리 제압과 피난로 확보",
+                requiredFlag = "",
+                completeFlag = "",
+                dangerNotes = "개울 병목, 쓰러진 통나무 장애물, H2 능선, 늑대 굴 바위. 자유시간/기력 1을 소모하는 반복 의뢰.",
+                isStory = false,
+                repeatable = true,
+                consumesFreeTime = true
+            };
+            wolfPass.rewardPreview.Add("은전 38");
+            wolfPass.rewardPreview.Add("산양 젖");
+            wolfPass.rewardPreview.Add("질긴 가죽");
+            wolfPass.rewardPreview.Add("마을 신뢰 +1");
+            list.Add(wolfPass);
+
+            MissionInfo tigerRavine = new MissionInfo
+            {
+                id = "MISSION_FREE_SOBAEK_TIGER_RAVINE",
+                title = "백호 바위골 주민 구조",
+                location = "소백촌 남쪽 바위골",
+                battleId = HubController.TigerRavineBattleId,
+                recommendedLevel = 2,
+                enemyFaction = "산군 호랑이",
+                difficulty = "보통",
+                summary = "바위골을 지나던 주민들이 산군에게 막혀 움직이지 못한다. 억새밭과 낙석 지대를 돌아가며 동쪽 바위 선반을 제압하고 주민들을 빼내야 한다.",
+                victoryConditionShort = "산군 호랑이 제압과 갇힌 주민 구조",
+                requiredFlag = "",
+                completeFlag = "",
+                dangerNotes = "절벽 낙차, 막힌 바위벽, 억새 엄폐, H3 바위 선반. 자유시간/기력 1을 소모하는 반복 의뢰.",
+                isStory = false,
+                repeatable = true,
+                consumesFreeTime = true
+            };
+            tigerRavine.rewardPreview.Add("은전 55");
+            tigerRavine.rewardPreview.Add("호피 조각");
+            tigerRavine.rewardPreview.Add("응급 약재");
+            tigerRavine.rewardPreview.Add("마을 신뢰 +1");
+            list.Add(tigerRavine);
+
+            MissionInfo leopardCliff = new MissionInfo
+            {
+                id = "MISSION_FREE_SOBAEK_LEOPARD_CLIFF",
+                title = "표범 절벽길 약초꾼 호송",
+                location = "소백촌 동쪽 절벽 약초길",
+                battleId = HubController.LeopardCliffBattleId,
+                recommendedLevel = 2,
+                enemyFaction = "그림자 표범",
+                difficulty = "보통",
+                summary = "약초꾼들이 표범 매복 때문에 절벽길을 지나지 못한다. 대나무 덤불과 밧줄다리, 북동쪽 약초 선반의 고저차를 읽고 호송로를 열어야 한다.",
+                victoryConditionShort = "그림자 표범 격퇴와 약초꾼 호송로 개방",
+                requiredFlag = "",
+                completeFlag = "",
+                dangerNotes = "낭떠러지 장애물, 밧줄다리 병목, 대나무 덤불 시야 차단, H3 약초 선반. 자유시간/기력 1을 소모하는 반복 의뢰.",
+                isStory = false,
+                repeatable = true,
+                consumesFreeTime = true
+            };
+            leopardCliff.rewardPreview.Add("은전 50");
+            leopardCliff.rewardPreview.Add("희귀 약초");
+            leopardCliff.rewardPreview.Add("표범 무늬 가죽");
+            leopardCliff.rewardPreview.Add("마을 신뢰 +1");
+            list.Add(leopardCliff);
+
             return list;
         }
 

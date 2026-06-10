@@ -12,6 +12,9 @@ public sealed class HubController : MonoBehaviour
 {
     public const string FirstBattleId = "BATTLE_PYESADANG_DEFENSE";
     public const string BanditLairBattleId = "BATTLE_SOBAEK_BANDIT_LAIR";
+    public const string WolfPassBattleId = "BATTLE_SOBAEK_WOLF_PASS";
+    public const string TigerRavineBattleId = "BATTLE_SOBAEK_TIGER_RAVINE";
+    public const string LeopardCliffBattleId = "BATTLE_SOBAEK_LEOPARD_CLIFF";
     private const int MaxDailyActions = 3;
     public const string ActionPointKey = "hub:daily_actions_remaining";
     private const string ActionPointInitializedFlag = "FLAG_HUB_ACTION_POINTS_READY";
@@ -246,15 +249,25 @@ public sealed class HubController : MonoBehaviour
         if (MapHotspot(map, 0.055f, 0.060f, 0.225f, 0.092f, s, "뒷산 도적 소굴", "기력 1 · 반복 의뢰",
                        ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
         {
-            if (ActionsRemaining <= 0)
-            {
-                ShowToast("기력이 부족합니다.");
-                AddLog("도적 소굴 의뢰: 기력이 부족하다. 하루를 보내고 다시 행동할 수 있다.");
-            }
-            else
-            {
-                root.Flow.GoToBattlePrep(BanditLairBattleId);
-            }
+            OpenFreeTimeBattlePrep(BanditLairBattleId, "도적 소굴 의뢰");
+        }
+
+        if (MapHotspot(map, 0.735f, 0.060f, 0.190f, 0.092f, s, "늑대 고개", "기력 1 · 방목길 방어",
+                       ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
+        {
+            OpenFreeTimeBattlePrep(WolfPassBattleId, "늑대 고개 방어");
+        }
+
+        if (MapHotspot(map, 0.730f, 0.330f, 0.195f, 0.092f, s, "호랑이 바위골", "기력 1 · 주민 구조",
+                       ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
+        {
+            OpenFreeTimeBattlePrep(TigerRavineBattleId, "호랑이 바위골 구조");
+        }
+
+        if (MapHotspot(map, 0.755f, 0.690f, 0.180f, 0.092f, s, "표범 절벽길", "기력 1 · 약초길 호송",
+                       ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
+        {
+            OpenFreeTimeBattlePrep(LeopardCliffBattleId, "표범 절벽길 호송");
         }
 
         if (MapHotspot(map, 0.505f, 0.382f, 0.175f, 0.092f, s, "연무장", "수련 · 기력 1",
@@ -295,6 +308,18 @@ public sealed class HubController : MonoBehaviour
         {
             menu = HubMenu.Infirmary;
         }
+    }
+
+    private void OpenFreeTimeBattlePrep(string battleId, string label)
+    {
+        if (ActionsRemaining <= 0)
+        {
+            ShowToast("기력이 부족합니다.");
+            AddLog(label + ": 기력이 부족하다. 하루를 보내고 다시 행동할 수 있다.");
+            return;
+        }
+
+        root.Flow.GoToBattlePrep(battleId);
     }
 
     private bool MapHotspot(Rect parent, float px, float py, float pw, float ph, float s, string title, string subtitle,
@@ -403,7 +428,7 @@ public sealed class HubController : MonoBehaviour
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "출정", UiTheme.Heading);
         GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 90f * s),
                   "임무 게시판에서 메인 전투와 자유시간 의뢰를 고른다.\n도적 소굴 같은 마을 의뢰는 기력 1을 쓰고, " +
-                      "적 정보·보상·승패 조건을 확인한 뒤 출격 준비로 넘어간다.",
+                      "늑대·호랑이·표범 습격 같은 토벌 의뢰도 지형 정보를 확인한 뒤 출격 준비로 넘어간다.",
                   UiTheme.Body);
         if (GUI.Button(new Rect(r.x, r.y + 150f * s, r.width * 0.7f, 60f * s), "임무 선택 →", UiTheme.ButtonPrimary))
         {

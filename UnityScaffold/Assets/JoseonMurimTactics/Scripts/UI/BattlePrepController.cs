@@ -176,6 +176,10 @@ public sealed class BattlePrepController : MonoBehaviour
         {
             DrawBanditLairMapPreview(previewRect, s);
         }
+        else if (def != null && IsWildlifeBattle(def.id))
+        {
+            DrawWildlifeMapPreview(previewRect, s, def.id);
+        }
         else
         {
             DrawTacticalMapPreview(previewRect, s);
@@ -268,6 +272,13 @@ public sealed class BattlePrepController : MonoBehaviour
                "• 향로·등불·석등: 연막, 화염, 낙석으로 전투 흐름 변환";
     }
 
+    private static bool IsWildlifeBattle(string battleId)
+    {
+        return battleId == HubController.WolfPassBattleId ||
+               battleId == HubController.TigerRavineBattleId ||
+               battleId == HubController.LeopardCliffBattleId;
+    }
+
     private static void DrawTacticalMapPreview(Rect rect, float s)
     {
         UiTheme.DrawFill(rect, new Color(0.12f, 0.12f, 0.10f, 0.42f));
@@ -317,6 +328,57 @@ public sealed class BattlePrepController : MonoBehaviour
 
         GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "폐광 / 보급 상자",
                   new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        GUI.Label(new Rect(rect.x, rect.yMax - 20f * s, rect.width, 18f * s), "아군 진입",
+                  new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+    }
+
+    private static void DrawWildlifeMapPreview(Rect rect, float s, string battleId)
+    {
+        UiTheme.DrawFill(rect, new Color(0.10f, 0.12f, 0.10f, 0.46f));
+
+        Color woods = new Color(0.13f, 0.32f, 0.18f, 0.92f);
+        Color road = new Color(0.50f, 0.43f, 0.29f, 0.94f);
+        Color water = new Color(0.18f, 0.43f, 0.51f, 0.88f);
+        Color rock = new Color(0.42f, 0.38f, 0.31f, 0.94f);
+        Color high = new Color(0.55f, 0.49f, 0.33f, 0.96f);
+        Color danger = new Color(0.72f, 0.18f, 0.10f, 0.88f);
+        Color mark = new Color(0.96f, 0.78f, 0.24f, 1f);
+
+        if (battleId == HubController.WolfPassBattleId)
+        {
+            UiTheme.DrawFill(new Rect(rect.x + 8f * s, rect.y + 18f * s, 34f * s, rect.height - 34f * s), woods);
+            UiTheme.DrawFill(new Rect(rect.x + 38f * s, rect.center.y - 8f * s, rect.width - 72f * s, 16f * s), water);
+            UiTheme.DrawFill(new Rect(rect.center.x - 10f * s, rect.y + 20f * s, 20f * s, rect.height - 42f * s), road);
+            UiTheme.DrawFill(new Rect(rect.xMax - 42f * s, rect.y + 20f * s, 28f * s, 58f * s), high);
+            UiTheme.DrawFill(new Rect(rect.xMax - 34f * s, rect.y + 28f * s, 14f * s, 14f * s), mark);
+            UiTheme.DrawFill(new Rect(rect.center.x - 30f * s, rect.center.y + 20f * s, 14f * s, 14f * s), danger);
+            GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "늑대 굴 / H2 능선",
+                      new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        }
+        else if (battleId == HubController.TigerRavineBattleId)
+        {
+            UiTheme.DrawFill(new Rect(rect.x + 10f * s, rect.y + 38f * s, 42f * s, 58f * s), woods);
+            UiTheme.DrawFill(new Rect(rect.center.x - 8f * s, rect.y + 22f * s, 16f * s, rect.height - 44f * s), rock);
+            UiTheme.DrawFill(new Rect(rect.x + 46f * s, rect.center.y - 8f * s, rect.width - 92f * s, 16f * s), road);
+            UiTheme.DrawFill(new Rect(rect.xMax - 48f * s, rect.y + 18f * s, 34f * s, 72f * s), high);
+            UiTheme.DrawFill(new Rect(rect.xMax - 35f * s, rect.y + 24f * s, 16f * s, 16f * s), mark);
+            UiTheme.DrawFill(new Rect(rect.center.x + 12f * s, rect.center.y + 18f * s, 16f * s, 16f * s), danger);
+            GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "바위 선반 / H3",
+                      new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        }
+        else
+        {
+            UiTheme.DrawFill(new Rect(rect.x + 10f * s, rect.y + 18f * s, 36f * s, 58f * s), woods);
+            UiTheme.DrawFill(new Rect(rect.x + 48f * s, rect.y + 26f * s, rect.width - 96f * s, 14f * s), road);
+            UiTheme.DrawFill(new Rect(rect.center.x - 12f * s, rect.center.y - 8f * s, 24f * s, 16f * s), road);
+            UiTheme.DrawFill(new Rect(rect.x + 42f * s, rect.y + 76f * s, rect.width - 58f * s, 22f * s), rock);
+            UiTheme.DrawFill(new Rect(rect.xMax - 42f * s, rect.y + 36f * s, 28f * s, 54f * s), high);
+            UiTheme.DrawFill(new Rect(rect.xMax - 34f * s, rect.y + 44f * s, 14f * s, 14f * s), mark);
+            UiTheme.DrawFill(new Rect(rect.center.x - 36f * s, rect.center.y + 18f * s, 14f * s, 14f * s), danger);
+            GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "약초 선반 / 절벽길",
+                      new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        }
+
         GUI.Label(new Rect(rect.x, rect.yMax - 20f * s, rect.width, 18f * s), "아군 진입",
                   new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
     }

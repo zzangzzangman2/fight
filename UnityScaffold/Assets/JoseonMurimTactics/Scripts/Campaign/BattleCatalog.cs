@@ -47,6 +47,18 @@ namespace JoseonMurimTactics
             {
                 return CreateBanditLairBattle();
             }
+            if (battleId == HubController.WolfPassBattleId)
+            {
+                return CreateWolfPassBattle();
+            }
+            if (battleId == HubController.TigerRavineBattleId)
+            {
+                return CreateTigerRavineBattle();
+            }
+            if (battleId == HubController.LeopardCliffBattleId)
+            {
+                return CreateLeopardCliffBattle();
+            }
 
             return CreatePyesadangDefenseBattle(battleId);
         }
@@ -127,6 +139,117 @@ namespace JoseonMurimTactics
 
             d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +1));
             d.factionOnWin.Add(new IdDelta(FactionIds.BlackHatGuild, -2));
+
+            return d;
+        }
+
+        private static BattleDefinition CreateWolfPassBattle()
+        {
+            return CreateWildlifeBattle(
+                HubController.WolfPassBattleId,
+                "MISSION_FREE_SOBAEK_WOLF_PASS",
+                "소백촌 늑대 고개 방어",
+                "소백촌 북동쪽 자작나무 고개",
+                "굶주린 늑대 우두머리",
+                "늑대 우두머리 제압과 방목민 피난로 확보",
+                "남쪽 방목길에서 진입한다. 중앙 개울은 다리와 얕은 여울만 건널 수 있고, 동쪽 능선은 고저차가 크며, 북쪽 굴 주변 나무와 바위는 통과할 수 없다.",
+                38,
+                "OBJ_REPEL_WOLF_PACK",
+                "굶주린 늑대 무리 격퇴",
+                "OBJ_PROTECT_HERDERS",
+                "방목민 피난로 확보",
+                "OBJ_SECURE_WOLF_DEN",
+                "북쪽 늑대 굴 봉쇄",
+                "산양 젖",
+                "질긴 가죽",
+                "마을 감사패");
+        }
+
+        private static BattleDefinition CreateTigerRavineBattle()
+        {
+            return CreateWildlifeBattle(
+                HubController.TigerRavineBattleId,
+                "MISSION_FREE_SOBAEK_TIGER_RAVINE",
+                "백호 바위골 주민 구조",
+                "소백촌 남쪽 바위골",
+                "산군 호랑이",
+                "산군 호랑이 제압과 갇힌 주민 구조",
+                "바위골은 가운데 절벽과 낙석이 길을 끊는다. 서쪽 억새밭은 느리지만 엄폐가 좋고, 동쪽 바위 선반은 H3 고지라 한 칸씩 올라야 한다.",
+                55,
+                "OBJ_SUBDUE_TIGER",
+                "산군 호랑이 제압",
+                "OBJ_RESCUE_VILLAGERS",
+                "갇힌 주민 구조",
+                "OBJ_CONTROL_RAVINE_HIGHGROUND",
+                "동쪽 바위 선반 확보",
+                "호피 조각",
+                "응급 약재",
+                "마을 감사패");
+        }
+
+        private static BattleDefinition CreateLeopardCliffBattle()
+        {
+            return CreateWildlifeBattle(
+                HubController.LeopardCliffBattleId,
+                "MISSION_FREE_SOBAEK_LEOPARD_CLIFF",
+                "표범 절벽길 약초꾼 호송",
+                "소백촌 동쪽 절벽 약초길",
+                "그림자 표범",
+                "그림자 표범 격퇴와 약초꾼 호송로 개방",
+                "절벽길은 하단 낭떠러지와 대나무 덤불이 길을 잘라낸다. 밧줄다리만 계곡을 넘고, 북동쪽 약초 선반은 표범이 먼저 차지한 고지다.",
+                50,
+                "OBJ_DRIVE_OFF_LEOPARD",
+                "그림자 표범 격퇴",
+                "OBJ_ESCORT_HERBALISTS",
+                "약초꾼 호송로 개방",
+                "OBJ_AVOID_CLIFF_AMBUSH",
+                "절벽 매복 피해 최소화",
+                "희귀 약초",
+                "표범 무늬 가죽",
+                "마을 감사패");
+        }
+
+        private static BattleDefinition CreateWildlifeBattle(string battleId, string questId, string title,
+                                                             string location, string bossName, string victory,
+                                                             string mapHint, int silver, string primaryObjectiveId,
+                                                             string primaryObjective, string supportObjectiveId,
+                                                             string supportObjective, string optionalObjectiveId,
+                                                             string optionalObjective, params string[] rewards)
+        {
+            BattleDefinition d = new BattleDefinition
+            {
+                id = battleId,
+                title = title,
+                location = location,
+                bossName = bossName,
+                victoryCondition = victory,
+                mapHint = mapHint,
+                silverReward = silver,
+                joseonRenownOnWin = 1,
+                questId = questId,
+                repeatable = true
+            };
+
+            d.roster.Add("박성준");
+            d.roster.Add("백련");
+            d.roster.Add("도아린");
+            d.roster.Add("진서율");
+            d.roster.Add("신서아");
+            d.roster.Add("한비연");
+
+            d.defeatConditions.Add("아군 전멸");
+            d.defeatConditions.Add("12턴 초과");
+
+            d.objectives.Add(new BattleObjective(primaryObjectiveId, primaryObjective, false));
+            d.objectives.Add(new BattleObjective(supportObjectiveId, supportObjective, false));
+            d.objectives.Add(new BattleObjective(optionalObjectiveId, optionalObjective, true));
+
+            foreach (string reward in rewards)
+            {
+                d.rewardItems.Add(reward);
+            }
+
+            d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +1));
 
             return d;
         }

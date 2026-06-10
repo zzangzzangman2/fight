@@ -33,12 +33,21 @@ public sealed class BattleTestController : MonoBehaviour
     private const string SnowGateMapDisplayName = "백두산 설문 관문전";
     private const string SnowfieldMapDisplayName = "백두산 천지 설산로";
     private const string BanditLairMapDisplayName = "소백촌 도적 소굴";
+    private const string WolfPassMapDisplayName = "소백촌 늑대 고개";
+    private const string TigerRavineMapDisplayName = "백호 바위골";
+    private const string LeopardCliffMapDisplayName = "표범 절벽길";
     private const string SnowGateMapConcept =
         "중앙 1칸 협로, 좌측 설죽림 우회로, 우측 절벽 고지, 얼어붙은 여울과 붕괴 가능한 다리 밧줄을 쓰는 대표 수작업 전장";
     private const string SnowfieldMapConcept =
         "설송림, 현무암 절벽, 얼음 물길, 온천 증기를 따라 움직이는 백두산 설산 SRPG 전장";
     private const string BanditLairMapConcept =
         "벌목길, 폐광 동굴, 통나무 장애물, 진흙 웅덩이, 덫, 망루 고지로 구성된 자유시간 반복 의뢰 전장";
+    private const string WolfPassMapConcept =
+        "개울 병목, 쓰러진 통나무, 자작나무 숲, H2 능선과 늑대 굴 바위로 구성된 야수 방어 전장";
+    private const string TigerRavineMapConcept =
+        "억새 엄폐, 막힌 바위벽, 낙석 협곡, H3 바위 선반으로 주민을 구조하는 산군 토벌 전장";
+    private const string LeopardCliffMapConcept =
+        "낭떠러지, 대나무 덤불, 밧줄다리, H3 약초 선반으로 매복을 읽는 표범 호송 전장";
     private static readonly bool UseLegacyOnGui = false;
     private const float TacticalCameraMinSize = 3.05f;
     private const float TacticalCameraMaxSize = 3.45f;
@@ -52,6 +61,9 @@ public sealed class BattleTestController : MonoBehaviour
             case BattleTestMapVariant.BaekduMountainSnowfield:
                 return SnowfieldPaintedBattleMapResource;
             case BattleTestMapVariant.BanditLair:
+            case BattleTestMapVariant.WolfPass:
+            case BattleTestMapVariant.TigerRavine:
+            case BattleTestMapVariant.LeopardCliff:
                 return string.Empty;
             default:
                 return SnowGatePaintedBattleMapResource;
@@ -69,6 +81,12 @@ public sealed class BattleTestController : MonoBehaviour
                 return SnowfieldMapDisplayName;
             case BattleTestMapVariant.BanditLair:
                 return BanditLairMapDisplayName;
+            case BattleTestMapVariant.WolfPass:
+                return WolfPassMapDisplayName;
+            case BattleTestMapVariant.TigerRavine:
+                return TigerRavineMapDisplayName;
+            case BattleTestMapVariant.LeopardCliff:
+                return LeopardCliffMapDisplayName;
             default:
                 return SnowGateMapDisplayName;
             }
@@ -85,6 +103,12 @@ public sealed class BattleTestController : MonoBehaviour
                 return SnowfieldMapConcept;
             case BattleTestMapVariant.BanditLair:
                 return BanditLairMapConcept;
+            case BattleTestMapVariant.WolfPass:
+                return WolfPassMapConcept;
+            case BattleTestMapVariant.TigerRavine:
+                return TigerRavineMapConcept;
+            case BattleTestMapVariant.LeopardCliff:
+                return LeopardCliffMapConcept;
             default:
                 return SnowGateMapConcept;
             }
@@ -1174,6 +1198,36 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (battleId == HubController.WolfPassBattleId)
+        {
+            mapVariant = BattleTestMapVariant.WolfPass;
+            useAuthoredSceneMap = false;
+            width = 15;
+            height = 12;
+            unitDefinitions = BuildWolfPassUnitDefinitions(baselineUnitDefinitions);
+            return;
+        }
+
+        if (battleId == HubController.TigerRavineBattleId)
+        {
+            mapVariant = BattleTestMapVariant.TigerRavine;
+            useAuthoredSceneMap = false;
+            width = 16;
+            height = 12;
+            unitDefinitions = BuildTigerRavineUnitDefinitions(baselineUnitDefinitions);
+            return;
+        }
+
+        if (battleId == HubController.LeopardCliffBattleId)
+        {
+            mapVariant = BattleTestMapVariant.LeopardCliff;
+            useAuthoredSceneMap = false;
+            width = 16;
+            height = 12;
+            unitDefinitions = BuildLeopardCliffUnitDefinitions(baselineUnitDefinitions);
+            return;
+        }
+
         unitDefinitions = CloneUnitDefinitions(baselineUnitDefinitions);
     }
 
@@ -1283,6 +1337,128 @@ public sealed class BattleTestController : MonoBehaviour
         return result.ToArray();
     }
 
+    private static BattleTestUnitDefinition[] BuildWolfPassUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
+    {
+        List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
+        AddFreeTimeAllies(result, baseDefinitions, new[] {
+            new Vector2Int(7, 1),
+            new Vector2Int(6, 1),
+            new Vector2Int(8, 1),
+            new Vector2Int(9, 1),
+            new Vector2Int(5, 2),
+            new Vector2Int(10, 2)
+        });
+
+        BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
+                                        FindFirstDefinition(baseDefinitions, Faction.Enemy);
+        BattleTestUnitDefinition spear = FindDefinition(baseDefinitions, "iron_wolf_spear_1") ?? guard;
+        BattleTestUnitDefinition captain = FindDefinition(baseDefinitions, "iron_wolf_captain") ?? guard;
+
+        result.Add(BeastUnit(guard, "wolf_runner_1", "굶주린 늑대", new Vector2Int(5, 5),
+                             "백두산 야수", "야성", "이빨", 20, 1, 16, 18, 5, 1, 5, 12, 4, 7, "덮쳐 물기",
+                             1, 1, 2, 2, 1, BattleSpecialEffect.Strike));
+        result.Add(BeastUnit(spear, "wolf_runner_2", "능선 늑대", new Vector2Int(10, 6),
+                             "백두산 야수", "야성", "발톱", 22, 1, 15, 17, 5, 1, 5, 12, 4, 8, "측면 물기",
+                             1, 1, 2, 3, 1, BattleSpecialEffect.Mark));
+        result.Add(BeastUnit(guard, "wolf_den_guard", "굴 지키는 늑대", new Vector2Int(12, 9),
+                             "백두산 야수", "야성", "송곳니", 24, 1, 13, 16, 4, 1, 6, 13, 5, 8, "지키는 포효",
+                             1, 1, 2, 3, 1, BattleSpecialEffect.BreakGuard));
+        result.Add(BeastUnit(captain, "wolf_alpha", "굶주린 늑대 우두머리", new Vector2Int(12, 10),
+                             "백두산 야수", "야성", "우두머리 이빨", 34, 2, 14, 17, 5, 1, 7, 14, 6, 11,
+                             "무리 돌진", 1, 1, 2, 4, 2, BattleSpecialEffect.BreakGuard));
+
+        return result.ToArray();
+    }
+
+    private static BattleTestUnitDefinition[] BuildTigerRavineUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
+    {
+        List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
+        AddFreeTimeAllies(result, baseDefinitions, new[] {
+            new Vector2Int(7, 1),
+            new Vector2Int(6, 1),
+            new Vector2Int(8, 1),
+            new Vector2Int(9, 1),
+            new Vector2Int(5, 2),
+            new Vector2Int(10, 2)
+        });
+
+        BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
+                                        FindFirstDefinition(baseDefinitions, Faction.Enemy);
+        BattleTestUnitDefinition spear = FindDefinition(baseDefinitions, "iron_wolf_spear_1") ?? guard;
+        BattleTestUnitDefinition captain = FindDefinition(baseDefinitions, "iron_wolf_captain") ?? guard;
+
+        result.Add(BeastUnit(guard, "tiger_shadow_1", "바위골 호랑이", new Vector2Int(4, 6),
+                             "백두산 야수", "산기운", "발톱", 30, 2, 13, 15, 4, 1, 6, 14, 6, 10, "앞발 후려치기",
+                             1, 1, 2, 3, 1, BattleSpecialEffect.Strike));
+        result.Add(BeastUnit(spear, "tiger_shadow_2", "억새밭 산짐승", new Vector2Int(8, 5),
+                             "백두산 야수", "산기운", "이빨", 26, 1, 15, 16, 5, 1, 5, 13, 5, 9, "억새 돌진",
+                             1, 1, 2, 3, 1, BattleSpecialEffect.Mark));
+        result.Add(BeastUnit(guard, "tiger_cave_guard", "바위굴 수호수", new Vector2Int(12, 8),
+                             "백두산 야수", "산기운", "발톱", 32, 2, 12, 14, 4, 1, 6, 15, 6, 10, "낙석 몰이",
+                             1, 1, 2, 4, 1, BattleSpecialEffect.BreakGuard));
+        result.Add(BeastUnit(captain, "tiger_boss_sangun", "산군 호랑이", new Vector2Int(13, 9),
+                             "백두산 야수", "산군", "대호의 발톱", 54, 3, 14, 16, 5, 1, 8, 16, 8, 14,
+                             "산군 포효", 1, 1, 2, 5, 2, BattleSpecialEffect.BreakGuard));
+
+        return result.ToArray();
+    }
+
+    private static BattleTestUnitDefinition[] BuildLeopardCliffUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
+    {
+        List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
+        AddFreeTimeAllies(result, baseDefinitions, new[] {
+            new Vector2Int(6, 1),
+            new Vector2Int(7, 1),
+            new Vector2Int(8, 1),
+            new Vector2Int(5, 2),
+            new Vector2Int(9, 2),
+            new Vector2Int(4, 3)
+        });
+
+        BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
+                                        FindFirstDefinition(baseDefinitions, Faction.Enemy);
+        BattleTestUnitDefinition spear = FindDefinition(baseDefinitions, "iron_wolf_spear_1") ?? guard;
+        BattleTestUnitDefinition captain = FindDefinition(baseDefinitions, "iron_wolf_captain") ?? guard;
+
+        result.Add(BeastUnit(guard, "leopard_ambusher_1", "절벽 표범", new Vector2Int(3, 7),
+                             "백두산 야수", "그림자", "발톱", 24, 2, 17, 18, 6, 1, 5, 13, 4, 8, "절벽 급습",
+                             1, 1, 2, 3, 1, BattleSpecialEffect.Mark));
+        result.Add(BeastUnit(spear, "leopard_ambusher_2", "대나무 표범", new Vector2Int(10, 6),
+                             "백두산 야수", "그림자", "이빨", 26, 2, 16, 18, 6, 1, 5, 13, 5, 9, "그림자 물기",
+                             1, 1, 2, 3, 1, BattleSpecialEffect.Poison));
+        result.Add(BeastUnit(guard, "leopard_ridge_guard", "약초길 표범", new Vector2Int(12, 7),
+                             "백두산 야수", "그림자", "발톱", 28, 2, 15, 17, 5, 1, 6, 14, 5, 9, "바위 타기",
+                             1, 1, 2, 3, 1, BattleSpecialEffect.Strike));
+        result.Add(BeastUnit(captain, "leopard_boss_shadow", "그림자 표범", new Vector2Int(13, 8),
+                             "백두산 야수", "그림자", "검은 발톱", 40, 3, 17, 19, 6, 1, 7, 15, 7, 12,
+                             "무음 도약", 1, 1, 2, 5, 2, BattleSpecialEffect.Mark));
+
+        return result.ToArray();
+    }
+
+    private static void AddFreeTimeAllies(List<BattleTestUnitDefinition> result, BattleTestUnitDefinition[] baseDefinitions,
+                                          Vector2Int[] allyCells)
+    {
+        if (baseDefinitions == null)
+        {
+            return;
+        }
+
+        int allyIndex = 0;
+        foreach (BattleTestUnitDefinition definition in baseDefinitions)
+        {
+            if (definition == null || definition.faction != Faction.Ally)
+            {
+                continue;
+            }
+
+            BattleTestUnitDefinition ally = CloneUnitDefinition(definition);
+            ally.startCell = allyCells[Mathf.Min(allyIndex, allyCells.Length - 1)];
+            result.Add(ally);
+            allyIndex++;
+        }
+    }
+
     private static BattleTestUnitDefinition BanditUnit(BattleTestUnitDefinition template, string id, string displayName,
                                                        Vector2Int cell, string sectName, string elementName,
                                                        string weaponName, int maxHp, int maxInner, int initiative,
@@ -1301,6 +1477,44 @@ public sealed class BattleTestController : MonoBehaviour
         unit.elementName = elementName;
         unit.weaponName = weaponName;
         unit.speechTone = "험한 산도적 말투";
+        unit.maxHp = maxHp;
+        unit.maxInner = maxInner;
+        unit.initiative = initiative;
+        unit.agility = agility;
+        unit.moveRange = moveRange;
+        unit.attackRange = attackRange;
+        unit.attackBonus = attackBonus;
+        unit.defense = defense;
+        unit.damageMin = damageMin;
+        unit.damageMax = damageMax;
+        unit.specialName = specialName;
+        unit.specialRange = specialRange;
+        unit.specialCost = specialCost;
+        unit.specialCooldown = specialCooldown;
+        unit.specialPower = specialPower;
+        unit.specialAttackBonus = specialAttackBonus;
+        unit.specialEffect = specialEffect;
+        return unit;
+    }
+
+    private static BattleTestUnitDefinition BeastUnit(BattleTestUnitDefinition template, string id, string displayName,
+                                                      Vector2Int cell, string sectName, string elementName,
+                                                      string weaponName, int maxHp, int maxInner, int initiative,
+                                                      int agility, int moveRange, int attackRange, int attackBonus,
+                                                      int defense, int damageMin, int damageMax, string specialName,
+                                                      int specialRange, int specialCost, int specialCooldown,
+                                                      int specialPower, int specialAttackBonus,
+                                                      BattleSpecialEffect specialEffect)
+    {
+        BattleTestUnitDefinition unit = CloneUnitDefinition(template) ?? new BattleTestUnitDefinition();
+        unit.id = id;
+        unit.displayName = displayName;
+        unit.faction = Faction.Enemy;
+        unit.startCell = cell;
+        unit.sectName = sectName;
+        unit.elementName = elementName;
+        unit.weaponName = weaponName;
+        unit.speechTone = "낮은 울음과 포효";
         unit.maxHp = maxHp;
         unit.maxInner = maxInner;
         unit.initiative = initiative;
@@ -1453,6 +1667,18 @@ public sealed class BattleTestController : MonoBehaviour
         if (mapVariant == BattleTestMapVariant.BanditLair)
         {
             return $"{MapDisplayName}\n주 목표: 도적 두목 제압 / 보급 상자 회수\n보조: 덫 회피, 망루 고지 제압, 통나무 엄폐 활용\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
+        }
+        if (mapVariant == BattleTestMapVariant.WolfPass)
+        {
+            return $"{MapDisplayName}\n주 목표: 늑대 우두머리 제압 / 방목길 확보\n보조: 개울 병목, 늑대 굴 봉쇄, 통나무 우회\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
+        }
+        if (mapVariant == BattleTestMapVariant.TigerRavine)
+        {
+            return $"{MapDisplayName}\n주 목표: 산군 호랑이 제압 / 주민 구조\n보조: 억새 엄폐, 낙석 회피, H3 바위 선반 확보\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
+        }
+        if (mapVariant == BattleTestMapVariant.LeopardCliff)
+        {
+            return $"{MapDisplayName}\n주 목표: 그림자 표범 격퇴 / 약초길 개방\n보조: 밧줄다리 병목, 절벽 매복 회피, 약초 선반 확보\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
         }
 
         return $"{MapDisplayName}\n주 목표: 관문 정찰조장 제압\n보조: 협로 엄폐, 고저차, 지형 상호작용 활용\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
@@ -1972,6 +2198,24 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (mapVariant == BattleTestMapVariant.WolfPass)
+        {
+            CreateWolfPassInteractables(propRoot);
+            return;
+        }
+
+        if (mapVariant == BattleTestMapVariant.TigerRavine)
+        {
+            CreateTigerRavineInteractables(propRoot);
+            return;
+        }
+
+        if (mapVariant == BattleTestMapVariant.LeopardCliff)
+        {
+            CreateLeopardCliffInteractables(propRoot);
+            return;
+        }
+
         AddInteractable(propRoot, "signboard", "백두천광 현판", BattleTestInteractableKind.Objective,
                         new Vector2Int(7, 10), new Color(0.92f, 0.76f, 0.34f, 1f));
         AddInteractable(propRoot, "incense", "제단 향로", BattleTestInteractableKind.Smoke, new Vector2Int(7, 9),
@@ -2035,6 +2279,54 @@ public sealed class BattleTestController : MonoBehaviour
                         new Vector2Int(4, 7), new Color(0.28f, 0.46f, 0.20f, 1f));
         AddInteractable(propRoot, "stone_lantern", "굴 입구 낙석", BattleTestInteractableKind.Rockfall,
                         new Vector2Int(10, 10), new Color(0.45f, 0.43f, 0.38f, 1f));
+    }
+
+    private void CreateWolfPassInteractables(Transform propRoot)
+    {
+        AddInteractable(propRoot, "wolf_den_marker", "늑대 굴 봉쇄 지점", BattleTestInteractableKind.Objective,
+                        new Vector2Int(12, 10), new Color(0.80f, 0.68f, 0.42f, 1f));
+        AddInteractable(propRoot, "bridge_rope", "개울 징검다리", BattleTestInteractableKind.CollapseBridge,
+                        new Vector2Int(7, 4), new Color(0.40f, 0.27f, 0.16f, 1f));
+        AddInteractable(propRoot, "fallen_wall", "쓰러진 통나무 엄폐", BattleTestInteractableKind.Cover,
+                        new Vector2Int(5, 6), new Color(0.46f, 0.30f, 0.16f, 1f));
+        AddInteractable(propRoot, "bamboo_bundle", "휘어진 자작나무", BattleTestInteractableKind.BambooFall,
+                        new Vector2Int(3, 8), new Color(0.26f, 0.48f, 0.24f, 1f));
+        AddInteractable(propRoot, "stone_lantern", "능선 굴러내릴 바위", BattleTestInteractableKind.Rockfall,
+                        new Vector2Int(10, 8), new Color(0.48f, 0.46f, 0.40f, 1f));
+        AddInteractable(propRoot, "snow_pine", "빽빽한 자작나무", BattleTestInteractableKind.BambooFall,
+                        new Vector2Int(2, 9), new Color(0.30f, 0.50f, 0.30f, 1f));
+    }
+
+    private void CreateTigerRavineInteractables(Transform propRoot)
+    {
+        AddInteractable(propRoot, "trapped_villagers", "갇힌 주민", BattleTestInteractableKind.Objective,
+                        new Vector2Int(14, 9), new Color(0.86f, 0.70f, 0.40f, 1f));
+        AddInteractable(propRoot, "fallen_wall", "큰 바위 엄폐", BattleTestInteractableKind.Cover,
+                        new Vector2Int(4, 6), new Color(0.48f, 0.43f, 0.34f, 1f));
+        AddInteractable(propRoot, "stone_lantern", "흔들리는 낙석", BattleTestInteractableKind.Rockfall,
+                        new Vector2Int(8, 5), new Color(0.52f, 0.48f, 0.40f, 1f));
+        AddInteractable(propRoot, "bamboo_bundle", "억새 더미", BattleTestInteractableKind.BambooFall,
+                        new Vector2Int(3, 7), new Color(0.52f, 0.58f, 0.28f, 1f));
+        AddInteractable(propRoot, "smoke", "흙먼지 구름", BattleTestInteractableKind.Smoke,
+                        new Vector2Int(9, 6), new Color(0.58f, 0.54f, 0.46f, 1f));
+        AddInteractable(propRoot, "frozen_boulder", "바위 선반 낙석", BattleTestInteractableKind.Rockfall,
+                        new Vector2Int(12, 8), new Color(0.55f, 0.52f, 0.45f, 1f));
+    }
+
+    private void CreateLeopardCliffInteractables(Transform propRoot)
+    {
+        AddInteractable(propRoot, "herb_cache", "희귀 약초 군락", BattleTestInteractableKind.Objective,
+                        new Vector2Int(14, 8), new Color(0.82f, 0.74f, 0.40f, 1f));
+        AddInteractable(propRoot, "bridge_rope", "절벽 밧줄다리", BattleTestInteractableKind.CollapseBridge,
+                        new Vector2Int(8, 5), new Color(0.42f, 0.28f, 0.16f, 1f));
+        AddInteractable(propRoot, "bamboo_bundle", "대나무 덤불", BattleTestInteractableKind.BambooFall,
+                        new Vector2Int(4, 7), new Color(0.20f, 0.50f, 0.28f, 1f));
+        AddInteractable(propRoot, "fallen_wall", "절벽길 바위 엄폐", BattleTestInteractableKind.Cover,
+                        new Vector2Int(10, 6), new Color(0.46f, 0.42f, 0.34f, 1f));
+        AddInteractable(propRoot, "stone_lantern", "떨어질 선반 바위", BattleTestInteractableKind.Rockfall,
+                        new Vector2Int(12, 7), new Color(0.50f, 0.46f, 0.39f, 1f));
+        AddInteractable(propRoot, "smoke", "절벽 안개", BattleTestInteractableKind.Smoke,
+                        new Vector2Int(5, 8), new Color(0.54f, 0.60f, 0.56f, 1f));
     }
 
     private void AddInteractable(Transform parent, string id, string displayName, BattleTestInteractableKind kind,
@@ -3876,9 +4168,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (interactable.kind == BattleTestInteractableKind.Objective)
         {
-            AddLog(mapVariant == BattleTestMapVariant.BanditLair
-                       ? "[목표] 빼앗긴 보급입니다. 도적 두목을 제압한 뒤 회수하세요."
-                       : "[목표] 현판은 지켜야 합니다. 적이 닿기 전에 병목을 막으세요.");
+            AddLog(ObjectiveInteractMessage());
             return false;
         }
 
@@ -3990,6 +4280,23 @@ public sealed class BattleTestController : MonoBehaviour
         RefreshUnits();
         FocusCameraOnUnit(activeUnit, 0.28f);
         return false;
+    }
+
+    private string ObjectiveInteractMessage()
+    {
+        switch (mapVariant)
+        {
+        case BattleTestMapVariant.BanditLair:
+            return "[목표] 빼앗긴 보급입니다. 도적 두목을 제압한 뒤 회수하세요.";
+        case BattleTestMapVariant.WolfPass:
+            return "[목표] 늑대 굴입니다. 우두머리를 제압하고 피난로를 확보한 뒤 봉쇄하세요.";
+        case BattleTestMapVariant.TigerRavine:
+            return "[목표] 갇힌 주민입니다. 산군을 떼어내고 바위 선반 길을 열어 구조하세요.";
+        case BattleTestMapVariant.LeopardCliff:
+            return "[목표] 약초꾼 호송 지점입니다. 표범 매복을 정리한 뒤 지나갈 수 있습니다.";
+        default:
+            return "[목표] 현판은 지켜야 합니다. 적이 닿기 전에 병목을 막으세요.";
+        }
     }
 
     private IEnumerator AnimateMove(BattleTestUnit unit, List<Vector2Int> path)
@@ -5939,7 +6246,7 @@ public sealed class BattleTestController : MonoBehaviour
             {
                 enemiesAlive = true;
                 BattleTestTile tile = TileAt(unit.cell);
-                if (mapVariant != BattleTestMapVariant.BanditLair && tile != null && tile.objective)
+                if (HasEnemyBreachObjective(mapVariant) && tile != null && tile.objective)
                 {
                     objectiveBreached = true;
                 }
@@ -5965,6 +6272,12 @@ public sealed class BattleTestController : MonoBehaviour
         PlayBattleOutcomeVisuals(alliesAlive);
         AddLog(alliesAlive ? "[전투 종료] 승리." : "[전투 종료] 패배.");
         return true;
+    }
+
+    private static bool HasEnemyBreachObjective(BattleTestMapVariant variant)
+    {
+        return variant == BattleTestMapVariant.BaekduSnowGate ||
+               variant == BattleTestMapVariant.BaekduMountainSnowfield;
     }
 
     private void PlayBattleOutcomeVisuals(bool alliesWon)
@@ -6313,6 +6626,12 @@ public sealed class BattleTestController : MonoBehaviour
             return ResolveBaekduMountainSnowfieldTerrain(x, y);
         case BattleTestMapVariant.BanditLair:
             return ResolveBanditLairTerrain(x, y);
+        case BattleTestMapVariant.WolfPass:
+            return ResolveWolfPassTerrain(x, y);
+        case BattleTestMapVariant.TigerRavine:
+            return ResolveTigerRavineTerrain(x, y);
+        case BattleTestMapVariant.LeopardCliff:
+            return ResolveLeopardCliffTerrain(x, y);
         default:
             return ResolveBaekduSnowGateTerrain(x, y);
         }
@@ -6442,6 +6761,272 @@ public sealed class BattleTestController : MonoBehaviour
         return new TerrainProfile(TerrainType.Plain, new Color(0.34f, 0.43f, 0.25f, 1f), 0, 0, 2, true, false,
                                   false, false, false, "bandit_open_clearing",
                                   "Open lair clearing: uneven grass and dirt.");
+    }
+
+    private TerrainProfile ResolveWolfPassTerrain(int x, int y)
+    {
+        if (IsWolfPassOuterBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.09f, 0.20f, 0.13f, 1f), y >= 8 ? 2 : 0, 0,
+                                      99, false, true, false, false, false, "wolf_outer_forest_wall",
+                                      "Dense birch and pine wall: impassable from map creation.");
+        }
+
+        if (IsWolfPassTreeBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.10f, 0.24f, 0.15f, 1f), 1, 0, 99, false,
+                                      true, false, false, false, "wolf_birch_blocker",
+                                      "Thick birch trunk cluster: blocks movement and sight.");
+        }
+
+        if (IsWolfPassLogBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Rubble, new Color(0.36f, 0.25f, 0.15f, 1f), y >= 7 ? 1 : 0, 3,
+                                      99, false, true, false, false, false, "wolf_fallen_log_blocker",
+                                      "Fallen logs and thorn brush: impassable obstacle.");
+        }
+
+        if (IsWolfPassDenRockBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.24f, 0.25f, 0.20f, 1f), 2, 0, 99, false,
+                                      true, false, false, true, "wolf_den_rock_wall",
+                                      "Rock wall around the wolf den: cannot be crossed.");
+        }
+
+        if (y == 4 && x >= 3 && x <= 12)
+        {
+            if (x == 7 || x == 8)
+            {
+                return new TerrainProfile(TerrainType.Bridge, new Color(0.45f, 0.31f, 0.18f, 1f), 0, 0, 1, true,
+                                          false, true, false, false, "wolf_creek_bridge",
+                                          "Stepping-stone bridge across the cold creek.");
+            }
+
+            if (x == 5 || x == 10)
+            {
+                return new TerrainProfile(TerrainType.ShallowWater, new Color(0.20f, 0.46f, 0.50f, 1f), 0, 0, 3,
+                                          true, false, false, false, true, "wolf_shallow_creek",
+                                          "Shallow creek ford: slow and exposed.");
+            }
+
+            return new TerrainProfile(TerrainType.DeepWater, new Color(0.07f, 0.22f, 0.26f, 1f), 0, 0, 99, false,
+                                      false, false, false, true, "wolf_deep_creek",
+                                      "Deep creek cut: impassable away from bridge and fords.");
+        }
+
+        if (x >= 10 && x <= 13 && y >= 6 && y <= 10)
+        {
+            bool den = x == 12 && y == 10;
+            bool ridgeTop = x >= 11 && y >= 7;
+            int elevation = ridgeTop ? 2 : 1;
+            return new TerrainProfile(den ? TerrainType.Gate : TerrainType.Hill,
+                                      den ? new Color(0.55f, 0.43f, 0.25f, 1f)
+                                          : new Color(0.43f, 0.46f, 0.28f, 1f),
+                                      elevation, ridgeTop ? 1 : 0, ridgeTop ? 1 : 2, true, false,
+                                      x == 10 && y == 6, den, ridgeTop && x == 13, "wolf_eastern_ridge",
+                                      den
+                                          ? "Wolf den objective on the eastern ridge."
+                                          : "Eastern ridge: high ground with one-level climb routes.");
+        }
+
+        if (x <= 4 && y >= 5 && y <= 9)
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.14f, 0.32f, 0.18f, 1f), y >= 8 ? 1 : 0, 2,
+                                      2, true, true, x == 4 && y == 7, false, false, "wolf_left_birch_woods",
+                                      "Left birch woods: slow covered flank with blocked sight lines.");
+        }
+
+        if (x >= 5 && x <= 10 && y <= 3)
+        {
+            bool road = x >= 6 && x <= 9;
+            return new TerrainProfile(road ? TerrainType.Road : TerrainType.Plain,
+                                      road ? new Color(0.52f, 0.45f, 0.30f, 1f)
+                                           : new Color(0.36f, 0.46f, 0.25f, 1f),
+                                      0, 0, road ? 1 : 2, true, false, road && y == 2, false, false,
+                                      "wolf_southern_pasture_road",
+                                      "Southern pasture road: ally entry and herder escape route.");
+        }
+
+        if (x >= 5 && x <= 9 && y >= 5 && y <= 8)
+        {
+            bool path = x == 7 || x == 8;
+            bool danger = x == 6 && y == 6;
+            return new TerrainProfile(path ? TerrainType.Road : TerrainType.Plain,
+                                      path ? new Color(0.50f, 0.42f, 0.28f, 1f)
+                                           : new Color(0.34f, 0.44f, 0.25f, 1f),
+                                      y >= 7 ? 1 : 0, danger ? 1 : 0, path ? 1 : 2, true, false,
+                                      path && y == 6, false, danger, "wolf_central_pass",
+                                      "Central pass: uneven ground between creek and den ridge.");
+        }
+
+        return new TerrainProfile(TerrainType.Plain, new Color(0.35f, 0.46f, 0.25f, 1f), 0, 0, 2, true, false,
+                                  false, false, false, "wolf_open_pasture",
+                                  "Open pasture grass: standard movement around the wolf pass.");
+    }
+
+    private TerrainProfile ResolveTigerRavineTerrain(int x, int y)
+    {
+        if (IsTigerRavineOuterBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.20f, 0.19f, 0.16f, 1f), y >= 8 ? 3 : 1, 0,
+                                      99, false, true, false, false, true, "tiger_outer_cliff_wall",
+                                      "Ravine edge and dense brush: impassable boundary.");
+        }
+
+        if (IsTigerRavineCliffBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.26f, 0.24f, 0.20f, 1f), 2, 0, 99, false,
+                                      true, false, false, true, "tiger_central_cliff_wall",
+                                      "Central rock wall: blocks direct movement through the ravine.");
+        }
+
+        if (IsTigerRavineBoulderBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Rubble, new Color(0.38f, 0.34f, 0.28f, 1f), 1, 4, 99, false,
+                                      true, false, false, false, "tiger_boulder_blocker",
+                                      "Collapsed boulder: full obstacle, not decorative.");
+        }
+
+        if (x >= 11 && x <= 14 && y >= 7 && y <= 10)
+        {
+            bool objective = x == 14 && y == 9;
+            int elevation = x >= 13 && y >= 8 ? 3 : x >= 12 ? 2 : 1;
+            return new TerrainProfile(objective ? TerrainType.Gate : TerrainType.Hill,
+                                      objective ? new Color(0.60f, 0.46f, 0.27f, 1f)
+                                                : new Color(0.44f, 0.40f, 0.30f, 1f),
+                                      elevation, elevation >= 2 ? 1 : 0, elevation >= 2 ? 1 : 2, true, false,
+                                      x == 11 && y == 7, objective, elevation >= 3, "tiger_eastern_rock_shelf",
+                                      objective
+                                          ? "Trapped villagers on the eastern H3 rock shelf."
+                                          : "Eastern rock shelf: strong high ground reached by staged climbs.");
+        }
+
+        if (x >= 2 && x <= 5 && y >= 5 && y <= 8)
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.42f, 0.44f, 0.22f, 1f), 0, 2, 2, true,
+                                      true, x == 5 && y == 6, false, false, "tiger_reed_cover",
+                                      "Tall reed cover: slow but safe approach for rescuers.");
+        }
+
+        if (x >= 7 && x <= 10 && y >= 5 && y <= 8)
+        {
+            bool dust = (x == 8 && y == 5) || (x == 9 && y == 6);
+            return new TerrainProfile(dust ? TerrainType.Rubble : TerrainType.Road,
+                                      dust ? new Color(0.43f, 0.36f, 0.27f, 1f)
+                                           : new Color(0.52f, 0.43f, 0.30f, 1f),
+                                      y >= 7 ? 1 : 0, dust ? 1 : 0, dust ? 2 : 1, true, false,
+                                      x == 8 && y == 6, false, dust, "tiger_ravine_floor",
+                                      "Ravine floor: main lane with loose rock hazards.");
+        }
+
+        if (x >= 4 && x <= 10 && y <= 3)
+        {
+            bool road = x >= 6 && x <= 9;
+            return new TerrainProfile(road ? TerrainType.Road : TerrainType.Plain,
+                                      road ? new Color(0.53f, 0.45f, 0.30f, 1f)
+                                           : new Color(0.38f, 0.45f, 0.27f, 1f),
+                                      0, 0, road ? 1 : 2, true, false, road && y == 2, false, false,
+                                      "tiger_southern_rescue_road",
+                                      "Southern rescue road: ally entry into the ravine.");
+        }
+
+        if (x >= 10 && x <= 12 && y >= 4 && y <= 6)
+        {
+            return new TerrainProfile(TerrainType.Mud, new Color(0.35f, 0.30f, 0.22f, 1f), y >= 6 ? 1 : 0, 1, 2,
+                                      true, false, false, false, y == 6, "tiger_muddy_slope",
+                                      "Muddy slope toward the rock shelf: passable but exposed.");
+        }
+
+        return new TerrainProfile(TerrainType.Plain, new Color(0.38f, 0.43f, 0.26f, 1f), 0, 0, 2, true, false,
+                                  false, false, false, "tiger_open_ravine",
+                                  "Open ravine grass and gravel.");
+    }
+
+    private TerrainProfile ResolveLeopardCliffTerrain(int x, int y)
+    {
+        if (IsLeopardCliffOuterBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.18f, 0.19f, 0.17f, 1f), y >= 7 ? 3 : 1, 0,
+                                      99, false, true, false, false, true, "leopard_outer_cliff_wall",
+                                      "Outer cliff and brush: impassable map edge.");
+        }
+
+        if (IsLeopardCliffBambooBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Bamboo, new Color(0.09f, 0.25f, 0.16f, 1f), y >= 8 ? 2 : 1, 0,
+                                      99, false, true, false, false, false, "leopard_bamboo_blocker",
+                                      "Dense bamboo wall: blocks movement and line of sight.");
+        }
+
+        if (IsLeopardCliffRockBlocker(x, y))
+        {
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.25f, 0.24f, 0.21f, 1f), 2, 0, 99, false,
+                                      true, false, false, true, "leopard_rock_drop_blocker",
+                                      "Sheer rock drop: cannot be crossed.");
+        }
+
+        if (y == 5 && x >= 6 && x <= 9)
+        {
+            if (x == 8 || x == 9)
+            {
+                return new TerrainProfile(TerrainType.Bridge, new Color(0.42f, 0.28f, 0.16f, 1f), 1, 0, 1, true,
+                                          false, true, false, false, "leopard_rope_bridge",
+                                          "Rope bridge over the cliff cut.");
+            }
+
+            return new TerrainProfile(TerrainType.DeepWater, new Color(0.08f, 0.14f, 0.17f, 1f), 0, 0, 99, false,
+                                      false, false, false, true, "leopard_cliff_gap",
+                                      "Open cliff gap: impassable except by rope bridge.");
+        }
+
+        if (x >= 11 && x <= 14 && y >= 6 && y <= 9)
+        {
+            bool objective = x == 14 && y == 8;
+            int elevation = x >= 13 && y >= 8 ? 3 : x >= 12 ? 2 : 1;
+            return new TerrainProfile(objective ? TerrainType.Gate : TerrainType.Hill,
+                                      objective ? new Color(0.58f, 0.48f, 0.27f, 1f)
+                                                : new Color(0.39f, 0.42f, 0.27f, 1f),
+                                      elevation, elevation >= 2 ? 1 : 0, elevation >= 2 ? 1 : 2, true, false,
+                                      x == 11 && y == 6, objective, elevation >= 3, "leopard_herb_shelf",
+                                      objective
+                                          ? "Rare herb shelf objective on H3 cliff high ground."
+                                          : "Northeast herb shelf: staged climb and leopard ambush ground.");
+        }
+
+        if (x <= 5 && y >= 6 && y <= 9)
+        {
+            bool mist = x == 5 && y == 8;
+            return new TerrainProfile(mist ? TerrainType.Smoke : TerrainType.Bamboo,
+                                      mist ? new Color(0.43f, 0.50f, 0.44f, 1f)
+                                           : new Color(0.16f, 0.36f, 0.21f, 1f),
+                                      y >= 8 ? 2 : 1, 2, 2, true, true, x == 4 && y == 7, false, mist,
+                                      "leopard_left_bamboo_path",
+                                      "Left bamboo path: covered, slow, and vision-blocking.");
+        }
+
+        if (x >= 4 && x <= 10 && y >= 2 && y <= 4)
+        {
+            bool road = y == 3 || x >= 7;
+            return new TerrainProfile(road ? TerrainType.Road : TerrainType.Plain,
+                                      road ? new Color(0.50f, 0.42f, 0.29f, 1f)
+                                           : new Color(0.36f, 0.46f, 0.26f, 1f),
+                                      0, 0, road ? 1 : 2, true, false, road && x == 7, false, false,
+                                      "leopard_southern_cliff_road",
+                                      "Southern cliff road: ally escort entry.");
+        }
+
+        if (x >= 9 && x <= 11 && y >= 5 && y <= 7)
+        {
+            bool ambush = x == 11 && y == 7;
+            return new TerrainProfile(TerrainType.Rubble, new Color(0.39f, 0.36f, 0.29f, 1f), y >= 7 ? 1 : 0,
+                                      ambush ? 1 : 0, 2, true, false, false, false, ambush,
+                                      "leopard_rocky_connector",
+                                      "Rocky connector from rope bridge to herb shelf.");
+        }
+
+        return new TerrainProfile(TerrainType.Plain, new Color(0.35f, 0.43f, 0.25f, 1f), 0, 0, 2, true, false,
+                                  false, false, false, "leopard_open_cliff_grass",
+                                  "Open cliff grass: standard movement around the escort route.");
     }
 
     private TerrainProfile ResolveBaekduMountainSnowfieldTerrain(int x, int y)
@@ -6776,6 +7361,79 @@ public sealed class BattleTestController : MonoBehaviour
                (x == 6 && y == 6) ||
                (x == 10 && y == 8) ||
                (x == 2 && y == 4);
+    }
+
+    private static bool IsWolfPassOuterBlocker(int x, int y)
+    {
+        return x == 0 ||
+               y == 11 ||
+               (x == 1 && (y <= 2 || y >= 9)) ||
+               (x == 14 && y >= 3);
+    }
+
+    private static bool IsWolfPassTreeBlocker(int x, int y)
+    {
+        return (x == 2 && y == 9) ||
+               (x == 3 && y == 10) ||
+               (x == 4 && y == 9);
+    }
+
+    private static bool IsWolfPassLogBlocker(int x, int y)
+    {
+        return (x == 4 && y == 6) ||
+               (x == 6 && y == 6) ||
+               (x == 11 && y == 8);
+    }
+
+    private static bool IsWolfPassDenRockBlocker(int x, int y)
+    {
+        return (x == 11 && y == 10) ||
+               (x == 13 && (y == 9 || y == 10));
+    }
+
+    private static bool IsTigerRavineOuterBlocker(int x, int y)
+    {
+        return x == 0 ||
+               y == 11 ||
+               (x == 1 && (y <= 1 || y >= 9)) ||
+               (x == 15 && y >= 2);
+    }
+
+    private static bool IsTigerRavineCliffBlocker(int x, int y)
+    {
+        return x == 6 && y >= 3 && y <= 9 && y != 5 && y != 6;
+    }
+
+    private static bool IsTigerRavineBoulderBlocker(int x, int y)
+    {
+        return (x == 9 && y == 4) ||
+               (x == 10 && y == 4) ||
+               (x == 10 && y == 5) ||
+               (x == 7 && y == 8);
+    }
+
+    private static bool IsLeopardCliffOuterBlocker(int x, int y)
+    {
+        return x == 0 ||
+               y == 11 ||
+               (x == 1 && y >= 10) ||
+               (x == 15 && y >= 4);
+    }
+
+    private static bool IsLeopardCliffBambooBlocker(int x, int y)
+    {
+        return (x == 2 && y == 8) ||
+               (x == 3 && y == 9) ||
+               (x == 6 && y == 8) ||
+               (x == 7 && y == 8);
+    }
+
+    private static bool IsLeopardCliffRockBlocker(int x, int y)
+    {
+        return (x == 12 && y == 5) ||
+               (x == 13 && y == 5) ||
+               (x == 14 && y == 5) ||
+               (x == 14 && y == 10);
     }
 
     private static bool IsDenseTreeBlocker(int x, int y)
@@ -7449,7 +8107,10 @@ public enum BattleTestMapVariant
 {
     BaekduSnowGate,
     BaekduMountainSnowfield,
-    BanditLair
+    BanditLair,
+    WolfPass,
+    TigerRavine,
+    LeopardCliff
 }
 
 public enum BattleSpecialEffect

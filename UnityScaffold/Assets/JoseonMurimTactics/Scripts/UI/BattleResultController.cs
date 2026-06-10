@@ -44,8 +44,7 @@ public sealed class BattleResultController : MonoBehaviour
         int optionalDone = 0;
         foreach (string objId in result.completedObjectives)
         {
-            if (objId != "OBJ_DEFEAT_SCOUTS" && objId != "OBJ_CLEAR_BANDIT_LAIR" &&
-                objId != "OBJ_RECOVER_SUPPLIES")
+            if (IsOptionalObjective(objId))
             {
                 optionalDone++;
             }
@@ -56,6 +55,25 @@ public sealed class BattleResultController : MonoBehaviour
         if (optionalDone >= 1)
             return "을";
         return "병";
+    }
+
+    private bool IsOptionalObjective(string objId)
+    {
+        if (def == null || def.objectives == null)
+        {
+            return objId != "OBJ_DEFEAT_SCOUTS" && objId != "OBJ_CLEAR_BANDIT_LAIR" &&
+                   objId != "OBJ_RECOVER_SUPPLIES";
+        }
+
+        foreach (BattleObjective objective in def.objectives)
+        {
+            if (objective != null && objective.id == objId)
+            {
+                return objective.optional;
+            }
+        }
+
+        return false;
     }
 
     private void OnGUI()
@@ -236,6 +254,24 @@ public sealed class BattleResultController : MonoBehaviour
             return "빼앗긴 보급 회수";
         case "OBJ_AVOID_TRAPS":
             return "덫 피해 최소화";
+        case "OBJ_REPEL_WOLF_PACK":
+            return "굶주린 늑대 무리 격퇴";
+        case "OBJ_PROTECT_HERDERS":
+            return "방목민 피난로 확보";
+        case "OBJ_SECURE_WOLF_DEN":
+            return "북쪽 늑대 굴 봉쇄";
+        case "OBJ_SUBDUE_TIGER":
+            return "산군 호랑이 제압";
+        case "OBJ_RESCUE_VILLAGERS":
+            return "갇힌 주민 구조";
+        case "OBJ_CONTROL_RAVINE_HIGHGROUND":
+            return "동쪽 바위 선반 확보";
+        case "OBJ_DRIVE_OFF_LEOPARD":
+            return "그림자 표범 격퇴";
+        case "OBJ_ESCORT_HERBALISTS":
+            return "약초꾼 호송로 개방";
+        case "OBJ_AVOID_CLIFF_AMBUSH":
+            return "절벽 매복 피해 최소화";
         case "OBJ_SAVE_PORTERS":
             return "마을 짐꾼 생존";
         case "OBJ_INSPECT_MARK":

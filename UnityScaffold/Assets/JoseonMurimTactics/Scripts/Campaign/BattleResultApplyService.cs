@@ -70,7 +70,7 @@ public sealed class BattleResultApplyService
             root.Flags.AddInt("silver", System.Math.Max(1, result.silver / 4));
         }
 
-        if (result.Won && definition != null && definition.id == HubController.BanditLairBattleId)
+        if (result.Won && definition != null && IsVillageFreeTimeBattle(definition.id))
         {
             root.Flags.AddInt("sect:village_trust", 1);
         }
@@ -108,6 +108,14 @@ public sealed class BattleResultApplyService
 
         outcome.applied = true;
         return outcome;
+    }
+
+    private static bool IsVillageFreeTimeBattle(string battleId)
+    {
+        return battleId == HubController.BanditLairBattleId ||
+               battleId == HubController.WolfPassBattleId ||
+               battleId == HubController.TigerRavineBattleId ||
+               battleId == HubController.LeopardCliffBattleId;
     }
 }
 }

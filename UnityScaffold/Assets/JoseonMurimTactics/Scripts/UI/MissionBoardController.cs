@@ -161,18 +161,15 @@ public sealed class MissionBoardController : MonoBehaviour
         GUI.Label(new Rect(x, y, wdt, 24f * s), "보조 목표 / 실패 결과 / 세력 변화", UiTheme.SmallMuted);
         y += 28f * s;
         GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s),
-                  m.repeatable ? "· 보조 목표: 덫 피해 최소화 / 보급 회수 / 망루 고지 제압"
-                               : "· 보조 목표: 제단 보존 / 부상자 최소화 / 8턴 이내",
+                  "· 보조 목표: " + ObjectiveSummary(m),
                   UiTheme.Small);
         y += 26f * s;
         GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s),
-                  m.repeatable ? "· 실패: 자유시간 소모, 도적 소문 위험도 유지"
-                               : "· 실패: 중원무림맹 위압 상승, 허브 기능 일부 지연",
+                  "· 실패: " + FailureSummary(m),
                   UiTheme.Small);
         y += 26f * s;
         GUI.Label(new Rect(x + 10f * s, y, wdt - 10f * s, 24f * s),
-                  m.repeatable ? "· 예상 변화: 조선문파연합 +1 / 흑립방 -2 / 마을 신뢰 상승"
-                               : "· 예상 변화: 조선문파연합 +5 / 감찰단 적대 +5",
+                  "· 예상 변화: " + ExpectedChangeSummary(m),
                   UiTheme.Small);
         y += 34f * s;
 
@@ -322,6 +319,63 @@ public sealed class MissionBoardController : MonoBehaviour
         }
 
         return "필요 조건 미달: " + mission.requiredFlag;
+    }
+
+    private static string ObjectiveSummary(MissionInfo mission)
+    {
+        if (mission == null || !mission.repeatable)
+        {
+            return "제단 보존 / 부상자 최소화 / 8턴 이내";
+        }
+
+        if (mission.battleId == HubController.BanditLairBattleId)
+        {
+            return "덫 피해 최소화 / 보급 회수 / 망루 고지 제압";
+        }
+        if (mission.battleId == HubController.WolfPassBattleId)
+        {
+            return "피난로 확보 / 늑대 굴 봉쇄 / 개울 병목 활용";
+        }
+        if (mission.battleId == HubController.TigerRavineBattleId)
+        {
+            return "주민 구조 / 바위 선반 확보 / 억새 엄폐 활용";
+        }
+        if (mission.battleId == HubController.LeopardCliffBattleId)
+        {
+            return "약초꾼 호송 / 절벽 매복 회피 / 밧줄다리 확보";
+        }
+
+        return "지형 목표 확보 / 부상자 최소화 / 빠른 정리";
+    }
+
+    private static string FailureSummary(MissionInfo mission)
+    {
+        if (mission == null || !mission.repeatable)
+        {
+            return "중원무림맹 위압 상승, 허브 기능 일부 지연";
+        }
+
+        if (mission.battleId == HubController.BanditLairBattleId)
+        {
+            return "자유시간 소모, 도적 소문 위험도 유지";
+        }
+
+        return "자유시간 소모, 마을 외곽 피해와 야수 출몰 위험도 유지";
+    }
+
+    private static string ExpectedChangeSummary(MissionInfo mission)
+    {
+        if (mission == null || !mission.repeatable)
+        {
+            return "조선문파연합 +5 / 감찰단 적대 +5";
+        }
+
+        if (mission.battleId == HubController.BanditLairBattleId)
+        {
+            return "조선문파연합 +1 / 흑립방 -2 / 마을 신뢰 상승";
+        }
+
+        return "조선문파연합 +1 / 마을 신뢰 상승";
     }
 
     private static void Line(float x, ref float y, float w, float s, string label, string value)
