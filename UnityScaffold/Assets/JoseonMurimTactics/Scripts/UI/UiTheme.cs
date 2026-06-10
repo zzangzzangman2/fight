@@ -318,22 +318,32 @@ public static class UiTheme
 
     private static Font LoadKoreanFont()
     {
-        // 둥근 계열(모바일 미연시풍 대화 폰트 느낌)을 먼저 시도하고, 없으면 맑은 고딕 계열로 내려간다.
-        string[] candidates = { "NanumSquareRound", "NanumSquareRoundOTF", "나눔스퀘어라운드", "NanumSquare",
-                                "Noto Sans KR",     "Pretendard",          "Malgun Gothic",    "맑은 고딕",
-                                "MalgunGothic",     "Noto Sans CJK KR",    "NanumGothic",      "Nanum Gothic",
-                                "Gulim",            "굴림",                "Dotum",            "돋움",
-                                "Batang",           "Arial Unicode MS" };
+        // Prefer fonts that exist on a clean Windows install. Unity 6000.4 player builds can
+        // fail to advance through an OS-font candidate array after a missing first family,
+        // which makes every IMGUI label render blank.
+        string[] candidates = { "Malgun Gothic", "맑은 고딕", "Gulim", "굴림", "Dotum", "돋움", "Batang",
+                                "Noto Sans KR", "Noto Sans CJK KR", "Pretendard", "Nanum Gothic",
+                                "NanumGothic", "NanumSquare", "Arial Unicode MS", "Arial" };
 
         Font f = null;
-        try
+        foreach (string candidate in candidates)
         {
-            f = Font.CreateDynamicFontFromOSFont(candidates, 22);
+            try
+            {
+                f = Font.CreateDynamicFontFromOSFont(candidate, 22);
+            }
+            catch
+            {
+                f = null;
+            }
+
+            if (f != null)
+            {
+                Debug.Log($"[UiTheme] Using IMGUI font: {candidate}");
+                return f;
+            }
         }
-        catch
-        {
-            f = null;
-        }
+
         if (f == null)
         {
             f = Font.CreateDynamicFontFromOSFont("Arial", 22);

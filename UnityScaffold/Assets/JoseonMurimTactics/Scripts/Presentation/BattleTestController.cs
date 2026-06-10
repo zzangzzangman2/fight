@@ -119,6 +119,7 @@ public sealed class BattleTestController : MonoBehaviour
     private readonly List<string> battleLog = new List<string>();
     private readonly List<BattleTestInteractable> interactables = new List<BattleTestInteractable>();
     private readonly PhaseTurnController phaseTurn = new PhaseTurnController();
+    private bool authoredMapBound;
     private readonly System.Random random = new System.Random(20260608);
     private BattleTestTile[,] tiles;
     private Sprite diamondSprite;
@@ -1100,10 +1101,10 @@ public sealed class BattleTestController : MonoBehaviour
         battleOver = false;
         commandMode = BattleCommandMode.Move;
         scoutMode = true;
-        showThreatOverlay = true;
-        showElevationOverlay = true;
-        showCoverOverlay = true;
-        showSightOverlay = true;
+        showThreatOverlay = false;
+        showElevationOverlay = false;
+        showCoverOverlay = false;
+        showSightOverlay = false;
         showObjectiveOverlay = true;
         phaseTurn.Reset();
         hoveredTile = null;
@@ -1118,7 +1119,7 @@ public sealed class BattleTestController : MonoBehaviour
         units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
         CenterCamera();
         EnsureBattleHud();
-        AddLog("[Scout] Scout mode: inspect enemies, hazards, terrain, and move allies onto southern deployment cells.");
+        AddLog("[정찰] 정찰 모드: 적과 위험 지형을 확인하고, 아군을 남쪽 배치 칸으로 옮길 수 있습니다.");
 
         AddLog("[체계] 전투 준비 완료.");
         suppressCameraFocus = true;
@@ -1663,7 +1664,7 @@ public sealed class BattleTestController : MonoBehaviour
     {
         if (scoutMode)
         {
-            return $"{MapDisplayName}\nSCOUT: enemy positions, danger tiles, terrain info, LoS blockers, props.\nSelect ally -> click southern deployment tile to reposition. S/Space starts battle.";
+            return $"{MapDisplayName}\n정찰: 적 위치, 위험 지형, 시야 차단물, 지형지물을 확인하세요.\n아군 선택 후 남쪽 파란 배치 칸을 클릭하면 재배치. S/Space로 전투 시작.";
         }
 
         if (mapVariant == BattleTestMapVariant.BanditLair)
@@ -1850,12 +1851,13 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         scoutMode = true;
-        showThreatOverlay = true;
-        showElevationOverlay = true;
-        showCoverOverlay = true;
-        showSightOverlay = true;
+        showThreatOverlay = false;
+        showElevationOverlay = false;
+        showCoverOverlay = false;
+        showSightOverlay = false;
+        showObjectiveOverlay = true;
         commandMode = BattleCommandMode.Move;
-        AddLog("[Scout] 정찰 모드 재개.");
+        AddLog("[정찰] 정찰 모드 재개.");
         RefreshHighlights();
     }
 
@@ -1868,7 +1870,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         scoutMode = false;
         commandMode = BattleCommandMode.Move;
-        AddLog("[Scout] 정찰 종료. 아군 행동을 시작합니다.");
+        AddLog("[정찰] 정찰 종료. 아군 행동을 시작합니다.");
         RefreshHighlights();
         RefreshUnits();
     }
@@ -1910,6 +1912,7 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void CreateTerrain()
     {
+        authoredMapBound = false;
         if (useAuthoredSceneMap && TryCreateAuthoredSceneTerrain())
         {
             return;
@@ -1971,6 +1974,7 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         RegisterAuthoredInteractables(mapController);
+        authoredMapBound = true;
         return true;
     }
 
@@ -2367,10 +2371,6 @@ public sealed class BattleTestController : MonoBehaviour
 
         AttachMapPropComponents(propObject, id, displayName, kind, cell);
         CreateInteractableAccent(propObject.transform, kind, renderer.sortingOrder + 1);
-
-        TextMesh label = CreateWorldLabel(propObject.transform, InteractableGlyph(kind), 46, new Vector3(0f, 0.38f, -0.05f),
-                                          new Color(1f, 0.92f, 0.66f, 1f), 2300 + ((cell.x + cell.y) * 2));
-        interactable.label = label;
     }
 
     private void AttachMapPropComponents(GameObject propObject, string id, string displayName,
@@ -3022,23 +3022,23 @@ public sealed class BattleTestController : MonoBehaviour
         string text = string.Empty;
         if (profile.objective)
         {
-            text = "目";
+            text = "목표";
         }
         else if (profile.isChokePoint)
         {
-            text = "狹";
+            text = "병목";
         }
         else if (profile.elevation >= 2)
         {
-            text = "高" + profile.elevation;
+            text = "고지" + profile.elevation;
         }
         else if (profile.blocksLineOfSight)
         {
-            text = "遮";
+            text = "차단";
         }
         else if (profile.danger)
         {
-            text = "危";
+            text = "위험";
         }
 
         if (string.IsNullOrEmpty(text))
@@ -3046,8 +3046,9 @@ public sealed class BattleTestController : MonoBehaviour
             return null;
         }
 
-        TextMesh label = CreateWorldLabel(parent, text, 40, new Vector3(0f, 0.03f, -0.06f),
-                                          new Color(0.98f, 0.92f, 0.70f, 0.92f), 1800);
+        TextMesh label = CreateWorldLabel(parent, text, text.Length > 2 ? 34 : 38, new Vector3(0f, 0.03f, -0.06f),
+                                          new Color(0.98f, 0.92f, 0.70f, 0.88f), 1800);
+        label.characterSize = text.Length > 2 ? 0.014f : 0.0155f;
         label.gameObject.SetActive(false);
         return label;
     }
@@ -3092,15 +3093,14 @@ public sealed class BattleTestController : MonoBehaviour
             CharacterVisualController visual = unitObject.AddComponent<CharacterVisualController>();
             visual.visual = definition.visual;
             visual.sortingLayerName = "Default";
-            visual.baseSortingOrder = 3000;
+            // Authored diorama floor rows occupy (rows - (x+y)) * 40 + [0..28]; base 1000 puts the
+            // unit on slot 30 of its own row so nearer terrain blocks correctly occlude it.
+            visual.baseSortingOrder = authoredMapBound ? 1000 : 3000;
             visual.ApplyVisual();
 
             CircleCollider2D collider = unitObject.AddComponent<CircleCollider2D>();
             collider.radius = 0.26f;
             collider.offset = new Vector2(0f, 0.28f);
-
-            ShadowBlob shadow = unitObject.AddComponent<ShadowBlob>();
-            shadow.Configure(new Vector2(0.92f, 0.26f), new Color(0.025f, 0.022f, 0.018f, 0.32f), 2940);
 
             BattleTestUnitView view = unitObject.AddComponent<BattleTestUnitView>();
             BattleTestUnit unit = new BattleTestUnit(definition, view);
@@ -3285,7 +3285,7 @@ public sealed class BattleTestController : MonoBehaviour
                 return;
             }
 
-            AddLog("[Scout] Select an ally, then click a southern deployment tile.");
+            AddLog("[정찰] 아군을 선택한 뒤 남쪽 배치 칸을 클릭하세요.");
             return;
         }
 
@@ -3368,13 +3368,13 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (!IsDeploymentCell(destination.cell))
         {
-            AddLog("[Scout] 남쪽 배치 구역에만 재배치할 수 있습니다.");
+            AddLog("[정찰] 남쪽 배치 구역에만 재배치할 수 있습니다.");
             return false;
         }
 
         if (!destination.walkable || UnitAt(destination.cell) != null)
         {
-            AddLog("[Scout] 해당 배치칸은 사용할 수 없습니다.");
+            AddLog("[정찰] 해당 배치칸은 사용할 수 없습니다.");
             return false;
         }
 
@@ -3384,7 +3384,7 @@ public sealed class BattleTestController : MonoBehaviour
             activeUnit.view.transform.position = UnitWorldPosition(destination.cell);
         }
 
-        AddLog($"[Scout] {activeUnit.definition.displayName} deployment -> ({destination.cell.x},{destination.cell.y}).");
+        AddLog($"[정찰] {activeUnit.definition.displayName} 재배치 -> ({destination.cell.x},{destination.cell.y})");
         RefreshHighlights();
         RefreshUnits();
         return true;
@@ -5455,29 +5455,6 @@ public sealed class BattleTestController : MonoBehaviour
         }
     }
 
-    private string InteractableGlyph(BattleTestInteractableKind kind)
-    {
-        switch (kind)
-        {
-        case BattleTestInteractableKind.Smoke:
-            return "煙";
-        case BattleTestInteractableKind.Fire:
-            return "火";
-        case BattleTestInteractableKind.Cover:
-            return "盾";
-        case BattleTestInteractableKind.Objective:
-            return "守";
-        case BattleTestInteractableKind.CollapseBridge:
-            return "斷";
-        case BattleTestInteractableKind.BambooFall:
-            return "竹";
-        case BattleTestInteractableKind.Rockfall:
-            return "石";
-        default:
-            return "物";
-        }
-    }
-
     private void RefreshTerrainTint(BattleTestTile tile)
     {
         if (tile == null)
@@ -5701,7 +5678,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (scoutMode && mode != BattleCommandMode.Move)
         {
-            AddLog("[Scout] 정찰 중에는 공격/무공 대신 지형 확인과 배치 변경만 가능합니다.");
+            AddLog("[정찰] 정찰 중에는 공격/무공 대신 지형 확인과 배치 변경만 가능합니다.");
             return;
         }
 
@@ -6031,34 +6008,24 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         BattleTestTile activeTile = TileAt(activeUnit.cell);
-        if (activeTile != null)
-        {
-            activeTile.SetHighlight(new Color(1f, 0.72f, 0.16f, 0.44f));
-        }
+        bool movementPreview = IsMovementPreviewActive();
 
-        DrawMapOverlays();
+        DrawMapOverlays(movementPreview);
 
         if (scoutMode)
         {
             HighlightDeploymentCells();
+            if (activeTile != null)
+            {
+                activeTile.SetHighlight(new Color(1f, 0.80f, 0.22f, 0.66f));
+            }
+
             return;
         }
 
-        if (commandMode == BattleCommandMode.Move && !activeUnit.moved)
+        if (movementPreview)
         {
-            foreach (Vector2Int cell in GetReachableCells(activeUnit).Keys)
-            {
-                if (cell == activeUnit.cell)
-                {
-                    continue;
-                }
-
-                BattleTestTile tile = TileAt(cell);
-                if (tile != null)
-                {
-                    tile.SetHighlight(new Color(0.24f, 0.56f, 0.92f, 0.28f));
-                }
-            }
+            HighlightMoveReachability(activeUnit);
         }
 
         if (commandMode == BattleCommandMode.Attack && !activeUnit.acted)
@@ -6077,7 +6044,7 @@ public sealed class BattleTestController : MonoBehaviour
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
                     {
-                        tile.SetHighlight(new Color(0.95f, 0.18f, 0.14f, 0.36f));
+                        tile.SetHighlight(new Color(1f, 0.27f, 0.22f, 0.62f));
                     }
                 }
             }
@@ -6101,8 +6068,8 @@ public sealed class BattleTestController : MonoBehaviour
                     if (tile != null)
                     {
                         Color color = activeUnit.definition.specialEffect == BattleSpecialEffect.Heal
-                                          ? new Color(0.18f, 0.88f, 0.58f, 0.32f)
-                                          : new Color(0.62f, 0.30f, 0.90f, 0.34f);
+                                          ? new Color(0.28f, 0.92f, 0.55f, 0.55f)
+                                          : new Color(0.74f, 0.40f, 1f, 0.58f);
                         tile.SetHighlight(color);
                     }
                 }
@@ -6121,8 +6088,63 @@ public sealed class BattleTestController : MonoBehaviour
                 BattleTestTile tile = TileAt(interactable.cell);
                 if (tile != null)
                 {
-                    tile.SetHighlight(new Color(1f, 0.62f, 0.16f, 0.36f));
+                    tile.SetHighlight(new Color(1f, 0.70f, 0.18f, 0.60f));
                 }
+            }
+        }
+
+        if (activeTile != null)
+        {
+            activeTile.SetHighlight(new Color(1f, 0.82f, 0.25f, 0.68f));
+        }
+    }
+
+    private bool IsMovementPreviewActive()
+    {
+        return activeUnit != null && !activeUnit.defeated && commandMode == BattleCommandMode.Move && !activeUnit.moved;
+    }
+
+    private void HighlightMoveReachability(BattleTestUnit unit)
+    {
+        Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
+        HashSet<Vector2Int> boundary = new HashSet<Vector2Int>();
+
+        foreach (KeyValuePair<Vector2Int, int> pair in reachable)
+        {
+            Vector2Int cell = pair.Key;
+            if (cell != unit.cell)
+            {
+                BattleTestTile tile = TileAt(cell);
+                if (tile != null)
+                {
+                    float alpha = Mathf.Lerp(0.60f, 0.44f, pair.Value / (float)Mathf.Max(1, EffectiveMoveRange(unit)));
+                    tile.SetHighlight(new Color(0.30f, 0.60f, 1f, alpha));
+                }
+            }
+
+            foreach (Vector2Int neighbor in Neighbors(cell))
+            {
+                if (!IsInside(neighbor) || reachable.ContainsKey(neighbor))
+                {
+                    continue;
+                }
+
+                BattleTestTile edgeTile = TileAt(neighbor);
+                if (edgeTile == null)
+                {
+                    continue;
+                }
+
+                boundary.Add(neighbor);
+            }
+        }
+
+        foreach (Vector2Int cell in boundary)
+        {
+            BattleTestTile tile = TileAt(cell);
+            if (tile != null)
+            {
+                tile.SetHighlight(new Color(1f, 0.30f, 0.24f, 0.42f));
             }
         }
     }
@@ -6138,12 +6160,12 @@ public sealed class BattleTestController : MonoBehaviour
         {
             if (tile != null && IsDeploymentCell(tile.cell) && tile.walkable && UnitAt(tile.cell) == null)
             {
-                tile.SetHighlight(new Color(0.16f, 0.66f, 0.94f, 0.30f));
+                tile.SetHighlight(new Color(0.30f, 0.60f, 1f, 0.50f));
             }
         }
     }
 
-    private void DrawMapOverlays()
+    private void DrawMapOverlays(bool movementPreview)
     {
         if (tiles == null)
         {
@@ -6157,35 +6179,35 @@ public sealed class BattleTestController : MonoBehaviour
                 continue;
             }
 
-            if (showThreatOverlay && IsInEnemyThreat(tile.cell))
+            if (!movementPreview && showThreatOverlay && IsInEnemyThreat(tile.cell))
             {
-                tile.SetHighlight(new Color(0.70f, 0.08f, 0.08f, 0.20f));
+                tile.SetHighlight(new Color(0.95f, 0.18f, 0.14f, 0.30f));
             }
 
-            if (showElevationOverlay && tile.elevation > 0)
+            if (!movementPreview && showElevationOverlay && tile.elevation > 0)
             {
-                float alpha = Mathf.Clamp01(0.12f + tile.elevation * 0.065f);
+                float alpha = Mathf.Clamp01(0.16f + tile.elevation * 0.07f);
                 tile.SetHighlight(new Color(1f, 0.80f, 0.20f, alpha));
             }
 
-            if (showCoverOverlay && tile.coverBonus > 0)
+            if (!movementPreview && showCoverOverlay && tile.coverBonus > 0)
             {
-                tile.SetHighlight(new Color(0.24f, 0.62f, 0.46f, 0.24f));
+                tile.SetHighlight(new Color(0.28f, 0.78f, 0.45f, 0.34f));
             }
 
-            if (showSightOverlay && tile.blocksLineOfSight)
+            if (!movementPreview && showSightOverlay && tile.blocksLineOfSight)
             {
-                tile.SetHighlight(new Color(0.42f, 0.36f, 0.28f, 0.28f));
+                tile.SetHighlight(new Color(0.55f, 0.45f, 0.32f, 0.36f));
             }
 
             if (showObjectiveOverlay && tile.objective)
             {
-                tile.SetHighlight(new Color(1f, 0.80f, 0.14f, 0.34f));
+                tile.SetHighlight(new Color(1f, 0.80f, 0.16f, 0.45f));
             }
 
-            if (tile.danger && !showObjectiveOverlay)
+            if (!movementPreview && tile.danger && !showObjectiveOverlay)
             {
-                tile.SetHighlight(new Color(0.86f, 0.16f, 0.08f, 0.20f));
+                tile.SetHighlight(new Color(0.92f, 0.18f, 0.10f, 0.26f));
             }
         }
     }
@@ -6228,6 +6250,7 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void RefreshTileNameVisibility()
     {
+        bool movementPreview = IsMovementPreviewActive();
         if (tiles != null)
         {
             foreach (BattleTestTile tile in tiles)
@@ -6237,10 +6260,12 @@ public sealed class BattleTestController : MonoBehaviour
                     continue;
                 }
 
-                bool visible = showTerrainNames || (showObjectiveOverlay && tile.objective) ||
-                               (showElevationOverlay && tile.elevation >= 2) ||
-                               (showSightOverlay && tile.blocksLineOfSight) ||
-                               (showCoverOverlay && tile.coverBonus > 0);
+                bool visible = showTerrainNames ||
+                               (!movementPreview &&
+                                ((showObjectiveOverlay && tile.objective) ||
+                                 (showElevationOverlay && tile.elevation >= 2) ||
+                                 (showSightOverlay && tile.blocksLineOfSight) ||
+                                 (showCoverOverlay && tile.coverBonus > 0)));
                 tile.nameLabel.gameObject.SetActive(visible);
             }
         }
@@ -8277,17 +8302,17 @@ public sealed class BattleTestTile : MonoBehaviour
 public sealed class BattleTestUnitView : MonoBehaviour
 {
     private TextMesh label;
+    private MeshRenderer labelRenderer;
     private Transform turnMarkerRoot;
-    private TextMesh turnMarkerText;
-    private SpriteRenderer turnMarkerPlate;
     private SpriteRenderer turnMarkerArrow;
-    private SpriteRenderer turnMarkerHalo;
     private SpriteRenderer turnGroundRing;
+    private SpriteRenderer hpBarBack;
+    private SpriteRenderer hpBarFill;
     private CharacterVisualController visualController;
     private Vector3 turnMarkerBasePosition;
-    private readonly Vector3 groundRingBaseScale = new Vector3(1.56f, 0.46f, 1f);
-    private static Sprite turnMarkerPlateSprite;
-    private static Sprite turnMarkerArrowSprite;
+    private static Sprite turnMarkerChevronSprite;
+    private static Sprite turnGroundRingSprite;
+    private static Sprite hpBarSprite;
 
     public BattleTestUnit Unit { get; private set; }
 
@@ -8295,34 +8320,27 @@ public sealed class BattleTestUnitView : MonoBehaviour
     {
         Unit = unit;
         visualController = controller;
-        label = CreateLabel();
+        CreateLabel();
         CreateTurnMarker();
         Refresh(false);
     }
 
     private void LateUpdate()
     {
+        UpdateAttachmentSorting();
         if (turnMarkerRoot == null || !turnMarkerRoot.gameObject.activeSelf)
         {
             return;
         }
 
-        float wave = Mathf.Sin(Time.time * 5.4f);
-        turnMarkerRoot.localPosition = turnMarkerBasePosition + new Vector3(0f, wave * 0.035f, 0f);
-        turnMarkerRoot.localScale = Vector3.one * (1f + wave * 0.035f);
-
-        if (turnMarkerHalo != null)
-        {
-            Color color = turnMarkerHalo.color;
-            color.a = 0.24f + Mathf.Abs(wave) * 0.18f;
-            turnMarkerHalo.color = color;
-        }
+        // Fire Emblem style cursor bob: smooth vertical bounce, no scale pumping.
+        float wave = Mathf.Sin(Time.time * 4.6f);
+        turnMarkerRoot.localPosition = turnMarkerBasePosition + new Vector3(0f, Mathf.Abs(wave) * 0.085f, 0f);
 
         if (turnGroundRing != null && turnGroundRing.gameObject.activeSelf)
         {
-            turnGroundRing.transform.localScale = groundRingBaseScale * (1f + Mathf.Abs(wave) * 0.055f);
             Color color = turnGroundRing.color;
-            color.a = 0.18f + Mathf.Abs(wave) * 0.16f;
+            color.a = 0.42f + Mathf.Abs(wave) * 0.22f;
             turnGroundRing.color = color;
         }
     }
@@ -8337,13 +8355,42 @@ public sealed class BattleTestUnitView : MonoBehaviour
 
         if (label != null && Unit != null)
         {
-            label.text = $"{Unit.definition.displayName}\n체력 {Unit.hp}/{Unit.definition.maxHp}";
+            label.text = Unit.definition.displayName;
             label.color = Unit.definition.faction == Faction.Ally
-                              ? new Color(0.80f, 0.90f, 1f, Unit.defeated ? 0.45f : 1f)
-                              : new Color(1f, 0.72f, 0.68f, Unit.defeated ? 0.45f : 1f);
+                              ? new Color(0.84f, 0.93f, 1f, Unit.defeated ? 0.40f : 0.96f)
+                              : new Color(1f, 0.74f, 0.70f, Unit.defeated ? 0.40f : 0.96f);
         }
 
+        RefreshHpBar();
         RefreshTurnMarker(selected);
+    }
+
+    private void RefreshHpBar()
+    {
+        if (hpBarFill == null || Unit == null)
+        {
+            return;
+        }
+
+        bool visible = !Unit.defeated;
+        hpBarBack.gameObject.SetActive(visible);
+        hpBarFill.gameObject.SetActive(visible);
+        if (!visible)
+        {
+            return;
+        }
+
+        float ratio = Mathf.Clamp01(Unit.hp / (float)Mathf.Max(1, Unit.definition.maxHp));
+        Transform fill = hpBarFill.transform;
+        Vector3 scale = fill.localScale;
+        scale.x = Mathf.Max(0.001f, ratio);
+        fill.localScale = scale;
+        fill.localPosition = new Vector3(-0.31f * (1f - ratio), fill.localPosition.y, fill.localPosition.z);
+        hpBarFill.color = ratio > 0.5f
+                              ? new Color(0.30f, 0.88f, 0.36f, 0.96f)
+                              : ratio > 0.25f
+                                  ? new Color(0.98f, 0.80f, 0.22f, 0.96f)
+                                  : new Color(0.96f, 0.26f, 0.20f, 0.96f);
     }
 
     public void FaceToward(Vector3 worldPosition)
@@ -8465,58 +8512,24 @@ public sealed class BattleTestUnitView : MonoBehaviour
         root.transform.SetParent(transform, false);
         turnMarkerRoot = root.transform;
 
-        turnMarkerHalo = CreateMarkerSprite("Turn Halo", GetTurnMarkerPlateSprite(), new Vector3(0f, -0.012f, 0.02f),
-                                            new Vector3(1.92f, 0.68f, 1f),
-                                            new Color(1f, 0.74f, 0.16f, 0.32f), 6098);
-        turnMarkerPlate =
-            CreateMarkerSprite("Turn Plate", GetTurnMarkerPlateSprite(), Vector3.zero, new Vector3(1.56f, 0.46f, 1f),
-                               new Color(0.95f, 0.72f, 0.16f, 0.96f), 6100);
-        turnMarkerArrow = CreateMarkerSprite("Turn Arrow", GetTurnMarkerArrowSprite(), new Vector3(0f, -0.20f, 0f),
-                                             new Vector3(0.48f, 0.34f, 1f),
-                                             new Color(0.95f, 0.72f, 0.16f, 0.96f), 6101);
+        GameObject arrowObject = new GameObject("Turn Chevron");
+        arrowObject.transform.SetParent(turnMarkerRoot, false);
+        arrowObject.transform.localScale = new Vector3(0.56f, 0.56f, 1f);
+        turnMarkerArrow = arrowObject.AddComponent<SpriteRenderer>();
+        turnMarkerArrow.sprite = GetTurnMarkerChevronSprite();
+        turnMarkerArrow.color = new Color(1f, 0.78f, 0.20f, 0.98f);
+        turnMarkerArrow.sortingLayerName = "Default";
 
         GameObject ringObject = new GameObject("Current Turn Ground Ring");
         ringObject.transform.SetParent(transform, false);
-        ringObject.transform.localPosition = new Vector3(0f, -0.30f, 0.03f);
-        ringObject.transform.localScale = groundRingBaseScale;
+        ringObject.transform.localPosition = new Vector3(0f, -0.30f, 0.02f);
         turnGroundRing = ringObject.AddComponent<SpriteRenderer>();
-        turnGroundRing.sprite = GetTurnMarkerPlateSprite();
-        turnGroundRing.color = new Color(1f, 0.72f, 0.16f, 0.24f);
+        turnGroundRing.sprite = GetTurnGroundRingSprite();
+        turnGroundRing.color = new Color(1f, 0.78f, 0.20f, 0.55f);
         turnGroundRing.sortingLayerName = "Default";
-        turnGroundRing.sortingOrder = 4098;
         turnGroundRing.gameObject.SetActive(false);
 
-        GameObject textObject = new GameObject("Turn Marker Text");
-        textObject.transform.SetParent(turnMarkerRoot, false);
-        textObject.transform.localPosition = new Vector3(0f, -0.005f, -0.02f);
-        turnMarkerText = textObject.AddComponent<TextMesh>();
-        turnMarkerText.anchor = TextAnchor.MiddleCenter;
-        turnMarkerText.alignment = TextAlignment.Center;
-        turnMarkerText.fontSize = 44;
-        turnMarkerText.characterSize = 0.014f;
-        turnMarkerText.color = new Color(0.11f, 0.075f, 0.03f, 1f);
-        ApplyWorldTextFont(turnMarkerText);
-
-        MeshRenderer textRenderer = textObject.GetComponent<MeshRenderer>();
-        textRenderer.sortingLayerName = "Default";
-        textRenderer.sortingOrder = 6102;
         turnMarkerRoot.gameObject.SetActive(false);
-    }
-
-    private SpriteRenderer CreateMarkerSprite(string name, Sprite sprite, Vector3 localPosition, Vector3 localScale,
-                                              Color color, int sortingOrder)
-    {
-        GameObject markerObject = new GameObject(name);
-        markerObject.transform.SetParent(turnMarkerRoot, false);
-        markerObject.transform.localPosition = localPosition;
-        markerObject.transform.localScale = localScale;
-
-        SpriteRenderer renderer = markerObject.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite;
-        renderer.color = color;
-        renderer.sortingLayerName = "Default";
-        renderer.sortingOrder = sortingOrder;
-        return renderer;
     }
 
     private void RefreshTurnMarker(bool selected)
@@ -8539,46 +8552,89 @@ public sealed class BattleTestUnitView : MonoBehaviour
         }
 
         CharacterVisualData visual = Unit.definition.visual;
-        float markerY = visual == null ? 1.74f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.58f;
+        float markerY = visual == null ? 1.52f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.34f;
         turnMarkerBasePosition = new Vector3(0f, markerY, -0.09f);
         turnMarkerRoot.localPosition = turnMarkerBasePosition;
 
         bool enemy = Unit.definition.faction == Faction.Enemy;
-        Color plate = enemy ? new Color(0.92f, 0.20f, 0.16f, 0.98f) : new Color(0.98f, 0.68f, 0.12f, 0.98f);
-        Color halo = plate;
-        halo.a = enemy ? 0.30f : 0.34f;
-
-        turnMarkerPlate.color = plate;
-        turnMarkerArrow.color = plate;
-        turnMarkerHalo.color = halo;
+        Color accent = enemy ? new Color(0.96f, 0.28f, 0.22f, 0.98f) : new Color(1f, 0.78f, 0.20f, 0.98f);
+        turnMarkerArrow.color = accent;
         if (turnGroundRing != null)
         {
-            Color ring = plate;
-            ring.a = enemy ? 0.24f : 0.28f;
+            Color ring = accent;
+            ring.a = 0.55f;
             turnGroundRing.color = ring;
         }
-
-        turnMarkerText.text = enemy ? "적 턴" : "현재 턴";
-        turnMarkerText.color = enemy ? new Color(1f, 0.95f, 0.86f, 1f) : new Color(0.12f, 0.075f, 0.025f, 1f);
     }
 
-    private TextMesh CreateLabel()
+    private void UpdateAttachmentSorting()
+    {
+        if (visualController == null)
+        {
+            return;
+        }
+
+        int body = visualController.CurrentBodySortingOrder;
+        if (turnGroundRing != null)
+        {
+            turnGroundRing.sortingOrder = body - 3;
+        }
+
+        if (turnMarkerArrow != null)
+        {
+            turnMarkerArrow.sortingOrder = body + 9;
+        }
+
+        if (hpBarBack != null)
+        {
+            hpBarBack.sortingOrder = body + 7;
+        }
+
+        if (hpBarFill != null)
+        {
+            hpBarFill.sortingOrder = body + 8;
+        }
+
+        if (labelRenderer != null)
+        {
+            labelRenderer.sortingOrder = body + 9;
+        }
+    }
+
+    private void CreateLabel()
     {
         GameObject labelObject = new GameObject("Unit Label");
         labelObject.transform.SetParent(transform, false);
-        labelObject.transform.localPosition = new Vector3(0f, -0.42f, -0.04f);
+        labelObject.transform.localPosition = new Vector3(0f, -0.485f, -0.04f);
 
-        TextMesh mesh = labelObject.AddComponent<TextMesh>();
-        mesh.anchor = TextAnchor.MiddleCenter;
-        mesh.alignment = TextAlignment.Center;
-        mesh.fontSize = 42;
-        mesh.characterSize = 0.016f;
-        ApplyWorldTextFont(mesh);
+        label = labelObject.AddComponent<TextMesh>();
+        label.anchor = TextAnchor.MiddleCenter;
+        label.alignment = TextAlignment.Center;
+        label.fontSize = 34;
+        label.characterSize = 0.0135f;
+        ApplyWorldTextFont(label);
 
-        MeshRenderer renderer = labelObject.GetComponent<MeshRenderer>();
+        labelRenderer = labelObject.GetComponent<MeshRenderer>();
+        labelRenderer.sortingLayerName = "Default";
+
+        hpBarBack = CreateBarSprite("HP Bar Back", new Vector3(0f, -0.385f, -0.03f),
+                                    new Color(0.05f, 0.045f, 0.04f, 0.80f));
+        hpBarBack.transform.localScale = new Vector3(1.06f, 1.45f, 1f);
+        hpBarFill = CreateBarSprite("HP Bar Fill", new Vector3(0f, -0.385f, -0.04f),
+                                    new Color(0.30f, 0.88f, 0.36f, 0.96f));
+    }
+
+    private SpriteRenderer CreateBarSprite(string name, Vector3 localPosition, Color color)
+    {
+        GameObject barObject = new GameObject(name);
+        barObject.transform.SetParent(transform, false);
+        barObject.transform.localPosition = localPosition;
+
+        SpriteRenderer renderer = barObject.AddComponent<SpriteRenderer>();
+        renderer.sprite = GetHpBarSprite();
+        renderer.color = color;
         renderer.sortingLayerName = "Default";
-        renderer.sortingOrder = 5000;
-        return mesh;
+        return renderer;
     }
 
     private static void ApplyWorldTextFont(TextMesh mesh)
@@ -8597,71 +8653,104 @@ public sealed class BattleTestUnitView : MonoBehaviour
         }
     }
 
-    private static Sprite GetTurnMarkerPlateSprite()
+    private static Sprite GetTurnMarkerChevronSprite()
     {
-        if (turnMarkerPlateSprite != null)
+        if (turnMarkerChevronSprite != null)
         {
-            return turnMarkerPlateSprite;
+            return turnMarkerChevronSprite;
         }
 
-        const int textureWidth = 128;
-        const int textureHeight = 40;
-        Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
-        texture.name = "BattleTestTurnMarkerPlate";
+        // Double chevron pointing down at the active unit, Fire Emblem cursor style.
+        const int size = 64;
+        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestTurnChevron";
         texture.wrapMode = TextureWrapMode.Clamp;
         texture.filterMode = FilterMode.Bilinear;
 
-        Vector2 center = new Vector2(textureWidth * 0.5f, textureHeight * 0.5f);
-        for (int y = 0; y < textureHeight; y++)
+        for (int y = 0; y < size; y++)
         {
-            for (int x = 0; x < textureWidth; x++)
+            float fy = (y + 0.5f) / size;
+            for (int x = 0; x < size; x++)
             {
-                float nx = Mathf.Abs((x + 0.5f - center.x) / center.x);
-                float ny = Mathf.Abs((y + 0.5f - center.y) / center.y);
-                float rounded = Mathf.Pow(nx, 4.0f) + Mathf.Pow(ny, 4.0f);
-                float alpha = Mathf.Clamp01((1.08f - rounded) * 8f);
-                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                float nx = Mathf.Abs((((x + 0.5f) / size) * 2f) - 1f);
+                // V stroke: distance from the descending diagonal band.
+                float tip1 = 0.10f + nx * 0.62f;
+                float tip2 = 0.52f + nx * 0.62f;
+                float band = 0.17f;
+                bool inChevron1 = fy > tip1 && fy < tip1 + band && nx < 0.92f;
+                bool inChevron2 = fy > tip2 && fy < tip2 + band && nx < 0.62f;
+                texture.SetPixel(x, y, inChevron1 || inChevron2 ? Color.white : Color.clear);
             }
         }
 
         texture.Apply();
-        turnMarkerPlateSprite = Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight),
-                                              new Vector2(0.5f, 0.5f), 96f);
-        turnMarkerPlateSprite.name = "BattleTestTurnMarkerPlate";
-        return turnMarkerPlateSprite;
+        turnMarkerChevronSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 1f), 96f);
+        turnMarkerChevronSprite.name = "BattleTestTurnChevron";
+        return turnMarkerChevronSprite;
     }
 
-    private static Sprite GetTurnMarkerArrowSprite()
+    private static Sprite GetTurnGroundRingSprite()
     {
-        if (turnMarkerArrowSprite != null)
+        if (turnGroundRingSprite != null)
         {
-            return turnMarkerArrowSprite;
+            return turnGroundRingSprite;
         }
 
-        const int textureWidth = 48;
-        const int textureHeight = 32;
+        // Cell-shaped diamond outline so the active unit's tile reads like a cursor.
+        const int textureWidth = 232;
+        const int textureHeight = 124;
         Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
-        texture.name = "BattleTestTurnMarkerArrow";
+        texture.name = "BattleTestTurnGroundRing";
         texture.wrapMode = TextureWrapMode.Clamp;
         texture.filterMode = FilterMode.Bilinear;
 
         for (int y = 0; y < textureHeight; y++)
         {
-            float fy = (y + 0.5f) / textureHeight;
             for (int x = 0; x < textureWidth; x++)
             {
-                float nx = Mathf.Abs((((x + 0.5f) / textureWidth) * 2f) - 1f);
-                float halfWidth = 1f - fy;
-                float alpha = nx <= halfWidth ? Mathf.Clamp01((halfWidth - nx) * 12f) : 0f;
-                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                float nx = Mathf.Abs(((x + 0.5f) / textureWidth * 2f) - 1f) / 0.96f;
+                float ny = Mathf.Abs(((y + 0.5f) / textureHeight * 2f) - 1f) / 0.96f;
+                float d = nx + ny;
+                float ring = Mathf.Clamp01((1f - Mathf.Abs(d - 0.92f) * 11f));
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, ring));
             }
         }
 
         texture.Apply();
-        turnMarkerArrowSprite = Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight),
-                                              new Vector2(0.5f, 1f), 96f);
-        turnMarkerArrowSprite.name = "BattleTestTurnMarkerArrow";
-        return turnMarkerArrowSprite;
+        turnGroundRingSprite = Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight),
+                                             new Vector2(0.5f, 0.5f), textureWidth / 1.16f);
+        turnGroundRingSprite.name = "BattleTestTurnGroundRing";
+        return turnGroundRingSprite;
+    }
+
+    private static Sprite GetHpBarSprite()
+    {
+        if (hpBarSprite != null)
+        {
+            return hpBarSprite;
+        }
+
+        const int textureWidth = 62;
+        const int textureHeight = 7;
+        Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+        texture.name = "BattleTestHpBar";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Point;
+
+        for (int y = 0; y < textureHeight; y++)
+        {
+            for (int x = 0; x < textureWidth; x++)
+            {
+                bool corner = (x == 0 || x == textureWidth - 1) && (y == 0 || y == textureHeight - 1);
+                texture.SetPixel(x, y, corner ? Color.clear : Color.white);
+            }
+        }
+
+        texture.Apply();
+        hpBarSprite = Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight),
+                                    new Vector2(0.5f, 0.5f), 100f);
+        hpBarSprite.name = "BattleTestHpBar";
+        return hpBarSprite;
     }
 }
 

@@ -37,6 +37,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     public string sortingLayerName = "Characters";
     public int baseSortingOrder = 1000;
 
+    public int CurrentBodySortingOrder => bodyRenderer == null ? baseSortingOrder : bodyRenderer.sortingOrder;
+
     private Transform bodyTransform;
     private Vector3 baseBodyPosition;
     private Vector3 baseBodyScale = Vector3.one;
@@ -588,7 +590,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
     private void UpdateSorting()
     {
-        int order = baseSortingOrder - Mathf.RoundToInt(transform.position.y * 100f) +
+        // Interleave with the painted diorama floor: floor rows use (rows - (x+y)) * 40 with
+        // slots 0..26 (26 = highlights), props 28. Units sit on slot 30 of their own row band.
+        // World y = (x+y) * tileHeight/2, so one row step = 0.31 world units = 40 orders.
+        int order = baseSortingOrder + 350 - Mathf.RoundToInt(transform.position.y * (40f / 0.31f)) +
                     (visual != null ? visual.sortingOffset : 0);
         shadowRenderer.sortingLayerName = sortingLayerName;
         bodyRenderer.sortingLayerName = sortingLayerName;

@@ -9,19 +9,27 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleTilemapBattlefield : MonoBehaviour
 {
-    private const float HighlightAlphaScale = 0.22f;
     private const bool UsePaintedGroundBackdrop = true;
+    // Floor sprites use (rows - (x+y)) * RowStride + slot. Floor slots stay below 26,
+    // props use 28, units 30. Highlights sit on 26: above the floor of
+    // their own row, clipped by nearer rows, under standing units and props.
+    private const int RowStride = 40;
+    private const int HighlightSlot = 26;
 
     private readonly Dictionary<string, TerrainTileData> terrainTiles = new Dictionary<string, TerrainTileData>();
     private readonly Dictionary<TerrainType, Tilemap> terrainLayerLookup = new Dictionary<TerrainType, Tilemap>();
+    private readonly Dictionary<Vector2Int, SpriteRenderer> highlightCells =
+        new Dictionary<Vector2Int, SpriteRenderer>();
 
     private Grid grid;
     private Tile overlayTile;
-    private Tile highlightTile;
     private Sprite fallbackDiamond;
     private Sprite softDiamond;
     private Sprite detailSprite;
     private Sprite dotSprite;
+    private Sprite highlightCellSprite;
+    private Transform highlightRoot;
+    private int highlightRowCount = 33;
     private BattleMapTilemapBinder binder;
 
     public BattleMapTilemapBinder Binder => binder;
@@ -67,7 +75,7 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         HighlightDangerTilemap = binder.HighlightDangerTilemap;
 
         overlayTile = CreateUtilityTile("Runtime Tactical Overlay", softDiamond, Color.white);
-        highlightTile = CreateUtilityTile("Runtime Highlight Tile", softDiamond, Color.white);
+        highlightRowCount = width + height - 1;
 
         TacticalOverlay = binder.TacticalOverlay;
         TacticalOverlay.Configure(Vector2Int.zero, new Vector2Int(width, height));
@@ -107,7 +115,7 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         HighlightDangerTilemap = binder.HighlightDangerTilemap;
         TacticalOverlay = binder.TacticalOverlay;
         overlayTile = CreateUtilityTile("Authored Tactical Overlay", softDiamond, Color.white);
-        highlightTile = CreateUtilityTile("Authored Highlight Tile", softDiamond, Color.white);
+        highlightRowCount = Mathf.Max(1, binder.Size.x + binder.Size.y - 1);
 
         Transform colliderRoot = transform.Find("AuthoredTacticalGridOverlay_Colliders");
         if (colliderRoot == null)
@@ -179,24 +187,31 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
     public void SetHighlight(Vector2Int cell, Color color)
     {
-        Vector3Int tileCell = ToTilemapCell(cell);
         if (color.a <= 0.01f)
         {
-            ClearHighlightCell(tileCell);
+            if (highlightCells.TryGetValue(cell, out SpriteRenderer existing) && existing != null)
+            {
+                existing.gameObject.SetActive(false);
+            }
+
             return;
         }
 
-        Color softened = color;
-        softened.a *= HighlightAlphaScale;
-        Tilemap target = HighlightTilemapFor(color);
-        ClearHighlightCell(tileCell);
-        target.SetTile(tileCell, highlightTile);
-        target.SetTileFlags(tileCell, TileFlags.None);
-        target.SetColor(tileCell, softened);
+        SpriteRenderer renderer = EnsureHighlightCell(cell);
+        renderer.gameObject.SetActive(true);
+        renderer.color = color;
     }
 
     public void ClearHighlights()
     {
+        foreach (KeyValuePair<Vector2Int, SpriteRenderer> entry in highlightCells)
+        {
+            if (entry.Value != null)
+            {
+                entry.Value.gameObject.SetActive(false);
+            }
+        }
+
         if (HighlightMoveTilemap != null)
         {
             HighlightMoveTilemap.ClearAllTiles();
@@ -218,48 +233,35 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         }
     }
 
-    private void ClearHighlightCell(Vector3Int tileCell)
+    private SpriteRenderer EnsureHighlightCell(Vector2Int cell)
     {
-        if (HighlightMoveTilemap != null)
+        if (highlightCells.TryGetValue(cell, out SpriteRenderer renderer) && renderer != null)
         {
-            HighlightMoveTilemap.SetTile(tileCell, null);
+            return renderer;
         }
 
-        if (HighlightAttackTilemap != null)
+        if (highlightRoot == null)
         {
-            HighlightAttackTilemap.SetTile(tileCell, null);
+            GameObject rootObject = new GameObject("Highlight_Cells");
+            rootObject.transform.SetParent(transform, false);
+            highlightRoot = rootObject.transform;
         }
 
-        if (HighlightDangerTilemap != null)
+        if (highlightCellSprite == null)
         {
-            HighlightDangerTilemap.SetTile(tileCell, null);
+            highlightCellSprite = CreateHighlightDiamondSprite();
         }
 
-        if (binder != null && binder.HighlightPathArrowTilemap != null)
-        {
-            binder.HighlightPathArrowTilemap.SetTile(tileCell, null);
-        }
-    }
+        GameObject cellObject = new GameObject($"Highlight_{cell.x}_{cell.y}");
+        cellObject.transform.SetParent(highlightRoot, false);
+        cellObject.transform.position = CellToWorld(cell) + new Vector3(0f, 0f, -0.01f);
 
-    private Tilemap HighlightTilemapFor(Color color)
-    {
-        BattleMapHighlightLayer layer = ClassifyHighlightLayer(color);
-        return binder == null ? HighlightMoveTilemap : binder.TilemapForHighlight(layer);
-    }
-
-    private static BattleMapHighlightLayer ClassifyHighlightLayer(Color color)
-    {
-        if (color.r > 0.64f && color.g < 0.34f)
-        {
-            return color.a <= 0.35f ? BattleMapHighlightLayer.Danger : BattleMapHighlightLayer.Attack;
-        }
-
-        if (color.b > color.r && color.b > color.g)
-        {
-            return BattleMapHighlightLayer.Move;
-        }
-
-        return color.r > 0.70f && color.g > 0.55f ? BattleMapHighlightLayer.Attack : BattleMapHighlightLayer.Move;
+        renderer = cellObject.AddComponent<SpriteRenderer>();
+        renderer.sprite = highlightCellSprite;
+        renderer.sortingLayerName = "Default";
+        renderer.sortingOrder = ((highlightRowCount - (cell.x + cell.y)) * RowStride) + HighlightSlot;
+        highlightCells[cell] = renderer;
+        return renderer;
     }
 
     public void SetTerrainTint(Vector2Int cell, TerrainType terrainType, Color color)
@@ -595,6 +597,44 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         tile.flags = TileFlags.None;
         tile.colliderType = Tile.ColliderType.None;
         return tile;
+    }
+
+    private static Sprite CreateHighlightDiamondSprite()
+    {
+        // Fire Emblem style movement tile: even translucent fill with a crisp brighter
+        // border, sized to one grid cell (1.16 x 0.62 world) with a small inset so
+        // adjacent highlighted cells keep a visible seam.
+        const int textureWidth = 232;
+        const int textureHeight = 124;
+        const float inset = 0.94f;
+        Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+        texture.name = "BattleHighlightCell";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < textureHeight; y++)
+        {
+            for (int x = 0; x < textureWidth; x++)
+            {
+                float nx = Mathf.Abs(((x + 0.5f) / textureWidth * 2f) - 1f) / inset;
+                float ny = Mathf.Abs(((y + 0.5f) / textureHeight * 2f) - 1f) / inset;
+                float d = nx + ny;
+                if (d > 1f)
+                {
+                    texture.SetPixel(x, y, Color.clear);
+                    continue;
+                }
+
+                float edge = Mathf.Clamp01((1f - d) * 26f);
+                float border = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - d) * 9f));
+                float alpha = Mathf.Lerp(0.62f, 1f, border) * edge;
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight), new Vector2(0.5f, 0.5f),
+                             textureWidth / 1.16f);
     }
 
     private Vector3 CellToWorld(Vector2Int cell)

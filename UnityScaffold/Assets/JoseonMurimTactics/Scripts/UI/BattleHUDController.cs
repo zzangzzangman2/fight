@@ -225,18 +225,18 @@ public sealed class BattleHUDController : MonoBehaviour
     {
         if (snapshot.scoutMode)
         {
-            SetCommand(0, "Scout\nMove ally", false, false);
-            SetCommand(1, "Terrain\nInspect", false, false);
-            SetCommand(2, "Enemy\nRanges", false, false);
-            SetCommand(3, "Props\nCheck", false, false);
-            SetCommand(4, "Deploy\nOnly", false, false);
-            SetCommand(5, "End\nScout", snapshot.canWait, true);
-            SetCommand(6, snapshot.showThreatRange ? "Threat\nON" : "Threat\nOFF", true,
+            SetCommand(0, "정찰 중\n아군 재배치", false, false);
+            SetCommand(1, "지형\n조사", false, false);
+            SetCommand(2, "적 사거리\n확인", false, false);
+            SetCommand(3, "지형지물\n확인", false, false);
+            SetCommand(4, "배치 칸\n전용", false, false);
+            SetCommand(5, "정찰 종료\n전투 시작", snapshot.canWait, true);
+            SetCommand(6, snapshot.showThreatRange ? "위협 범위\n표시 중" : "위협 범위\n숨김", true,
                        snapshot.showThreatRange);
-            SetCommand(7, snapshot.showCoverOverlay ? "Cover\nON" : "Cover\nOFF", true,
+            SetCommand(7, snapshot.showCoverOverlay ? "엄폐\n표시 중" : "엄폐\n숨김", true,
                        snapshot.showCoverOverlay);
-            SetCommand(8, snapshot.showLog ? "Log\nOpen" : "Log\nClosed", true, snapshot.showLog);
-            SetCommand(9, "Reset\nBattle", true, false);
+            SetCommand(8, snapshot.showLog ? "로그\n표시" : "로그\n접힘", true, snapshot.showLog);
+            SetCommand(9, "전투\n재시작", true, false);
             return;
         }
 
