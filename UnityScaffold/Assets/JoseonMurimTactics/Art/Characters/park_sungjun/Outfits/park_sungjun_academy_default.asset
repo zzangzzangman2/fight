@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0d1214ef064f6145a6f4d070fce0fe9, type: 3}
+  m_Name: park_sungjun_academy_default
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterOutfitData
+  outfitId: park_sungjun_academy_default
+  displayName: "\uBC15\uC131\uC900 \uAE30\uBCF8 \uC804\uD22C\uBCF5"
+  fullBodySprite: {fileID: 21300000, guid: f0e0929d060fd0d43be2a6ba3d3b463a, type: 3}
+  bustSprite: {fileID: 21300000, guid: f2b33e9330229d84a8355330e66c25df, type: 3}
+  portraitSprite: {fileID: 21300000, guid: f2b33e9330229d84a8355330e66c25df, type: 3}
+  faceIconSprite: {fileID: 21300000, guid: c86955db79e7366449b861f10c23317b, type: 3}
+  idlePoseSprite: {fileID: 21300000, guid: f0e0929d060fd0d43be2a6ba3d3b463a, type: 3}
+  movePoseSprite: {fileID: 21300000, guid: b8b8722bdc5ae2948ada7a93ce3824fb, type: 3}
+  attackPoseSprite: {fileID: 21300000, guid: a9de817fc6a83d3419305e9aa85b3437, type: 3}
+  skillPoseSprite: {fileID: 21300000, guid: d771af9ff8feac549851428fa97abab1, type: 3}
+  hitPoseSprite: {fileID: 21300000, guid: f756648b10155c54ab35be8bf7b912d5, type: 3}
+  defeatedPoseSprite: {fileID: 21300000, guid: a2e19f9bc11824f4391ed898c7441f84, type: 3}
+  actedPoseSprite: {fileID: 21300000, guid: 7a0ed06107069e041913a9dec3bab96d, type: 3}
+  useLayeredSprites: 0
+  baseBodyLayer: {fileID: 0}
+  outfitLayer: {fileID: 0}
+  hairLayer: {fileID: 0}
+  faceLayer: {fileID: 0}
+  weaponLayer: {fileID: 0}
+  accessoryLayer: {fileID: 0}

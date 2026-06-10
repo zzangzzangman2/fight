@@ -33,7 +33,8 @@ public enum CombatElementType
     Ice,
     Lightning,
     WindFlower,
-    DarkPoison
+    DarkPoison,
+    Light = 6
 }
 public enum WeaponType
 {

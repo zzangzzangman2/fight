@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1764430741105549517
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7777578027660560661}
+  - component: {fileID: 4878767573513141169}
+  - component: {fileID: 3782412052205864841}
+  m_Layer: 0
+  m_Name: park_sungjun_unit
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7777578027660560661
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1764430741105549517}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4878767573513141169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1764430741105549517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a899d2a461c944eea7d3b05bb8e05dac, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualController
+  visual: {fileID: 11400000, guid: 81f8b992e3a3c8a488ac523bb2308932, type: 2}
+  outfitOverride: {fileID: 0}
+  bodyRenderer: {fileID: 0}
+  baseLayerRenderer: {fileID: 0}
+  outfitLayerRenderer: {fileID: 0}
+  hairLayerRenderer: {fileID: 0}
+  faceLayerRenderer: {fileID: 0}
+  weaponLayerRenderer: {fileID: 0}
+  accessoryLayerRenderer: {fileID: 0}
+  shadowRenderer: {fileID: 0}
+  leftFootRenderer: {fileID: 0}
+  rightFootRenderer: {fileID: 0}
+  selectionRenderer: {fileID: 0}
+  effectRenderer: {fileID: 0}
+  animator: {fileID: 0}
+  sortingLayerName: Characters
+  baseSortingOrder: 1000
+--- !u!114 &3782412052205864841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1764430741105549517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestUnitView

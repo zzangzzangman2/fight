@@ -24,7 +24,7 @@ MonoBehaviour:
   skillPoseSprite: {fileID: 21300000, guid: 289876635c2a6844e8291e8ad88bd850, type: 3}
   hitPoseSprite: {fileID: 21300000, guid: 13e4544dd8e1d1344a882463d92a46f4, type: 3}
   defeatedPoseSprite: {fileID: 21300000, guid: 650181996cf61cc4084f49fd927a839c, type: 3}
-  actedPoseSprite: {fileID: 21300000, guid: 3fd70a32b2d875c41b3600bfcc028b9d, type: 3}
+  actedPoseSprite: {fileID: 21300000, guid: 91b925efcba488045bfbbeb8796313c4, type: 3}
   useLayeredSprites: 0
   baseBodyLayer: {fileID: 0}
   outfitLayer: {fileID: 0}

@@ -24,14 +24,14 @@ MonoBehaviour:
   skillPoseSprite: {fileID: 21300000, guid: a8cd6f169272336428181433c37ebd8a, type: 3}
   hitPoseSprite: {fileID: 21300000, guid: ae004630e4c749c4f9b505add10dc669, type: 3}
   defeatedPoseSprite: {fileID: 21300000, guid: 20552e1d3b159b040970d2dd582b4bc5, type: 3}
-  actedPoseSprite: {fileID: 21300000, guid: 998dcc4929f5525498f0d0e116f68022, type: 3}
+  actedPoseSprite: {fileID: 21300000, guid: 286db86f78d18ba4c9145ccb5e633a07, type: 3}
   defaultOutfit: {fileID: 11400000, guid: 157c8ab3c66cf0742b10380d9b4406a8, type: 2}
   outfitOptions:
   - {fileID: 11400000, guid: 157c8ab3c66cf0742b10380d9b4406a8, type: 2}
   defaultWeaponType: 2
   weaponAnimationSet: {fileID: 11400000, guid: 5bb1a69a23613ab419d5898bad73f6ad, type: 2}
-  heightInTiles: 1.2
-  spriteOffset: {x: 0, y: 0.14}
+  heightInTiles: 1.1
+  spriteOffset: {x: 0, y: 0.02}
   sortingOffset: 0
   idleAmplitude: 0.035
   idleSpeed: 1

@@ -24,12 +24,16 @@ C:\Users\sjpark\Downloads\joseon-murim-tactics\UnityScaffold
 
 ## 캐릭터 에셋
 
-현재 전투 테스트는 SchoolCombat 캐릭터 시각 에셋만 사용합니다.
+현재 전투 테스트는 6인 주역 전투 캐릭터 시각 에셋을 사용합니다.
 
 ```text
 Assets/JoseonMurimTactics/Art/Characters
- ├─ Sprites/SchoolCombatIndividuals/*.png
- └─ VisualData/SchoolCombat/*_visual.asset
+ ├─ park_sungjun/
+ ├─ baek_ryeon/
+ ├─ do_arin/
+ ├─ jin_seoyul/
+ ├─ shin_seoa/
+ └─ han_biyeon/
 ```
 
 각 유닛은 `CharacterVisualData`를 통해 `CharacterVisualController`에 연결됩니다. 구 full-body preview 전용 씬과 스크립트는 더 이상 사용하지 않습니다.

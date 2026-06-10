@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd07477b8e191754d98c82a61606029e, type: 3}
+  m_Name: park_sungjun_sword_motion_set
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.WeaponAnimationSet
+  weaponType: 0
+  elementType: 6
+  primaryEffectColor: {r: 1, g: 0.82, b: 0.3, a: 1}
+  secondaryEffectColor: {r: 0.96, g: 0.98, b: 1, a: 1}
+  idleClip: {fileID: 7400000, guid: bf05393d3fe67d240b62358b78d734ae, type: 2}
+  selectedIdleClip: {fileID: 7400000, guid: 7685dc0331483364abc97f5a18ad8352, type: 2}
+  walkClip: {fileID: 7400000, guid: 1081d25962563b942a90081628c869d8, type: 2}
+  attackClip: {fileID: 7400000, guid: 8d13c87107e3df24c9aac4a485bf7240, type: 2}
+  attackAltClip: {fileID: 0}
+  skillClip: {fileID: 7400000, guid: 8304ab534d8762c489eda52821e05cc1, type: 2}
+  guardClip: {fileID: 7400000, guid: 6c917b30cf32ff4448a1335027e51ffc, type: 2}
+  evadeClip: {fileID: 0}
+  hitClip: {fileID: 7400000, guid: 0f8f6cd3d890467429cfcf9bfd588672, type: 2}
+  defeatClip: {fileID: 7400000, guid: 8730e93745da7bd42b89f26164f201ce, type: 2}
+  victoryClip: {fileID: 7400000, guid: 910ec2ef1da84ed4f85c56e3e5b3b1f5, type: 2}
+  actedClip: {fileID: 7400000, guid: 2a0a88397d0566e45820e28eec94962e, type: 2}
+  walkSecondsPerTile: 0.2
+  moveSettleTime: 0.08
+  attackDuration: 0.7
+  skillDuration: 1.1
+  attackHitTime: 0.38
+  skillHitTime: 0.56
+  attackVfxTime: 0.28
+  skillVfxTime: 0.42
+  recoveryTime: 0.16
+  attackVfxPrefab: {fileID: 0}
+  skillVfxPrefab: {fileID: 0}
+  projectilePrefab: {fileID: 0}
+  weaponTrailPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 0}
+  guardVfxPrefab: {fileID: 0}
+  footstepVfxPrefab: {fileID: 0}
+  attackMoveForwardDistance: 0.14
+  skillMoveForwardDistance: 0.2
+  cameraShakeStrength: 0.055
+  cameraShakeDuration: 0.1

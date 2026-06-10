@@ -146,7 +146,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62f2a742e6ce4fe3af7c040e2c21817f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestController
   width: 16
   height: 12
@@ -158,11 +158,39 @@ MonoBehaviour:
   useCanvasHud: 1
   mapVariant: 1
   unitDefinitions:
+  - id: park_sungjun
+    displayName: "\uBC15\uC131\uC900"
+    faction: 0
+    visual: {fileID: 11400000, guid: 81f8b992e3a3c8a488ac523bb2308932, type: 2}
+    startCell: {x: 5, y: 8}
+    sectName: "\uBC31\uB450 \uB8E8\uBA58\uC624\uB354"
+    age: 17
+    mbti: ENFJ
+    elementName: "\uBE5B"
+    weaponName: "\uAC80"
+    speechTone: "\uCE68\uCC29\uD558\uACE0 \uB2E4\uC815\uD55C \uC8FC\uC778\uACF5 \uB9D0\uD22C"
+    maxHp: 36
+    maxInner: 5
+    initiative: 15
+    agility: 16
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 7
+    defense: 15
+    damageMin: 6
+    damageMax: 10
+    specialName: "\uBC31\uB450\uAD11\uAC80"
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 5
+    specialAttackBonus: 2
+    specialEffect: 5
   - id: baek_ryeon
     displayName: "\uBC31\uB828"
     faction: 0
     visual: {fileID: 11400000, guid: c77c023609474414284dae0354ceec2d, type: 2}
-    startCell: {x: 5, y: 8}
+    startCell: {x: 7, y: 8}
     sectName: "\uAC15\uC6D0 \uC124\uC545\uCC3D\uBB38"
     age: 17
     mbti: INFJ
@@ -190,7 +218,7 @@ MonoBehaviour:
     displayName: "\uB3C4\uC544\uB9B0"
     faction: 0
     visual: {fileID: 11400000, guid: 2de93c0011812964a902c7b0b67f7a8c, type: 2}
-    startCell: {x: 7, y: 8}
+    startCell: {x: 9, y: 8}
     sectName: "\uACBD\uC0C1 \uD654\uC655\uB3C4\uBB38"
     age: 16
     mbti: ESTP
@@ -218,7 +246,7 @@ MonoBehaviour:
     displayName: "\uC9C4\uC11C\uC728"
     faction: 0
     visual: {fileID: 11400000, guid: f33b94466f4b6ed48a7a2b8ebca61610, type: 2}
-    startCell: {x: 9, y: 8}
+    startCell: {x: 10, y: 8}
     sectName: "\uACBD\uC131 \uCC9C\uB8B0\uBD09\uBB38"
     age: 15
     mbti: ENTP
@@ -275,7 +303,7 @@ MonoBehaviour:
     displayName: "\uD55C\uBE44\uC5F0"
     faction: 0
     visual: {fileID: 11400000, guid: b3e2849120920b44b87c6353a2665b4a, type: 2}
-    startCell: {x: 11, y: 8}
+    startCell: {x: 13, y: 8}
     sectName: "\uD669\uD574\uB3C4 \uAD6C\uC6D4\uC0B0 \uD751\uB828\uC554\uBB38"
     age: 17
     mbti: ISTP

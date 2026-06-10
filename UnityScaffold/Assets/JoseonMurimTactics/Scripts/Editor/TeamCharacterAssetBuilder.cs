@@ -19,19 +19,25 @@ public static class TeamCharacterAssetBuilder
     private const float PosePixelsPerUnit = 420f;
     private const float PortraitPixelsPerUnit = 420f;
     private const float IconPixelsPerUnit = 220f;
+    private static readonly Vector2 BattlePosePivot = new Vector2(0.5f, 32f / 384f);
 
     private static readonly Spec[] Team = {
+        new Spec("park_sungjun", "박성준", "백두 루멘오더", 17, "ENFJ", "빛", "검",
+                 "침착하고 다정한 주인공 말투", WeaponType.Sword, CombatElementType.Light,
+                 new Color(1f, 0.82f, 0.30f, 1f), new Color(0.96f, 0.98f, 1f, 1f),
+                 new Vector2Int(5, 8), 36, 5, 15, 16, 4, 1, 7, 15, 6, 10, "백두광검", 1, 1, 2,
+                 5, 2, BattleSpecialEffect.Mark),
         new Spec("baek_ryeon", "백련", "강원 설악창문", 17, "INFJ", "얼음/서리", "창", "차분한 존댓말",
                  WeaponType.Spear, CombatElementType.Ice, new Color(0.56f, 0.92f, 1f, 1f),
-                 new Color(0.92f, 0.98f, 1f, 1f), new Vector2Int(5, 8), 30, 4, 12, 13, 4, 2, 5, 14, 5,
+                 new Color(0.92f, 0.98f, 1f, 1f), new Vector2Int(7, 8), 30, 4, 12, 13, 4, 2, 5, 14, 5,
                  8, "설악빙창", 2, 1, 2, 4, 1, BattleSpecialEffect.Freeze),
         new Spec("do_arin", "도아린", "경상 화왕도문", 16, "ESTP", "불", "대도", "짧고 거친 직설",
                  WeaponType.Dao, CombatElementType.Fire, new Color(1f, 0.38f, 0.12f, 1f),
-                 new Color(1f, 0.82f, 0.30f, 1f), new Vector2Int(7, 8), 34, 3, 14, 15, 4, 1, 7, 14, 6,
+                 new Color(1f, 0.82f, 0.30f, 1f), new Vector2Int(9, 8), 34, 3, 14, 15, 4, 1, 7, 14, 6,
                  11, "화왕참", 1, 1, 2, 6, 2, BattleSpecialEffect.BreakGuard),
         new Spec("jin_seoyul", "진서율", "경성 천뢰봉문", 15, "ENTP", "전기", "봉",
                  "빠르고 장난기 있는 추리형 말투", WeaponType.Staff, CombatElementType.Lightning,
-                 new Color(0.36f, 0.72f, 1f, 1f), new Color(1f, 0.88f, 0.24f, 1f), new Vector2Int(9, 8),
+                 new Color(0.36f, 0.72f, 1f, 1f), new Color(1f, 0.88f, 0.24f, 1f), new Vector2Int(10, 8),
                  24, 4, 18, 19, 5, 2, 6, 12, 4, 7, "천뢰봉무", 2, 1, 2, 4, 3,
                  BattleSpecialEffect.Strike),
         new Spec("shin_seoa", "신서아", "전라도 남원 화접풍류문", 13, "ENFP", "바람/꽃", "부채",
@@ -42,11 +48,11 @@ public static class TeamCharacterAssetBuilder
         new Spec("han_biyeon", "한비연", "황해도 구월산 흑련암문", 17, "ISTP", "어둠/독", "단검·암기",
                  "짧고 비꼬는 듯한 말투", WeaponType.Dagger, CombatElementType.DarkPoison,
                  new Color(0.58f, 0.30f, 0.92f, 1f), new Color(0.46f, 1f, 0.22f, 1f),
-                 new Vector2Int(11, 8), 27, 4, 16, 17, 5, 3, 6, 13, 4, 8, "흑련독침", 3, 1, 2, 3, 2,
+                 new Vector2Int(13, 8), 27, 4, 16, 17, 5, 3, 6, 13, 4, 8, "흑련독침", 3, 1, 2, 3, 2,
                  BattleSpecialEffect.Poison)
     };
 
-    [MenuItem("Joseon Murim Tactics/Combat/Rebuild Five Character Team Assets")]
+    [MenuItem("Joseon Murim Tactics/Combat/Rebuild Six Character Team Assets")]
     public static void RebuildTeamCharacterAssets()
     {
         AssetDatabase.Refresh();
@@ -98,7 +104,7 @@ public static class TeamCharacterAssetBuilder
             defaultOutfit.skillPoseSprite = EnsureSprite(PosePath(spec, "skill"), PosePixelsPerUnit);
             defaultOutfit.hitPoseSprite = EnsureSprite(PosePath(spec, "hit"), PosePixelsPerUnit);
             defaultOutfit.defeatedPoseSprite = EnsureSprite(PosePath(spec, "defeated"), PosePixelsPerUnit);
-            defaultOutfit.actedPoseSprite = idleSprite;
+            defaultOutfit.actedPoseSprite = EnsureSprite(PosePath(spec, "acted"), PosePixelsPerUnit);
             defaultOutfit.bustSprite = EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_portrait.png", PortraitPixelsPerUnit);
             defaultOutfit.portraitSprite = defaultOutfit.bustSprite;
             defaultOutfit.faceIconSprite = EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_icon.png", IconPixelsPerUnit);
@@ -113,7 +119,7 @@ public static class TeamCharacterAssetBuilder
             visualData.skillPoseSprite = defaultOutfit.skillPoseSprite;
             visualData.hitPoseSprite = defaultOutfit.hitPoseSprite;
             visualData.defeatedPoseSprite = defaultOutfit.defeatedPoseSprite;
-            visualData.actedPoseSprite = idleSprite;
+            visualData.actedPoseSprite = defaultOutfit.actedPoseSprite;
             visualData.bustSprite = defaultOutfit.bustSprite;
             visualData.portraitSprite = visualData.bustSprite;
             visualData.faceIconSprite = defaultOutfit.faceIconSprite;
@@ -121,8 +127,8 @@ public static class TeamCharacterAssetBuilder
             visualData.outfitOptions = new[] { defaultOutfit };
             visualData.defaultWeaponType = spec.weaponType;
             visualData.weaponAnimationSet = weaponSet;
-            visualData.heightInTiles = 1.20f;
-            visualData.spriteOffset = new Vector2(0f, 0.14f);
+            visualData.heightInTiles = 1.10f;
+            visualData.spriteOffset = new Vector2(0f, 0.02f);
             visualData.moveSecondsPerTile = weaponSet.walkSecondsPerTile;
             visualData.moveSettleTime = weaponSet.moveSettleTime;
             visualData.moveLeanDegrees = 5f;
@@ -154,7 +160,7 @@ public static class TeamCharacterAssetBuilder
         RebuildBattleTestSceneUnits();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("[TeamCharacterAssetBuilder] Five character combat team assets rebuilt.");
+        Debug.Log("[TeamCharacterAssetBuilder] Six character combat team assets rebuilt.");
     }
 
     public static BattleTestUnitDefinition[] BuildSceneUnitDefinitions()
@@ -236,6 +242,9 @@ public static class TeamCharacterAssetBuilder
     private static void EnsureCharacterFolders(Spec spec)
     {
         EnsureFolder(CharacterRoot + "/" + spec.id);
+        EnsureFolder(CharacterRoot + "/" + spec.id + "/Source");
+        EnsureFolder(CharacterRoot + "/" + spec.id + "/Sprites");
+        EnsureFolder(CharacterRoot + "/" + spec.id + "/Portraits");
         EnsureFolder(CharacterRoot + "/" + spec.id + "/VisualData");
         EnsureFolder(CharacterRoot + "/" + spec.id + "/Outfits");
         EnsureFolder(AnimationRoot + "/" + spec.id);
@@ -265,6 +274,7 @@ public static class TeamCharacterAssetBuilder
         EnsureSprite(PosePath(spec, "skill"), PosePixelsPerUnit);
         EnsureSprite(PosePath(spec, "hit"), PosePixelsPerUnit);
         EnsureSprite(PosePath(spec, "defeated"), PosePixelsPerUnit);
+        EnsureSprite(PosePath(spec, "acted"), PosePixelsPerUnit);
         EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_portrait.png", PortraitPixelsPerUnit);
         EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_icon.png", IconPixelsPerUnit);
     }
@@ -303,6 +313,24 @@ public static class TeamCharacterAssetBuilder
             {
                 importer.alphaIsTransparency = true;
                 dirty = true;
+            }
+
+            if (path.Contains("/Sprites/"))
+            {
+                TextureImporterSettings settings = new TextureImporterSettings();
+                importer.ReadTextureSettings(settings);
+                if (settings.spriteAlignment != (int)SpriteAlignment.Custom)
+                {
+                    settings.spriteAlignment = (int)SpriteAlignment.Custom;
+                    importer.SetTextureSettings(settings);
+                    dirty = true;
+                }
+
+                if (importer.spritePivot != BattlePosePivot)
+                {
+                    importer.spritePivot = BattlePosePivot;
+                    dirty = true;
+                }
             }
 
             if (dirty)

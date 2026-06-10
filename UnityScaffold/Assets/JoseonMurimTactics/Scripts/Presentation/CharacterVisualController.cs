@@ -61,7 +61,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private static Sprite[] elementSlashSprites;
     private static Sprite[] elementSkillSprites;
     private static Sprite[] elementImpactSprites;
-    private const int CombatElementSpriteCount = 6;
+    private const int CombatElementSpriteCount = 7;
 
     private void Awake()
     {
@@ -1185,6 +1185,14 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                 float gate = Mathf.SmoothStep(-0.92f, -0.10f, nx) * (1f - Mathf.SmoothStep(0.90f, 1f, nx));
                 return new Color(1f, 1f, 1f, Mathf.Clamp01(spiral + petals * 0.45f) * gate);
             });
+        case CombatElementType.Light:
+            return CreateGeneratedSprite("GeneratedLightSlash", 180, 96, 120f, (nx, ny) => {
+                float arc = Mathf.Abs((nx * nx * 0.72f) + ((ny + 0.70f) * (ny + 0.70f) * 2.0f) - 1f);
+                float ray = Mathf.Clamp01((0.045f - Mathf.Abs(ny - (nx * 0.18f))) * 18f);
+                float core = Mathf.Clamp01((0.20f - arc) * 8.5f);
+                float gate = Mathf.SmoothStep(-0.92f, -0.04f, nx) * (1f - Mathf.SmoothStep(0.86f, 1f, nx));
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(core + ray * 0.55f) * gate);
+            });
         case CombatElementType.DarkPoison:
             return CreateGeneratedSprite("GeneratedPoisonSlash", 180, 96, 120f, (nx, ny) => {
                 float cloudA = Mathf.Clamp01((0.30f - ((nx + 0.25f) * (nx + 0.25f) + ((ny + 0.04f) * (ny + 0.04f) * 1.8f))) * 3.1f);
@@ -1236,6 +1244,17 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                 float ring = Mathf.Clamp01((0.050f - Mathf.Abs(r - 0.62f)) * 16f);
                 return new Color(1f, 1f, 1f, Mathf.Clamp01(swirl + petals * 0.38f + ring * 0.55f));
             });
+        case CombatElementType.Light:
+            return CreateGeneratedSprite("GeneratedHolySigil", 132, 132, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float ring = Mathf.Clamp01((0.055f - Mathf.Abs(r - 0.62f)) * 18f);
+                float cross = Mathf.Clamp01((0.045f - Mathf.Min(Mathf.Abs(nx), Mathf.Abs(ny))) * 12f) *
+                              Mathf.Clamp01(0.78f - r);
+                float rays = Mathf.Clamp01(Mathf.Abs(Mathf.Cos(angle * 8f)) * (0.88f - r)) * 0.32f;
+                float core = Mathf.Clamp01((0.24f - r) * 3.5f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(ring + cross + rays + core));
+            });
         case CombatElementType.DarkPoison:
             return CreateGeneratedSprite("GeneratedPoisonCloudBurst", 132, 132, 96f, (nx, ny) => {
                 float r = Mathf.Sqrt((nx * nx) + (ny * ny));
@@ -1283,6 +1302,15 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                 float petal = Mathf.Clamp01((0.13f - Mathf.Abs(Mathf.Sin(angle * 5f) * r - 0.16f)) * 4.8f);
                 float core = Mathf.Clamp01((0.22f - r) * 3f);
                 return new Color(1f, 1f, 1f, Mathf.Clamp01(petal + core));
+            });
+        case CombatElementType.Light:
+            return CreateGeneratedSprite("GeneratedLightImpact", 96, 96, 96f, (nx, ny) => {
+                float r = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float angle = Mathf.Atan2(ny, nx);
+                float star = Mathf.Clamp01((0.13f - Mathf.Abs(Mathf.Sin(angle * 6f) * r - 0.18f)) * 5f);
+                float pillar = Mathf.Clamp01((0.050f - Mathf.Abs(nx)) * 13f) * Mathf.Clamp01(0.88f - Mathf.Abs(ny));
+                float core = Mathf.Clamp01((0.30f - r) * 3.4f);
+                return new Color(1f, 1f, 1f, Mathf.Clamp01(star + pillar + core));
             });
         case CombatElementType.DarkPoison:
             return CreateGeneratedSprite("GeneratedPoisonImpact", 96, 96, 96f, (nx, ny) => {

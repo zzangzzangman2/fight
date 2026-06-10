@@ -1224,18 +1224,20 @@ public static class BattleMapDioramaSceneBuilder
                  4, 1, 7, 14, 6, 11, "Iron Mountain Palm", BattleSpecialEffect.BreakGuard),
             Unit("jin_seoyul", "Jin Seoyul", Faction.Ally, "jin_seoyul_visual.asset", new Vector2Int(11, 2), 24, 4,
                  18, 19, 5, 2, 6, 12, 4, 7, "Sky Rod Form", BattleSpecialEffect.Strike),
+            Unit("shin_seoa", "Shin Seoa", Faction.Ally, "shin_seoa_visual.asset", new Vector2Int(5, 2), 24, 5, 13,
+                 14, 5, 3, 5, 13, 4, 7, "Flower Wind", BattleSpecialEffect.Mark),
             Unit("han_biyeon", "Han Biyeon", Faction.Ally, "han_biyeon_visual.asset", new Vector2Int(4, 3), 27, 4,
                  16, 17, 5, 3, 6, 13, 4, 8, "Poison Needle", BattleSpecialEffect.Poison),
             Unit("iron_wolf_guard_1", "Iron Wolf Guard", Faction.Enemy,
-                 "SchoolCombat/school_combat_04_visual.asset", new Vector2Int(9, 10), 30, 3, 12, 12, 4, 1, 5, 14,
+                 "do_arin_visual.asset", new Vector2Int(9, 10), 30, 3, 12, 12, 4, 1, 5, 14,
                  5, 8, "Iron Slash", BattleSpecialEffect.Strike),
             Unit("iron_wolf_spear_1", "Iron Wolf Spear", Faction.Enemy,
-                 "SchoolCombat/school_combat_05_visual.asset", new Vector2Int(11, 11), 32, 3, 11, 12, 4, 2, 5,
+                 "baek_ryeon_visual.asset", new Vector2Int(11, 11), 32, 3, 11, 12, 4, 2, 5,
                  15, 5, 9, "Wolf Spear", BattleSpecialEffect.BreakGuard),
             Unit("iron_wolf_captain", "Iron Wolf Captain", Faction.Enemy,
-                 "SchoolCombat/school_combat_06_visual.asset", new Vector2Int(14, 10), 38, 4, 13, 13, 4, 1, 7,
+                 "jin_seoyul_visual.asset", new Vector2Int(14, 10), 38, 4, 13, 13, 4, 1, 7,
                  16, 6, 11, "Pack Order", BattleSpecialEffect.Mark),
-            Unit("ridge_archer", "Ridge Archer", Faction.Enemy, "SchoolCombat/school_combat_03_visual.asset",
+            Unit("ridge_archer", "Ridge Archer", Faction.Enemy, "han_biyeon_visual.asset",
                  new Vector2Int(16, 9), 26, 3, 15, 16, 4, 3, 5, 13, 4, 7, "Ridge Shot",
                  BattleSpecialEffect.Strike)
         };
@@ -1368,8 +1370,34 @@ public static class BattleMapDioramaSceneBuilder
 
     private static CharacterVisualData LoadVisual(string fileName)
     {
-        string path = "Assets/JoseonMurimTactics/Art/Characters/VisualData/" + fileName;
-        return AssetDatabase.LoadAssetAtPath<CharacterVisualData>(path);
+        const string characterRoot = "Assets/JoseonMurimTactics/Art/Characters/";
+        List<string> candidates = new List<string>();
+        string assetName = Path.GetFileName(fileName);
+
+        if (fileName.Contains("/"))
+        {
+            candidates.Add(characterRoot + fileName);
+        }
+
+        if (assetName.EndsWith("_visual.asset", StringComparison.Ordinal))
+        {
+            string id = Path.GetFileNameWithoutExtension(assetName).Replace("_visual", string.Empty);
+            candidates.Add(characterRoot + id + "/VisualData/" + assetName);
+        }
+
+        candidates.Add(characterRoot + "VisualData/" + fileName);
+
+        foreach (string path in candidates)
+        {
+            CharacterVisualData visual = AssetDatabase.LoadAssetAtPath<CharacterVisualData>(path);
+            if (visual != null)
+            {
+                return visual;
+            }
+        }
+
+        Debug.LogWarning("[BattleMapDioramaSceneBuilder] Missing character visual: " + fileName);
+        return null;
     }
 
     private static Sprite LoadSprite(string relativePath)

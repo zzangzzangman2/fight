@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7025212912761161549}
   - component: {fileID: 5565531488372536411}
-  - component: {fileID: 1011667690922072161}
+  - component: {fileID: 4812464343276754282}
   m_Layer: 0
   m_Name: shin_seoa_unit
   m_TagString: Untagged
@@ -43,7 +43,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a899d2a461c944eea7d3b05bb8e05dac, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualController
   visual: {fileID: 11400000, guid: c19ee1d29735dc443ac30423e2c5016b, type: 2}
   outfitOverride: {fileID: 0}
@@ -55,12 +55,14 @@ MonoBehaviour:
   weaponLayerRenderer: {fileID: 0}
   accessoryLayerRenderer: {fileID: 0}
   shadowRenderer: {fileID: 0}
+  leftFootRenderer: {fileID: 0}
+  rightFootRenderer: {fileID: 0}
   selectionRenderer: {fileID: 0}
   effectRenderer: {fileID: 0}
   animator: {fileID: 0}
   sortingLayerName: Characters
   baseSortingOrder: 1000
---- !u!114 &1011667690922072161
+--- !u!114 &4812464343276754282
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -70,5 +72,5 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 0}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestUnitView
