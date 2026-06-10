@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7766259176870064965}
   - component: {fileID: 6209862397950465069}
-  - component: {fileID: 5525591117883947539}
+  - component: {fileID: 4408841495059265406}
   m_Layer: 0
   m_Name: baek_ryeon_unit
   m_TagString: Untagged
@@ -46,14 +46,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualController
   visual: {fileID: 11400000, guid: c77c023609474414284dae0354ceec2d, type: 2}
+  outfitOverride: {fileID: 0}
   bodyRenderer: {fileID: 0}
+  baseLayerRenderer: {fileID: 0}
+  outfitLayerRenderer: {fileID: 0}
+  hairLayerRenderer: {fileID: 0}
+  faceLayerRenderer: {fileID: 0}
+  weaponLayerRenderer: {fileID: 0}
+  accessoryLayerRenderer: {fileID: 0}
   shadowRenderer: {fileID: 0}
   selectionRenderer: {fileID: 0}
   effectRenderer: {fileID: 0}
   animator: {fileID: 0}
   sortingLayerName: Characters
   baseSortingOrder: 1000
---- !u!114 &5525591117883947539
+--- !u!114 &4408841495059265406
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

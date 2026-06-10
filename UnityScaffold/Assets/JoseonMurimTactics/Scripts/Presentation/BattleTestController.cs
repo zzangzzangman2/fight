@@ -3983,6 +3983,7 @@ public sealed class BattleTestController : MonoBehaviour
                 float stride = (stepIndex + t) * Mathf.PI * 2f;
                 float stepHop = Mathf.Abs(Mathf.Sin(stride)) * 0.030f;
                 float footSway = Mathf.Sin(stride) * 0.026f;
+                unit.view.SetMoveStridePhase(stepIndex + t);
                 unit.view.transform.position = Vector3.Lerp(start, target, eased) + new Vector3(footSway, stepHop, 0f);
                 if (camera != null)
                 {
@@ -7603,6 +7604,14 @@ public sealed class BattleTestUnitView : MonoBehaviour
         if (visualController != null)
         {
             visualController.PlayMove();
+        }
+    }
+
+    public void SetMoveStridePhase(float phase)
+    {
+        if (visualController != null)
+        {
+            visualController.SetMoveStridePhase(phase);
         }
     }
 

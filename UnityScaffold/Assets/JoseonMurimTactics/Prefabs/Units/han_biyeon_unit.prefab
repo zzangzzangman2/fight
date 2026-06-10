@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1787924905884657221}
   - component: {fileID: 5381823795058392434}
-  - component: {fileID: 6627672348677458902}
+  - component: {fileID: 4152093853183889796}
   m_Layer: 0
   m_Name: han_biyeon_unit
   m_TagString: Untagged
@@ -46,14 +46,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualController
   visual: {fileID: 11400000, guid: b3e2849120920b44b87c6353a2665b4a, type: 2}
+  outfitOverride: {fileID: 0}
   bodyRenderer: {fileID: 0}
+  baseLayerRenderer: {fileID: 0}
+  outfitLayerRenderer: {fileID: 0}
+  hairLayerRenderer: {fileID: 0}
+  faceLayerRenderer: {fileID: 0}
+  weaponLayerRenderer: {fileID: 0}
+  accessoryLayerRenderer: {fileID: 0}
   shadowRenderer: {fileID: 0}
   selectionRenderer: {fileID: 0}
   effectRenderer: {fileID: 0}
   animator: {fileID: 0}
   sortingLayerName: Characters
   baseSortingOrder: 1000
---- !u!114 &6627672348677458902
+--- !u!114 &4152093853183889796
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

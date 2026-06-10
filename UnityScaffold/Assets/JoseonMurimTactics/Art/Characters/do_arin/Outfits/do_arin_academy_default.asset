@@ -9,15 +9,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 95fb2a208870457687ddbb0bb4f0dd12, type: 3}
-  m_Name: do_arin_visual
-  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualData
-  visualId: do_arin
+  m_Script: {fileID: 11500000, guid: b0d1214ef064f6145a6f4d070fce0fe9, type: 3}
+  m_Name: do_arin_academy_default
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterOutfitData
+  outfitId: do_arin_academy_default
+  displayName: "\uB3C4\uC544\uB9B0 \uAE30\uBCF8 \uC804\uD22C\uBCF5"
   fullBodySprite: {fileID: 21300000, guid: b716d120f511f9c4388f3605da2516cb, type: 3}
   bustSprite: {fileID: 21300000, guid: 14a4e44137ddada43ae5ceafe8a3a434, type: 3}
   portraitSprite: {fileID: 21300000, guid: 14a4e44137ddada43ae5ceafe8a3a434, type: 3}
   faceIconSprite: {fileID: 21300000, guid: f014ecebb5274c54da3bac7d4c3822cb, type: 3}
-  animatorController: {fileID: 0}
   idlePoseSprite: {fileID: 21300000, guid: b716d120f511f9c4388f3605da2516cb, type: 3}
   movePoseSprite: {fileID: 21300000, guid: 9bda6df4dd0e739488de1eef6a51bc29, type: 3}
   attackPoseSprite: {fileID: 21300000, guid: 76ef77985da0d174e9fd5d013a88da18, type: 3}
@@ -25,28 +25,10 @@ MonoBehaviour:
   hitPoseSprite: {fileID: 21300000, guid: 64fcbb788e572f240a8d941d33b7a34c, type: 3}
   defeatedPoseSprite: {fileID: 21300000, guid: 39939577039b24541822812f07433b52, type: 3}
   actedPoseSprite: {fileID: 21300000, guid: b716d120f511f9c4388f3605da2516cb, type: 3}
-  defaultOutfit: {fileID: 11400000, guid: d6887b88ccb8ce14088ea3bbc802154b, type: 2}
-  outfitOptions:
-  - {fileID: 11400000, guid: d6887b88ccb8ce14088ea3bbc802154b, type: 2}
-  defaultWeaponType: 1
-  weaponAnimationSet: {fileID: 11400000, guid: a4c5e51357fdb7345b63d2da061950e4, type: 2}
-  heightInTiles: 1.2
-  spriteOffset: {x: 0, y: 0.14}
-  sortingOffset: 0
-  idleAmplitude: 0.035
-  idleSpeed: 1
-  breathingScale: 0.015
-  shadowWidth: 0.76
-  shadowHeight: 0.19
-  normalTint: {r: 1, g: 1, b: 1, a: 1}
-  selectedTint: {r: 1, g: 0.8264, b: 0.7536, a: 1}
-  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
-  hitTint: {r: 1, g: 0.656, b: 0.52959996, a: 1}
-  guardTint: {r: 1, g: 0.783, b: 0.69200003, a: 1}
-  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}
-  moveSecondsPerTile: 0.2
-  moveSettleTime: 0.08
-  moveLeanDegrees: 5
-  attackLunge: 0.14
-  skillPulseScale: 0.1
-  hitRecoil: 0.11
+  useLayeredSprites: 0
+  baseBodyLayer: {fileID: 0}
+  outfitLayer: {fileID: 0}
+  hairLayer: {fileID: 0}
+  faceLayer: {fileID: 0}
+  weaponLayer: {fileID: 0}
+  accessoryLayer: {fileID: 0}

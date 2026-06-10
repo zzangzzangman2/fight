@@ -21,6 +21,10 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite defeatedPoseSprite;
     public Sprite actedPoseSprite;
 
+    [Header("Outfits")]
+    public CharacterOutfitData defaultOutfit;
+    public CharacterOutfitData[] outfitOptions;
+
     public WeaponType defaultWeaponType = WeaponType.Sword;
     public WeaponAnimationSet weaponAnimationSet;
 

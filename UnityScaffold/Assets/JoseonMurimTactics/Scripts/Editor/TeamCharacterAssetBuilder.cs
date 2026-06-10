@@ -88,18 +88,37 @@ public static class TeamCharacterAssetBuilder
 
             CharacterVisualData visualData = LoadOrCreate<CharacterVisualData>(VisualDataPath(spec));
             Sprite idleSprite = EnsureSprite(PosePath(spec, "idle"), PosePixelsPerUnit);
+            CharacterOutfitData defaultOutfit = LoadOrCreate<CharacterOutfitData>(OutfitPath(spec));
+            defaultOutfit.outfitId = spec.id + "_academy_default";
+            defaultOutfit.displayName = spec.displayName + " 기본 전투복";
+            defaultOutfit.fullBodySprite = idleSprite;
+            defaultOutfit.idlePoseSprite = idleSprite;
+            defaultOutfit.movePoseSprite = EnsureSprite(PosePath(spec, "move"), PosePixelsPerUnit);
+            defaultOutfit.attackPoseSprite = EnsureSprite(PosePath(spec, "attack"), PosePixelsPerUnit);
+            defaultOutfit.skillPoseSprite = EnsureSprite(PosePath(spec, "skill"), PosePixelsPerUnit);
+            defaultOutfit.hitPoseSprite = EnsureSprite(PosePath(spec, "hit"), PosePixelsPerUnit);
+            defaultOutfit.defeatedPoseSprite = EnsureSprite(PosePath(spec, "defeated"), PosePixelsPerUnit);
+            defaultOutfit.actedPoseSprite = idleSprite;
+            defaultOutfit.bustSprite = EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_portrait.png", PortraitPixelsPerUnit);
+            defaultOutfit.portraitSprite = defaultOutfit.bustSprite;
+            defaultOutfit.faceIconSprite = EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_icon.png", IconPixelsPerUnit);
+            defaultOutfit.useLayeredSprites = false;
+            EditorUtility.SetDirty(defaultOutfit);
+
             visualData.visualId = spec.id;
             visualData.fullBodySprite = idleSprite;
             visualData.idlePoseSprite = idleSprite;
-            visualData.movePoseSprite = EnsureSprite(PosePath(spec, "move"), PosePixelsPerUnit);
-            visualData.attackPoseSprite = EnsureSprite(PosePath(spec, "attack"), PosePixelsPerUnit);
-            visualData.skillPoseSprite = EnsureSprite(PosePath(spec, "skill"), PosePixelsPerUnit);
-            visualData.hitPoseSprite = EnsureSprite(PosePath(spec, "hit"), PosePixelsPerUnit);
-            visualData.defeatedPoseSprite = EnsureSprite(PosePath(spec, "defeated"), PosePixelsPerUnit);
+            visualData.movePoseSprite = defaultOutfit.movePoseSprite;
+            visualData.attackPoseSprite = defaultOutfit.attackPoseSprite;
+            visualData.skillPoseSprite = defaultOutfit.skillPoseSprite;
+            visualData.hitPoseSprite = defaultOutfit.hitPoseSprite;
+            visualData.defeatedPoseSprite = defaultOutfit.defeatedPoseSprite;
             visualData.actedPoseSprite = idleSprite;
-            visualData.bustSprite = EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_portrait.png", PortraitPixelsPerUnit);
+            visualData.bustSprite = defaultOutfit.bustSprite;
             visualData.portraitSprite = visualData.bustSprite;
-            visualData.faceIconSprite = EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_icon.png", IconPixelsPerUnit);
+            visualData.faceIconSprite = defaultOutfit.faceIconSprite;
+            visualData.defaultOutfit = defaultOutfit;
+            visualData.outfitOptions = new[] { defaultOutfit };
             visualData.defaultWeaponType = spec.weaponType;
             visualData.weaponAnimationSet = weaponSet;
             visualData.heightInTiles = 1.20f;
@@ -218,6 +237,7 @@ public static class TeamCharacterAssetBuilder
     {
         EnsureFolder(CharacterRoot + "/" + spec.id);
         EnsureFolder(CharacterRoot + "/" + spec.id + "/VisualData");
+        EnsureFolder(CharacterRoot + "/" + spec.id + "/Outfits");
         EnsureFolder(AnimationRoot + "/" + spec.id);
     }
 
@@ -421,6 +441,11 @@ public static class TeamCharacterAssetBuilder
     private static string VisualDataPath(Spec spec)
     {
         return CharacterRoot + "/" + spec.id + "/VisualData/" + spec.id + "_visual.asset";
+    }
+
+    private static string OutfitPath(Spec spec)
+    {
+        return CharacterRoot + "/" + spec.id + "/Outfits/" + spec.id + "_academy_default.asset";
     }
 
     private static string CombatVisualPath(Spec spec)

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 651948606701456627}
   - component: {fileID: 5759448458420267952}
-  - component: {fileID: 4779879907621232670}
+  - component: {fileID: 2064508111413807088}
   m_Layer: 0
   m_Name: jin_seoyul_unit
   m_TagString: Untagged
@@ -46,14 +46,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualController
   visual: {fileID: 11400000, guid: f33b94466f4b6ed48a7a2b8ebca61610, type: 2}
+  outfitOverride: {fileID: 0}
   bodyRenderer: {fileID: 0}
+  baseLayerRenderer: {fileID: 0}
+  outfitLayerRenderer: {fileID: 0}
+  hairLayerRenderer: {fileID: 0}
+  faceLayerRenderer: {fileID: 0}
+  weaponLayerRenderer: {fileID: 0}
+  accessoryLayerRenderer: {fileID: 0}
   shadowRenderer: {fileID: 0}
   selectionRenderer: {fileID: 0}
   effectRenderer: {fileID: 0}
   animator: {fileID: 0}
   sortingLayerName: Characters
   baseSortingOrder: 1000
---- !u!114 &4779879907621232670
+--- !u!114 &2064508111413807088
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
