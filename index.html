@@ -3,34 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>조선 무협 SRPG v0.4 - Fire Emblem식 전술 프로토타입</title>
+  <title>조선 무협 SRPG v0.5 - 백두산 설문 관문전</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <main class="app-shell">
     <section class="battle-stage" aria-label="2D 타일 전장">
       <header class="battle-topbar">
-        <div>
-          <p class="kicker">Joseon Murim SRPG v0.4</p>
-          <h1>압록강 폐사당 전투</h1>
-          <p class="subline">아군 페이즈: 유닛 선택 → 이동 범위 → 이동 → 무공/지형/대기 · 적 페이즈: 중원 사절단 행동</p>
+        <div class="title-block">
+          <p class="kicker">Joseon Murim SRPG</p>
+          <h1>백두산 설문 관문전</h1>
         </div>
-        <div class="phase-card">
+        <div class="phase-card player" id="phaseCard">
           <span id="phaseLabel">Player Phase</span>
-          <strong>Round <b id="roundCounter">1</b></strong>
+          <strong>TURN <b id="roundCounter">1</b></strong>
         </div>
         <div class="topbar-tools">
+          <button id="briefingButton" class="small-button" type="button">작전 브리핑</button>
           <button id="dangerToggle" class="small-button" type="button" aria-pressed="false">적 사정권</button>
           <button id="endPhaseButton" class="primary-button" type="button">페이즈 종료</button>
           <button id="restartButton" class="icon-button" type="button" title="새 전투">↻</button>
         </div>
       </header>
 
+      <div id="guidePanel" class="guide-panel" aria-live="polite"></div>
+
       <div class="map-wrap">
-        <div id="battlefield" class="battlefield" aria-label="전장 타일맵"></div>
+        <div id="battlefield" class="battlefield painted" aria-label="전장 타일맵"></div>
+        <div id="phaseBanner" class="phase-banner" aria-hidden="true"><span class="pb-text"></span></div>
         <div class="map-caption">
-          <strong>목표</strong>
-          <span>중원정파 사절 주홍문을 제압하거나 항복시켜 조선 문파 연합의 첫 승리를 만든다.</span>
+          <strong>目標</strong>
+          <span>중원 감찰단이 설문(雪門)을 넘기 전에 저지한다 — 사절 주홍문을 제압하거나 항복시킬 것.</span>
         </div>
       </div>
     </section>
@@ -64,6 +67,9 @@
       <ol id="combatLog" class="combat-log"></ol>
     </section>
   </main>
+
+  <div id="introOverlay" class="overlay" hidden></div>
+  <div id="resultOverlay" class="overlay" hidden></div>
 
   <script src="./app.js"></script>
 </body>

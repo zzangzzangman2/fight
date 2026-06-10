@@ -9,6 +9,7 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite fullBodySprite;
     public Sprite bustSprite;
     public Sprite portraitSprite;
+    public Sprite faceIconSprite;
     public RuntimeAnimatorController animatorController;
 
     [Header("Board Fit")]
@@ -26,6 +27,15 @@ public sealed class CharacterVisualData : ScriptableObject
     [Header("State Colors")]
     public Color normalTint = Color.white;
     public Color selectedTint = new Color(1f, 0.92f, 0.62f, 1f);
+    public Color actedTint = new Color(0.72f, 0.78f, 0.86f, 0.82f);
+    public Color hitTint = new Color(1f, 0.62f, 0.58f, 1f);
+    public Color guardTint = new Color(0.72f, 0.96f, 1f, 1f);
     public Color defeatedTint = new Color(0.55f, 0.55f, 0.55f, 0.68f);
+
+    [Header("State Motion")]
+    public float moveLeanDegrees = 5f;
+    public float attackLunge = 0.13f;
+    public float skillPulseScale = 0.09f;
+    public float hitRecoil = 0.10f;
 }
 }

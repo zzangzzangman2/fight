@@ -153,15 +153,15 @@ MonoBehaviour:
   tileWidth: 1.16
   tileHeight: 0.62
   unitDefinitions:
-  - id: park_sungjun
-    displayName: 박성준
+  - id: test_swordsman
+    displayName: 청월검 소윤
     faction: 0
-    visual: {fileID: 11400000, guid: 24d2a678d40883fa1f2c992f5ee23586, type: 2}
+    visual: {fileID: 11400000, guid: 59400ee9bc43423394f8d6613776d840, type: 2}
     startCell: {x: 7, y: 8}
-    sectName: 백두산 백두검문
+    sectName: 청월검문
     age: 17
     mbti: ENTP
-    elementName: 빛
+    elementName: 청광
     weaponName: 검
     speechTone: 능청스럽지만 결정적 순간에는 단호함
     maxHp: 36
@@ -174,7 +174,7 @@ MonoBehaviour:
     defense: 15
     damageMin: 6
     damageMax: 10
-    specialName: 백두광검
+    specialName: 청월섬
     specialRange: 1
     specialCost: 0
     specialCooldown: 1

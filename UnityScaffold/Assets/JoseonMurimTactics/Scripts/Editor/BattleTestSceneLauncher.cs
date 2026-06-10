@@ -55,9 +55,10 @@ public static class BattleTestSceneLauncher
         controller.tileWidth = 1.16f;
         controller.tileHeight = 0.62f;
         controller.unitDefinitions = new[] {
-            Unit("park_sungjun", "박성준", Faction.Ally, "SchoolCombat/school_combat_01_visual.asset", new Vector2Int(7, 8),
-                 "백두산 백두검문", 17, "ENTP", "빛", "검", "능청스럽지만 결정적 순간에는 단호함", 36, 5, 15, 16, 4, 1,
-                 7, 15, 6, 10, "백두광검", 1, 0, 1, 5, 2, BattleSpecialEffect.Mark),
+            Unit("test_swordsman", "청월검 소윤", Faction.Ally,
+                 "TestSwordsman/VisualData/test_swordsman_visual.asset", new Vector2Int(7, 8),
+                 "청월검문", 16, "ENFP", "청광", "검", "밝고 침착한 실전형 말투", 36, 5, 15, 16, 4, 1,
+                 7, 15, 6, 10, "청월섬", 1, 0, 1, 5, 2, BattleSpecialEffect.Mark),
             Unit("baek_ryeon", "백련", Faction.Ally, "SchoolCombat/school_combat_02_visual.asset", new Vector2Int(6, 9), "강원 설악창문",
                  17, "INFJ", "얼음/서리", "창", "차분한 존댓말", 30, 4, 12, 13, 4, 2, 5, 14, 5, 8, "설악빙창", 2, 1, 2,
                  4, 1, BattleSpecialEffect.Freeze),
@@ -126,8 +127,15 @@ public static class BattleTestSceneLauncher
 
     private static CharacterVisualData LoadVisual(string fileName)
     {
-        string path = "Assets/JoseonMurimTactics/Art/Characters/VisualData/" + fileName;
-        return AssetDatabase.LoadAssetAtPath<CharacterVisualData>(path);
+        string directPath = "Assets/JoseonMurimTactics/Art/Characters/" + fileName;
+        CharacterVisualData visual = AssetDatabase.LoadAssetAtPath<CharacterVisualData>(directPath);
+        if (visual != null)
+        {
+            return visual;
+        }
+
+        string legacyPath = "Assets/JoseonMurimTactics/Art/Characters/VisualData/" + fileName;
+        return AssetDatabase.LoadAssetAtPath<CharacterVisualData>(legacyPath);
     }
 
     private static void EnsureFolder(string folder)
