@@ -615,17 +615,43 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             return null;
         }
 
+        float stateAge = Time.time - stateStartedAt;
+        float progress = stateDuration > 0f ? Mathf.Clamp01(stateAge / stateDuration) : 0f;
+        CharacterOutfitData outfit = ActiveOutfit();
+
         switch (visualState)
         {
         case CharacterBattleVisualState.Move:
-            return SelectMoveCycleSprite();
+        {
+            // 걷기 프레임은 시간이 아니라 보폭 위상(발 디딤)에 동기화한다.
+            Sprite frame = FrameSprite(outfit != null ? outfit.moveFrames : null, visual.moveFrames,
+                                       MoveStride01(stateAge), true);
+            return frame != null ? frame : SelectMoveCycleSprite();
+        }
         case CharacterBattleVisualState.Attack:
-            return AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
+        {
+            Sprite frame = FrameSprite(outfit != null ? outfit.attackFrames : null, visual.attackFrames, progress,
+                                       false);
+            return frame != null ? frame : AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
+        }
         case CharacterBattleVisualState.Skill:
-            return SkillPoseSprite() != null ? SkillPoseSprite() :
+        {
+            Sprite frame = FrameSprite(outfit != null ? outfit.skillFrames : null, visual.skillFrames, progress,
+                                       false);
+            if (frame == null)
+            {
+                frame = FrameSprite(outfit != null ? outfit.attackFrames : null, visual.attackFrames, progress, false);
+            }
+
+            return frame != null ? frame :
+                   SkillPoseSprite() != null ? SkillPoseSprite() :
                    AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
+        }
         case CharacterBattleVisualState.Hit:
-            return HitPoseSprite() != null ? HitPoseSprite() : SelectIdleFallback();
+        {
+            Sprite frame = FrameSprite(outfit != null ? outfit.hitFrames : null, visual.hitFrames, progress, false);
+            return frame != null ? frame : HitPoseSprite() != null ? HitPoseSprite() : SelectIdleFallback();
+        }
         case CharacterBattleVisualState.Guard:
             return AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
         case CharacterBattleVisualState.Defeat:
@@ -635,8 +661,45 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         case CharacterBattleVisualState.Wait:
             return ActedPoseSprite() != null ? ActedPoseSprite() : SelectIdleFallback();
         default:
-            return SelectIdleFallback();
+        {
+            Sprite frame = IdleFrameSprite(outfit);
+            return frame != null ? frame : SelectIdleFallback();
         }
+        }
+    }
+
+    /// <summary>프레임 배열에서 위상(t01)에 맞는 장을 고른다. 배열이 비면 null을 돌려 단일 포즈 폴백을 쓴다.</summary>
+    private static Sprite FrameSprite(Sprite[] primary, Sprite[] fallback, float t01, bool loop)
+    {
+        Sprite[] frames = primary != null && primary.Length > 0 ? primary : fallback;
+        if (frames == null || frames.Length == 0)
+        {
+            return null;
+        }
+
+        if (frames.Length == 1)
+        {
+            return frames[0];
+        }
+
+        float phase = loop ? Mathf.Repeat(t01, 1f) : Mathf.Clamp01(t01);
+        int index = Mathf.Min(frames.Length - 1, Mathf.FloorToInt(phase * frames.Length));
+        return frames[index];
+    }
+
+    private Sprite IdleFrameSprite(CharacterOutfitData outfit)
+    {
+        Sprite[] frames = outfit != null && outfit.idleFrames != null && outfit.idleFrames.Length > 0
+                              ? outfit.idleFrames
+                              : visual.idleFrames;
+        if (frames == null || frames.Length == 0)
+        {
+            return null;
+        }
+
+        float rate = Mathf.Max(0.5f, visual.idleFrameRate);
+        int index = Mathf.FloorToInt((Time.time + phaseSeed) * rate) % frames.Length;
+        return frames[index];
     }
 
     private Sprite SelectIdleFallback()

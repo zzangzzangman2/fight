@@ -21,6 +21,14 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite defeatedPoseSprite;
     public Sprite actedPoseSprite;
 
+    [Header("Battle Pose Frames (2장 이상이면 프레임 애니메이션, 비우면 단일 포즈)")]
+    public Sprite[] idleFrames;
+    public Sprite[] moveFrames;
+    public Sprite[] attackFrames;
+    public Sprite[] skillFrames;
+    public Sprite[] hitFrames;
+    public float idleFrameRate = 4f;
+
     [Header("Outfits")]
     public CharacterOutfitData defaultOutfit;
     public CharacterOutfitData[] outfitOptions;

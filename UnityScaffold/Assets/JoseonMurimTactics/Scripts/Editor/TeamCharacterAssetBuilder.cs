@@ -105,6 +105,11 @@ public static class TeamCharacterAssetBuilder
             defaultOutfit.hitPoseSprite = EnsureSprite(PosePath(spec, "hit"), PosePixelsPerUnit);
             defaultOutfit.defeatedPoseSprite = EnsureSprite(PosePath(spec, "defeated"), PosePixelsPerUnit);
             defaultOutfit.actedPoseSprite = EnsureSprite(PosePath(spec, "acted"), PosePixelsPerUnit);
+            defaultOutfit.idleFrames = CollectPoseFrames(spec, "idle", defaultOutfit.idlePoseSprite);
+            defaultOutfit.moveFrames = CollectPoseFrames(spec, "move", defaultOutfit.movePoseSprite);
+            defaultOutfit.attackFrames = CollectPoseFrames(spec, "attack", defaultOutfit.attackPoseSprite);
+            defaultOutfit.skillFrames = CollectPoseFrames(spec, "skill", defaultOutfit.skillPoseSprite);
+            defaultOutfit.hitFrames = CollectPoseFrames(spec, "hit", defaultOutfit.hitPoseSprite);
             defaultOutfit.bustSprite = EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_portrait.png", PortraitPixelsPerUnit);
             defaultOutfit.portraitSprite = defaultOutfit.bustSprite;
             defaultOutfit.faceIconSprite = EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_icon.png", IconPixelsPerUnit);
@@ -120,6 +125,11 @@ public static class TeamCharacterAssetBuilder
             visualData.hitPoseSprite = defaultOutfit.hitPoseSprite;
             visualData.defeatedPoseSprite = defaultOutfit.defeatedPoseSprite;
             visualData.actedPoseSprite = defaultOutfit.actedPoseSprite;
+            visualData.idleFrames = defaultOutfit.idleFrames;
+            visualData.moveFrames = defaultOutfit.moveFrames;
+            visualData.attackFrames = defaultOutfit.attackFrames;
+            visualData.skillFrames = defaultOutfit.skillFrames;
+            visualData.hitFrames = defaultOutfit.hitFrames;
             visualData.bustSprite = defaultOutfit.bustSprite;
             visualData.portraitSprite = visualData.bustSprite;
             visualData.faceIconSprite = defaultOutfit.faceIconSprite;
@@ -277,6 +287,11 @@ public static class TeamCharacterAssetBuilder
         EnsureSprite(PosePath(spec, "acted"), PosePixelsPerUnit);
         EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_portrait.png", PortraitPixelsPerUnit);
         EnsureSprite(CharacterRoot + "/" + spec.id + "/Portraits/" + spec.id + "_icon.png", IconPixelsPerUnit);
+        ConfigurePoseFrameImporters(spec, "idle");
+        ConfigurePoseFrameImporters(spec, "move");
+        ConfigurePoseFrameImporters(spec, "attack");
+        ConfigurePoseFrameImporters(spec, "skill");
+        ConfigurePoseFrameImporters(spec, "hit");
     }
 
     private static Sprite EnsureSprite(string path, float pixelsPerUnit)
@@ -464,6 +479,57 @@ public static class TeamCharacterAssetBuilder
     private static string PosePath(Spec spec, string pose)
     {
         return CharacterRoot + "/" + spec.id + "/Sprites/" + spec.id + "_" + pose + ".png";
+    }
+
+    private const int MaxPoseFrames = 8;
+
+    private static string PoseFramePath(Spec spec, string pose, int frame)
+    {
+        return CharacterRoot + "/" + spec.id + "/Sprites/" + spec.id + "_" + pose + "_" + frame + ".png";
+    }
+
+    private static void ConfigurePoseFrameImporters(Spec spec, string pose)
+    {
+        for (int frame = 2; frame <= MaxPoseFrames; frame++)
+        {
+            string path = PoseFramePath(spec, pose, frame);
+            if (AssetImporter.GetAtPath(path) == null)
+            {
+                break;
+            }
+
+            EnsureSprite(path, PosePixelsPerUnit);
+        }
+    }
+
+    /// <summary>{id}_{pose}.png에 더해 {id}_{pose}_2..8.png 연속 파일을 프레임 배열로 모은다.
+    /// 추가 프레임 파일이 없으면 null을 돌려 단일 포즈 경로(현행 동작)를 유지한다.</summary>
+    private static Sprite[] CollectPoseFrames(Spec spec, string pose, Sprite baseSprite)
+    {
+        if (baseSprite == null)
+        {
+            return null;
+        }
+
+        List<Sprite> frames = new List<Sprite> { baseSprite };
+        for (int frame = 2; frame <= MaxPoseFrames; frame++)
+        {
+            string path = PoseFramePath(spec, pose, frame);
+            if (AssetImporter.GetAtPath(path) == null)
+            {
+                break;
+            }
+
+            Sprite sprite = EnsureSprite(path, PosePixelsPerUnit);
+            if (sprite == null)
+            {
+                break;
+            }
+
+            frames.Add(sprite);
+        }
+
+        return frames.Count >= 2 ? frames.ToArray() : null;
     }
 
     private static string VisualDataPath(Spec spec)

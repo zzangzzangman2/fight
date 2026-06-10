@@ -23,6 +23,13 @@ public sealed class CharacterOutfitData : ScriptableObject
     public Sprite defeatedPoseSprite;
     public Sprite actedPoseSprite;
 
+    [Header("Battle Pose Frames (의상별 오버라이드, 비우면 캐릭터 기본 프레임)")]
+    public Sprite[] idleFrames;
+    public Sprite[] moveFrames;
+    public Sprite[] attackFrames;
+    public Sprite[] skillFrames;
+    public Sprite[] hitFrames;
+
     [Header("Future Layered Swap Slots")]
     public bool useLayeredSprites;
     public Sprite baseBodyLayer;

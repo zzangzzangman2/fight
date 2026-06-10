@@ -46,3 +46,18 @@
 4. `heightInTiles`, `spriteOffset`, `shadowWidth`, `shadowHeight`로 보드 위 크기와 발 위치를 맞춘다.
 5. `BattleTestUnitDefinition.visual`에 새 VisualData를 연결한다.
 6. 고유 애니메이터가 필요해지면 `animatorController`를 채우고, 현재 절차 애니메이션은 기본 fallback으로 둔다.
+
+## 멀티 프레임 애니메이션 (프레임 시트)
+
+단일 포즈 대신 여러 장을 넣으면 프레임 애니메이션으로 자동 전환된다. 비워두면 기존 단일 포즈 + 절차 변형 그대로 동작한다.
+
+- 파일 규칙: 기본 포즈 `{id}_{pose}.png`가 1프레임, 추가 프레임은 `{id}_{pose}_2.png`, `{id}_{pose}_3.png` … 최대 `_8`까지. 번호는 연속이어야 하며 빠진 번호에서 수집이 멈춘다.
+  - 예: `park_sungjun_move.png`, `park_sungjun_move_2.png`, `park_sungjun_move_3.png`, `park_sungjun_move_4.png` → 4프레임 걷기 사이클.
+- 지원 포즈: `idle`, `move`, `attack`, `skill`, `hit` (defeated/acted는 단일 포즈 유지).
+- 메뉴 `Joseon Murim Tactics > Combat > Rebuild Six Character Team Assets`를 실행하면 프레임 파일을 자동 수집해 `CharacterVisualData.moveFrames` 등에 채운다.
+- 재생 규칙:
+  - `move` 프레임은 시간이 아니라 **보폭 위상**(타일당 1보, 발자국 데칼과 동일 위상)에 동기화된다 — 4~6프레임 권장.
+  - `attack`/`skill`/`hit` 프레임은 무기 타임라인 진행도(선딜→타격→후딜)에 맞춰 1회 재생된다 — 3~4프레임 권장(중간 프레임이 타격 순간).
+  - `idle` 프레임은 `idleFrameRate`(기본 4fps)로 순환한다.
+- 모든 프레임은 같은 캔버스 크기/피벗으로 그려야 한다(발 위치 고정). 임포터 설정은 리빌드 메뉴가 기본 포즈와 동일하게 맞춘다.
+- 의상(`CharacterOutfitData`)에도 같은 프레임 슬롯이 있어 의상별 모션 오버라이드가 가능하다.
