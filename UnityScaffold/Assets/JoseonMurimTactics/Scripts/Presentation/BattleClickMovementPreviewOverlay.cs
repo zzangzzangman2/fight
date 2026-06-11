@@ -29,6 +29,7 @@ namespace JoseonMurimTactics
         private const BindingFlags AnyInstance = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         private const BindingFlags AnyStatic = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
         private static readonly Type Vector2IntType = typeof(Vector2Int);
+        private static Material defaultSpriteMaterial;
 
         [Header("Selection Gate")]
         [SerializeField] private bool requireDirectUnitClick = true;
@@ -433,6 +434,7 @@ namespace JoseonMurimTactics
             SpriteRenderer renderer = GetRenderer();
             renderer.name = kind + "_" + cell.x + "_" + cell.y;
             renderer.sprite = diamondSprite;
+            ApplyDefaultSpriteMaterial(renderer);
             renderer.color = ColorFor(kind, cost);
             renderer.sortingLayerName = "Default";
             renderer.sortingOrder = sortingOrder + (kind == PreviewKind.Current ? 2 : kind == PreviewKind.Blocked ? 1 : 0);
@@ -474,8 +476,32 @@ namespace JoseonMurimTactics
             GameObject obj = new GameObject("PreviewCell");
             obj.hideFlags = HideFlags.DontSave;
             SpriteRenderer renderer = obj.AddComponent<SpriteRenderer>();
-            renderer.sharedMaterial = null;
+            ApplyDefaultSpriteMaterial(renderer);
             return renderer;
+        }
+
+        private static void ApplyDefaultSpriteMaterial(SpriteRenderer renderer)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            Material material = DefaultSpriteMaterial();
+            if (material != null)
+            {
+                renderer.sharedMaterial = material;
+            }
+        }
+
+        private static Material DefaultSpriteMaterial()
+        {
+            if (defaultSpriteMaterial == null)
+            {
+                defaultSpriteMaterial = Resources.GetBuiltinResource<Material>("Sprites-Default.mat");
+            }
+
+            return defaultSpriteMaterial;
         }
 
         private void HideOverlay()

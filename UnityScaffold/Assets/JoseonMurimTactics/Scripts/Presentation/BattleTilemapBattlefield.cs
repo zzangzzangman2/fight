@@ -30,6 +30,7 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
     private Transform highlightRoot;
     private int highlightRowCount = 33;
     private BattleMapTilemapBinder binder;
+    private static Material defaultSpriteMaterial;
 
     public BattleMapTilemapBinder Binder => binder;
     public Tilemap GroundTilemap { get; private set; }
@@ -263,10 +264,35 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
         renderer = cellObject.AddComponent<SpriteRenderer>();
         renderer.sprite = highlightCellSprite;
+        ApplyDefaultSpriteMaterial(renderer);
         renderer.sortingLayerName = "Default";
         renderer.sortingOrder = ((highlightRowCount - (cell.x + cell.y)) * RowStride) + HighlightSlot;
         highlightCells[cell] = renderer;
         return renderer;
+    }
+
+    private static void ApplyDefaultSpriteMaterial(SpriteRenderer renderer)
+    {
+        if (renderer == null)
+        {
+            return;
+        }
+
+        Material material = DefaultSpriteMaterial();
+        if (material != null)
+        {
+            renderer.sharedMaterial = material;
+        }
+    }
+
+    private static Material DefaultSpriteMaterial()
+    {
+        if (defaultSpriteMaterial == null)
+        {
+            defaultSpriteMaterial = Resources.GetBuiltinResource<Material>("Sprites-Default.mat");
+        }
+
+        return defaultSpriteMaterial;
     }
 
     public void SetTerrainTint(Vector2Int cell, TerrainType terrainType, Color color)
