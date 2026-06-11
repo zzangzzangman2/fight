@@ -405,7 +405,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         if (!defeated)
         {
             PlayEmotion(CharacterEmotion.Pain, 0.32f);
-            PlayState(CharacterBattleVisualState.Hit, 0.30f);
+            PlayState(CharacterBattleVisualState.Hit, ClipDuration(visual == null ? null : visual.hitClip, 0.30f));
         }
     }
 
@@ -413,7 +413,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     {
         if (!defeated)
         {
-            PlayState(CharacterBattleVisualState.Guard, 0.45f);
+            PlayState(CharacterBattleVisualState.Guard, ClipDuration(visual == null ? null : visual.guardClip, 0.45f));
         }
     }
 
@@ -1258,9 +1258,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         emotionFaceRenderer.sprite = sprite;
         emotionFaceRenderer.flipX = facingSign < 0f;
         emotionFaceRenderer.color = tint;
-        emotionFaceRenderer.transform.localPosition = Vector3.zero;
+        Vector2 offset = visual == null ? Vector2.zero : visual.emotionFaceOffset;
+        Vector2 scale = visual == null ? Vector2.one : visual.emotionFaceScale;
+        emotionFaceRenderer.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
         emotionFaceRenderer.transform.localRotation = Quaternion.identity;
-        emotionFaceRenderer.transform.localScale = Vector3.one;
+        emotionFaceRenderer.transform.localScale = new Vector3(scale.x, scale.y, 1f);
     }
 
     private bool UpdateBlink(float time)
@@ -1574,8 +1576,9 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         SetLayerSorting(faceLayerRenderer, order + 3);
         SetLayerSorting(weaponLayerRenderer, order + 4);
         SetLayerSorting(accessoryLayerRenderer, order + 5);
-        SetLayerSorting(emotionFaceRenderer, order + 6);
-        effectRenderer.sortingOrder = order + 7;
+        int emotionFaceOrderOffset = visual == null ? 6 : visual.emotionFaceSortingOffset;
+        SetLayerSorting(emotionFaceRenderer, order + emotionFaceOrderOffset);
+        effectRenderer.sortingOrder = order + Mathf.Max(7, emotionFaceOrderOffset + 1);
     }
 
     private Sprite SelectStateSprite()

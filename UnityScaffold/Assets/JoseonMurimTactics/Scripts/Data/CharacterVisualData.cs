@@ -51,6 +51,11 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite painFaceSprite;
     public Sprite seriousFaceSprite;
 
+    [Header("Face Overlay Fit")]
+    public Vector2 emotionFaceOffset;
+    public Vector2 emotionFaceScale = Vector2.one;
+    public int emotionFaceSortingOffset = 6;
+
     [Header("Runtime Polish")]
     public bool enableBlink = true;
     public bool enableLayerSway = true;
