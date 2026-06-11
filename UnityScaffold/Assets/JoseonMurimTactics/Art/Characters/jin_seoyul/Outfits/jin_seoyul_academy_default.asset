@@ -50,10 +50,10 @@ MonoBehaviour:
   - {fileID: 21300000, guid: f4ab0eb4b05f7db4abbd9e787757da65, type: 3}
   - {fileID: 21300000, guid: 2a2a4e621b4c00f4db1e21735f859760, type: 3}
   - {fileID: 21300000, guid: f3e97783cc6d9d941af09d5825395d15, type: 3}
-  useLayeredSprites: 0
-  baseBodyLayer: {fileID: 0}
+  useLayeredSprites: 1
+  baseBodyLayer: {fileID: 21300000, guid: 17bbd03a396a40c89e46e2eef806e2d6, type: 3}
   outfitLayer: {fileID: 0}
-  hairLayer: {fileID: 0}
+  hairLayer: {fileID: 21300000, guid: bcce2d4274464292a0b92c662afb591e, type: 3}
   faceLayer: {fileID: 0}
-  weaponLayer: {fileID: 0}
+  weaponLayer: {fileID: 21300000, guid: 72bf884ad28842009c90f72c52163952, type: 3}
   accessoryLayer: {fileID: 0}

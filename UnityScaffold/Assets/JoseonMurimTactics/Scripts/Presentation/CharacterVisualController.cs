@@ -1722,7 +1722,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         CharacterOutfitData outfit = ActiveOutfit();
-        bool hasLayerSprites = outfit != null && outfit.useLayeredSprites &&
+        bool hasLayerSprites = outfit != null && outfit.useLayeredSprites && CanUseLayeredSpritesForState(visualState) &&
                                (outfit.baseBodyLayer != null || outfit.outfitLayer != null ||
                                 outfit.hairLayer != null || outfit.faceLayer != null ||
                                 outfit.weaponLayer != null || outfit.accessoryLayer != null);
@@ -1737,6 +1737,14 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         SetLayerSprite(faceLayerRenderer, hasLayerSprites ? outfit.faceLayer : null);
         SetLayerSprite(weaponLayerRenderer, hasLayerSprites ? outfit.weaponLayer : null);
         SetLayerSprite(accessoryLayerRenderer, hasLayerSprites ? outfit.accessoryLayer : null);
+    }
+
+    private static bool CanUseLayeredSpritesForState(CharacterBattleVisualState state)
+    {
+        return state == CharacterBattleVisualState.Idle ||
+               state == CharacterBattleVisualState.SelectedIdle ||
+               state == CharacterBattleVisualState.Wait ||
+               state == CharacterBattleVisualState.TurnStart;
     }
 
     private void SetBodySprite(Sprite sprite)
