@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f56ea942947d394d894eed21d4fd33f, type: 3}
+  m_Name: clip_jin_seoyul_selected_idle
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterSpriteAnimationClipData
+  clipId: jin_seoyul_selected_idle
+  frames:
+  - {fileID: 21300000, guid: c5a059a3c831be5448b6d943b9846d1d, type: 3}
+  - {fileID: 21300000, guid: 680f378e947e47e46b5973d2ff09e6a9, type: 3}
+  - {fileID: 21300000, guid: ce7ce94b9041ba5409b3a1e100a6404e, type: 3}
+  framesPerSecond: 6
+  loop: 1
+  pingPong: 1
+  holdLastFrame: 1
+  rootOffset: {x: 0, y: 0}
+  durationOverride: 0
+  eventCues: []

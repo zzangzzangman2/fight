@@ -51,6 +51,29 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 658f75c18de8d0a41940c66f0fd4317f, type: 3}
   - {fileID: 21300000, guid: c4c6d27b29e9e8147a2abf8cc4c4b2ae, type: 3}
   idleFrameRate: 4
+  livingMotion: {fileID: 11400000, guid: 2842ae9cccc1d474dbc05e14f17b36ec, type: 2}
+  idleClip: {fileID: 11400000, guid: c1eb177791a06264dbe797ef3aae3c60, type: 2}
+  selectedIdleClip: {fileID: 11400000, guid: b2f4fc32e5c21ff428aae07058334b79, type: 2}
+  moveClip: {fileID: 11400000, guid: 58f54a9644f2e444f9ea778c85e8fad8, type: 2}
+  attackClip: {fileID: 11400000, guid: 958f0802918c42942bc48b8558bcdd2d, type: 2}
+  skillClip: {fileID: 11400000, guid: f1e6161b1c96e304b8d5d1de04d27795, type: 2}
+  hitClip: {fileID: 11400000, guid: ad5ea096802227f49b7b7126a5613c6b, type: 2}
+  guardClip: {fileID: 11400000, guid: 7bc5e5b9ee6f65743b69953c61313b6d, type: 2}
+  waitClip: {fileID: 11400000, guid: 5edb595db6a701643807c9077a659ffc, type: 2}
+  defeatClip: {fileID: 11400000, guid: 9b38078a791202b4cbfb941d9ca31883, type: 2}
+  victoryClip: {fileID: 11400000, guid: 402b95e00161cbe43ace8b76f7f27dca, type: 2}
+  turnStartClip: {fileID: 11400000, guid: 9d23601928ceec74ba34059d163b7042, type: 2}
+  lowHpClip: {fileID: 11400000, guid: e875726cd9cd94f44ab60003e537d432, type: 2}
+  blinkFaceSprite: {fileID: 0}
+  happyFaceSprite: {fileID: 0}
+  angryFaceSprite: {fileID: 0}
+  painFaceSprite: {fileID: 0}
+  seriousFaceSprite: {fileID: 0}
+  enableBlink: 1
+  enableLayerSway: 1
+  enableFootDust: 0
+  enableSelectionPop: 1
+  enableImpactFreeze: 1
   defaultOutfit: {fileID: 11400000, guid: 4d3512fa19688cb4cac2ddcd867da1ce, type: 2}
   outfitOptions:
   - {fileID: 11400000, guid: 4d3512fa19688cb4cac2ddcd867da1ce, type: 2}

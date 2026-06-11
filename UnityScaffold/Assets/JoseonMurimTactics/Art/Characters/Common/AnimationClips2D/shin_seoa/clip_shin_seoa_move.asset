@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f56ea942947d394d894eed21d4fd33f, type: 3}
+  m_Name: clip_shin_seoa_move
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterSpriteAnimationClipData
+  clipId: shin_seoa_move
+  frames:
+  - {fileID: 21300000, guid: 3826b56b9549a67439638698cd675ae6, type: 3}
+  - {fileID: 21300000, guid: a46ca13f80cf5bc46ae835197979caa2, type: 3}
+  - {fileID: 21300000, guid: a333e76b33ff8164fa5da84eb04be240, type: 3}
+  - {fileID: 21300000, guid: f87eae3d5becf6d49ba72b18e0c925cb, type: 3}
+  - {fileID: 21300000, guid: 3e82f359ddcd0cc4396b6b8a0d1c7687, type: 3}
+  - {fileID: 21300000, guid: 457b48887830ce44cbb785981aa770a3, type: 3}
+  framesPerSecond: 12
+  loop: 1
+  pingPong: 0
+  holdLastFrame: 1
+  rootOffset: {x: 0, y: 0}
+  durationOverride: 0
+  eventCues:
+  - cueId: footstep_left
+    normalizedTime: 0.18
+    payload:
+  - cueId: footstep_right
+    normalizedTime: 0.68
+    payload:

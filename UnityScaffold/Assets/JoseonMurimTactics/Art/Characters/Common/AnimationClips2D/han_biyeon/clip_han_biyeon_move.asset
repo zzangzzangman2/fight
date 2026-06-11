@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f56ea942947d394d894eed21d4fd33f, type: 3}
+  m_Name: clip_han_biyeon_move
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterSpriteAnimationClipData
+  clipId: han_biyeon_move
+  frames:
+  - {fileID: 21300000, guid: ddc8a863628b6a44f93f87c655c80824, type: 3}
+  - {fileID: 21300000, guid: bc3fd1198e5b87a4283ea7d3981f2ab2, type: 3}
+  - {fileID: 21300000, guid: b53099cce5f68aa41bb680e5d9163e25, type: 3}
+  - {fileID: 21300000, guid: 8fba351915c6c544eb02ab6faf8c0c92, type: 3}
+  - {fileID: 21300000, guid: 5de475d29a81ee14bb3cf55343027ca0, type: 3}
+  - {fileID: 21300000, guid: 12263415a1cbd6e4aa60a310b51e5e3f, type: 3}
+  framesPerSecond: 12
+  loop: 1
+  pingPong: 0
+  holdLastFrame: 1
+  rootOffset: {x: 0, y: 0}
+  durationOverride: 0
+  eventCues:
+  - cueId: footstep_left
+    normalizedTime: 0.18
+    payload:
+  - cueId: footstep_right
+    normalizedTime: 0.68
+    payload:

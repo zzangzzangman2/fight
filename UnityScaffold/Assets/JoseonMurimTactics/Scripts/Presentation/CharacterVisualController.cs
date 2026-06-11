@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 using System.Collections.Generic;
 
@@ -29,6 +29,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     public SpriteRenderer outfitLayerRenderer;
     public SpriteRenderer hairLayerRenderer;
     public SpriteRenderer faceLayerRenderer;
+    public SpriteRenderer emotionFaceRenderer;
     public SpriteRenderer weaponLayerRenderer;
     public SpriteRenderer accessoryLayerRenderer;
     public SpriteRenderer shadowRenderer;
@@ -61,6 +62,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private float assistReactionStartedAt = -999f;
     private CharacterEmotion activeEmotion = CharacterEmotion.Neutral;
     private float emotionExpiresAt = -1f;
+    private float nextBlinkAt = -1f;
+    private float blinkUntil = -1f;
     private CharacterSpriteAnimationClipData activeCueClip;
     private int activeCueLoopIndex = -1;
     private readonly HashSet<string> firedClipCues = new HashSet<string>();
@@ -507,6 +510,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             }
 
             ClearMotionTrail();
+            ClearEmotionFace();
 
             ApplyLayerSprites();
             return;
@@ -553,6 +557,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         effectRenderer.enabled = false;
         effectRenderer.color = Color.white;
         ClearMotionTrail();
+        ScheduleNextBlink(Time.time);
         visualState = defeated ? CharacterBattleVisualState.Defeat :
                       selected ? CharacterBattleVisualState.SelectedIdle :
                       acted ? CharacterBattleVisualState.Wait : CharacterBattleVisualState.Idle;
@@ -810,6 +815,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         ApplyEmotionTint(ref tint);
         ApplyStateEnterMotion(stateAge, ref localPosition, ref localScale, ref rotation);
         ApplyClickAndAssistReactions(time, ref localPosition, ref localScale, ref rotation);
+        ApplyRootOffset(ref localPosition);
         ApplyCueEffect(time, ref showEffect, ref effectSprite, ref effectPosition, ref effectScale,
                        ref effectRotation, ref effectColor);
 
@@ -817,6 +823,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         bodyRenderer.color = tint;
         ApplyLayerFlip(facingSign < 0f);
         ApplyLayerTint(tint);
+        UpdateEmotionFace(time, tint);
         bodyTransform.localPosition = localPosition;
         bodyTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
         bodyTransform.localScale = localScale;
@@ -859,6 +866,18 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         localScale.x *= 1f + (scaleDelta * pop);
         localScale.y *= 1f - (scaleDelta * 0.45f * pop);
         rotation += -facingSign * settle * 3.0f * strength;
+    }
+
+    private void ApplyRootOffset(ref Vector3 localPosition)
+    {
+        CharacterSpriteAnimationClipData clip = ActiveStateClip();
+        if (clip == null || clip.rootOffset.sqrMagnitude <= 0.000001f)
+        {
+            return;
+        }
+
+        float weight = visualState == CharacterBattleVisualState.Move ? 0.5f : 1f;
+        localPosition += new Vector3(clip.rootOffset.x * facingSign * weight, clip.rootOffset.y * weight, 0f);
     }
 
     private static bool UsesStateEnterAccent(CharacterBattleVisualState state)
@@ -1181,11 +1200,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
     private void ApplyEmotionTint(ref Color tint)
     {
-        if (emotionExpiresAt > 0f && Time.time > emotionExpiresAt)
-        {
-            activeEmotion = lowHpActive ? CharacterEmotion.LowHp : CharacterEmotion.Neutral;
-            emotionExpiresAt = -1f;
-        }
+        RefreshEmotion(Time.time);
 
         switch (activeEmotion)
         {
@@ -1205,6 +1220,142 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         case CharacterEmotion.LowHp:
             tint = Color.Lerp(tint, visual.hitTint, 0.18f);
             break;
+        }
+    }
+
+    private void RefreshEmotion(float time)
+    {
+        if (emotionExpiresAt > 0f && time > emotionExpiresAt)
+        {
+            activeEmotion = lowHpActive ? CharacterEmotion.LowHp : CharacterEmotion.Neutral;
+            emotionExpiresAt = -1f;
+        }
+    }
+
+    private void UpdateEmotionFace(float time, Color tint)
+    {
+        if (emotionFaceRenderer == null)
+        {
+            return;
+        }
+
+        RefreshEmotion(time);
+        bool blinking = UpdateBlink(time);
+        Sprite sprite = EmotionFaceSprite(activeEmotion);
+        if (sprite == null && blinking && CanBlinkDuring(activeEmotion))
+        {
+            sprite = visual.blinkFaceSprite;
+        }
+
+        if (sprite == null)
+        {
+            emotionFaceRenderer.enabled = false;
+            emotionFaceRenderer.sprite = null;
+            return;
+        }
+
+        emotionFaceRenderer.enabled = true;
+        emotionFaceRenderer.sprite = sprite;
+        emotionFaceRenderer.flipX = facingSign < 0f;
+        emotionFaceRenderer.color = tint;
+        emotionFaceRenderer.transform.localPosition = Vector3.zero;
+        emotionFaceRenderer.transform.localRotation = Quaternion.identity;
+        emotionFaceRenderer.transform.localScale = Vector3.one;
+    }
+
+    private bool UpdateBlink(float time)
+    {
+        if (visual == null || !visual.enableBlink || visual.blinkFaceSprite == null)
+        {
+            nextBlinkAt = -1f;
+            blinkUntil = -1f;
+            return false;
+        }
+
+        if (blinkUntil > time)
+        {
+            return true;
+        }
+
+        if (blinkUntil > 0f)
+        {
+            blinkUntil = -1f;
+            ScheduleNextBlink(time);
+        }
+
+        if (nextBlinkAt < 0f)
+        {
+            ScheduleNextBlink(time);
+        }
+
+        if (time < nextBlinkAt)
+        {
+            return false;
+        }
+
+        blinkUntil = time + 0.08f;
+        nextBlinkAt = -1f;
+        return true;
+    }
+
+    private void ScheduleNextBlink(float time)
+    {
+        if (visual == null || !visual.enableBlink || visual.blinkFaceSprite == null)
+        {
+            nextBlinkAt = -1f;
+            blinkUntil = -1f;
+            return;
+        }
+
+        CharacterLivingMotionProfile profile = MotionProfile();
+        float min = profile == null ? 3f : Mathf.Max(0.2f, profile.blinkMinInterval);
+        float max = profile == null ? 7f : Mathf.Max(min, profile.blinkMaxInterval);
+        nextBlinkAt = time + Random.Range(min, max);
+    }
+
+    private Sprite EmotionFaceSprite(CharacterEmotion emotion)
+    {
+        if (visual == null)
+        {
+            return null;
+        }
+
+        switch (emotion)
+        {
+        case CharacterEmotion.Blink:
+            return visual.blinkFaceSprite;
+        case CharacterEmotion.Smile:
+        case CharacterEmotion.Victory:
+            return visual.happyFaceSprite;
+        case CharacterEmotion.Serious:
+            return visual.seriousFaceSprite;
+        case CharacterEmotion.Angry:
+            return visual.angryFaceSprite != null ? visual.angryFaceSprite : visual.seriousFaceSprite;
+        case CharacterEmotion.Pain:
+            return visual.painFaceSprite;
+        case CharacterEmotion.LowHp:
+            return visual.painFaceSprite != null ? visual.painFaceSprite : visual.seriousFaceSprite;
+        default:
+            return null;
+        }
+    }
+
+    private static bool CanBlinkDuring(CharacterEmotion emotion)
+    {
+        return emotion == CharacterEmotion.Neutral ||
+               emotion == CharacterEmotion.Smile ||
+               emotion == CharacterEmotion.Serious ||
+               emotion == CharacterEmotion.LowHp;
+    }
+
+    private void ClearEmotionFace()
+    {
+        nextBlinkAt = -1f;
+        blinkUntil = -1f;
+        if (emotionFaceRenderer != null)
+        {
+            emotionFaceRenderer.enabled = false;
+            emotionFaceRenderer.sprite = null;
         }
     }
 
@@ -1358,6 +1509,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         outfitLayerRenderer = outfitLayerRenderer != null ? outfitLayerRenderer : EnsureChildRenderer("Layer_Outfit", bodyRenderer.transform);
         hairLayerRenderer = hairLayerRenderer != null ? hairLayerRenderer : EnsureChildRenderer("Layer_Hair", bodyRenderer.transform);
         faceLayerRenderer = faceLayerRenderer != null ? faceLayerRenderer : EnsureChildRenderer("Layer_Face", bodyRenderer.transform);
+        emotionFaceRenderer = emotionFaceRenderer != null ? emotionFaceRenderer : EnsureChildRenderer("Layer_EmotionFace", bodyRenderer.transform);
         weaponLayerRenderer = weaponLayerRenderer != null ? weaponLayerRenderer : EnsureChildRenderer("Layer_Weapon", bodyRenderer.transform);
         accessoryLayerRenderer = accessoryLayerRenderer != null ? accessoryLayerRenderer : EnsureChildRenderer("Layer_Accessory", bodyRenderer.transform);
         motionTrailRenderer = motionTrailRenderer != null ? motionTrailRenderer : EnsureChildRenderer("MotionTrail");
@@ -1422,7 +1574,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         SetLayerSorting(faceLayerRenderer, order + 3);
         SetLayerSorting(weaponLayerRenderer, order + 4);
         SetLayerSorting(accessoryLayerRenderer, order + 5);
-        effectRenderer.sortingOrder = order + 6;
+        SetLayerSorting(emotionFaceRenderer, order + 6);
+        effectRenderer.sortingOrder = order + 7;
     }
 
     private Sprite SelectStateSprite()

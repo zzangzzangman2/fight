@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f56ea942947d394d894eed21d4fd33f, type: 3}
+  m_Name: clip_jin_seoyul_hit
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterSpriteAnimationClipData
+  clipId: jin_seoyul_hit
+  frames:
+  - {fileID: 21300000, guid: f4ab0eb4b05f7db4abbd9e787757da65, type: 3}
+  - {fileID: 21300000, guid: 2a2a4e621b4c00f4db1e21735f859760, type: 3}
+  - {fileID: 21300000, guid: f3e97783cc6d9d941af09d5825395d15, type: 3}
+  framesPerSecond: 12
+  loop: 0
+  pingPong: 0
+  holdLastFrame: 0
+  rootOffset: {x: -0.01, y: 0}
+  durationOverride: 0
+  eventCues:
+  - cueId: hit_flash
+    normalizedTime: 0.1
+    payload:
