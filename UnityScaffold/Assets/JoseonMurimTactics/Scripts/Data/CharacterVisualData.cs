@@ -54,7 +54,7 @@ public sealed class CharacterVisualData : ScriptableObject
     [Header("Runtime Polish")]
     public bool enableBlink = true;
     public bool enableLayerSway = true;
-    public bool enableFootDust = true;
+    public bool enableFootDust = false;
     public bool enableSelectionPop = true;
     public bool enableImpactFreeze = true;
 
