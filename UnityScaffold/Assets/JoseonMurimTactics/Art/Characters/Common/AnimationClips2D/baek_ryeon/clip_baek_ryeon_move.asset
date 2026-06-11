@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f56ea942947d394d894eed21d4fd33f, type: 3}
+  m_Name: clip_baek_ryeon_move
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterSpriteAnimationClipData
+  clipId: baek_ryeon_move
+  frames:
+  - {fileID: 21300000, guid: ee3c6737b467b574eb411e337c0ef495, type: 3}
+  - {fileID: 21300000, guid: f70dcf921e4cb074baac7a5e51a0a6e4, type: 3}
+  - {fileID: 21300000, guid: 1ad3b2afe849bea49b345818143b5bd6, type: 3}
+  - {fileID: 21300000, guid: 0f21653254067e34d8946216fa7ba829, type: 3}
+  - {fileID: 21300000, guid: d058e6174e6f074449010f93ca8f2ad9, type: 3}
+  - {fileID: 21300000, guid: 3c370c4b180bbf44889b3623c07f66e0, type: 3}
+  framesPerSecond: 12
+  loop: 1
+  pingPong: 0
+  holdLastFrame: 1
+  rootOffset: {x: 0, y: 0}
+  durationOverride: 0
+  eventCues:
+  - cueId: footstep_l
+    normalizedTime: 0.18
+    payload:
+  - cueId: footstep_r
+    normalizedTime: 0.68
+    payload:

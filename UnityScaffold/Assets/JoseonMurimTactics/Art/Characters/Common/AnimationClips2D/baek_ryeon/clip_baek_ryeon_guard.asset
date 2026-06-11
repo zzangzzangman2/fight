@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f56ea942947d394d894eed21d4fd33f, type: 3}
+  m_Name: clip_baek_ryeon_guard
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterSpriteAnimationClipData
+  clipId: baek_ryeon_guard
+  frames:
+  - {fileID: 21300000, guid: 998dcc4929f5525498f0d0e116f68022, type: 3}
+  - {fileID: 21300000, guid: 5a565319bcb94e34fb0b801d4b8bcbfd, type: 3}
+  - {fileID: 21300000, guid: 3f060d8410194e54cad32fd547e7a6d1, type: 3}
+  framesPerSecond: 8
+  loop: 0
+  pingPong: 0
+  holdLastFrame: 1
+  rootOffset: {x: 0, y: 0}
+  durationOverride: 0
+  eventCues:
+  - cueId: guard_flash
+    normalizedTime: 0.18
+    payload:

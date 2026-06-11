@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 
+using System.Collections.Generic;
+
 namespace JoseonMurimTactics
 {
 public enum CharacterBattleVisualState
@@ -58,6 +60,15 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private float assistReactionStartedAt = -999f;
     private CharacterEmotion activeEmotion = CharacterEmotion.Neutral;
     private float emotionExpiresAt = -1f;
+    private CharacterSpriteAnimationClipData activeCueClip;
+    private int activeCueLoopIndex = -1;
+    private readonly HashSet<string> firedClipCues = new HashSet<string>();
+    private Sprite cueEffectSprite;
+    private float cueEffectUntil = -1f;
+    private Vector3 cueEffectPosition;
+    private Vector3 cueEffectScale = Vector3.one;
+    private float cueEffectRotation;
+    private Color cueEffectColor = Color.white;
 
     private static Sprite ovalSprite;
     private static Sprite slashSprite;
@@ -86,6 +97,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         UpdateStateLifetime();
+        RunAnimationEventCues();
         ApplyProceduralPose();
         UpdateSorting();
     }
@@ -114,6 +126,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                           acted ? CharacterBattleVisualState.Wait : CharacterBattleVisualState.Idle;
             stateDuration = 0f;
             stateStartedAt = Time.time;
+            ResetAnimationEventCues();
         }
     }
 
@@ -126,6 +139,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                           selected ? CharacterBattleVisualState.SelectedIdle : CharacterBattleVisualState.Idle;
             stateDuration = 0f;
             stateStartedAt = Time.time;
+            ResetAnimationEventCues();
         }
     }
 
@@ -502,6 +516,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                       acted ? CharacterBattleVisualState.Wait : CharacterBattleVisualState.Idle;
         stateDuration = 0f;
         stateStartedAt = Time.time;
+        ResetAnimationEventCues();
 
         ApplyProceduralPose();
         UpdateSorting();
@@ -522,6 +537,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             moveStridePhase = -1f;
             moveStridePhaseSetAt = -1f;
         }
+        ResetAnimationEventCues();
 
         if (bodyRenderer != null)
         {
@@ -546,6 +562,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                       acted ? CharacterBattleVisualState.Wait : CharacterBattleVisualState.Idle;
         stateDuration = 0f;
         stateStartedAt = Time.time;
+        ResetAnimationEventCues();
     }
 
     private void ApplyProceduralPose()
@@ -724,6 +741,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
         ApplyEmotionTint(ref tint);
         ApplyClickAndAssistReactions(time, ref localPosition, ref localScale, ref rotation);
+        ApplyCueEffect(time, ref showEffect, ref effectSprite, ref effectPosition, ref effectScale,
+                       ref effectRotation, ref effectColor);
 
         bodyRenderer.flipX = facingSign < 0f;
         bodyRenderer.color = tint;
@@ -745,6 +764,199 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         UpdateEffect(showEffect, effectSprite, effectPosition, effectScale, effectRotation, effectColor);
+    }
+
+    private void ResetAnimationEventCues()
+    {
+        activeCueClip = null;
+        activeCueLoopIndex = -1;
+        firedClipCues.Clear();
+        cueEffectSprite = null;
+        cueEffectUntil = -1f;
+    }
+
+    private void RunAnimationEventCues()
+    {
+        CharacterSpriteAnimationClipData clip = ActiveStateClip();
+        if (clip == null || clip.eventCues == null || clip.eventCues.Length == 0)
+        {
+            if (activeCueClip != clip)
+            {
+                activeCueClip = clip;
+                activeCueLoopIndex = -1;
+                firedClipCues.Clear();
+            }
+
+            return;
+        }
+
+        float duration = Mathf.Max(0.01f, clip.Duration);
+        float elapsed = Mathf.Max(0f, Time.time - stateStartedAt);
+        bool loop = ShouldLoopCueClip(clip);
+        int loopIndex = loop ? Mathf.FloorToInt(elapsed / duration) : 0;
+        float normalized = loop ? Mathf.Repeat(elapsed / duration, 1f) : Mathf.Clamp01(elapsed / duration);
+
+        if (activeCueClip != clip || activeCueLoopIndex != loopIndex)
+        {
+            activeCueClip = clip;
+            activeCueLoopIndex = loopIndex;
+            firedClipCues.Clear();
+        }
+
+        for (int i = 0; i < clip.eventCues.Length; i++)
+        {
+            CharacterSpriteAnimationEventCue cue = clip.eventCues[i];
+            if (string.IsNullOrEmpty(cue.cueId) || normalized < Mathf.Clamp01(cue.normalizedTime))
+            {
+                continue;
+            }
+
+            string key = i.ToString() + ":" + cue.cueId;
+            if (firedClipCues.Add(key))
+            {
+                HandleAnimationCue(cue);
+            }
+        }
+    }
+
+    private CharacterSpriteAnimationClipData ActiveStateClip()
+    {
+        if (visual == null)
+        {
+            return null;
+        }
+
+        switch (visualState)
+        {
+        case CharacterBattleVisualState.Move:
+            return visual.moveClip;
+        case CharacterBattleVisualState.Attack:
+            return visual.attackClip;
+        case CharacterBattleVisualState.Skill:
+            return visual.skillClip;
+        case CharacterBattleVisualState.Hit:
+            return visual.hitClip;
+        case CharacterBattleVisualState.Guard:
+            return visual.guardClip;
+        case CharacterBattleVisualState.Defeat:
+            return visual.defeatClip;
+        case CharacterBattleVisualState.Victory:
+            return visual.victoryClip;
+        case CharacterBattleVisualState.Wait:
+            return visual.waitClip;
+        case CharacterBattleVisualState.TurnStart:
+            return visual.turnStartClip;
+        default:
+            return visualState == CharacterBattleVisualState.SelectedIdle
+                       ? visual.selectedIdleClip
+                       : lowHpActive ? visual.lowHpClip : visual.idleClip;
+        }
+    }
+
+    private bool ShouldLoopCueClip(CharacterSpriteAnimationClipData clip)
+    {
+        return clip != null && (clip.loop ||
+                                visualState == CharacterBattleVisualState.Idle ||
+                                visualState == CharacterBattleVisualState.SelectedIdle ||
+                                visualState == CharacterBattleVisualState.Move ||
+                                visualState == CharacterBattleVisualState.Victory ||
+                                visualState == CharacterBattleVisualState.Wait);
+    }
+
+    private void HandleAnimationCue(CharacterSpriteAnimationEventCue cue)
+    {
+        string cueId = cue.cueId.ToLowerInvariant();
+        if (cueId.Contains("footstep"))
+        {
+            OnFootstepFrame();
+            float dustAmount = FootDustAmount();
+            if (dustAmount > 0f)
+            {
+                ScheduleCueEffect(GetFootstepDustSprite(), new Vector3(-facingSign * 0.16f, 0.10f, -0.02f),
+                                  Vector3.one * 0.36f * dustAmount, 0f,
+                                  new Color(0.78f, 0.88f, 0.94f, 0.32f * dustAmount), 0.12f);
+            }
+
+            return;
+        }
+
+        if (cueId.Contains("impact") || cueId.Contains("damage") || cueId.Contains("hit_flash"))
+        {
+            if (visualState == CharacterBattleVisualState.Skill)
+            {
+                OnSkillHitFrame();
+            }
+            else if (visualState == CharacterBattleVisualState.Attack)
+            {
+                OnAttackHitFrame();
+            }
+
+            ScheduleCueEffect(GetElementImpactSprite(ActiveElement()), new Vector3(0f, 0.58f, -0.03f),
+                              Vector3.one * 0.62f, 0f, ElementSecondary(0.72f), 0.16f);
+            return;
+        }
+
+        if (cueId.Contains("guard"))
+        {
+            ScheduleCueEffect(GetGuardRingSprite(), new Vector3(0f, 0.48f, -0.03f),
+                              Vector3.one * 0.64f, 0f, ElementPrimary(0.48f), 0.18f);
+            return;
+        }
+
+        if (cueId.Contains("cast") || cueId.Contains("afterglow"))
+        {
+            ScheduleCueEffect(GetElementSkillSprite(ActiveElement()), new Vector3(0f, 0.58f, -0.03f),
+                              Vector3.one * 0.70f, Time.time * 18f, ElementPrimary(0.56f), 0.16f);
+            return;
+        }
+
+        if (cueId.Contains("ready"))
+        {
+            ScheduleCueEffect(GetGuardRingSprite(), new Vector3(0f, 0.18f, -0.03f),
+                              Vector3.one * 0.48f, 0f, ElementPrimary(0.42f), 0.14f);
+            return;
+        }
+
+        if (cueId.Contains("anticipation") || cueId.Contains("recover"))
+        {
+            ScheduleCueEffect(GetElementSlashSprite(ActiveElement()), new Vector3(facingSign * 0.34f, 0.56f, -0.02f),
+                              new Vector3(0.62f, 0.46f, 1f), facingSign < 0f ? 180f : 0f,
+                              ElementPrimary(0.55f), 0.12f);
+        }
+    }
+
+    private void ScheduleCueEffect(Sprite sprite, Vector3 position, Vector3 scale, float rotation, Color color,
+                                   float seconds)
+    {
+        cueEffectSprite = sprite;
+        cueEffectPosition = position;
+        cueEffectScale = scale;
+        cueEffectRotation = rotation;
+        cueEffectColor = color;
+        cueEffectUntil = Time.time + Mathf.Max(0.02f, seconds);
+    }
+
+    private void ApplyCueEffect(float time, ref bool showEffect, ref Sprite effectSprite,
+                                ref Vector3 effectPosition, ref Vector3 effectScale,
+                                ref float effectRotation, ref Color effectColor)
+    {
+        if (cueEffectSprite == null)
+        {
+            return;
+        }
+
+        if (time >= cueEffectUntil)
+        {
+            cueEffectSprite = null;
+            return;
+        }
+
+        showEffect = true;
+        effectSprite = cueEffectSprite;
+        effectPosition = cueEffectPosition;
+        effectScale = cueEffectScale;
+        effectRotation = cueEffectRotation;
+        effectColor = cueEffectColor;
     }
 
     private void ApplyEmotionTint(ref Color tint)
