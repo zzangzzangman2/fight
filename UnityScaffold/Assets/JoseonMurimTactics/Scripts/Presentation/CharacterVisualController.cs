@@ -47,6 +47,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private Transform bodyTransform;
     private Vector3 baseBodyPosition;
     private Vector3 baseBodyScale = Vector3.one;
+    private float bodyFootBoundsMinY;
     private float phaseSeed;
     private bool selected;
     private bool acted;
@@ -530,6 +531,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
         Sprite fitSprite = bodyRenderer.sprite != null ? bodyRenderer.sprite : visual.fullBodySprite;
         float scale = 1f;
+        bodyFootBoundsMinY = fitSprite != null ? fitSprite.bounds.min.y : 0f;
         if (fitSprite != null && fitSprite.bounds.size.y > 0.01f)
         {
             scale = visual.heightInTiles / fitSprite.bounds.size.y;
@@ -543,12 +545,12 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         bodyTransform.localScale = baseBodyScale;
 
         shadowRenderer.sprite = GetOvalSprite();
-        shadowRenderer.transform.localPosition = Vector3.zero;
+        shadowRenderer.transform.localPosition = new Vector3(0f, 0.055f, 0f);
         shadowRenderer.transform.localScale = new Vector3(visual.shadowWidth, visual.shadowHeight, 1f);
         shadowRenderer.color = new Color(0f, 0f, 0f, 0.34f);
 
         selectionRenderer.sprite = GetOvalSprite();
-        selectionRenderer.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+        selectionRenderer.transform.localPosition = new Vector3(0f, 0.055f, 0f);
         selectionRenderer.transform.localScale =
             new Vector3(visual.shadowWidth * 1.15f, visual.shadowHeight * 1.35f, 1f);
         selectionRenderer.color = new Color(1f, 0.78f, 0.18f, 0.62f);
@@ -667,7 +669,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             float selectPulse = Mathf.Abs(Mathf.Sin((time * 4.8f) + phaseSeed));
             localScale.y *= 1f + (selectPulse * 0.030f);
             localScale.x *= 1f - (selectPulse * 0.014f);
-            localPosition.y += selectPulse * 0.012f;
+            localPosition.y += selectPulse * 0.004f;
             tint = visual.selectedTint;
         }
         else if (acted || visualState == CharacterBattleVisualState.Wait)
@@ -818,6 +820,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         ApplyRootOffset(ref localPosition);
         ApplyCueEffect(time, ref showEffect, ref effectSprite, ref effectPosition, ref effectScale,
                        ref effectRotation, ref effectColor);
+        StabilizeFootAnchor(ref localPosition, localScale);
 
         bodyRenderer.flipX = facingSign < 0f;
         bodyRenderer.color = tint;
@@ -1362,7 +1365,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     }
 
     private void ApplyClickAndAssistReactions(float time, ref Vector3 localPosition, ref Vector3 localScale,
-                                             ref float rotation)
+                                              ref float rotation)
     {
         if (visual != null && visual.enableSelectionPop)
         {
@@ -1372,7 +1375,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                 float pop = Mathf.Sin(clickT * Mathf.PI);
                 float scale = Mathf.Lerp(1f, SelectedPopScale(), pop);
                 localScale *= scale;
-                localPosition.y += pop * 0.055f;
+                localPosition.y += pop * 0.024f;
                 rotation += -facingSign * pop * 2.5f;
             }
         }
@@ -1381,9 +1384,19 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         if (assistT < 1f)
         {
             float pulse = Mathf.Sin(assistT * Mathf.PI);
-            localPosition.y += pulse * 0.035f;
+            localPosition.y += pulse * 0.018f;
             rotation += facingSign * pulse * 2f;
         }
+    }
+
+    private void StabilizeFootAnchor(ref Vector3 localPosition, Vector3 localScale)
+    {
+        if (Mathf.Abs(bodyFootBoundsMinY) <= 0.0001f)
+        {
+            return;
+        }
+
+        localPosition.y += bodyFootBoundsMinY * (baseBodyScale.y - localScale.y);
     }
 
     private void UpdateShadowPose(Vector3 localPosition)
@@ -1403,7 +1416,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             height *= 0.94f;
         }
 
-        shadowRenderer.transform.localPosition = Vector3.zero;
+        shadowRenderer.transform.localPosition = new Vector3(0f, 0.055f, 0f);
         shadowRenderer.transform.localScale = new Vector3(width, Mathf.Max(0.02f, height), 1f);
     }
 
@@ -1897,10 +1910,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
     private static bool CanUseLayeredSpritesForState(CharacterBattleVisualState state)
     {
-        return state == CharacterBattleVisualState.Idle ||
-               state == CharacterBattleVisualState.SelectedIdle ||
-               state == CharacterBattleVisualState.Wait ||
-               state == CharacterBattleVisualState.TurnStart;
+        return state == CharacterBattleVisualState.Idle;
     }
 
     private void SetBodySprite(Sprite sprite)

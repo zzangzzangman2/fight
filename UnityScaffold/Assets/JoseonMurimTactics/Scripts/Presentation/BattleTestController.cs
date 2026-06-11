@@ -8821,7 +8821,7 @@ public sealed class BattleTestUnitView : MonoBehaviour
 
         GameObject ringObject = new GameObject("Current Turn Ground Ring");
         ringObject.transform.SetParent(transform, false);
-        ringObject.transform.localPosition = new Vector3(0f, -0.30f, 0.02f);
+        ringObject.transform.localPosition = new Vector3(0f, -0.20f, 0.02f);
         turnGroundRing = ringObject.AddComponent<SpriteRenderer>();
         turnGroundRing.sprite = GetTurnGroundRingSprite();
         turnGroundRing.color = new Color(1f, 0.78f, 0.20f, 0.55f);
@@ -8851,7 +8851,7 @@ public sealed class BattleTestUnitView : MonoBehaviour
         }
 
         CharacterVisualData visual = Unit.definition.visual;
-        float markerY = visual == null ? 1.52f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.34f;
+        float markerY = visual == null ? 1.46f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.28f;
         turnMarkerBasePosition = new Vector3(0f, markerY, -0.09f);
         turnMarkerRoot.localPosition = turnMarkerBasePosition;
 
@@ -8904,7 +8904,7 @@ public sealed class BattleTestUnitView : MonoBehaviour
     {
         GameObject labelObject = new GameObject("Unit Label");
         labelObject.transform.SetParent(transform, false);
-        labelObject.transform.localPosition = new Vector3(0f, -0.485f, -0.04f);
+        labelObject.transform.localPosition = new Vector3(0f, -0.405f, -0.04f);
 
         label = labelObject.AddComponent<TextMesh>();
         label.anchor = TextAnchor.MiddleCenter;
@@ -8916,9 +8916,9 @@ public sealed class BattleTestUnitView : MonoBehaviour
         labelRenderer = labelObject.GetComponent<MeshRenderer>();
         labelRenderer.sortingLayerName = "Default";
 
-        hpBarBack = CreateBarSprite("HP Bar Back", new Vector3(0f, -0.385f, -0.03f), WorldHpBackColor);
+        hpBarBack = CreateBarSprite("HP Bar Back", new Vector3(0f, -0.305f, -0.03f), WorldHpBackColor);
         hpBarBack.transform.localScale = new Vector3(WorldHpBackScaleX, 0.82f, 1f);
-        hpBarFill = CreateBarSprite("HP Bar Fill", new Vector3(0f, -0.385f, -0.04f),
+        hpBarFill = CreateBarSprite("HP Bar Fill", new Vector3(0f, -0.305f, -0.04f),
                                     Unit != null && Unit.definition.faction == Faction.Enemy
                                         ? WorldHpEnemyColor
                                         : WorldHpAllyColor);

@@ -9,19 +9,19 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattleHUDController : MonoBehaviour
 {
-    private static readonly Color Panel = new Color(0.025f, 0.031f, 0.037f, 0.82f);
-    private static readonly Color PanelStrong = new Color(0.014f, 0.018f, 0.023f, 0.92f);
-    private static readonly Color PanelSoft = new Color(0.050f, 0.060f, 0.066f, 0.70f);
-    private static readonly Color Button = new Color(0.080f, 0.090f, 0.095f, 0.88f);
-    private static readonly Color ButtonActive = new Color(0.185f, 0.143f, 0.073f, 0.96f);
-    private static readonly Color ButtonDisabled = new Color(0.040f, 0.044f, 0.046f, 0.52f);
-    private static readonly Color LineGold = new Color(0.760f, 0.575f, 0.250f, 0.96f);
-    private static readonly Color TextMain = new Color(0.940f, 0.915f, 0.835f, 1f);
-    private static readonly Color TextSub = new Color(0.690f, 0.735f, 0.735f, 0.92f);
-    private static readonly Color TextDim = new Color(0.520f, 0.555f, 0.555f, 0.72f);
-    private static readonly Color HpFill = new Color(0.690f, 0.180f, 0.160f, 0.96f);
-    private static readonly Color InnerFill = new Color(0.170f, 0.590f, 0.680f, 0.96f);
-    private static readonly Color GaugeBg = new Color(0.025f, 0.027f, 0.028f, 0.92f);
+    private static readonly Color Panel = new Color(0.018f, 0.017f, 0.014f, 0.88f);
+    private static readonly Color PanelStrong = new Color(0.010f, 0.011f, 0.010f, 0.94f);
+    private static readonly Color PanelSoft = new Color(0.086f, 0.072f, 0.046f, 0.84f);
+    private static readonly Color Button = new Color(0.055f, 0.055f, 0.047f, 0.94f);
+    private static readonly Color ButtonActive = new Color(0.310f, 0.225f, 0.095f, 0.98f);
+    private static readonly Color ButtonDisabled = new Color(0.026f, 0.027f, 0.024f, 0.56f);
+    private static readonly Color LineGold = new Color(0.840f, 0.650f, 0.300f, 0.98f);
+    private static readonly Color TextMain = new Color(0.960f, 0.925f, 0.825f, 1f);
+    private static readonly Color TextSub = new Color(0.760f, 0.800f, 0.740f, 0.94f);
+    private static readonly Color TextDim = new Color(0.550f, 0.565f, 0.520f, 0.74f);
+    private static readonly Color HpFill = new Color(0.720f, 0.170f, 0.135f, 0.98f);
+    private static readonly Color InnerFill = new Color(0.135f, 0.600f, 0.560f, 0.98f);
+    private static readonly Color GaugeBg = new Color(0.012f, 0.014f, 0.013f, 0.94f);
 
     private const int MaxRosterSlots = 6;
     private const float ReferenceWidth = 1920f;
@@ -259,6 +259,8 @@ public sealed class BattleHUDController : MonoBehaviour
 
         selectedUnitCard = PanelRect("SelectedUnitCard", root, BottomLeft(), new Vector2(390f, 118f),
                                      new Vector2(24f, 24f), PanelStrong, true, "ui_unit_status_card");
+        AddAccentLine("SelectedUnitAccent", selectedUnitCard, TopLeft(), TopRight(),
+                      new Vector2(14f, -10f), new Vector2(-14f, -7f), LineGold);
         RectTransform portrait = PanelRect("PortraitFrame", selectedUnitCard, TopLeft(), new Vector2(66f, 66f),
                                            new Vector2(16f, -18f), PanelSoft, true, "ui_panel_gold_frame");
         selectedPortraitText = MakeText("PortraitGlyph", portrait, StretchMin(), StretchMax(),
@@ -283,13 +285,19 @@ public sealed class BattleHUDController : MonoBehaviour
 
         rosterPanel = PanelRect("RosterStrip", root, BottomCenter(), new Vector2(720f, 82f), new Vector2(0f, 18f),
                                 Panel, true, "ui_turn_order_card");
+        AddAccentLine("RosterAccent", rosterPanel, TopLeft(), TopRight(),
+                      new Vector2(16f, -9f), new Vector2(-16f, -6f), new Color(LineGold.r, LineGold.g, LineGold.b, 0.62f));
 
         commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(536f, 166f),
                                  new Vector2(-24f, 24f), PanelStrong, true, "ui_battle_command_panel");
+        AddAccentLine("CommandAccent", commandPanel, TopLeft(), TopRight(),
+                      new Vector2(18f, -10f), new Vector2(-18f, -7f), LineGold);
         BuildCommandButtons();
 
         forecastPanel = PanelRect("ForecastCard", root, BottomCenter(), new Vector2(720f, 144f),
                                   new Vector2(0f, 112f), PanelStrong, true, "ui_battle_forecast_panel");
+        AddAccentLine("ForecastAccent", forecastPanel, TopLeft(), TopRight(),
+                      new Vector2(18f, -10f), new Vector2(-18f, -7f), LineGold);
         forecastTitle = MakeText("ForecastTitle", forecastPanel, TopLeft(), TopRight(),
                                  new Vector2(18f, -30f), new Vector2(-18f, -8f), 15, FontStyle.Bold,
                                  TextAnchor.MiddleCenter, LineGold);
@@ -795,7 +803,7 @@ public sealed class BattleHUDController : MonoBehaviour
 
         image.sprite = sprite;
         image.type = allowSliced && HasBorder(sprite) ? Image.Type.Sliced : Image.Type.Simple;
-        image.color = Color.white;
+        image.color = fallbackColor.a > 0.001f ? fallbackColor : Color.white;
     }
 
     private static void ConfigureButtonSpriteState(Button button)
