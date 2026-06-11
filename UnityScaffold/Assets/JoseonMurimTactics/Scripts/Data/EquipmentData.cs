@@ -230,7 +230,13 @@ public static class MaterialCatalog
         new MaterialInfo("iron_ore", "철광석", 15, "무기 강화 재료. 뒷산 폐광에서도 가끔 나온다."),
         new MaterialInfo("fine_cloth", "질긴 천", 15, "방어구 강화 재료. 소백촌 베틀에서 짠 천."),
         new MaterialInfo("jade_shard", "옥 조각", 20, "장신구 강화 재료. 맑은 기운이 감도는 옥."),
-        new MaterialInfo("wood_bundle", "목재 묶음", 12, "문파 시설 복구 재료.")
+        new MaterialInfo("wood_bundle", "목재 묶음", 12, "문파 시설 복구 재료."),
+        new MaterialInfo("goat_milk", "산양 젖", 14, "늑대 고개 방목민들이 나눠 준 진한 산양 젖."),
+        new MaterialInfo("tough_leather", "질긴 가죽", 16, "야수의 발톱을 견딘 질긴 가죽. 방어구 손질에 쓴다."),
+        new MaterialInfo("tiger_pelt", "호피 조각", 28, "산군의 무늬가 남은 가죽 조각. 고급 방어구 재료."),
+        new MaterialInfo("emergency_medicine", "응급 약재", 18, "전투 직후 상처를 덮는 데 쓰는 급한 약재 묶음."),
+        new MaterialInfo("rare_herb", "희귀 약초", 24, "절벽 약초길에서만 드문드문 나는 향 짙은 약초."),
+        new MaterialInfo("leopard_pelt", "표범 무늬 가죽", 26, "그림자 표범의 무늬가 남은 가죽. 가볍고 질기다.")
     };
 
     private static readonly Dictionary<string, MaterialInfo> Map = BuildMap();

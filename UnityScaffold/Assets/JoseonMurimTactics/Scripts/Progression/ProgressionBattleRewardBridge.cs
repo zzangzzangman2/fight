@@ -108,9 +108,15 @@ namespace JoseonMurimTactics
                     continue;
                 }
 
+                string itemId = InventoryService.NormalizeItemId(material.id);
+                if (string.IsNullOrEmpty(itemId))
+                {
+                    continue;
+                }
+
                 int oldValue;
-                session.inventory.TryGetValue(material.id, out oldValue);
-                session.inventory[material.id] = oldValue + material.delta;
+                session.inventory.TryGetValue(itemId, out oldValue);
+                session.inventory[itemId] = oldValue + material.delta;
             }
         }
 

@@ -34,6 +34,7 @@ public sealed class InventoryService
             return 0;
         }
 
+        NormalizeStoredKeys();
         return session.inventory.TryGetValue(NormalizeItemId(itemId), out int count) ? count : 0;
     }
 
@@ -44,6 +45,7 @@ public sealed class InventoryService
             return;
         }
 
+        NormalizeStoredKeys();
         string key = NormalizeItemId(itemId);
         if (count <= 0)
         {
@@ -61,6 +63,7 @@ public sealed class InventoryService
             return GetCount(itemId);
         }
 
+        NormalizeStoredKeys();
         string key = NormalizeItemId(itemId);
         int next = GetCount(key) + count;
         session.inventory[key] = next;
@@ -114,6 +117,7 @@ public sealed class InventoryService
             return stacks;
         }
 
+        NormalizeStoredKeys();
         foreach (KeyValuePair<string, int> pair in session.inventory)
         {
             if (pair.Value > 0)
@@ -133,28 +137,76 @@ public sealed class InventoryService
             return string.Empty;
         }
 
-        switch (item)
+        string trimmed = item.Trim();
+        switch (trimmed)
         {
         case "약재 꾸러미":
         case "약초 꾸러미":
+        case "약재_꾸러미":
+        case "약초_꾸러미":
         case "supply:medicine":
             return "medicine_bundle";
         case "내공단":
             return "inner_power_pill";
         case "투척 비수 묶음":
+        case "투척_비수_묶음":
             return "throwing_dagger_bundle";
         case "목재 묶음":
+        case "목재_묶음":
+        case "supply:wood":
+        case "material:wood_bundle":
             return "wood_bundle";
         case "철광석":
+        case "material:iron_ore":
             return "iron_ore";
         case "질긴 천":
+        case "질긴_천":
+        case "material:fine_cloth":
             return "fine_cloth";
         case "옥 조각":
+        case "옥_조각":
+        case "material:jade_shard":
             return "jade_shard";
+        case "산양 젖":
+        case "산양_젖":
+        case "material:goat_milk":
+            return "goat_milk";
+        case "질긴 가죽":
+        case "질긴_가죽":
+        case "supply:leather":
+        case "material:tough_leather":
+            return "tough_leather";
+        case "호피 조각":
+        case "호피_조각":
+        case "material:tiger_pelt":
+            return "tiger_pelt";
+        case "응급 약재":
+        case "응급_약재":
+        case "material:emergency_medicine":
+            return "emergency_medicine";
+        case "희귀 약초":
+        case "희귀_약초":
+        case "supply:herb":
+        case "material:rare_herb":
+            return "rare_herb";
+        case "표범 무늬 가죽":
+        case "표범_무늬_가죽":
+        case "material:leopard_pelt":
+            return "leopard_pelt";
+        case "마을 감사패":
+        case "마을_감사패":
+            return "village_thanks_plaque";
+        case "사당 현판 보존 명성":
+        case "사당_현판_보존_명성":
+            return "temple_signboard_renown";
+        case "무공 단서: 돌계단 방진":
+        case "무공_단서__돌계단_방진":
+            return "skill_clue_stone_step_formation";
         case "무공 단서: 새벽일섬":
+        case "무공_단서__새벽일섬":
             return "skill_clue_dawn_flash";
         default:
-            return item.Trim().ToLowerInvariant().Replace(" ", "_").Replace(":", "_");
+            return trimmed.ToLowerInvariant().Replace(" ", "_").Replace(":", "_");
         }
     }
 
@@ -187,6 +239,12 @@ public sealed class InventoryService
             return "내공단";
         case "throwing_dagger_bundle":
             return "투척 비수 묶음";
+        case "village_thanks_plaque":
+            return "마을 감사패";
+        case "temple_signboard_renown":
+            return "사당 현판 보존 명성";
+        case "skill_clue_stone_step_formation":
+            return "무공 단서: 돌계단 방진";
         case "skill_clue_dawn_flash":
             return "무공 단서: 새벽일섬";
         default:
@@ -203,7 +261,7 @@ public sealed class InventoryService
     private static InventoryItemType GuessType(string itemId)
     {
         string key = NormalizeItemId(itemId);
-        if (key.Contains("clue"))
+        if (key.Contains("clue") || key.Contains("renown") || key.EndsWith("_plaque", StringComparison.Ordinal))
         {
             return InventoryItemType.KeyItem;
         }
@@ -224,6 +282,53 @@ public sealed class InventoryService
         }
 
         return InventoryItemType.Consumable;
+    }
+
+    private void NormalizeStoredKeys()
+    {
+        if (session == null || session.inventory == null || session.inventory.Count == 0)
+        {
+            return;
+        }
+
+        Dictionary<string, int> normalized = null;
+        foreach (KeyValuePair<string, int> pair in session.inventory)
+        {
+            string key = NormalizeItemId(pair.Key);
+            if (string.IsNullOrEmpty(key) || key != pair.Key || pair.Value <= 0)
+            {
+                normalized = new Dictionary<string, int>();
+                break;
+            }
+        }
+
+        if (normalized == null)
+        {
+            return;
+        }
+
+        foreach (KeyValuePair<string, int> pair in session.inventory)
+        {
+            if (pair.Value <= 0)
+            {
+                continue;
+            }
+
+            string key = NormalizeItemId(pair.Key);
+            if (string.IsNullOrEmpty(key))
+            {
+                continue;
+            }
+
+            normalized.TryGetValue(key, out int current);
+            normalized[key] = current + pair.Value;
+        }
+
+        session.inventory.Clear();
+        foreach (KeyValuePair<string, int> pair in normalized)
+        {
+            session.inventory[pair.Key] = pair.Value;
+        }
     }
 }
 }
