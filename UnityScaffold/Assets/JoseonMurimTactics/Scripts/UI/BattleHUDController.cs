@@ -294,8 +294,8 @@ public sealed class BattleHUDController : MonoBehaviour
         AddAccentLine("RosterAccent", rosterPanel, TopLeft(), TopRight(),
                       new Vector2(16f, -9f), new Vector2(-16f, -6f), new Color(LineGold.r, LineGold.g, LineGold.b, 0.62f));
 
-        commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(602f, 188f),
-                                 new Vector2(-34f, 30f), new Color(0.010f, 0.011f, 0.010f, 0.10f),
+        commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(410f, 144f),
+                                 new Vector2(-34f, 30f), Color.clear,
                                  false);
         BuildCommandButtons();
 
@@ -378,7 +378,7 @@ public sealed class BattleHUDController : MonoBehaviour
                                                   CommandButtonPosition(index), action,
                                                   out Button button,
                                                   out Image background);
-        float iconSize = primary ? 104f : 72f;
+        float iconSize = primary ? 126f : 96f;
         Image icon = SolidImage("CommandIcon_" + index, buttonRect, TopCenter(), TopCenter(),
                                 new Vector2(iconSize * -0.5f, -2f - iconSize),
                                 new Vector2(iconSize * 0.5f, -2f), Color.white);
@@ -392,6 +392,7 @@ public sealed class BattleHUDController : MonoBehaviour
         text.text = label;
         text.horizontalOverflow = HorizontalWrapMode.Overflow;
         text.verticalOverflow = VerticalWrapMode.Truncate;
+        text.gameObject.SetActive(false);
 
         Text badge = MakeText("CommandShortcut_" + index, buttonRect, TopRight(), TopRight(),
                               new Vector2(primary ? -58f : -46f, primary ? -24f : -20f),
@@ -399,6 +400,7 @@ public sealed class BattleHUDController : MonoBehaviour
                               FontStyle.Bold,
                               TextAnchor.MiddleRight, TextSub);
         badge.text = shortcut;
+        badge.gameObject.SetActive(false);
 
         Text hint = MakeText("CommandHint_" + index, buttonRect, BottomLeft(), BottomRight(),
                              new Vector2(0f, 0f), new Vector2(0f, primary ? 18f : 14f), primary ? 10 : 9,
@@ -430,16 +432,20 @@ public sealed class BattleHUDController : MonoBehaviour
         commandViews.Add(new CommandButtonView(buttonRect, button,
                                                background, icon, badge, hint,
                                                activeFrame, disabledOverlay, text));
+        if (index == CommandMoveIndex || index == CommandGuardIndex || index == CommandTerrainIndex)
+        {
+            buttonRect.gameObject.SetActive(false);
+        }
     }
 
     private static bool IsPrimaryCommand(int index)
     {
-        return index == CommandAttackIndex || index == CommandSkillIndex;
+        return index == CommandAttackIndex || index == CommandSkillIndex || index == CommandWaitIndex;
     }
 
     private static Vector2 CommandButtonSize(int index)
     {
-        return IsPrimaryCommand(index) ? new Vector2(104f, 132f) : new Vector2(74f, 96f);
+        return IsPrimaryCommand(index) ? new Vector2(126f, 126f) : new Vector2(96f, 96f);
     }
 
     private static Vector2 CommandButtonPosition(int index)
@@ -447,17 +453,19 @@ public sealed class BattleHUDController : MonoBehaviour
         switch (index)
         {
         case CommandAttackIndex:
-            return new Vector2(284f, -36f);
+            return new Vector2(0f, -8f);
         case CommandSkillIndex:
-            return new Vector2(402f, -36f);
+            return new Vector2(136f, -8f);
+        case CommandMoveIndex:
+            return new Vector2(-1000f, -1000f);
         case CommandGuardIndex:
-            return new Vector2(102f, -74f);
+            return new Vector2(-1000f, -1000f);
         case CommandTerrainIndex:
-            return new Vector2(186f, -74f);
+            return new Vector2(-1000f, -1000f);
         case CommandWaitIndex:
-            return new Vector2(520f, -74f);
+            return new Vector2(272f, -8f);
         default:
-            return new Vector2(18f, -74f);
+            return Vector2.zero;
         }
     }
 
@@ -543,9 +551,7 @@ public sealed class BattleHUDController : MonoBehaviour
         CommandButtonView view = commandViews[index];
         bool activeEnabled = active && enabled;
         view.button.interactable = enabled;
-        view.background.color = enabled ? (activeEnabled ? new Color(1f, 0.86f, 0.32f, 0.18f) :
-                                new Color(1f, 1f, 1f, 0.01f)) :
-                                new Color(0f, 0f, 0f, 0.01f);
+        view.background.color = Color.clear;
         view.label.text = label;
         view.label.color = enabled ? (activeEnabled ? LineGold : TextMain) : TextDim;
         view.icon.color = enabled ? (activeEnabled ? Color.white : new Color(0.88f, 0.90f, 0.86f, 0.94f)) :
@@ -553,7 +559,7 @@ public sealed class BattleHUDController : MonoBehaviour
         view.shortcut.color = enabled ? (activeEnabled ? LineGold : TextSub) : TextDim;
         view.hint.color = enabled ? TextDim : new Color(TextDim.r, TextDim.g, TextDim.b, 0.42f);
         view.activeFrame.gameObject.SetActive(activeEnabled);
-        view.disabledOverlay.gameObject.SetActive(!enabled);
+        view.disabledOverlay.gameObject.SetActive(false);
     }
 
     private void SetCommandIcon(int index, string iconSprite)
