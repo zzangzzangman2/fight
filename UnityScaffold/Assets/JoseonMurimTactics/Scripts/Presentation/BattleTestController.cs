@@ -3095,13 +3095,12 @@ public sealed class BattleTestController : MonoBehaviour
             unitObject.transform.SetParent(unitRoot, false);
             unitObject.transform.position = UnitWorldPosition(definition.startCell);
 
-            CharacterVisualController visual = unitObject.AddComponent<CharacterVisualController>();
+            BattleUnitVisualAdapter visual = unitObject.AddComponent<BattleUnitVisualAdapter>();
             visual.visual = definition.visual;
             visual.sortingLayerName = "Default";
             // Authored diorama floor rows occupy (rows - (x+y)) * 40 + [0..28]; base 1000 puts the
             // unit on slot 30 of its own row so nearer terrain blocks correctly occlude it.
             visual.baseSortingOrder = authoredMapBound ? 1000 : 3000;
-            visual.ApplyVisual();
 
             CircleCollider2D collider = unitObject.AddComponent<CircleCollider2D>();
             collider.radius = 0.26f;
@@ -8380,7 +8379,7 @@ public sealed class BattleTestUnitView : MonoBehaviour
     private SpriteRenderer turnGroundRing;
     private SpriteRenderer hpBarBack;
     private SpriteRenderer hpBarFill;
-    private CharacterVisualController visualController;
+    private BattleUnitVisualAdapter visualController;
     private Vector3 turnMarkerBasePosition;
     private static Sprite turnMarkerChevronSprite;
     private static Sprite turnGroundRingSprite;
@@ -8388,13 +8387,30 @@ public sealed class BattleTestUnitView : MonoBehaviour
 
     public BattleTestUnit Unit { get; private set; }
 
-    public void Bind(BattleTestUnit unit, CharacterVisualController controller)
+    public void Bind(BattleTestUnit unit, BattleUnitVisualAdapter controller)
     {
         Unit = unit;
         visualController = controller;
+        if (visualController != null)
+        {
+            visualController.Bind(Unit == null || Unit.definition == null ? null : Unit.definition.visual, false);
+        }
+
         CreateLabel();
         CreateTurnMarker();
         Refresh(false);
+    }
+
+    public void Bind(BattleTestUnit unit, CharacterVisualController controller)
+    {
+        BattleUnitVisualAdapter adapter = controller == null ? GetComponent<BattleUnitVisualAdapter>() : controller.GetComponent<BattleUnitVisualAdapter>();
+        if (adapter == null)
+        {
+            adapter = gameObject.AddComponent<BattleUnitVisualAdapter>();
+        }
+
+        adapter.BindExisting(controller, unit == null || unit.definition == null ? null : unit.definition.visual, false);
+        Bind(unit, adapter);
     }
 
     private void LateUpdate()

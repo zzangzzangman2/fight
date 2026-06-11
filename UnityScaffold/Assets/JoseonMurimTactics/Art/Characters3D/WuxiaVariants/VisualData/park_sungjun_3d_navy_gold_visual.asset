@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95fb2a208870457687ddbb0bb4f0dd12, type: 3}
+  m_Name: park_sungjun_3d_navy_gold_visual
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualData
+  visualId: park_sungjun_3d_navy_gold
+  fullBodySprite: {fileID: 21300000, guid: f0e0929d060fd0d43be2a6ba3d3b463a, type: 3}
+  bustSprite: {fileID: 21300000, guid: f2b33e9330229d84a8355330e66c25df, type: 3}
+  portraitSprite: {fileID: 21300000, guid: f2b33e9330229d84a8355330e66c25df, type: 3}
+  faceIconSprite: {fileID: 21300000, guid: c86955db79e7366449b861f10c23317b, type: 3}
+  animatorController: {fileID: 0}
+  idlePoseSprite: {fileID: 21300000, guid: f0e0929d060fd0d43be2a6ba3d3b463a, type: 3}
+  movePoseSprite: {fileID: 21300000, guid: b8b8722bdc5ae2948ada7a93ce3824fb, type: 3}
+  attackPoseSprite: {fileID: 21300000, guid: a9de817fc6a83d3419305e9aa85b3437, type: 3}
+  skillPoseSprite: {fileID: 21300000, guid: d771af9ff8feac549851428fa97abab1, type: 3}
+  hitPoseSprite: {fileID: 21300000, guid: f756648b10155c54ab35be8bf7b912d5, type: 3}
+  defeatedPoseSprite: {fileID: 21300000, guid: a2e19f9bc11824f4391ed898c7441f84, type: 3}
+  actedPoseSprite: {fileID: 21300000, guid: 7a0ed06107069e041913a9dec3bab96d, type: 3}
+  idleFrames:
+  - {fileID: 21300000, guid: f0e0929d060fd0d43be2a6ba3d3b463a, type: 3}
+  - {fileID: 21300000, guid: e7a3b64a340dbc245bb198d66a00c72a, type: 3}
+  - {fileID: 21300000, guid: d0706cb7b80f1ec4db78d2a8158520b4, type: 3}
+  moveFrames:
+  - {fileID: 21300000, guid: b8b8722bdc5ae2948ada7a93ce3824fb, type: 3}
+  - {fileID: 21300000, guid: 49e14c07f9dfd8244b4af3c0b19c8e8d, type: 3}
+  - {fileID: 21300000, guid: 646a8f4ad554ba649a79369e0a695eeb, type: 3}
+  - {fileID: 21300000, guid: f03dc73debdf57144b7a58165156f1f3, type: 3}
+  - {fileID: 21300000, guid: 7c73c04e3a6133c43bf1d1922975014f, type: 3}
+  - {fileID: 21300000, guid: 8002f86a34b7c4a44b6ca86111a9dbc1, type: 3}
+  attackFrames:
+  - {fileID: 21300000, guid: a9de817fc6a83d3419305e9aa85b3437, type: 3}
+  - {fileID: 21300000, guid: 678f9cddf9c94ac408de55887ae67e07, type: 3}
+  - {fileID: 21300000, guid: 29898c06a5c880d44bbfbd6b8858152a, type: 3}
+  - {fileID: 21300000, guid: d83c0e50a5800834d9eb03c0bac043b6, type: 3}
+  skillFrames:
+  - {fileID: 21300000, guid: d771af9ff8feac549851428fa97abab1, type: 3}
+  - {fileID: 21300000, guid: baa9f31d176b261418f0afd3ec5ded1a, type: 3}
+  - {fileID: 21300000, guid: f85ea632b2d72ed42ab9a52770c0fdc4, type: 3}
+  - {fileID: 21300000, guid: 9c56e0715605da04981a5a1b90944e18, type: 3}
+  hitFrames:
+  - {fileID: 21300000, guid: f756648b10155c54ab35be8bf7b912d5, type: 3}
+  - {fileID: 21300000, guid: 9322df3055aa3c24db78f01e1247bdea, type: 3}
+  - {fileID: 21300000, guid: 99d73241c3fd5ac46bcbc28b5e2a911e, type: 3}
+  idleFrameRate: 4
+  defaultOutfit: {fileID: 11400000, guid: ebf2caebbee9aa445b7e8fd2696c52fc, type: 2}
+  outfitOptions:
+  - {fileID: 11400000, guid: ebf2caebbee9aa445b7e8fd2696c52fc, type: 2}
+  defaultWeaponType: 0
+  weaponAnimationSet: {fileID: 11400000, guid: bc828ba601f8483468ee3befa72c4b3f, type: 2}
+  heightInTiles: 1.1
+  spriteOffset: {x: 0, y: 0.02}
+  sortingOffset: 0
+  battleVisualMode: 1
+  modelPrefab: {fileID: 919132149155446097, guid: 7e043af1f1329384b8351f62d1248de8, type: 3}
+  modelAnimatorController: {fileID: 0}
+  modelLocalOffset: {x: 0, y: 0, z: 0}
+  modelLocalEuler: {x: 0, y: 180, z: 0}
+  modelScale: 111.10983
+  modelGroundY: 0
+  modelShadowWidth: 0.78
+  modelShadowHeight: 0.2
+  modelFaceByYaw: 1
+  modelKeepFeetOnGround: 1
+  idleAmplitude: 0.035
+  idleSpeed: 1
+  breathingScale: 0.015
+  shadowWidth: 0.76
+  shadowHeight: 0.19
+  normalTint: {r: 1, g: 1, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.9496, b: 0.804, a: 1}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
+  hitTint: {r: 0.9928, g: 0.6848, b: 0.6556, a: 1}
+  guardTint: {r: 1, g: 0.937, b: 0.755, a: 1}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}
+  moveSecondsPerTile: 0.2
+  moveSettleTime: 0.08
+  moveLeanDegrees: 5
+  attackLunge: 0.14
+  skillPulseScale: 0.1
+  hitRecoil: 0.11
