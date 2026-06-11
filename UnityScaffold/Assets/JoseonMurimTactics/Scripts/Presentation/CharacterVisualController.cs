@@ -1607,6 +1607,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
         switch (visualState)
         {
+        case CharacterBattleVisualState.SelectedIdle:
+            return SelectIdleFallback();
         case CharacterBattleVisualState.Move:
         {
             // 걷기 프레임은 시간이 아니라 보폭 위상(발 디딤)에 동기화한다.
@@ -1703,22 +1705,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             return ActedPoseSprite() != null ? ActedPoseSprite() : SelectIdleFallback();
         }
         case CharacterBattleVisualState.TurnStart:
-        {
-            Sprite clipFrame = ClipSprite(visual.turnStartClip, stateAge, progress, false);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
-            return AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
-        }
+            return SelectIdleFallback();
         default:
         {
-            CharacterSpriteAnimationClipData clip = visualState == CharacterBattleVisualState.SelectedIdle
-                                                        ? visual.selectedIdleClip
-                                                        : lowHpActive
-                                                            ? visual.lowHpClip
-                                                            : visual.idleClip;
+            CharacterSpriteAnimationClipData clip = lowHpActive ? visual.lowHpClip : visual.idleClip;
             Sprite clipFrame = ClipSprite(clip, stateAge, 0f, true);
             if (clipFrame != null)
             {
