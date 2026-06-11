@@ -94,6 +94,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private static Sprite[] elementSkillSprites;
     private static Sprite[] elementImpactSprites;
     private const int CombatElementSpriteCount = 7;
+    private const int SelectedSortingBoost = 96;
 
     private void Awake()
     {
@@ -141,6 +142,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             stateStartedAt = Time.time;
             ResetAnimationEventCues();
         }
+
+        UpdateSorting();
     }
 
     public void SetActed(bool value)
@@ -631,13 +634,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         //  떠다니는 느낌만 남는다. 스케일 호흡은 발 라인이 고정되어 접지가 유지된다.)
         float pulse = Mathf.Sin((time * Mathf.Max(0.1f, IdleBobSpeed())) + phaseSeed);
         float rawBob = pulse * IdleBobAmount();
-        float idleBob = rawBob * 0.25f; // 잔향만 — 주 호흡은 스케일이 담당한다.
-        float breathPhase = (time * Mathf.Max(0.1f, IdleBreathSpeed()) * 0.7f) + phaseSeed;
-        // 2배음을 섞은 비대칭 파형: 들숨은 길게 차오르고 날숨은 살짝 빠르게 떨어진다.
-        float breathWave = (Mathf.Sin(breathPhase) + (0.24f * Mathf.Sin((breathPhase * 2f) + 0.6f))) / 1.24f;
-        float breathAmount = IdleBreathAmount() * 1.9f;
-        float breathY = 1f + (breathWave * breathAmount);          // 가슴이 차오르는 세로 신축
-        float breathX = 1f - (breathWave * breathAmount * 0.62f); // 체적 보존 — 들숨에 어깨 폭이 살짝 좁아진다
+        float idleBob = rawBob * 0.25f; // 발을 붙여 보이게 잔향만 남긴다.
+        // 전신 스프라이트는 프레임마다 스케일하면 픽셀이 뭉개져 위치/기울기만 쓴다.
         // 저주파 체중 이동: 좌우로 아주 천천히 무게를 옮기며 발 피벗 기준 미세하게 기운다.
         float weightSway = Mathf.Sin((time * 0.52f) + (phaseSeed * 1.7f));
 
@@ -648,8 +646,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             ApplyLayerSprites();
         }
         Vector3 localPosition = baseBodyPosition + new Vector3(weightSway * 0.006f, idleBob, 0f);
-        Vector3 localScale =
-            new Vector3(baseBodyScale.x * breathX, baseBodyScale.y * breathY, baseBodyScale.z);
+        Vector3 localScale = baseBodyScale;
         float rotation = weightSway * 1.15f; // 대기 중 미세 기울기 — 액션 상태는 아래 switch에서 덮어쓴다.
         Color tint = visual.normalTint;
         float shadowAlpha = 0.34f;
@@ -665,10 +662,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                             (selected && visualState == CharacterBattleVisualState.Idle);
         if (selectedIdle)
         {
-            // 선택 강조: 공중 바운스 대신 발을 붙인 채 들썩이는 기합(세로 신축 + 잔향 리프트).
+            // 선택 강조: 발을 붙인 채 작은 위치 잔향만 준다.
             float selectPulse = Mathf.Abs(Mathf.Sin((time * 4.8f) + phaseSeed));
-            localScale.y *= 1f + (selectPulse * 0.030f);
-            localScale.x *= 1f - (selectPulse * 0.014f);
             localPosition.y += selectPulse * 0.004f;
             tint = visual.selectedTint;
         }
@@ -677,7 +672,6 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             tint = visual.actedTint;
             // 행동 완료: 호흡을 얕게 죽이고 어깨를 떨어뜨려 지친 실루엣을 만든다.
             localPosition.y -= Mathf.Abs(rawBob) * WaitSlouchAmount();
-            localScale.y = baseBodyScale.y * (1f + (breathWave * breathAmount * 0.45f));
             rotation *= 0.5f;
         }
 
@@ -907,7 +901,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         case CharacterBattleVisualState.Move:
             return 0.46f;
         case CharacterBattleVisualState.SelectedIdle:
-            return 0.65f;
+            return 0f;
         default:
             return 1f;
         }
@@ -1563,11 +1557,19 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
     private void UpdateSorting()
     {
+        if (shadowRenderer == null || bodyRenderer == null || selectionRenderer == null ||
+            motionTrailRenderer == null || effectRenderer == null ||
+            leftFootRenderer == null || rightFootRenderer == null)
+        {
+            return;
+        }
+
         // Interleave with the painted diorama floor: floor rows use (rows - (x+y)) * 40 with
         // slots 0..26 (26 = highlights), props 28. Units sit on slot 30 of their own row band.
         // World y = (x+y) * tileHeight/2, so one row step = 0.31 world units = 40 orders.
+        int selectedBoost = selected && !defeated ? SelectedSortingBoost : 0;
         int order = baseSortingOrder + 350 - Mathf.RoundToInt(transform.position.y * (40f / 0.31f)) +
-                    (visual != null ? visual.sortingOffset : 0);
+                    (visual != null ? visual.sortingOffset : 0) + selectedBoost;
         shadowRenderer.sortingLayerName = sortingLayerName;
         bodyRenderer.sortingLayerName = sortingLayerName;
         selectionRenderer.sortingLayerName = sortingLayerName;
