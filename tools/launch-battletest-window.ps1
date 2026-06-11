@@ -33,7 +33,11 @@ $arguments = @(
     '-screen-width', "$targetWidth",
     '-screen-height', "$targetHeight",
     '-force-d3d11'
-) + $ExtraArgs
+)
+
+if ($ExtraArgs -ne $null -and $ExtraArgs.Count -gt 0) {
+    $arguments += @($ExtraArgs | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+}
 
 $process = Start-Process -FilePath $ExePath -ArgumentList $arguments -PassThru
 
