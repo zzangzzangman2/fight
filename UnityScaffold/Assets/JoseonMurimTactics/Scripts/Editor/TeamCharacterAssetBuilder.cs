@@ -174,7 +174,7 @@ public static class TeamCharacterAssetBuilder
             combatVisual.faceIcon = visualData.faceIconSprite;
             combatVisual.defaultWeaponType = spec.weaponType;
             combatVisual.weaponAnimationSet = weaponSet;
-            combatVisual.boardVisual = visualData;
+            combatVisual.boardVisual = GetBattleSceneVisual(spec.id);
             combatVisual.actedTint = visualData.actedTint;
             combatVisual.defeatedTint = visualData.defeatedTint;
             EditorUtility.SetDirty(combatVisual);

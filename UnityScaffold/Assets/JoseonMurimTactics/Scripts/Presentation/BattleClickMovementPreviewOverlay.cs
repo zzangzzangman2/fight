@@ -498,7 +498,11 @@ namespace JoseonMurimTactics
         {
             if (defaultSpriteMaterial == null)
             {
-                defaultSpriteMaterial = Resources.GetBuiltinResource<Material>("Sprites-Default.mat");
+                Shader shader = Shader.Find("Sprites/Default");
+                if (shader != null)
+                {
+                    defaultSpriteMaterial = new Material(shader) { name = "RuntimePreviewSpriteMaterial" };
+                }
             }
 
             return defaultSpriteMaterial;

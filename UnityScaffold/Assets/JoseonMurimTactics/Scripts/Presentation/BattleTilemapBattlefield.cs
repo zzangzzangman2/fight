@@ -289,7 +289,11 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
     {
         if (defaultSpriteMaterial == null)
         {
-            defaultSpriteMaterial = Resources.GetBuiltinResource<Material>("Sprites-Default.mat");
+            Shader shader = Shader.Find("Sprites/Default");
+            if (shader != null)
+            {
+                defaultSpriteMaterial = new Material(shader) { name = "RuntimeBattleHighlightSpriteMaterial" };
+            }
         }
 
         return defaultSpriteMaterial;

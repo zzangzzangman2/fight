@@ -19,7 +19,7 @@ MonoBehaviour:
   faceIcon: {fileID: 21300000, guid: c86955db79e7366449b861f10c23317b, type: 3}
   defaultWeaponType: 0
   weaponAnimationSet: {fileID: 11400000, guid: bc828ba601f8483468ee3befa72c4b3f, type: 2}
-  boardVisual: {fileID: 11400000, guid: 81f8b992e3a3c8a488ac523bb2308932, type: 2}
+  boardVisual: {fileID: 11400000, guid: 1acd38455911a5d4fb78dde1a2842834, type: 2}
   shadowPrefab: {fileID: 0}
   selectionRingPrefab: {fileID: 0}
   actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
