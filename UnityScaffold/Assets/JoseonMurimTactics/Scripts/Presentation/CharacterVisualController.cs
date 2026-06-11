@@ -617,10 +617,22 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         float time = Time.time;
         float stateAge = time - stateStartedAt;
         float progress = stateDuration > 0f ? Mathf.Clamp01(stateAge / stateDuration) : 0f;
+
+        // 살아있는 대기 모션 v2 — "그림이 통째로 위아래로 뜨는" 번역형 바운스 대신,
+        // 발 피벗을 붙인 채 가슴이 차오르는 세로 스쿼시&스트레치로 숨을 쉰다.
+        // (GroundingStabilizer가 발을 그림자에 고정하므로 Y 이동형 바운스는 보정과 싸워
+        //  떠다니는 느낌만 남는다. 스케일 호흡은 발 라인이 고정되어 접지가 유지된다.)
         float pulse = Mathf.Sin((time * Mathf.Max(0.1f, IdleBobSpeed())) + phaseSeed);
-        float idleBob = pulse * IdleBobAmount();
-        float breath = 1f + (Mathf.Cos((time * Mathf.Max(0.1f, IdleBreathSpeed()) * 0.7f) + phaseSeed) *
-                             IdleBreathAmount());
+        float rawBob = pulse * IdleBobAmount();
+        float idleBob = rawBob * 0.25f; // 잔향만 — 주 호흡은 스케일이 담당한다.
+        float breathPhase = (time * Mathf.Max(0.1f, IdleBreathSpeed()) * 0.7f) + phaseSeed;
+        // 2배음을 섞은 비대칭 파형: 들숨은 길게 차오르고 날숨은 살짝 빠르게 떨어진다.
+        float breathWave = (Mathf.Sin(breathPhase) + (0.24f * Mathf.Sin((breathPhase * 2f) + 0.6f))) / 1.24f;
+        float breathAmount = IdleBreathAmount() * 1.9f;
+        float breathY = 1f + (breathWave * breathAmount);          // 가슴이 차오르는 세로 신축
+        float breathX = 1f - (breathWave * breathAmount * 0.62f); // 체적 보존 — 들숨에 어깨 폭이 살짝 좁아진다
+        // 저주파 체중 이동: 좌우로 아주 천천히 무게를 옮기며 발 피벗 기준 미세하게 기운다.
+        float weightSway = Mathf.Sin((time * 0.52f) + (phaseSeed * 1.7f));
 
         Sprite stateSprite = SelectStateSprite();
         if (bodyRenderer.sprite != stateSprite)
@@ -628,9 +640,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             SetBodySprite(stateSprite);
             ApplyLayerSprites();
         }
-        Vector3 localPosition = baseBodyPosition + new Vector3(0f, idleBob, 0f);
-        Vector3 localScale = new Vector3(baseBodyScale.x * breath, baseBodyScale.y, baseBodyScale.z);
-        float rotation = 0f;
+        Vector3 localPosition = baseBodyPosition + new Vector3(weightSway * 0.006f, idleBob, 0f);
+        Vector3 localScale =
+            new Vector3(baseBodyScale.x * breathX, baseBodyScale.y * breathY, baseBodyScale.z);
+        float rotation = weightSway * 1.15f; // 대기 중 미세 기울기 — 액션 상태는 아래 switch에서 덮어쓴다.
         Color tint = visual.normalTint;
         float shadowAlpha = 0.34f;
         float footStride01 = -1f;
@@ -645,15 +658,20 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                             (selected && visualState == CharacterBattleVisualState.Idle);
         if (selectedIdle)
         {
+            // 선택 강조: 공중 바운스 대신 발을 붙인 채 들썩이는 기합(세로 신축 + 잔향 리프트).
             float selectPulse = Mathf.Abs(Mathf.Sin((time * 4.8f) + phaseSeed));
-            localPosition.y += selectPulse * 0.035f;
-            localScale.x *= 1f + selectPulse * 0.018f;
+            localScale.y *= 1f + (selectPulse * 0.030f);
+            localScale.x *= 1f - (selectPulse * 0.014f);
+            localPosition.y += selectPulse * 0.012f;
             tint = visual.selectedTint;
         }
         else if (acted || visualState == CharacterBattleVisualState.Wait)
         {
             tint = visual.actedTint;
-            localPosition.y -= Mathf.Abs(idleBob) * WaitSlouchAmount();
+            // 행동 완료: 호흡을 얕게 죽이고 어깨를 떨어뜨려 지친 실루엣을 만든다.
+            localPosition.y -= Mathf.Abs(rawBob) * WaitSlouchAmount();
+            localScale.y = baseBodyScale.y * (1f + (breathWave * breathAmount * 0.45f));
+            rotation *= 0.5f;
         }
 
         switch (visualState)

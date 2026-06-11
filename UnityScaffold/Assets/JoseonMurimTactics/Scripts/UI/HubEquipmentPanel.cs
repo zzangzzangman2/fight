@@ -140,7 +140,7 @@ public sealed class HubEquipmentPanel
                       CharacterGrowthCatalog.DisplayName(id), name);
 
             string subText = id == CharacterGrowthCatalog.ProtagonistId
-                                 ? "문주 · 19세"
+                                 ? "문주 · 18세"
                                  : $"{StageLabel(id)} {root.Approval.Get(id)}";
             GUIStyle sub = new GUIStyle(UiTheme.SmallMuted)
             {
@@ -203,7 +203,7 @@ public sealed class HubEquipmentPanel
         string title = isHero ? "백두천광검문 소문주" : info != null ? info.title : string.Empty;
         GUI.Label(new Rect(textX, inner.y + 30f * s, textW, 24f * s), title, UiTheme.SmallMuted);
 
-        string traits = isHero ? "19세 · ENFJ · 빛/검"
+        string traits = isHero ? "18세 · ENFJ · 빛/검"
                                : info != null ? $"{info.age}세 · {info.mbti} · {info.element}/{info.weapon}"
                                               : string.Empty;
         GUI.Label(new Rect(textX, inner.y + 52f * s, textW, 24f * s), traits, UiTheme.Small);
@@ -212,7 +212,7 @@ public sealed class HubEquipmentPanel
 
         if (!isHero)
         {
-            // 연애도 게이지 — 19세 동갑내기 히로인 공략 지표.
+            // 연애도 게이지 — 히로인 공략 지표.
             int approval = root.Approval.Get(selectedCharId);
             GUIStyle gaugeTitle = new GUIStyle(UiTheme.Small) { fontStyle = FontStyle.Bold };
             gaugeTitle.normal.textColor = Rose;
@@ -245,7 +245,7 @@ public sealed class HubEquipmentPanel
         else
         {
             GUI.Label(new Rect(inner.x, y, inner.width, 44f * s),
-                      "꺼져 가던 천광을 다시 세우는 주인공. 동갑내기 동료들과의 인연은 동료 메뉴와 선물로 깊어진다.",
+                      "꺼져 가던 천광을 다시 세우는 주인공. 동료들과의 인연은 동료 메뉴와 선물로 깊어진다.",
                       UiTheme.Small);
             y += 50f * s;
         }

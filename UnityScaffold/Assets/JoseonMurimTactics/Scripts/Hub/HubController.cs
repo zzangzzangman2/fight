@@ -549,7 +549,7 @@ public sealed class HubController : MonoBehaviour
                       $"{info.name} · {info.title}", UiTheme.Body);
             GUI.Label(
                 new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 180f * s, 26f * s),
-                $"{info.age}세 동갑 · {info.mbti} · {info.region} {info.sectName} · {info.element}/{info.weapon}   |   연애도 {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})",
+                $"{info.age}세 · {info.mbti} · {info.region} {info.sectName} · {info.element}/{info.weapon}   |   연애도 {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})",
                 UiTheme.SmallMuted);
             GUI.Label(new Rect(card.x + 16f * s, card.y + 68f * s, card.width - 180f * s, 24f * s),
                       "고민: " + CompanionConcern(id), UiTheme.SmallMuted);
@@ -915,7 +915,7 @@ public sealed class HubController : MonoBehaviour
         {
         case 1:
             GUI.Label(new Rect(0f, y, w, 24f * s),
-                      "동갑내기 동료들의 마음을 여는 공략 선물. 하루 1회씩 건넬 수 있다.", UiTheme.SmallMuted);
+                      "동료들의 마음을 여는 공략 선물. 하루 1회씩 건넬 수 있다.", UiTheme.SmallMuted);
             y += 30f * s;
             foreach (GiftInfo gift in GiftCatalog.All)
             {

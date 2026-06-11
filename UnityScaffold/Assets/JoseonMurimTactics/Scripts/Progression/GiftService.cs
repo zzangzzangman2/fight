@@ -13,7 +13,7 @@ public struct GiftResult
 }
 
 /// <summary>
-/// 동료 선물 — 19세 동갑내기 동료들과의 호감/연애도를 올리는 공략 수단.
+/// 동료 선물 — 동료와의 호감/연애도를 올리는 공략 수단.
 /// 하루 제한: 동료 1명당 1회. intVars["gift:last_day:<companionId>"] = 지급한 날(DayIndex).
 /// </summary>
 public sealed class GiftService

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace JoseonMurimTactics
 {
 /// <summary>
-/// 동료 선물 한 종의 정의. 모두 19세 동갑내기 동료들 — 선물은 호감/연애도를 올리는
+/// 동료 선물 한 종의 정의. 선물은 호감/연애도를 올리는
 /// 정식 공략 수단이다. favoriteCompanionId가 맞으면 선호 보너스가 붙는다.
 /// </summary>
 public sealed class GiftInfo
