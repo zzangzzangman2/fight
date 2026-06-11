@@ -35,6 +35,8 @@ public sealed class CharacterModelVisualController : MonoBehaviour, ICombatAnima
     private static readonly int GuardHash = Animator.StringToHash("Guard");
     private static readonly int VictoryHash = Animator.StringToHash("Victory");
     private static readonly int ResetToIdleHash = Animator.StringToHash("ResetToIdle");
+    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
 
     public int CurrentBodySortingOrder => currentSortingOrder;
 
@@ -281,12 +283,74 @@ public sealed class CharacterModelVisualController : MonoBehaviour, ICombatAnima
         }
 
         modelRenderers = modelRoot.GetComponentsInChildren<Renderer>(true);
+        ApplyBattleMaterials();
         if (visual.modelKeepFeetOnGround)
         {
             CharacterModelGroundingSolver.Apply(modelRoot, modelRenderers, transform.position.y + visual.modelGroundY);
         }
 
         UpdateSorting();
+    }
+
+    private void ApplyBattleMaterials()
+    {
+        if (modelRenderers == null)
+        {
+            return;
+        }
+
+        Shader shader = Shader.Find("Sprites/Default") ??
+                        Shader.Find("Unlit/Transparent") ??
+                        Shader.Find("Unlit/Texture");
+        if (shader == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < modelRenderers.Length; i++)
+        {
+            Renderer renderer = modelRenderers[i];
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            Material[] sourceMaterials = renderer.sharedMaterials;
+            if (sourceMaterials == null || sourceMaterials.Length == 0)
+            {
+                renderer.sharedMaterial = CreateBattleMaterial(shader, null);
+                continue;
+            }
+
+            Material[] battleMaterials = new Material[sourceMaterials.Length];
+            for (int j = 0; j < sourceMaterials.Length; j++)
+            {
+                battleMaterials[j] = CreateBattleMaterial(shader, sourceMaterials[j]);
+            }
+
+            renderer.sharedMaterials = battleMaterials;
+        }
+    }
+
+    private static Material CreateBattleMaterial(Shader shader, Material source)
+    {
+        Material material = new Material(shader) { name = source == null ? "BattleModelMaterial" : source.name + "_Battle" };
+        if (source != null)
+        {
+            Texture texture = source.HasProperty(MainTexId) ? source.GetTexture(MainTexId) : source.mainTexture;
+            if (texture != null)
+            {
+                material.SetTexture(MainTexId, texture);
+            }
+
+            if (source.HasProperty(ColorId))
+            {
+                material.SetColor(ColorId, source.GetColor(ColorId));
+            }
+        }
+
+        material.renderQueue = 3000;
+        return material;
     }
 
     private void EnsurePresentationSprites()
