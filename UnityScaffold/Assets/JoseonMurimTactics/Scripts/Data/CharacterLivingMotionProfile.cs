@@ -32,6 +32,9 @@ public sealed class CharacterLivingMotionProfile : ScriptableObject
     public float turnStartDuration = 0.34f;
     public float waitSlouchAmount = 0.45f;
     public float lowHpShakeAmount = 0.012f;
+    public float stateEnterPopScale = 1.035f;
+    public float stateEnterLift = 0.030f;
+    public float stateEnterDuration = 0.14f;
 
     [Header("Move")]
     public float moveHopAmount = 0.040f;
@@ -44,6 +47,10 @@ public sealed class CharacterLivingMotionProfile : ScriptableObject
     public float impactFreezeSeconds = 0.055f;
     public float hitShakeAmount = 0.025f;
     public float victoryHopAmount = 0.060f;
+
+    [Header("Motion Trail")]
+    public float motionTrailAlpha = 0.18f;
+    public float motionTrailDuration = 0.16f;
 
     [Header("Layer Sway")]
     public float hairSwayAmount = 1f;

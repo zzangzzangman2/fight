@@ -35,6 +35,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     public SpriteRenderer leftFootRenderer;
     public SpriteRenderer rightFootRenderer;
     public SpriteRenderer selectionRenderer;
+    public SpriteRenderer motionTrailRenderer;
     public SpriteRenderer effectRenderer;
     public Animator animator;
     public string sortingLayerName = "Characters";
@@ -69,6 +70,14 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private Vector3 cueEffectScale = Vector3.one;
     private float cueEffectRotation;
     private Color cueEffectColor = Color.white;
+    private Sprite motionTrailSprite;
+    private float motionTrailStartedAt = -999f;
+    private float motionTrailDuration = 0.16f;
+    private Vector3 motionTrailPosition;
+    private Vector3 motionTrailScale = Vector3.one;
+    private float motionTrailRotation;
+    private bool motionTrailFlipX;
+    private Color motionTrailColor = Color.white;
 
     private static Sprite ovalSprite;
     private static Sprite slashSprite;
@@ -319,6 +328,36 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         return profile == null ? 0.060f : Mathf.Max(0f, profile.victoryHopAmount);
     }
 
+    private float StateEnterPopScale()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 1.035f : Mathf.Max(1f, profile.stateEnterPopScale);
+    }
+
+    private float StateEnterLift()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.030f : Mathf.Max(0f, profile.stateEnterLift);
+    }
+
+    private float StateEnterDuration()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.14f : Mathf.Max(0.04f, profile.stateEnterDuration);
+    }
+
+    private float MotionTrailAlpha()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.18f : Mathf.Clamp01(profile.motionTrailAlpha);
+    }
+
+    private float MotionTrailDuration()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.16f : Mathf.Max(0.04f, profile.motionTrailDuration);
+    }
+
     public void PlayIdle()
     {
         if (defeated)
@@ -467,6 +506,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                 effectRenderer.enabled = false;
             }
 
+            ClearMotionTrail();
+
             ApplyLayerSprites();
             return;
         }
@@ -511,6 +552,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
         effectRenderer.enabled = false;
         effectRenderer.color = Color.white;
+        ClearMotionTrail();
         visualState = defeated ? CharacterBattleVisualState.Defeat :
                       selected ? CharacterBattleVisualState.SelectedIdle :
                       acted ? CharacterBattleVisualState.Wait : CharacterBattleVisualState.Idle;
@@ -527,6 +569,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         if (defeated && state != CharacterBattleVisualState.Defeat)
         {
             return;
+        }
+
+        if (state != visualState)
+        {
+            CaptureMotionTrail(state);
         }
 
         visualState = state;
@@ -618,11 +665,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             float hop = Mathf.Abs(step);
             float planted = 1f - Mathf.SmoothStep(0.08f, 0.32f, Mathf.Abs(step));
             // 실제 걷기 프레임이 있으면 보행감은 그림이 담당하므로 절차 변형은 잔향만 남긴다.
-            float gait = HasMoveFrames() ? 0.4f : 1f;
+            float gait = HasMoveFrames() ? 0.58f : 1f;
             localPosition.x += facingSign * step * 0.030f * gait;
             localPosition.y += hop * MoveHopAmount() * gait;
-            localScale.x *= 1f - hop * 0.025f * gait;
-            localScale.y *= 1f + hop * 0.035f * gait;
+            localScale.x *= 1f - hop * 0.030f * gait;
+            localScale.y *= 1f + hop * 0.042f * gait;
             rotation = ((-facingSign * visual.moveLeanDegrees) + (facingSign * step * 2.4f * gait)) *
                        MoveLeanMultiplier();
             float dustAmount = FootDustAmount();
@@ -647,10 +694,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             localPosition.x -= facingSign * AttackAnticipationDistance() * anticipation;
             localPosition.x += facingSign * AttackLunge(false) * AttackLungeMultiplier() * lunge;
             localPosition.x += attackShake;
-            localPosition.y += (0.025f * lunge) - (0.018f * anticipation);
-            localScale.x *= 1f + (0.06f * lunge) - (0.025f * anticipation);
-            localScale.y *= 1f - (0.025f * lunge) + (0.030f * anticipation);
-            rotation = (-facingSign * 8f * lunge) + (facingSign * 3.5f * anticipation);
+            localPosition.y += (0.035f * lunge) - (0.022f * anticipation);
+            localScale.x *= 1f + (0.075f * lunge) - (0.030f * anticipation);
+            localScale.y *= 1f - (0.032f * lunge) + (0.034f * anticipation);
+            rotation = (-facingSign * 9.5f * lunge) + (facingSign * 4.0f * anticipation);
             showEffect = progress > 0.16f && progress < 0.92f;
             effectSprite = GetElementSlashSprite(ActiveElement());
             effectPosition = new Vector3(facingSign * (0.34f + (0.08f * lunge)), 0.56f, -0.02f);
@@ -660,10 +707,13 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             break;
         case CharacterBattleVisualState.Skill:
             float skill = Mathf.Sin(progress * Mathf.PI);
-            localPosition.x += facingSign * AttackLunge(true) * AttackLungeMultiplier() * 0.55f * skill;
-            localPosition.y += 0.06f * skill;
-            localScale *= 1f + visual.skillPulseScale * skill;
-            rotation = Mathf.Sin(progress * Mathf.PI * 2f) * 3.5f;
+            float skillWindup = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 0.20f, progress)) *
+                                (1f - Mathf.SmoothStep(0.20f, 0.36f, progress));
+            localPosition.x -= facingSign * AttackAnticipationDistance() * 0.55f * skillWindup;
+            localPosition.x += facingSign * AttackLunge(true) * AttackLungeMultiplier() * 0.62f * skill;
+            localPosition.y += 0.075f * skill;
+            localScale *= 1f + visual.skillPulseScale * 1.12f * skill;
+            rotation = Mathf.Sin(progress * Mathf.PI * 2f) * 4.2f;
             tint = Color.Lerp(visual.normalTint, visual.guardTint, 0.42f * skill);
             showEffect = true;
             effectSprite = GetElementSkillSprite(ActiveElement());
@@ -740,6 +790,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         ApplyEmotionTint(ref tint);
+        ApplyStateEnterMotion(stateAge, ref localPosition, ref localScale, ref rotation);
         ApplyClickAndAssistReactions(time, ref localPosition, ref localScale, ref rotation);
         ApplyCueEffect(time, ref showEffect, ref effectSprite, ref effectPosition, ref effectScale,
                        ref effectRotation, ref effectColor);
@@ -764,6 +815,150 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         UpdateEffect(showEffect, effectSprite, effectPosition, effectScale, effectRotation, effectColor);
+        UpdateMotionTrail(time);
+    }
+
+    private void ApplyStateEnterMotion(float stateAge, ref Vector3 localPosition, ref Vector3 localScale,
+                                       ref float rotation)
+    {
+        if (!UsesStateEnterAccent(visualState))
+        {
+            return;
+        }
+
+        float duration = StateEnterDuration();
+        if (stateAge >= duration)
+        {
+            return;
+        }
+
+        float t = Mathf.Clamp01(stateAge / duration);
+        float pop = Mathf.Sin(t * Mathf.PI);
+        float settle = (1f - t) * Mathf.Sin(t * Mathf.PI * 2.4f);
+        float strength = StateEnterStrength(visualState);
+        float scaleDelta = (StateEnterPopScale() - 1f) * strength;
+        localPosition.y += pop * StateEnterLift() * strength;
+        localScale.x *= 1f + (scaleDelta * pop);
+        localScale.y *= 1f - (scaleDelta * 0.45f * pop);
+        rotation += -facingSign * settle * 3.0f * strength;
+    }
+
+    private static bool UsesStateEnterAccent(CharacterBattleVisualState state)
+    {
+        return state == CharacterBattleVisualState.SelectedIdle ||
+               state == CharacterBattleVisualState.Move ||
+               state == CharacterBattleVisualState.Attack ||
+               state == CharacterBattleVisualState.Skill ||
+               state == CharacterBattleVisualState.Hit ||
+               state == CharacterBattleVisualState.Guard ||
+               state == CharacterBattleVisualState.Victory ||
+               state == CharacterBattleVisualState.TurnStart;
+    }
+
+    private static float StateEnterStrength(CharacterBattleVisualState state)
+    {
+        switch (state)
+        {
+        case CharacterBattleVisualState.Attack:
+        case CharacterBattleVisualState.Skill:
+            return 0.58f;
+        case CharacterBattleVisualState.Hit:
+            return 0.72f;
+        case CharacterBattleVisualState.Move:
+            return 0.46f;
+        case CharacterBattleVisualState.SelectedIdle:
+            return 0.65f;
+        default:
+            return 1f;
+        }
+    }
+
+    private void CaptureMotionTrail(CharacterBattleVisualState nextState)
+    {
+        if (!UsesMotionTrail(nextState) || visual == null || bodyRenderer == null || bodyTransform == null)
+        {
+            return;
+        }
+
+        float alpha = MotionTrailAlpha();
+        if (alpha <= 0.001f || bodyRenderer.sprite == null)
+        {
+            return;
+        }
+
+        motionTrailSprite = bodyRenderer.sprite;
+        motionTrailStartedAt = Time.time;
+        motionTrailDuration = MotionTrailDuration() * MotionTrailStrength(nextState);
+        motionTrailPosition = bodyTransform.localPosition;
+        motionTrailScale = bodyTransform.localScale;
+        motionTrailRotation = bodyTransform.localEulerAngles.z;
+        motionTrailFlipX = bodyRenderer.flipX;
+        motionTrailColor = Color.Lerp(visual.normalTint, ElementPrimary(1f), 0.18f);
+        motionTrailColor.a = alpha;
+    }
+
+    private void UpdateMotionTrail(float time)
+    {
+        if (motionTrailRenderer == null)
+        {
+            return;
+        }
+
+        if (motionTrailSprite == null || time - motionTrailStartedAt >= motionTrailDuration)
+        {
+            motionTrailRenderer.enabled = false;
+            motionTrailSprite = null;
+            return;
+        }
+
+        float t = Mathf.Clamp01((time - motionTrailStartedAt) / Mathf.Max(0.01f, motionTrailDuration));
+        float fade = (1f - t) * (1f - t);
+        Vector3 drift = new Vector3(-facingSign * 0.026f * t, 0.018f * t, 0f);
+        motionTrailRenderer.enabled = true;
+        motionTrailRenderer.sprite = motionTrailSprite;
+        motionTrailRenderer.flipX = motionTrailFlipX;
+        motionTrailRenderer.transform.localPosition = motionTrailPosition + drift;
+        motionTrailRenderer.transform.localScale = motionTrailScale * (1f + 0.035f * t);
+        motionTrailRenderer.transform.localRotation = Quaternion.Euler(0f, 0f, motionTrailRotation - facingSign * 2.0f * t);
+        Color color = motionTrailColor;
+        color.a *= fade;
+        motionTrailRenderer.color = color;
+    }
+
+    private void ClearMotionTrail()
+    {
+        motionTrailSprite = null;
+        motionTrailStartedAt = -999f;
+        if (motionTrailRenderer != null)
+        {
+            motionTrailRenderer.sprite = null;
+            motionTrailRenderer.enabled = false;
+        }
+    }
+
+    private static bool UsesMotionTrail(CharacterBattleVisualState state)
+    {
+        return state == CharacterBattleVisualState.Attack ||
+               state == CharacterBattleVisualState.Skill ||
+               state == CharacterBattleVisualState.Hit ||
+               state == CharacterBattleVisualState.Guard ||
+               state == CharacterBattleVisualState.Victory ||
+               state == CharacterBattleVisualState.TurnStart;
+    }
+
+    private static float MotionTrailStrength(CharacterBattleVisualState state)
+    {
+        switch (state)
+        {
+        case CharacterBattleVisualState.Skill:
+            return 1.25f;
+        case CharacterBattleVisualState.Attack:
+            return 1.05f;
+        case CharacterBattleVisualState.Hit:
+            return 0.75f;
+        default:
+            return 0.9f;
+        }
     }
 
     private void ResetAnimationEventCues()
@@ -914,6 +1109,13 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         {
             ScheduleCueEffect(GetGuardRingSprite(), new Vector3(0f, 0.18f, -0.03f),
                               Vector3.one * 0.48f, 0f, ElementPrimary(0.42f), 0.14f);
+            return;
+        }
+
+        if (cueId.Contains("weak"))
+        {
+            ScheduleCueEffect(GetGuardRingSprite(), new Vector3(0f, 0.16f, -0.03f),
+                              Vector3.one * 0.34f, 0f, new Color(1f, 0.52f, 0.48f, 0.24f), 0.10f);
             return;
         }
 
@@ -1140,6 +1342,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         faceLayerRenderer = faceLayerRenderer != null ? faceLayerRenderer : EnsureChildRenderer("Layer_Face", bodyRenderer.transform);
         weaponLayerRenderer = weaponLayerRenderer != null ? weaponLayerRenderer : EnsureChildRenderer("Layer_Weapon", bodyRenderer.transform);
         accessoryLayerRenderer = accessoryLayerRenderer != null ? accessoryLayerRenderer : EnsureChildRenderer("Layer_Accessory", bodyRenderer.transform);
+        motionTrailRenderer = motionTrailRenderer != null ? motionTrailRenderer : EnsureChildRenderer("MotionTrail");
         effectRenderer = effectRenderer != null ? effectRenderer : EnsureChildRenderer("StateEffect");
 
         bodyTransform = bodyRenderer.transform;
@@ -1185,6 +1388,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         shadowRenderer.sortingLayerName = sortingLayerName;
         bodyRenderer.sortingLayerName = sortingLayerName;
         selectionRenderer.sortingLayerName = sortingLayerName;
+        motionTrailRenderer.sortingLayerName = sortingLayerName;
         effectRenderer.sortingLayerName = sortingLayerName;
         shadowRenderer.sortingOrder = order - 2;
         leftFootRenderer.sortingLayerName = sortingLayerName;
@@ -1192,6 +1396,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         leftFootRenderer.sortingOrder = order - 1;
         rightFootRenderer.sortingOrder = order - 1;
         selectionRenderer.sortingOrder = order - 1;
+        motionTrailRenderer.sortingOrder = order - 1;
         bodyRenderer.sortingOrder = order;
         SetLayerSorting(baseLayerRenderer, order);
         SetLayerSorting(outfitLayerRenderer, order + 1);

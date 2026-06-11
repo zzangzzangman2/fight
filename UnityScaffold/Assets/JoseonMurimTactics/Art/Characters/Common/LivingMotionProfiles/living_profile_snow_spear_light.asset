@@ -24,14 +24,19 @@ MonoBehaviour:
   turnStartDuration: 0.34
   waitSlouchAmount: 0.32
   lowHpShakeAmount: 0.009
+  stateEnterPopScale: 1.036
+  stateEnterLift: 0.03
+  stateEnterDuration: 0.145
   moveHopAmount: 0.022
-  moveLeanAmount: 0.62
+  moveLeanAmount: 0.72
   footDustAmount: 0
-  attackAnticipationDistance: 0.038
-  attackLungeMultiplier: 0.88
+  attackAnticipationDistance: 0.044
+  attackLungeMultiplier: 0.94
   impactFreezeSeconds: 0.052
-  hitShakeAmount: 0.02
-  victoryHopAmount: 0.046
-  hairSwayAmount: 1.05
-  weaponSwayAmount: 0.82
-  accessorySwayAmount: 0.85
+  hitShakeAmount: 0.023
+  victoryHopAmount: 0.052
+  motionTrailAlpha: 0.14
+  motionTrailDuration: 0.17
+  hairSwayAmount: 1.16
+  weaponSwayAmount: 0.92
+  accessorySwayAmount: 0.96
