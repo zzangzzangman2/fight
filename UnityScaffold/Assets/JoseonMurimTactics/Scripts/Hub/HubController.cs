@@ -1011,12 +1011,14 @@ public sealed class HubController : MonoBehaviour
         bool hover = row.Contains(Event.current.mousePosition);
         UiTheme.DrawFill(row, hover ? new Color(0.060f, 0.075f, 0.070f, 0.85f)
                                     : new Color(0.030f, 0.040f, 0.038f, 0.72f));
-        UiTheme.DrawFill(new Rect(row.x, row.y, 4f * s, row.height),
-                         HubInventoryGrid.AccentFor(InventoryService.TypeOf(itemId)));
+        InventoryItemType itemType = InventoryService.TypeOf(itemId);
+        UiTheme.DrawFill(new Rect(row.x, row.y, 4f * s, row.height), HubInventoryGrid.AccentFor(itemType));
+        HubInventoryGrid.DrawItemIcon(new Rect(row.x + 12f * s, row.y + 7f * s, 40f * s, 40f * s), itemId,
+                                      itemType, s);
         int owned = root.Inventory.GetCount(itemId);
         string nameLabel = owned > 0 ? $"{item}  <color=#9FB6A0>보유 {owned}</color>" : item;
-        GUI.Label(new Rect(row.x + 14f * s, row.y + 4f * s, row.width * 0.62f, 26f * s), nameLabel, UiTheme.Body);
-        GUI.Label(new Rect(row.x + 14f * s, row.y + 28f * s, row.width - 180f * s, 22f * s), desc,
+        GUI.Label(new Rect(row.x + 62f * s, row.y + 4f * s, row.width * 0.58f, 26f * s), nameLabel, UiTheme.Body);
+        GUI.Label(new Rect(row.x + 62f * s, row.y + 28f * s, row.width - 228f * s, 22f * s), desc,
                   UiTheme.SmallMuted);
         bool canBuy = root.Flags.GetInt("silver") >= price;
         GUI.enabled = canBuy;

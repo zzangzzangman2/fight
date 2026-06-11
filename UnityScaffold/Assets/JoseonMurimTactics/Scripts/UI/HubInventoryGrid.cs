@@ -45,7 +45,7 @@ public sealed class HubInventoryGrid
         float pad = 8f * s;
         int columns = Mathf.Max(2, Mathf.FloorToInt((rect.width - pad) / (190f * s)));
         float cellW = (rect.width - pad * (columns + 1)) / columns;
-        float cellH = 58f * s;
+        float cellH = 66f * s;
         int rows = (stacks.Count + columns - 1) / columns;
         float contentH = rows * (cellH + pad) + pad;
 
@@ -76,6 +76,9 @@ public sealed class HubInventoryGrid
                 DrawFrame(cell, Mathf.Max(1f, 1.4f * s), UiTheme.GoldBright);
             }
 
+            DrawItemIcon(new Rect(cell.x + 12f * s, cell.y + 9f * s, 42f * s, 42f * s), stack.itemId, stack.type,
+                         s);
+
             GUIStyle name = new GUIStyle(UiTheme.Body)
             {
                 fontSize = Mathf.RoundToInt(16f * s),
@@ -93,7 +96,7 @@ public sealed class HubInventoryGrid
                 label += $" <color=#F5C75C>+{level}</color>";
             }
 
-            GUI.Label(new Rect(cell.x + 12f * s, cell.y + 7f * s, cell.width - 58f * s, 24f * s), label, name);
+            GUI.Label(new Rect(cell.x + 64f * s, cell.y + 8f * s, cell.width - 110f * s, 24f * s), label, name);
 
             GUIStyle sub = new GUIStyle(UiTheme.SmallMuted)
             {
@@ -107,7 +110,7 @@ public sealed class HubInventoryGrid
                 typeLine += " · 장착 " + equipment.EquippedCount(stack.itemId);
             }
 
-            GUI.Label(new Rect(cell.x + 12f * s, cell.y + 32f * s, cell.width - 58f * s, 20f * s), typeLine, sub);
+            GUI.Label(new Rect(cell.x + 64f * s, cell.y + 36f * s, cell.width - 110f * s, 20f * s), typeLine, sub);
 
             GUIStyle countStyle = new GUIStyle(UiTheme.Body)
             {
@@ -116,7 +119,7 @@ public sealed class HubInventoryGrid
                 fontStyle = FontStyle.Bold
             };
             countStyle.normal.textColor = UiTheme.Ink;
-            GUI.Label(new Rect(cell.xMax - 52f * s, cell.y + 7f * s, 42f * s, 22f * s), "x" + stack.count, countStyle);
+            GUI.Label(new Rect(cell.xMax - 52f * s, cell.y + 8f * s, 42f * s, 22f * s), "x" + stack.count, countStyle);
 
             if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
             {
@@ -143,6 +146,37 @@ public sealed class HubInventoryGrid
         default:
             return "소모품";
         }
+    }
+
+    public static void DrawItemIcon(Rect rect, string itemId, InventoryItemType type, float s)
+    {
+        Color accent = AccentFor(type);
+        UiTheme.DrawFill(new Rect(rect.x + 2f * s, rect.y + 3f * s, rect.width, rect.height),
+                         new Color(0f, 0f, 0f, 0.26f));
+        UiTheme.DrawFill(rect, new Color(0.82f, 0.74f, 0.56f, 0.92f));
+        DrawFrame(rect, Mathf.Max(1f, 1.15f * s), accent);
+
+        Sprite sprite = IconSpriteRegistry.LoadSprite(itemId);
+        if (sprite != null && sprite.texture != null)
+        {
+            Rect inner = new Rect(rect.x + 3f * s, rect.y + 3f * s, rect.width - 6f * s, rect.height - 6f * s);
+            Rect texRect = sprite.textureRect;
+            Texture2D texture = sprite.texture;
+            Rect coords = new Rect(texRect.x / texture.width, texRect.y / texture.height,
+                                   texRect.width / texture.width, texRect.height / texture.height);
+            GUI.DrawTextureWithTexCoords(inner, texture, coords, true);
+            return;
+        }
+
+        GUIStyle fallback = new GUIStyle(UiTheme.Body)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = Mathf.RoundToInt(16f * s),
+            fontStyle = FontStyle.Bold
+        };
+        fallback.normal.textColor = UiTheme.Ink;
+        string label = TypeLabel(type);
+        GUI.Label(rect, string.IsNullOrEmpty(label) ? "?" : label.Substring(0, 1), fallback);
     }
 
     private static void DrawFrame(Rect rect, float thick, Color color)
