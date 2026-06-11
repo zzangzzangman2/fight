@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace JoseonMurimTactics
 {
 /// <summary>
-/// 동료 선물 한 종의 정의. 선물은 유대를 올리는
+/// 동료 선물 한 종의 정의. 선물은 연애도를 올리는
 /// 정식 공략 수단이다. favoriteCompanionId가 맞으면 선호 보너스가 붙는다.
 /// </summary>
 public sealed class GiftInfo
@@ -50,19 +50,19 @@ public static class GiftCatalog
     private static readonly List<GiftInfo> Items = new List<GiftInfo>
     {
         new GiftInfo("gift_snow_herbal_tea", "설산 약차", 28, "baek_ryeon", 3, 8,
-                     "설악산 약초로 우린 따뜻한 차. 백련 선호.",
+                     "설악산 약초로 우린 따뜻한 차. 백련 공략 선물.",
                      "백련의 차가운 눈매가 김 너머로 사르르 풀린다."),
         new GiftInfo("gift_spicy_jerky", "매운 육포", 25, "do_arin", 3, 8,
-                     "혀가 얼얼한 매운 육포. 도아린 선호.",
+                     "혀가 얼얼한 매운 육포. 도아린 공략 선물.",
                      "도아린이 한 입 베어 물고는 씩 웃는다. \"이거지!\""),
         new GiftInfo("gift_lightning_charm", "번개무늬 부적", 28, "jin_seoyul", 3, 8,
-                     "뇌문이 새겨진 장난스러운 부적. 진서율 선호.",
+                     "뇌문이 새겨진 장난스러운 부적. 진서율 공략 선물.",
                      "진서율의 눈이 번개처럼 반짝인다. \"문주님, 취향 저격인데요?\""),
         new GiftInfo("gift_flower_ribbon", "꽃비단 매듭", 25, "seo_a", 3, 8,
                      "남원 비단으로 엮은 꽃 매듭. 신서아 응원 선물.",
                      "신서아가 매듭을 머리에 달고 빙글 돈다. \"어때요? 예쁘죠!\""),
         new GiftInfo("gift_black_lotus_thread", "흑련 손질실", 28, "han_biyeon", 3, 8,
-                     "암기 손질에 쓰는 질긴 검은 실. 한비연 선호.",
+                     "암기 손질에 쓰는 질긴 검은 실. 한비연 공략 선물.",
                      "한비연이 실을 손끝에 감아 보며 작게 웃는다. \"…쓸 만하네.\""),
         new GiftInfo("gift_fine_inkstick", "고급 먹", 18, null, 5, 5,
                      "은은한 솔향이 나는 고급 먹. 누구에게나 무난한 선물.",

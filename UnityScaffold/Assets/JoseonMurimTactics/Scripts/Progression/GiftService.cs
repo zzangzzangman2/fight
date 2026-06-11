@@ -13,7 +13,7 @@ public struct GiftResult
 }
 
 /// <summary>
-/// 동료 선물 — 동료와의 유대를 올리는 공략 수단.
+/// 동료 선물 — 동료와의 연애도를 올리는 공략 수단.
 /// 하루 제한: 동료 1명당 1회. intVars["gift:last_day:<companionId>"] = 지급한 날(DayIndex).
 /// </summary>
 public sealed class GiftService
@@ -81,7 +81,7 @@ public sealed class GiftService
         return true;
     }
 
-    /// <summary>선물 지급: 아이템 1개 소모 → 유대 상승 → 하루 제한 기록.</summary>
+    /// <summary>선물 지급: 아이템 1개 소모 → 연애도 상승 → 하루 제한 기록.</summary>
     public GiftResult Give(string companionId, string giftId)
     {
         GiftResult result = new GiftResult();
@@ -106,10 +106,10 @@ public sealed class GiftService
         session.intVars[LastGiftDayPrefix + companionId] = DayIndex;
 
         string name = CompanionCatalog.Name(companionId);
-        // 기본 시스템 표기는 '유대'로 통일(후속 지시 §2). 연애 분기명은 성인 전용 이벤트 내부에서만 쓴다.
+        // 기본 표기는 '연애도'(기획 확정).
         result.message = result.wasFavorite
-                             ? $"{name}에게 {gift.displayName}을(를) 건넸다. 최애 선물! 유대 +{delta}."
-                             : $"{name}에게 {gift.displayName}을(를) 건넸다. 유대 +{delta}.";
+                             ? $"{name}에게 {gift.displayName}을(를) 건넸다. 최애 선물! 연애도 +{delta}."
+                             : $"{name}에게 {gift.displayName}을(를) 건넸다. 연애도 +{delta}.";
         if (result.wasFavorite && !string.IsNullOrEmpty(gift.favoriteReaction))
         {
             result.message += "\n" + gift.favoriteReaction;
