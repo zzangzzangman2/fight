@@ -1100,7 +1100,7 @@ public sealed class BattleTestController : MonoBehaviour
         aiQueued = false;
         battleOver = false;
         commandMode = BattleCommandMode.Move;
-        scoutMode = true;
+        scoutMode = false;
         showThreatOverlay = false;
         showElevationOverlay = false;
         showCoverOverlay = false;
@@ -1119,8 +1119,7 @@ public sealed class BattleTestController : MonoBehaviour
         units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
         CenterCamera();
         EnsureBattleHud();
-        AddLog("[정찰] 정찰 모드: 적과 위험 지형을 확인하고, 아군을 남쪽 배치 칸으로 옮길 수 있습니다.");
-
+        AddLog("[전투] 아군을 선택한 뒤 파란 이동 가능 칸을 클릭하세요. 정찰/재배치는 S로 전환할 수 있습니다.");
         AddLog("[체계] 전투 준비 완료.");
         suppressCameraFocus = true;
         BeginPlayerPhase();
@@ -3124,17 +3123,29 @@ public sealed class BattleTestController : MonoBehaviour
     {
         Transform unitRoot = new GameObject("Units").transform;
         unitRoot.SetParent(transform, false);
+        HashSet<Vector2Int> occupiedSpawnCells = new HashSet<Vector2Int>();
 
         foreach (BattleTestUnitDefinition definition in unitDefinitions)
         {
-            if (!IsInside(definition.startCell))
+            if (definition == null)
             {
                 continue;
             }
 
+            if (!TryResolveInitialSpawnCell(definition, occupiedSpawnCells, out Vector2Int spawnCell))
+            {
+                AddLog($"[배치] {definition.displayName} 배치 가능한 시작 칸을 찾지 못했습니다.");
+                continue;
+            }
+
+            if (spawnCell != definition.startCell)
+            {
+                AddLog($"[배치] {definition.displayName} 시작 위치 보정: ({definition.startCell.x},{definition.startCell.y}) -> ({spawnCell.x},{spawnCell.y})");
+            }
+
             GameObject unitObject = new GameObject(definition.displayName);
             unitObject.transform.SetParent(unitRoot, false);
-            unitObject.transform.position = UnitWorldPosition(definition.startCell);
+            unitObject.transform.position = UnitWorldPosition(spawnCell);
 
             CharacterVisualController visual = unitObject.AddComponent<CharacterVisualController>();
             visual.visual = definition.visual;
@@ -3149,10 +3160,75 @@ public sealed class BattleTestController : MonoBehaviour
 
             BattleTestUnitView view = unitObject.AddComponent<BattleTestUnitView>();
             BattleTestUnit unit = new BattleTestUnit(definition, view);
+            unit.cell = spawnCell;
             unit.initiative = definition.initiative + random.Next(0, 5);
             view.Bind(unit, visual);
             units.Add(unit);
+            occupiedSpawnCells.Add(spawnCell);
         }
+    }
+
+    private bool TryResolveInitialSpawnCell(BattleTestUnitDefinition definition, HashSet<Vector2Int> occupied,
+                                            out Vector2Int spawnCell)
+    {
+        Vector2Int preferred = definition.startCell;
+        if (definition.faction == Faction.Ally)
+        {
+            if (TryFindNearestSpawnCell(preferred, occupied, true, out spawnCell))
+            {
+                return true;
+            }
+        }
+        else if (IsValidInitialSpawnCell(preferred, occupied, false))
+        {
+            spawnCell = preferred;
+            return true;
+        }
+
+        return TryFindNearestSpawnCell(preferred, occupied, false, out spawnCell);
+    }
+
+    private bool TryFindNearestSpawnCell(Vector2Int preferred, HashSet<Vector2Int> occupied, bool deploymentOnly,
+                                         out Vector2Int spawnCell)
+    {
+        spawnCell = preferred;
+        int bestScore = int.MaxValue;
+        bool found = false;
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                Vector2Int candidate = new Vector2Int(x, y);
+                if (!IsValidInitialSpawnCell(candidate, occupied, deploymentOnly))
+                {
+                    continue;
+                }
+
+                int score = GridDistance(preferred, candidate) * 100 + y * 4 + x;
+                if (score >= bestScore)
+                {
+                    continue;
+                }
+
+                bestScore = score;
+                spawnCell = candidate;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    private bool IsValidInitialSpawnCell(Vector2Int cell, HashSet<Vector2Int> occupied, bool deploymentOnly)
+    {
+        BattleTestTile tile = TileAt(cell);
+        if (tile == null || !tile.walkable || occupied.Contains(cell))
+        {
+            return false;
+        }
+
+        return !deploymentOnly || IsDeploymentCell(cell);
     }
 
     private void BeginPlayerPhase()
