@@ -3,7 +3,42 @@ guid: 7e043af1f1329384b8351f62d1248de8
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Default-Material
+    second: {fileID: 2100000, guid: e4a3d0d102660784d9a2e7932fc2518c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Yuuka_Original_Body
+    second: {fileID: 2100000, guid: 13601aaa8deaa694e9c6c402d322b012, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Yuuka_Original_Calculator
+    second: {fileID: 2100000, guid: f1f99049391768648b3f5284bbf6710e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Yuuka_Original_EyeMouth
+    second: {fileID: 2100000, guid: f050d3c6a47229c4e8363590f8542e0b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Yuuka_Original_Eyebrow
+    second: {fileID: 2100000, guid: a79e8ffdbefd22f4ba69f384eb520c4e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Yuuka_Original_Hair
+    second: {fileID: 2100000, guid: 3a337135cc05bfe49a4e911a457e6312, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Yuuka_Original_Weapon
+    second: {fileID: 2100000, guid: f0e839c2a4e3ad94c9f5a2612807a435, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

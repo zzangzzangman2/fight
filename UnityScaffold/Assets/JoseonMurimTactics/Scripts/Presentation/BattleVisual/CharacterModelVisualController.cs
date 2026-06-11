@@ -35,8 +35,6 @@ public sealed class CharacterModelVisualController : MonoBehaviour, ICombatAnima
     private static readonly int GuardHash = Animator.StringToHash("Guard");
     private static readonly int VictoryHash = Animator.StringToHash("Victory");
     private static readonly int ResetToIdleHash = Animator.StringToHash("ResetToIdle");
-    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
-    private static readonly int ColorId = Shader.PropertyToID("_Color");
 
     public int CurrentBodySortingOrder => currentSortingOrder;
 
@@ -282,8 +280,9 @@ public sealed class CharacterModelVisualController : MonoBehaviour, ICombatAnima
             }
         }
 
-        modelRenderers = modelRoot.GetComponentsInChildren<Renderer>(true);
-        ApplyBattleMaterials();
+        PruneNonBattleParts();
+        modelRenderers = CollectBattleRenderers();
+        ConfigureBattleMaterials();
         if (visual.modelKeepFeetOnGround)
         {
             CharacterModelGroundingSolver.Apply(modelRoot, modelRenderers, transform.position.y + visual.modelGroundY);
@@ -292,17 +291,83 @@ public sealed class CharacterModelVisualController : MonoBehaviour, ICombatAnima
         UpdateSorting();
     }
 
-    private void ApplyBattleMaterials()
+    private Renderer[] CollectBattleRenderers()
     {
-        if (modelRenderers == null)
+        if (modelRoot == null)
+        {
+            return new Renderer[0];
+        }
+
+        Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>(true);
+        int count = 0;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null && renderers[i].enabled)
+            {
+                count++;
+            }
+        }
+
+        Renderer[] visibleRenderers = new Renderer[count];
+        int index = 0;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (renderer == null || !renderer.enabled)
+            {
+                continue;
+            }
+
+            visibleRenderers[index++] = renderer;
+        }
+
+        return visibleRenderers;
+    }
+
+    private void PruneNonBattleParts()
+    {
+        if (modelInstance == null)
         {
             return;
         }
 
-        Shader shader = Shader.Find("Sprites/Default") ??
-                        Shader.Find("Unlit/Transparent") ??
-                        Shader.Find("Unlit/Texture");
-        if (shader == null)
+        Renderer[] renderers = modelInstance.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (renderer == null || !ShouldHideBattlePart(renderer.name))
+            {
+                continue;
+            }
+
+            renderer.enabled = false;
+        }
+    }
+
+    private static bool ShouldHideBattlePart(string partName)
+    {
+        if (string.IsNullOrEmpty(partName))
+        {
+            return false;
+        }
+
+        return ContainsBattlePartName(partName, "Halo") ||
+               ContainsBattlePartName(partName, "Calculator") ||
+               ContainsBattlePartName(partName, "Milk") ||
+               ContainsBattlePartName(partName, "Pie") ||
+               ContainsBattlePartName(partName, "Star") ||
+               ContainsBattlePartName(partName, "Shield") ||
+               ContainsBattlePartName(partName, "Weapon");
+    }
+
+    private static bool ContainsBattlePartName(string partName, string marker)
+    {
+        return partName.IndexOf(marker, System.StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private void ConfigureBattleMaterials()
+    {
+        if (modelRenderers == null)
         {
             return;
         }
@@ -315,42 +380,16 @@ public sealed class CharacterModelVisualController : MonoBehaviour, ICombatAnima
                 continue;
             }
 
-            Material[] sourceMaterials = renderer.sharedMaterials;
-            if (sourceMaterials == null || sourceMaterials.Length == 0)
+            Material[] materials = renderer.sharedMaterials;
+            for (int j = 0; j < materials.Length; j++)
             {
-                renderer.sharedMaterial = CreateBattleMaterial(shader, null);
-                continue;
-            }
-
-            Material[] battleMaterials = new Material[sourceMaterials.Length];
-            for (int j = 0; j < sourceMaterials.Length; j++)
-            {
-                battleMaterials[j] = CreateBattleMaterial(shader, sourceMaterials[j]);
-            }
-
-            renderer.sharedMaterials = battleMaterials;
-        }
-    }
-
-    private static Material CreateBattleMaterial(Shader shader, Material source)
-    {
-        Material material = new Material(shader) { name = source == null ? "BattleModelMaterial" : source.name + "_Battle" };
-        if (source != null)
-        {
-            Texture texture = source.HasProperty(MainTexId) ? source.GetTexture(MainTexId) : source.mainTexture;
-            if (texture != null)
-            {
-                material.SetTexture(MainTexId, texture);
-            }
-
-            if (source.HasProperty(ColorId))
-            {
-                material.SetColor(ColorId, source.GetColor(ColorId));
+                Material material = materials[j];
+                if (material != null && material.renderQueue < 3000)
+                {
+                    material.renderQueue = 3000;
+                }
             }
         }
-
-        material.renderQueue = 3000;
-        return material;
     }
 
     private void EnsurePresentationSprites()

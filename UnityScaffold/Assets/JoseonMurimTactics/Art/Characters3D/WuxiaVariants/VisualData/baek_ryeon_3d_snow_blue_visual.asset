@@ -56,15 +56,15 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 157c8ab3c66cf0742b10380d9b4406a8, type: 2}
   defaultWeaponType: 2
   weaponAnimationSet: {fileID: 11400000, guid: 5bb1a69a23613ab419d5898bad73f6ad, type: 2}
-  heightInTiles: 1.1
-  spriteOffset: {x: 0, y: 0.02}
+  heightInTiles: 0.82
+  spriteOffset: {x: 0, y: -0.2}
   sortingOffset: 0
   battleVisualMode: 1
   modelPrefab: {fileID: 919132149155446097, guid: 9bcbd9d46c8c356449078faceb1f02d4, type: 3}
   modelAnimatorController: {fileID: 0}
   modelLocalOffset: {x: 0, y: 0, z: 0}
   modelLocalEuler: {x: 0, y: 180, z: 0}
-  modelScale: 69.25429
+  modelScale: 75
   modelGroundY: 0
   modelShadowWidth: 0.78
   modelShadowHeight: 0.2
