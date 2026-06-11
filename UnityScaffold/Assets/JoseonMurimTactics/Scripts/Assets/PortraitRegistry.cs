@@ -45,6 +45,11 @@ public static class PortraitRegistry
     private static readonly HashSet<string> MissingWarnings =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    public static string ResolvePortraitResource(string speakerId, string portraitId = null)
+    {
+        return ResolvePortraitResource(speakerId, portraitId, string.Empty);
+    }
+
     public static string ResolvePortraitResource(string speakerId, string portraitId, string explicitResource)
     {
         if (!string.IsNullOrEmpty(explicitResource))
@@ -63,7 +68,7 @@ public static class PortraitRegistry
         return !string.IsNullOrEmpty(normalizedSpeakerId) &&
                CharacterPortraits.TryGetValue(normalizedSpeakerId, out string characterResource)
                    ? characterResource
-                   : null;
+                   : string.Empty;
     }
 
     public static Texture2D LoadPortraitTexture(string resourcePath)

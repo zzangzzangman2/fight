@@ -602,12 +602,29 @@ public sealed class BattleHUDController : MonoBehaviour
         ApplySpriteOrColor(image, "ui_battle_button_normal_9slice", ButtonBg);
         image.raycastTarget = true;
         Button button = buttonObject.AddComponent<Button>();
-        ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(Cyan.r, Cyan.g, Cyan.b, 0.82f);
-        colors.pressedColor = new Color(Gold.r, Gold.g, Gold.b, 0.92f);
-        colors.disabledColor = new Color(0.45f, 0.45f, 0.45f, 0.54f);
-        button.colors = colors;
+        Sprite hoverSprite = BattleHudAssetRegistry.LoadSprite("ui_button_hover");
+        Sprite pressedSprite = BattleHudAssetRegistry.LoadSprite("ui_button_pressed");
+        Sprite disabledSprite = BattleHudAssetRegistry.LoadSprite("ui_button_disabled");
+        if (hoverSprite != null || pressedSprite != null || disabledSprite != null)
+        {
+            button.transition = Selectable.Transition.SpriteSwap;
+            button.spriteState = new SpriteState
+            {
+                highlightedSprite = hoverSprite,
+                pressedSprite = pressedSprite,
+                selectedSprite = hoverSprite,
+                disabledSprite = disabledSprite
+            };
+        }
+        else
+        {
+            ColorBlock colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(Cyan.r, Cyan.g, Cyan.b, 0.82f);
+            colors.pressedColor = new Color(Gold.r, Gold.g, Gold.b, 0.92f);
+            colors.disabledColor = new Color(0.45f, 0.45f, 0.45f, 0.54f);
+            button.colors = colors;
+        }
         if (action != null)
         {
             button.onClick.AddListener(() => action());
@@ -655,11 +672,11 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private static void ApplySpriteOrColor(Image image, string spriteName, Color fallbackColor)
     {
-        Sprite sprite = string.IsNullOrEmpty(spriteName) ? null : Resources.Load<Sprite>("UI/BattleHUD/" + spriteName);
+        Sprite sprite = BattleHudAssetRegistry.LoadSprite(spriteName);
         if (sprite != null)
         {
             image.sprite = sprite;
-            image.type = Image.Type.Sliced;
+            image.type = sprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
             image.color = Color.white;
         }
         else

@@ -6,7 +6,7 @@ namespace JoseonMurimTactics
 {
 public static class DialogueBackgroundRegistry
 {
-    public const string DefaultBackgroundId = "bg_baekdu_light_sword_gate_day";
+    public const string DefaultBackgroundId = "bg_baekdu_training_yard_snow";
 
     private static readonly Dictionary<string, string> ResourcePaths =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -40,6 +40,7 @@ public static class DialogueBackgroundRegistry
         new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
     private static readonly HashSet<string> MissingWarnings =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private static Dictionary<string, string> manifestResourcePaths;
 
     public static string ResolveBackgroundId(string id, string fallbackId = null)
     {
@@ -51,15 +52,24 @@ public static class DialogueBackgroundRegistry
     public static string ResolveResourcePath(string id, string fallbackId = null)
     {
         string resolvedId = ResolveBackgroundId(id, fallbackId);
-        return ResourcePaths.TryGetValue(resolvedId, out string resourcePath)
-                   ? resourcePath
-                   : ResourcePaths[DefaultBackgroundId];
+        if (TryResolveResourcePath(resolvedId, out string resourcePath))
+        {
+            return resourcePath;
+        }
+
+        if (!string.IsNullOrEmpty(fallbackId) && TryResolveResourcePath(fallbackId, out resourcePath))
+        {
+            return resourcePath;
+        }
+
+        return ResourcePaths[DefaultBackgroundId];
     }
 
     public static Texture2D LoadBackgroundTexture(string resourcePathOrId)
     {
-        string resourcePath = !string.IsNullOrEmpty(resourcePathOrId) && ResourcePaths.ContainsKey(resourcePathOrId)
-                                  ? ResourcePaths[resourcePathOrId]
+        string resourcePath = !string.IsNullOrEmpty(resourcePathOrId) &&
+                              TryResolveResourcePath(resourcePathOrId, out string resolvedPath)
+                                  ? resolvedPath
                                   : resourcePathOrId;
         if (string.IsNullOrEmpty(resourcePath))
         {
@@ -85,6 +95,54 @@ public static class DialogueBackgroundRegistry
 
         TextureCache[resourcePath] = texture;
         return texture;
+    }
+
+    public static bool TryResolveResourcePath(string id, out string resourcePath)
+    {
+        string normalizedId = AssetAliasResolver.NormalizeBackgroundId(id);
+        if (!string.IsNullOrEmpty(normalizedId))
+        {
+            Dictionary<string, string> manifestPaths = GetManifestResourcePaths();
+            if (manifestPaths.TryGetValue(normalizedId, out resourcePath))
+            {
+                return true;
+            }
+
+            if (ResourcePaths.TryGetValue(normalizedId, out resourcePath))
+            {
+                return true;
+            }
+        }
+
+        resourcePath = string.Empty;
+        return false;
+    }
+
+    private static Dictionary<string, string> GetManifestResourcePaths()
+    {
+        if (manifestResourcePaths != null)
+        {
+            return manifestResourcePaths;
+        }
+
+        manifestResourcePaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        AuthoringContentManifest manifest = AuthoringContentManifest.LoadFromResources();
+        foreach (AuthoringMediaItem background in manifest.backgrounds)
+        {
+            if (background == null || string.IsNullOrEmpty(background.id) ||
+                string.IsNullOrEmpty(background.resourcePath))
+            {
+                continue;
+            }
+
+            string normalizedId = AssetAliasResolver.NormalizeBackgroundId(background.id);
+            if (!string.IsNullOrEmpty(normalizedId))
+            {
+                manifestResourcePaths[normalizedId] = background.resourcePath;
+            }
+        }
+
+        return manifestResourcePaths;
     }
 }
 }

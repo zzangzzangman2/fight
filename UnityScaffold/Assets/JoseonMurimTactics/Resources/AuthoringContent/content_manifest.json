@@ -119,49 +119,49 @@
       "title": "Baekdu Light Sword Gate - Day",
       "resourcePath": "Backgrounds/Dialogue/bg_baekdu_light_sword_gate_day",
       "previewUrl": "",
-      "notes": "Dialogue background placeholder in Resources."
+      "notes": "Baekdu Light Sword sect gate dialogue background."
     },
     {
       "id": "bg_baekdu_training_yard_snow",
       "title": "Baekdu Training Yard - Snow",
       "resourcePath": "Backgrounds/Dialogue/bg_baekdu_training_yard_snow",
       "previewUrl": "",
-      "notes": "Dialogue background placeholder in Resources."
+      "notes": "Baekdu snowy training yard dialogue background."
     },
     {
       "id": "bg_baekdu_rooftop_day",
       "title": "Baekdu Rooftop - Day",
       "resourcePath": "Backgrounds/Dialogue/bg_baekdu_rooftop_day",
       "previewUrl": "",
-      "notes": "Dialogue background placeholder in Resources."
+      "notes": "Baekdu roofline and mountain overlook dialogue background."
     },
     {
       "id": "bg_sect_master_room_sickbed",
       "title": "Sect Master Sickroom",
       "resourcePath": "Backgrounds/Dialogue/bg_sect_master_room_sickbed",
       "previewUrl": "",
-      "notes": "Dialogue background placeholder in Resources."
+      "notes": "Sect master sickbed chamber dialogue background."
     },
     {
       "id": "bg_sobaek_village_street_day",
       "title": "Sobaek Village Street - Day",
       "resourcePath": "Backgrounds/Dialogue/bg_sobaek_village_street_day",
       "previewUrl": "",
-      "notes": "Dialogue background placeholder in Resources."
+      "notes": "Sobaek village street dialogue background."
     },
     {
       "id": "bg_chohui_apothecary_shop",
       "title": "Chohui Apothecary Shop",
       "resourcePath": "Backgrounds/Dialogue/bg_chohui_apothecary_shop",
       "previewUrl": "",
-      "notes": "Dialogue background placeholder in Resources."
+      "notes": "Cho Hui apothecary shop dialogue background."
     },
     {
       "id": "bg_baekdu_broken_flag_night",
       "title": "Baekdu Broken Flag - Night",
       "resourcePath": "Backgrounds/Dialogue/bg_baekdu_broken_flag_night",
       "previewUrl": "",
-      "notes": "Dialogue background placeholder in Resources."
+      "notes": "Baekdu broken flag night dialogue background."
     },
     {
       "id": "bg_wood_chopping_yard",
@@ -385,7 +385,7 @@
           "speakerId": "yeon_ok",
           "line": "박성준. 내려와라. 지붕은 연무장이 아니고, 네 이불도 아니다.",
           "mood": "엄격",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "choices": []
         },
         {
@@ -393,7 +393,7 @@
           "speakerId": "park_sungjun",
           "line": "사범님, 낮잠이 아닙니다. 하늘의 기운을 받아 천광심법을... 음, 누워서 받는 중이었습니다.",
           "mood": "능청",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "choices": []
         },
         {
@@ -401,7 +401,7 @@
           "speakerId": "yeon_ok",
           "line": "좋다. 그럼 누운 채로 장작도 패고, 목인도 서른 번 치거라.",
           "mood": "차갑게",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "choices": []
         },
         {
@@ -409,7 +409,7 @@
           "speakerId": "park_sungjun",
           "line": "(어떻게 둘러댈까?)",
           "mood": "선택",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "choices": [
             {
               "id": "c1_060",
@@ -463,7 +463,7 @@
           "speakerId": "yeon_ok",
           "line": "입공만 보면 벌써 천하제일이다. 몸도 내려와라. 문주님이 찾으신다.",
           "mood": "단호",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "choices": []
         },
         {
@@ -471,7 +471,7 @@
           "speakerId": "",
           "line": "성준이 뛰어내리자 기와 세 장이 먼저 하산했다. 연옥의 눈썹도 같이 올라갔다.",
           "mood": "서술",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "choices": []
         },
         {
@@ -479,7 +479,7 @@
           "speakerId": "park_sungjun",
           "line": "보셨죠? 제 경공이 아니라 검각이 먼저 움직였습니다. 건물이 아주 적극적이에요.",
           "mood": "농담",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "choices": []
         },
         {
@@ -487,7 +487,7 @@
           "speakerId": "yeon_ok",
           "line": "다음엔 네 용돈이 먼저 하산할 것이다.",
           "mood": "꾸짖음",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_rooftop_day",
           "choices": []
         },
         {
@@ -495,7 +495,7 @@
           "speakerId": "park_mugyeom",
           "line": "성준아. 검은 폼으로 드는 게 아니다. 지켜야 할 것이 있을 때 비로소 손에 붙는다.",
           "mood": "조용함",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_sect_master_room_sickbed",
           "choices": []
         },
         {
@@ -503,7 +503,7 @@
           "speakerId": "park_sungjun",
           "line": "아버지, 저는 폼도 지키고 문파도 지키고 밥상도 지키고 싶은데요. 셋 중 밥상이 제일 위태롭습니다.",
           "mood": "능청",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_sect_master_room_sickbed",
           "choices": []
         },
         {
@@ -511,7 +511,7 @@
           "speakerId": "park_mugyeom",
           "line": "그래서 부른 것이다. 중원 문파들이 백두산 영맥을 눈독 들인다는 말이 돈다.",
           "mood": "걱정",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_sect_master_room_sickbed",
           "choices": []
         },
         {
@@ -519,7 +519,7 @@
           "speakerId": "park_mugyeom",
           "line": "천광심법과 백야검결, 이제 네 차례다. 문파가 작아졌다고 이름까지 작게 부르지는 마라.",
           "mood": "당부",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_sect_master_room_sickbed",
           "choices": []
         },
         {
@@ -527,7 +527,7 @@
           "speakerId": "park_sungjun",
           "line": "걱정 마세요. 제가 가벼운 건 말투뿐입니다. 건드리면, 꽤 무겁게 받아칠 겁니다.",
           "mood": "다짐",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_sect_master_room_sickbed",
           "choices": []
         },
         {
@@ -535,7 +535,7 @@
           "speakerId": "",
           "line": "낮이 되자 성준은 소백촌으로 내려갔다. 마을 사람들은 그를 ‘사고뭉치 도련님’이라 부르면서도, 은근히 길을 터준다.",
           "mood": "서술",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_sobaek_village_street_day",
           "choices": []
         },
         {
@@ -543,7 +543,7 @@
           "speakerId": "cho_hui",
           "line": "왔네, 백두산 대표 한량. 오늘은 지붕 말고 땅 밟고 다니네?",
           "mood": "핀잔",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_chohui_apothecary_shop",
           "choices": []
         },
         {
@@ -551,7 +551,7 @@
           "speakerId": "park_sungjun",
           "line": "초희야, 그 말투... 나를 기다린 사람의 향기가 난다.",
           "mood": "풍류",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_chohui_apothecary_shop",
           "choices": []
         },
         {
@@ -559,7 +559,7 @@
           "speakerId": "cho_hui",
           "line": "기다렸지. 장작더미가. 약초 바구니도. 그리고 네가 미룬 외상 장부도.",
           "mood": "현실적",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_chohui_apothecary_shop",
           "choices": []
         },
         {
@@ -567,7 +567,7 @@
           "speakerId": "",
           "line": "문파 부흥은 거창한 비급에서 시작되지 않았다. 장작, 약초, 지붕 수리. 듣기엔 초라해도 은전은 거짓말을 하지 않는다.",
           "mood": "서술",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_sobaek_village_street_day",
           "choices": []
         },
         {
@@ -575,7 +575,7 @@
           "speakerId": "park_sungjun",
           "line": "(오늘은 뭘 해야 덜 혼나고 더 벌까?)",
           "mood": "선택",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_wood_chopping_yard",
           "choices": [
             {
               "id": "c1_210__.",
@@ -629,7 +629,7 @@
           "speakerId": "park_sungjun",
           "line": "좋아. 백야검결 제일식, 장작분광. 나무야 미안하다, 우리 집이 가난하다.",
           "mood": "농담",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_wood_chopping_yard",
           "choices": []
         },
         {
@@ -637,7 +637,7 @@
           "speakerId": "park_sungjun",
           "line": "산길? 내가 전문이지. 어릴 때 길 잃은 경험이 이렇게 경력이 될 줄이야.",
           "mood": "능청",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_mountain_herb_path",
           "choices": []
         },
         {
@@ -645,7 +645,7 @@
           "speakerId": "park_sungjun",
           "line": "비 새는 검각에서 천하제일을 꿈꾸면 감기부터 천하제일이 된다. 지붕부터 살리자.",
           "mood": "현실적",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_leaking_roof_repair_scene",
           "choices": []
         },
         {
@@ -653,7 +653,7 @@
           "speakerId": "",
           "line": "밤이 되자, 성준은 다시 찢어진 깃발 아래 섰다. 낮엔 웃었고, 손에는 물집이 잡혔다.",
           "mood": "서술",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_broken_flag_night",
           "choices": []
         },
         {
@@ -661,7 +661,7 @@
           "speakerId": "park_sungjun",
           "line": "좋아. 중원인지 뭔지, 우리 집 앞마당까지 들어오면 손님 대접은 못 하지.",
           "mood": "다짐",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_broken_flag_night",
           "choices": []
         },
         {
@@ -669,7 +669,7 @@
           "speakerId": "",
           "line": "꺼져가던 천광은 아직 남아 있었다. 조금 시끄럽고, 조금 가난하고, 이상하게 포기할 마음은 안 드는 빛이었다.",
           "mood": "서술",
-          "backgroundId": "bg_baekdu_training_yard_snow",
+          "backgroundId": "bg_baekdu_broken_flag_night",
           "choices": []
         }
       ],
