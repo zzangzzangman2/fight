@@ -218,6 +218,62 @@
       "resourcePath": "Backgrounds/Dialogue/bg_heukryeon_shadow_cliff_temple",
       "previewUrl": "",
       "notes": "Companion dialogue background."
+    },
+    {
+      "id": "bg_pyesadang_main_hall_day",
+      "title": "Haedong Shrine Headquarters - Day",
+      "resourcePath": "Backgrounds/Dialogue/bg_pyesadang_main_hall_day",
+      "previewUrl": "",
+      "notes": "Hub_Pyesadang base background for sect, companion, and rebuilding dialogue."
+    },
+    {
+      "id": "bg_pyesadang_main_hall_night",
+      "title": "Haedong Shrine Headquarters - Night",
+      "resourcePath": "Backgrounds/Dialogue/bg_pyesadang_main_hall_night",
+      "previewUrl": "",
+      "notes": "Hub_Pyesadang night meeting and resolve dialogue background."
+    },
+    {
+      "id": "bg_pyesadang_courtyard_dawn",
+      "title": "Pyesadang Courtyard - Dawn",
+      "resourcePath": "Backgrounds/Dialogue/bg_pyesadang_courtyard_dawn",
+      "previewUrl": "",
+      "notes": "Hub_Pyesadang dawn sortie and training dialogue background."
+    },
+    {
+      "id": "bg_pyesadang_training_ground_evening",
+      "title": "Pyesadang Training Ground - Evening",
+      "resourcePath": "Backgrounds/Dialogue/bg_pyesadang_training_ground_evening",
+      "previewUrl": "",
+      "notes": "Hub_Pyesadang martial training and progression dialogue background."
+    },
+    {
+      "id": "bg_pyesadang_infirmary",
+      "title": "Pyesadang Infirmary",
+      "resourcePath": "Backgrounds/Dialogue/bg_pyesadang_infirmary",
+      "previewUrl": "",
+      "notes": "Hub_Pyesadang healing, medicine, and injury dialogue background."
+    },
+    {
+      "id": "bg_pyesadang_market_stall",
+      "title": "Pyesadang Supply Stall",
+      "resourcePath": "Backgrounds/Dialogue/bg_pyesadang_market_stall",
+      "previewUrl": "",
+      "notes": "Hub_Pyesadang merchant, supplies, and consumables dialogue background."
+    },
+    {
+      "id": "bg_pyesadang_library",
+      "title": "Pyesadang Archive",
+      "resourcePath": "Backgrounds/Dialogue/bg_pyesadang_library",
+      "previewUrl": "",
+      "notes": "Hub_Pyesadang archive, manuals, and world lore dialogue background."
+    },
+    {
+      "id": "bg_pyesadang_tavern_corner",
+      "title": "Pyesadang Tavern Corner",
+      "resourcePath": "Backgrounds/Dialogue/bg_pyesadang_tavern_corner",
+      "previewUrl": "",
+      "notes": "Hub_Pyesadang tavern, rumors, requests, and murim information dialogue background."
     }
   ],
   "portraits": [
@@ -977,7 +1033,7 @@
           "speakerName": "박성준",
           "line": "좋아. 백야검결 제일식, 장작분광. 나무야 미안하다, 우리 집이 가난하다.",
           "mood": "농담",
-          "backgroundId": "bg_mountain_herb_path",
+          "backgroundId": "bg_wood_chopping_yard",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_023",
@@ -989,7 +1045,7 @@
           "speakerName": "박성준",
           "line": "산길? 내가 전문이지. 어릴 때 길 잃은 경험이 이렇게 경력이 될 줄이야.",
           "mood": "능청",
-          "backgroundId": "bg_leaking_roof_repair_scene",
+          "backgroundId": "bg_mountain_herb_path",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_024",
@@ -1001,7 +1057,7 @@
           "speakerName": "박성준",
           "line": "비 새는 검각에서 천하제일을 꿈꾸면 감기부터 천하제일이 된다. 지붕부터 살리자.",
           "mood": "현실적",
-          "backgroundId": "bg_sobaek_village_street_day",
+          "backgroundId": "bg_leaking_roof_repair_scene",
           "portraitId": "",
           "portraitResource": "",
           "nextNodeId": "chapter1_prologue_025",

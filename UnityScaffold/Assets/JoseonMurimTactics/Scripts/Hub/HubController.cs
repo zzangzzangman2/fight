@@ -165,6 +165,7 @@ public sealed class HubController : MonoBehaviour
     private void DrawContent(Rect rect, float s)
     {
         UiTheme.DrawPanel(rect);
+        DrawContentBackground(rect, s);
         Rect inner = new Rect(rect.x + 22f * s, rect.y + 18f * s, rect.width - 44f * s, rect.height - 36f * s);
         switch (menu)
         {
@@ -201,6 +202,47 @@ public sealed class HubController : MonoBehaviour
         default:
             DrawOverview(inner, s);
             break;
+        }
+    }
+
+    private void DrawContentBackground(Rect rect, float s)
+    {
+        Texture2D background = DialogueBackgroundRegistry.LoadBackgroundTexture(BackgroundIdFor(menu));
+        if (background == null)
+        {
+            return;
+        }
+
+        Rect art = new Rect(rect.x + 8f * s, rect.y + 8f * s, rect.width - 16f * s, rect.height - 16f * s);
+        GUI.DrawTexture(art, background, ScaleMode.ScaleAndCrop);
+        UiTheme.DrawFill(art, new Color(0.000f, 0.010f, 0.012f, 0.66f));
+        UiTheme.DrawBottomShade(new Rect(art.x, art.y + art.height * 0.36f, art.width, art.height * 0.64f));
+    }
+
+    private static string BackgroundIdFor(HubMenu hubMenu)
+    {
+        switch (hubMenu)
+        {
+        case HubMenu.Sortie:
+        case HubMenu.Sect:
+            return "bg_pyesadang_main_hall_day";
+        case HubMenu.Training:
+            return "bg_pyesadang_training_ground_evening";
+        case HubMenu.Companions:
+            return "bg_pyesadang_courtyard_dawn";
+        case HubMenu.Tavern:
+            return "bg_pyesadang_tavern_corner";
+        case HubMenu.Infirmary:
+            return "bg_pyesadang_infirmary";
+        case HubMenu.Market:
+            return "bg_pyesadang_market_stall";
+        case HubMenu.Library:
+            return "bg_pyesadang_library";
+        case HubMenu.Save:
+        case HubMenu.Settings:
+            return "bg_pyesadang_main_hall_night";
+        default:
+            return "bg_pyesadang_courtyard_dawn";
         }
     }
 
