@@ -94,7 +94,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private static Sprite[] elementSkillSprites;
     private static Sprite[] elementImpactSprites;
     private const int CombatElementSpriteCount = 7;
-    private const int SelectedSortingBoost = 96;
+    private const int SelectedSortingBoost = 160;
 
     private void Awake()
     {
@@ -665,7 +665,6 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             // 선택 강조: 발을 붙인 채 작은 위치 잔향만 준다.
             float selectPulse = Mathf.Abs(Mathf.Sin((time * 4.8f) + phaseSeed));
             localPosition.y += selectPulse * 0.004f;
-            tint = visual.selectedTint;
         }
         else if (acted || visualState == CharacterBattleVisualState.Wait)
         {
@@ -780,7 +779,6 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             float cheer = Mathf.Abs(Mathf.Sin((time * 5.6f) + phaseSeed));
             localPosition.y += cheer * VictoryHopAmount();
             rotation = Mathf.Sin((time * 5.6f) + phaseSeed) * 4f;
-            tint = visual.selectedTint;
             break;
         case CharacterBattleVisualState.Wait:
             tint = visual.actedTint;
@@ -791,7 +789,6 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             localScale.x *= 1f + ready * 0.045f;
             localScale.y *= 1f - ready * 0.020f;
             rotation = -facingSign * 4f * ready;
-            tint = visual.selectedTint;
             showEffect = true;
             effectSprite = GetGuardRingSprite();
             effectPosition = new Vector3(0f, 0.18f, -0.03f);
@@ -1200,17 +1197,14 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         switch (activeEmotion)
         {
         case CharacterEmotion.Smile:
-            tint = Color.Lerp(tint, visual.selectedTint, 0.18f);
             break;
         case CharacterEmotion.Serious:
         case CharacterEmotion.Angry:
-            tint = Color.Lerp(tint, visual.selectedTint, activeEmotion == CharacterEmotion.Angry ? 0.24f : 0.14f);
             break;
         case CharacterEmotion.Pain:
             tint = Color.Lerp(tint, visual.hitTint, 0.36f);
             break;
         case CharacterEmotion.Victory:
-            tint = Color.Lerp(tint, visual.selectedTint, 0.32f);
             break;
         case CharacterEmotion.LowHp:
             tint = Color.Lerp(tint, visual.hitTint, 0.18f);
