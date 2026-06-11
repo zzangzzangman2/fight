@@ -100,20 +100,43 @@ public sealed class BattlePrepController : MonoBehaviour
         float rx = right.x + 22f * s;
         float rw = right.width - 44f * s;
         float ry = right.y + 18f * s;
-        GUI.Label(new Rect(rx, ry, rw, 32f * s), "출격 인원", UiTheme.Heading);
+        GUI.Label(new Rect(rx, ry, rw, 32f * s), "출격 인원 · 장비", UiTheme.Heading);
         ry += 38f * s;
-        foreach (string member in def.roster)
+        // 2열 그리드: 이름 + 장비 요약(이번 전투 전에 정비했다는 체감, 설계 §F).
+        float cellW = (rw - 10f * s) * 0.5f;
+        for (int i = 0; i < def.roster.Count; i++)
         {
-            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 28f * s), "• " + member, UiTheme.Body);
-            ry += 32f * s;
+            string member = def.roster[i];
+            float cx = rx + (i % 2) * (cellW + 10f * s);
+            float cy = ry + (i / 2) * 56f * s;
+            GUI.Label(new Rect(cx + 6f * s, cy, cellW - 6f * s, 26f * s), "• " + member, UiTheme.Body);
+
+            string charId = CharacterGrowthCatalog.NormalizeCharacterId(member);
+            string summary = root.Equipment != null ? root.Equipment.Summary(charId) : string.Empty;
+            EquipmentBonus bonus = root.Equipment != null ? root.Equipment.BuildBonus(charId) : default;
+            string line = string.IsNullOrEmpty(summary) ? "장비 없음"
+                                                        : bonus.IsEmpty ? summary : $"{summary} ({bonus})";
+            GUIStyle equipStyle = new GUIStyle(UiTheme.SmallMuted)
+            {
+                fontSize = Mathf.RoundToInt(12f * s),
+                clipping = TextClipping.Clip,
+                wordWrap = false
+            };
+            if (!string.IsNullOrEmpty(summary))
+            {
+                equipStyle.normal.textColor = UiTheme.GoldBright;
+            }
+
+            GUI.Label(new Rect(cx + 20f * s, cy + 26f * s, cellW - 20f * s, 22f * s), line, equipStyle);
         }
-        ry += 10f * s;
+
+        ry += ((def.roster.Count + 1) / 2) * 56f * s + 6f * s;
 
         GUI.Label(new Rect(rx, ry, rw, 32f * s), "예상 보상", UiTheme.Heading);
         ry += 36f * s;
         if (def.silverReward > 0)
         {
-            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 26f * s), "· 은전 " + def.silverReward, UiTheme.Small);
+            GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 26f * s), "· 은냥 " + def.silverReward, UiTheme.Small);
             ry += 28f * s;
         }
         List<string> rewards = mission != null && mission.rewardPreview.Count > 0
@@ -121,7 +144,7 @@ public sealed class BattlePrepController : MonoBehaviour
                                    : def.rewardItems;
         foreach (string item in rewards)
         {
-            if (item.StartsWith("은전"))
+            if (item.StartsWith("은전") || item.StartsWith("은냥"))
                 continue;
             GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 26f * s), "· " + item, UiTheme.Small);
             ry += 28f * s;

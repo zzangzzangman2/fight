@@ -1089,6 +1089,7 @@ public sealed class BattleTestController : MonoBehaviour
         StopAllCoroutines();
         ClearGeneratedObjects();
         ApplyBattleEntryConfiguration();
+        ApplyEquipmentBonuses();
         width = Mathf.Max(width, 16);
         height = Mathf.Max(height, 12);
 
@@ -1230,6 +1231,43 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         unitDefinitions = CloneUnitDefinitions(baselineUnitDefinitions);
+    }
+
+    /// <summary>
+    /// 허브 정비창에서 장착한 장비/강화 보정을 아군 유닛 수치에 반영한다(설계 §F).
+    /// unitDefinitions는 매 전투 진입 시 baseline에서 새로 복제되므로 중복 적용되지 않는다.
+    /// 에디터에서 전투 씬을 단독 실행하면 GameRoot가 없어 보정 없이 진행된다.
+    /// </summary>
+    private void ApplyEquipmentBonuses()
+    {
+        GameRoot root = GameRoot.Instance;
+        if (root == null || root.Session == null || unitDefinitions == null)
+        {
+            return;
+        }
+
+        EquipmentService equipment = new EquipmentService(root.Session);
+        foreach (BattleTestUnitDefinition definition in unitDefinitions)
+        {
+            if (definition == null || definition.faction != Faction.Ally)
+            {
+                continue;
+            }
+
+            EquipmentBonus bonus = equipment.BuildBonus(definition.id);
+            if (bonus.IsEmpty)
+            {
+                continue;
+            }
+
+            definition.maxHp += bonus.hp;
+            definition.maxInner += bonus.inner;
+            definition.attackBonus += bonus.acc;
+            definition.defense += bonus.guard;
+            definition.damageMin += bonus.atk;
+            definition.damageMax += bonus.atk;
+            definition.moveRange += bonus.move;
+        }
     }
 
     private static BattleTestUnitDefinition[] CloneUnitDefinitions(BattleTestUnitDefinition[] source)

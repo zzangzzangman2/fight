@@ -22,7 +22,8 @@ namespace JoseonMurimTactics
 
     /// <summary>
     /// 동료 보상은 호감도/신뢰/지원 효과로 처리한다.
-    /// 미성년 캐릭터에게 로맨스 보상을 직접 지급하지 않도록 CanReceiveRomanticEffects를 확인한다.
+    /// 로맨스 연출은 CanReceiveRomanticEffects로 연애 가능 여부를 확인한 뒤에만 적용한다.
+    /// (현재 동료들은 박성준과 같은 19세 동갑으로 전원 연애 공략 가능.)
     /// </summary>
     public sealed class SupportBondService
     {

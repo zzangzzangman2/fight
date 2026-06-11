@@ -28,6 +28,8 @@ public sealed class GameSession
     public readonly HashSet<string> completedMissionIds = new HashSet<string>();
     public readonly HashSet<string> unlockedCodexEntryIds = new HashSet<string>();
     public readonly Dictionary<string, int> intVars = new Dictionary<string, int>();
+    // 캐릭터별 장착 장비 등 문자열 상태("equip:<charId>:<slot>" -> itemId). 구 세이브에는 없으므로 null 방어 필수.
+    public readonly Dictionary<string, string> stringVars = new Dictionary<string, string>();
     public readonly Dictionary<string, int> missionAttempts = new Dictionary<string, int>();
     public readonly List<string> appliedBattleResultIds = new List<string>();
 
@@ -77,6 +79,7 @@ public sealed class GameSession
                                     completedMissionIds = new List<string>(completedMissionIds),
                                     unlockedCodexEntryIds = new List<string>(unlockedCodexEntryIds),
                                     intVars = Pairs(intVars),
+                                    stringVars = StringPairs(stringVars),
                                     missionAttempts = Pairs(missionAttempts),
                                     appliedBattleResultIds = new List<string>(appliedBattleResultIds),
                                     actionsTaken = actionsTaken,
@@ -119,6 +122,7 @@ public sealed class GameSession
         FillFromPairs(session.factionReputation, dto.factionReputation);
         FillFromPairs(session.inventory, dto.inventory);
         FillFromPairs(session.intVars, dto.intVars);
+        FillFromStringPairs(session.stringVars, dto.stringVars);
         FillFromPairs(session.missionAttempts, dto.missionAttempts);
 
         if (dto.appliedBattleResultIds != null)
@@ -173,6 +177,33 @@ public sealed class GameSession
         }
     }
 
+    private static List<StringStringPair> StringPairs(Dictionary<string, string> source)
+    {
+        List<StringStringPair> list = new List<StringStringPair>(source.Count);
+        foreach (KeyValuePair<string, string> kvp in source)
+        {
+            list.Add(new StringStringPair { key = kvp.Key, value = kvp.Value });
+        }
+
+        return list;
+    }
+
+    private static void FillFromStringPairs(Dictionary<string, string> target, List<StringStringPair> pairs)
+    {
+        if (pairs == null)
+        {
+            return;
+        }
+
+        foreach (StringStringPair pair in pairs)
+        {
+            if (!string.IsNullOrEmpty(pair.key) && !string.IsNullOrEmpty(pair.value))
+            {
+                target[pair.key] = pair.value;
+            }
+        }
+    }
+
     private static void FillSet(HashSet<string> target, List<string> values)
     {
         if (values == null)
@@ -197,6 +228,13 @@ public sealed class GameSession
     }
 
     [Serializable]
+    public struct StringStringPair
+    {
+        public string key;
+        public string value;
+    }
+
+    [Serializable]
     public sealed class SaveDto
     {
         public string sectName;
@@ -214,6 +252,7 @@ public sealed class GameSession
         public List<string> completedMissionIds;
         public List<string> unlockedCodexEntryIds;
         public List<StringIntPair> intVars;
+        public List<StringStringPair> stringVars;
         public List<StringIntPair> missionAttempts;
         public List<string> appliedBattleResultIds;
         public int actionsTaken;

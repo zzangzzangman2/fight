@@ -154,7 +154,26 @@ public sealed class InventoryService
 
     public static string Label(string itemId)
     {
-        switch (NormalizeItemId(itemId))
+        string key = NormalizeItemId(itemId);
+        GiftInfo gift = GiftCatalog.Get(key);
+        if (gift != null)
+        {
+            return gift.displayName;
+        }
+
+        EquipmentInfo equip = EquipmentCatalog.Get(key);
+        if (equip != null)
+        {
+            return equip.displayName;
+        }
+
+        MaterialCatalog.MaterialInfo material = MaterialCatalog.Get(key);
+        if (material != null)
+        {
+            return material.displayName;
+        }
+
+        switch (key)
         {
         case "medicine_bundle":
             return "약재 꾸러미";
@@ -162,13 +181,17 @@ public sealed class InventoryService
             return "내공단";
         case "throwing_dagger_bundle":
             return "투척 비수 묶음";
-        case "wood_bundle":
-            return "목재 묶음";
         case "skill_clue_dawn_flash":
             return "무공 단서: 새벽일섬";
         default:
             return itemId;
         }
+    }
+
+    /// <summary>아이템 id의 분류(장터/정비창 탭 분류용).</summary>
+    public static InventoryItemType TypeOf(string itemId)
+    {
+        return GuessType(itemId);
     }
 
     private static InventoryItemType GuessType(string itemId)
@@ -179,7 +202,17 @@ public sealed class InventoryService
             return InventoryItemType.KeyItem;
         }
 
-        if (key.Contains("wood"))
+        if (GiftCatalog.IsGift(key))
+        {
+            return InventoryItemType.Gift;
+        }
+
+        if (EquipmentCatalog.IsEquipment(key))
+        {
+            return InventoryItemType.Equipment;
+        }
+
+        if (key.Contains("wood") || MaterialCatalog.Get(key) != null)
         {
             return InventoryItemType.Material;
         }

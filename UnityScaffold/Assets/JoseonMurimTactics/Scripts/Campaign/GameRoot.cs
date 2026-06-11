@@ -21,6 +21,8 @@ public sealed class GameRoot : MonoBehaviour
     public FactionReputationService Reputation { get; private set; }
     public SaveManager Save { get; private set; }
     public InventoryService Inventory { get; private set; }
+    public EquipmentService Equipment { get; private set; }
+    public GiftService Gifts { get; private set; }
     public SettingsService Settings { get; private set; }
     public NotificationService Notifications { get; private set; }
     public CompanionStateService CompanionStates { get; private set; }
@@ -135,6 +137,8 @@ public sealed class GameRoot : MonoBehaviour
         Reputation = new FactionReputationService(Session);
         Quests = new QuestManager(Flags);
         Inventory = new InventoryService(Session);
+        Equipment = new EquipmentService(Session);
+        Gifts = new GiftService(Session, Approval);
         CompanionStates = new CompanionStateService(Session);
         Settings = Settings ?? new SettingsService();
         Notifications = Notifications ?? new NotificationService();

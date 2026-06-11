@@ -42,7 +42,7 @@ public sealed class SaveLoadPopup : UIScreenBase
             string warning = slot.versionMismatch ? " · " + slot.versionWarning : string.Empty;
             lines.Add(
                 slot.exists
-                    ? $"{label} · {slot.chapterTitle} · {slot.location} · 은전 {slot.silver} · 동료 {slot.companionCount} · {slot.savedAtText}{warning}"
+                    ? $"{label} · {slot.chapterTitle} · {slot.location} · 은냥 {slot.silver} · 동료 {slot.companionCount} · {slot.savedAtText}{warning}"
                     : $"{label} · 비어 있음");
         }
 

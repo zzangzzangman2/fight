@@ -256,7 +256,7 @@ MonoBehaviour:
     visual: {fileID: 11400000, guid: 81f8b992e3a3c8a488ac523bb2308932, type: 2}
     startCell: {x: 5, y: 8}
     sectName: "\uBC31\uB450 \uB8E8\uBA58\uC624\uB354"
-    age: 17
+    age: 19
     mbti: ENFJ
     elementName: "\uBE5B"
     weaponName: "\uAC80"
@@ -284,7 +284,7 @@ MonoBehaviour:
     visual: {fileID: 11400000, guid: c77c023609474414284dae0354ceec2d, type: 2}
     startCell: {x: 7, y: 8}
     sectName: "\uAC15\uC6D0 \uC124\uC545\uCC3D\uBB38"
-    age: 17
+    age: 19
     mbti: INFJ
     elementName: "\uC5BC\uC74C/\uC11C\uB9AC"
     weaponName: "\uCC3D"
@@ -312,7 +312,7 @@ MonoBehaviour:
     visual: {fileID: 11400000, guid: 2de93c0011812964a902c7b0b67f7a8c, type: 2}
     startCell: {x: 9, y: 8}
     sectName: "\uACBD\uC0C1 \uD654\uC655\uB3C4\uBB38"
-    age: 16
+    age: 19
     mbti: ESTP
     elementName: "\uBD88"
     weaponName: "\uB300\uB3C4"
@@ -340,7 +340,7 @@ MonoBehaviour:
     visual: {fileID: 11400000, guid: f33b94466f4b6ed48a7a2b8ebca61610, type: 2}
     startCell: {x: 10, y: 8}
     sectName: "\uACBD\uC131 \uCC9C\uB8B0\uBD09\uBB38"
-    age: 15
+    age: 19
     mbti: ENTP
     elementName: "\uC804\uAE30"
     weaponName: "\uBD09"
@@ -369,7 +369,7 @@ MonoBehaviour:
     visual: {fileID: 11400000, guid: c19ee1d29735dc443ac30423e2c5016b, type: 2}
     startCell: {x: 3, y: 8}
     sectName: "\uC804\uB77C\uB3C4 \uB0A8\uC6D0 \uD654\uC811\uD48D\uB958\uBB38"
-    age: 13
+    age: 19
     mbti: ENFP
     elementName: "\uBC14\uB78C/\uAF43"
     weaponName: "\uBD80\uCC44"
@@ -397,7 +397,7 @@ MonoBehaviour:
     visual: {fileID: 11400000, guid: b3e2849120920b44b87c6353a2665b4a, type: 2}
     startCell: {x: 13, y: 8}
     sectName: "\uD669\uD574\uB3C4 \uAD6C\uC6D4\uC0B0 \uD751\uB828\uC554\uBB38"
-    age: 17
+    age: 19
     mbti: ISTP
     elementName: "\uC5B4\uB460/\uB3C5"
     weaponName: "\uB2E8\uAC80\xB7\uC554\uAE30"

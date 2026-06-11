@@ -127,7 +127,7 @@ public sealed class BattleResultController : MonoBehaviour
 
             int silver = applyOutcome != null && applyOutcome.replayRewardsReduced ? Mathf.Max(1, result.silver / 4)
                                                                                    : result.silver;
-            GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), $"은전 {silver}", UiTheme.Body);
+            GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), $"은냥 {silver}", UiTheme.Body);
             y += 32f * s;
             if (applyOutcome == null || !applyOutcome.replayRewardsReduced)
             {

@@ -25,6 +25,7 @@ public sealed class HubController : MonoBehaviour
         Sortie,
         Training,
         Companions,
+        Equipment,
         Sect,
         Tavern,
         Infirmary,
@@ -46,6 +47,11 @@ public sealed class HubController : MonoBehaviour
     private string pendingOverwriteSlot;
     private GameSettings settings;
     private Texture2D hubMapTexture;
+    private HubEquipmentPanel equipmentPanel;
+    private int marketTab;
+    private Vector2 marketScroll;
+    private string giftTargetId;
+    private Vector2 giftScroll;
 
     private void Awake()
     {
@@ -53,6 +59,7 @@ public sealed class HubController : MonoBehaviour
         EnsureActionPoints();
         settings = GameSettings.Load();
         hubMapTexture = Resources.Load<Texture2D>("UI/hub_free_time_map_v1");
+        equipmentPanel = new HubEquipmentPanel(root, ShowToast, AddLog);
         AddLog($"{root.Session.sectName}의 낡은 검각에 새벽빛이 들었다.");
         RefreshRumor("hub");
     }
@@ -89,7 +96,7 @@ public sealed class HubController : MonoBehaviour
         float top = 96f * s;
         float bottom = h - 52f * s;
         float menuW = 210f * s;
-        bool overviewMap = menu == HubMenu.Overview;
+        bool overviewMap = menu == HubMenu.Overview || menu == HubMenu.Equipment;
         float rightW = overviewMap ? 0f : 300f * s;
         float rightGap = overviewMap ? 0f : 16f * s;
         float centerX = margin + menuW + 16f * s;
@@ -119,7 +126,7 @@ public sealed class HubController : MonoBehaviour
         string mid = $"{ses.sectName}  ·  제1장  ·  기조 {StoryEnumLabels.Label(ses.heroDisposition)}";
         GUI.Label(new Rect(bar.x + bar.width * 0.34f, bar.y + 15f * s, bar.width * 0.4f, 30f * s), mid, UiTheme.Body);
         string right =
-            $"제{DayIndex}일   기력 {ActionsRemaining}/{MaxDailyActions}   위명 {root.Reputation.Get(FactionIds.JoseonSects)}   은전 {root.Flags.GetInt("silver")}";
+            $"제{DayIndex}일   기력 {ActionsRemaining}/{MaxDailyActions}   위명 {root.Reputation.Get(FactionIds.JoseonSects)}   은냥 {root.Flags.GetInt("silver")}";
         GUI.Label(new Rect(bar.x + bar.width * 0.6f - 18f * s, bar.y + 15f * s, bar.width * 0.4f, 30f * s), right,
                   new GUIStyle(UiTheme.Body) { alignment = TextAnchor.MiddleRight });
     }
@@ -142,6 +149,7 @@ public sealed class HubController : MonoBehaviour
         y += bh + gap;
         MenuButton(ref y, x, bw, bh, gap, "연무장", HubMenu.Training);
         MenuButton(ref y, x, bw, bh, gap, "동료", HubMenu.Companions);
+        MenuButton(ref y, x, bw, bh, gap, "장비", HubMenu.Equipment);
         MenuButton(ref y, x, bw, bh, gap, "문파", HubMenu.Sect);
         MenuButton(ref y, x, bw, bh, gap, "객잔", HubMenu.Tavern);
         MenuButton(ref y, x, bw, bh, gap, "의원", HubMenu.Infirmary);
@@ -177,6 +185,9 @@ public sealed class HubController : MonoBehaviour
             break;
         case HubMenu.Companions:
             DrawCompanions(inner, s);
+            break;
+        case HubMenu.Equipment:
+            equipmentPanel.Draw(inner, s);
             break;
         case HubMenu.Sect:
             DrawSect(inner, s);
@@ -230,6 +241,8 @@ public sealed class HubController : MonoBehaviour
             return "bg_pyesadang_training_ground_evening";
         case HubMenu.Companions:
             return "bg_pyesadang_courtyard_dawn";
+        case HubMenu.Equipment:
+            return "bg_pyesadang_main_hall_day";
         case HubMenu.Tavern:
             return "bg_pyesadang_tavern_corner";
         case HubMenu.Infirmary:
@@ -334,7 +347,7 @@ public sealed class HubController : MonoBehaviour
             menu = HubMenu.Tavern;
         }
 
-        if (MapHotspot(map, 0.300f, 0.705f, 0.165f, 0.092f, s, "장터", "보급 구매", "", HubMenu.Market))
+        if (MapHotspot(map, 0.300f, 0.705f, 0.165f, 0.092f, s, "장터", "보급 · 선물 · 장비", "", HubMenu.Market))
         {
             menu = HubMenu.Market;
         }
@@ -509,6 +522,19 @@ public sealed class HubController : MonoBehaviour
 
     private void DrawCompanions(Rect r, float s)
     {
+        if (!string.IsNullOrEmpty(giftTargetId))
+        {
+            if (!root.Session.HasCompanion(giftTargetId))
+            {
+                giftTargetId = null;
+            }
+            else
+            {
+                DrawGiftGiving(r, s, giftTargetId);
+                return;
+            }
+        }
+
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "동료", UiTheme.Heading);
         float y = r.y + 48f * s;
         float cardH = 126f * s;
@@ -523,15 +549,15 @@ public sealed class HubController : MonoBehaviour
                       $"{info.name} · {info.title}", UiTheme.Body);
             GUI.Label(
                 new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 180f * s, 26f * s),
-                $"{info.age}세 · {info.mbti} · {info.region} {info.sectName} · {info.element}/{info.weapon}   |   {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})",
+                $"{info.age}세 동갑 · {info.mbti} · {info.region} {info.sectName} · {info.element}/{info.weapon}   |   연애도 {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})",
                 UiTheme.SmallMuted);
             GUI.Label(new Rect(card.x + 16f * s, card.y + 68f * s, card.width - 180f * s, 24f * s),
                       "고민: " + CompanionConcern(id), UiTheme.SmallMuted);
             GUI.Label(new Rect(card.x + 16f * s, card.y + 92f * s, card.width - 180f * s, 24f * s),
                       $"다음 대화: {NextCompanionTalk(id)}   |   상태: {CompanionStatusText(id)}",
                       UiTheme.SmallMuted);
-            if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + card.height * 0.5f - 22f * s, 128f * s, 44f * s),
-                           "대화", UiTheme.Button))
+            if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + 14f * s, 128f * s, 44f * s), "대화",
+                           UiTheme.Button))
             {
                 if (TrySpendAction("동료 대화"))
                 {
@@ -539,6 +565,15 @@ public sealed class HubController : MonoBehaviour
                     root.Session.actionsTaken++;
                 }
             }
+
+            bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(id);
+            if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + cardH - 58f * s, 128f * s, 44f * s),
+                           giftedToday ? "선물 완료" : "선물", giftedToday ? UiTheme.Button : UiTheme.ButtonPrimary))
+            {
+                giftTargetId = id;
+                giftScroll = Vector2.zero;
+            }
+
             y += cardH + 12f * s;
         }
         GUI.Label(new Rect(r.x, y + 4f * s, r.width, 26f * s), "── 이후 합류 예정 ──", UiTheme.SmallMuted);
@@ -556,6 +591,108 @@ public sealed class HubController : MonoBehaviour
         }
     }
 
+    /// <summary>동료 선물 화면 — 보유 선물 목록에서 골라 건넨다(하루 1회/동료, 설계 §B).</summary>
+    private void DrawGiftGiving(Rect r, float s, string companionId)
+    {
+        CompanionInfo info = CompanionCatalog.Info(companionId);
+        string name = info != null ? info.name : companionId;
+        GUI.Label(new Rect(r.x, r.y, r.width - 150f * s, 36f * s), $"선물 — {name}", UiTheme.Heading);
+        if (GUI.Button(new Rect(r.xMax - 140f * s, r.y, 128f * s, 38f * s), "← 동료", UiTheme.Button))
+        {
+            giftTargetId = null;
+            return;
+        }
+
+        // 연애도 현황
+        int approval = root.Approval.Get(companionId);
+        Rect status = new Rect(r.x, r.y + 46f * s, r.width, 54f * s);
+        UiTheme.DrawFill(status, new Color(0.030f, 0.040f, 0.038f, 0.85f));
+        Color rose = new Color(0.94f, 0.45f, 0.62f, 1f);
+        GUIStyle gaugeTitle = new GUIStyle(UiTheme.Small) { fontStyle = FontStyle.Bold };
+        gaugeTitle.normal.textColor = rose;
+        GUI.Label(new Rect(status.x + 14f * s, status.y + 6f * s, status.width * 0.4f, 24f * s),
+                  $"연애도 {approval}/100 · {root.Approval.GetStageLabel(companionId)}", gaugeTitle);
+        bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(companionId);
+        GUIStyle stateStyle = new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleRight };
+        GUI.Label(new Rect(status.x + status.width * 0.5f, status.y + 6f * s, status.width * 0.5f - 14f * s, 24f * s),
+                  giftedToday ? "오늘은 이미 선물을 건넸다" : "오늘 선물 가능", stateStyle);
+        Rect barBg = new Rect(status.x + 14f * s, status.y + 34f * s, status.width - 28f * s, 10f * s);
+        UiTheme.DrawFill(barBg, UiTheme.HanjiPanelAlt);
+        UiTheme.DrawFill(new Rect(barBg.x, barBg.y, barBg.width * Mathf.Clamp01(approval / 100f), barBg.height), rose);
+
+        // 보유 선물 목록
+        List<InventoryStack> gifts = new List<InventoryStack>();
+        foreach (InventoryStack stack in root.Inventory.AllStacks())
+        {
+            if (stack.type == InventoryItemType.Gift)
+            {
+                gifts.Add(stack);
+            }
+        }
+
+        Rect body = new Rect(r.x, status.yMax + 12f * s, r.width, r.yMax - status.yMax - 12f * s);
+        if (gifts.Count == 0)
+        {
+            GUI.Label(new Rect(body.x, body.y, body.width, 60f * s),
+                      "보유한 선물이 없다. 장터의 ‘선물’ 탭에서 구입할 수 있다.", UiTheme.Body);
+            return;
+        }
+
+        float rowH = 62f * s;
+        giftScroll = GUI.BeginScrollView(body, giftScroll,
+                                         new Rect(0f, 0f, body.width - 18f * s,
+                                                  Mathf.Max(body.height, gifts.Count * (rowH + 8f * s))));
+        float y = 0f;
+        float w = body.width - 18f * s;
+        foreach (InventoryStack stack in gifts)
+        {
+            GiftInfo gift = GiftCatalog.Get(stack.itemId);
+            if (gift == null)
+            {
+                continue;
+            }
+
+            Rect row = new Rect(0f, y, w, rowH);
+            bool hover = row.Contains(Event.current.mousePosition);
+            UiTheme.DrawFill(row, hover ? new Color(0.060f, 0.075f, 0.070f, 0.88f)
+                                        : new Color(0.030f, 0.040f, 0.038f, 0.75f));
+            bool favorite = gift.IsFavoriteOf(companionId);
+            UiTheme.DrawFill(new Rect(row.x, row.y, 4f * s, row.height),
+                             favorite ? rose : HubInventoryGrid.AccentFor(InventoryItemType.Gift));
+
+            GUI.Label(new Rect(row.x + 14f * s, row.y + 6f * s, row.width * 0.6f, 26f * s),
+                      favorite ? $"{gift.displayName}  <color=#F0709C>최애 선물 ◆</color>" : gift.displayName,
+                      UiTheme.Body);
+            GUI.Label(new Rect(row.x + 14f * s, row.y + 32f * s, row.width - 220f * s, 24f * s),
+                      $"{gift.description}  (연애도 +{gift.DeltaFor(companionId)})", UiTheme.SmallMuted);
+            GUIStyle countStyle = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleRight };
+            GUI.Label(new Rect(row.xMax - 196f * s, row.y + 6f * s, 40f * s, 24f * s), "x" + stack.count, countStyle);
+
+            string reason;
+            bool canGive = root.Gifts != null && root.Gifts.CanGift(companionId, gift.id, out reason);
+            GUI.enabled = canGive;
+            if (GUI.Button(new Rect(row.xMax - 148f * s, row.y + 10f * s, 136f * s, 42f * s), "건네기",
+                           UiTheme.ButtonPrimary))
+            {
+                GiftResult result = root.Gifts.Give(companionId, gift.id);
+                if (result.success)
+                {
+                    ShowToast(result.wasFavorite ? $"최애 선물! 연애도 +{result.delta}" : $"연애도 +{result.delta}");
+                    AddLog(result.message.Replace("\n", " "));
+                }
+                else
+                {
+                    ShowToast(result.message);
+                }
+            }
+
+            GUI.enabled = true;
+            y += rowH + 8f * s;
+        }
+
+        GUI.EndScrollView();
+    }
+
     private void DrawSect(Rect r, float s)
     {
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "문파 — " + root.Session.sectName, UiTheme.Heading);
@@ -565,7 +702,7 @@ public sealed class HubController : MonoBehaviour
         Line(r.x, ref y, r.width, s, "중원무림맹 적대",
              (-root.Reputation.Get(FactionIds.ZhongyuanAlliance)).ToString());
         Line(r.x, ref y, r.width, s, "조정 관심", root.Reputation.Get(FactionIds.RoyalCourt).ToString());
-        Line(r.x, ref y, r.width, s, "은전", root.Flags.GetInt("silver").ToString());
+        Line(r.x, ref y, r.width, s, "은냥", root.Flags.GetInt("silver").ToString());
         Line(r.x, ref y, r.width, s, "제자 / 부상자",
              $"{Mathf.Max(6, root.Session.recruitedCompanionIds.Count + 4)}명 / {InjuredCount()}명");
         Line(r.x, ref y, r.width, s, "보급",
@@ -594,7 +731,7 @@ public sealed class HubController : MonoBehaviour
                 root.Flags.AddInt("silver", 10);
                 root.Session.actionsTaken++;
                 ShowToast("마을 신뢰 +2");
-                AddLog("소백촌 길목을 살피고 잡일을 도왔다. 마을 신뢰 +2, 은전 +10.");
+                AddLog("소백촌 길목을 살피고 잡일을 도왔다. 마을 신뢰 +2, 은냥 +10.");
             }
         }
         y += 58f * s;
@@ -685,8 +822,8 @@ public sealed class HubController : MonoBehaviour
                 root.Session.actionsTaken++;
                 root.Flags.AddInt("silver", 35);
                 root.Flags.AddInt("sect:village_trust", 1);
-                ShowToast("은전 +35");
-                AddLog("객잔 주인의 일감을 받아 장작과 심부름을 처리했다. 은전 +35, 마을 신뢰 +1.");
+                ShowToast("은냥 +35");
+                AddLog("객잔 주인의 일감을 받아 장작과 심부름을 처리했다. 은냥 +35, 마을 신뢰 +1.");
             }
         }
         GUI.Label(new Rect(r.x, r.y + 268f * s, r.width, 60f * s),
@@ -743,52 +880,141 @@ public sealed class HubController : MonoBehaviour
         }
     }
 
+    private static readonly string[] MarketTabs = { "보급품", "선물", "장비", "재료" };
+
     private void DrawMarket(Rect r, float s)
     {
-        GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "장터", UiTheme.Heading);
-        GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 26f * s), $"보유 은전: {root.Flags.GetInt("silver")}",
-                  UiTheme.Body);
-        float y = r.y + 84f * s;
-        IReadOnlyList<ShopItemInfo> stock =
-            root.ShopRepository != null ? root.ShopRepository.StockFor("hub_market", root.Session) : null;
-        if (stock != null)
+        GUI.Label(new Rect(r.x, r.y, r.width * 0.5f, 36f * s), "장터", UiTheme.Heading);
+        GUIStyle silverStyle = new GUIStyle(UiTheme.Heading)
         {
-            foreach (ShopItemInfo item in stock)
+            alignment = TextAnchor.MiddleRight,
+            fontSize = Mathf.RoundToInt(22f * s)
+        };
+        silverStyle.normal.textColor = UiTheme.GoldBright;
+        GUI.Label(new Rect(r.x + r.width * 0.4f, r.y, r.width * 0.6f, 36f * s),
+                  $"보유 은냥  {root.Flags.GetInt("silver")}", silverStyle);
+
+        float tabY = r.y + 42f * s;
+        float gap = 8f * s;
+        float tw = Mathf.Min(110f * s, (r.width - gap * 3f) / 4f);
+        for (int i = 0; i < MarketTabs.Length; i++)
+        {
+            if (GUI.Button(new Rect(r.x + i * (tw + gap), tabY, tw, 36f * s), MarketTabs[i],
+                           marketTab == i ? UiTheme.ButtonPrimary : UiTheme.Button))
             {
-                if (IsShopItemUnlocked(item))
-                {
-                    BuyRow(r, ref y, s, item.id, item.displayName, item.price, ShopItemDescription(item.id));
-                }
+                marketTab = i;
             }
         }
 
-        y += 8f * s;
-        GUI.Label(new Rect(r.x, y, r.width, 26f * s), "보유품", UiTheme.Heading);
-        y += 34f * s;
-        foreach (InventoryStack stack in root.Inventory.AllStacks())
+        Rect body = new Rect(r.x, tabY + 44f * s, r.width, r.yMax - tabY - 44f * s);
+        float w = body.width - 18f * s;
+        marketScroll =
+            GUI.BeginScrollView(body, marketScroll, new Rect(0f, 0f, w, MarketContentHeight(s, body.height)));
+        float y = 0f;
+        switch (marketTab)
         {
-            GUI.Label(new Rect(r.x + 8f * s, y, r.width - 16f * s, 24f * s),
-                      $"· {InventoryService.Label(stack.itemId)} x{stack.count}", UiTheme.Small);
-            y += 26f * s;
+        case 1:
+            GUI.Label(new Rect(0f, y, w, 24f * s),
+                      "동갑내기 동료들의 마음을 여는 공략 선물. 하루 1회씩 건넬 수 있다.", UiTheme.SmallMuted);
+            y += 30f * s;
+            foreach (GiftInfo gift in GiftCatalog.All)
+            {
+                string favoriteTag = string.IsNullOrEmpty(gift.favoriteCompanionId)
+                                         ? $"범용 · 연애도 +{gift.baseDelta}"
+                                         : $"{CompanionCatalog.Name(gift.favoriteCompanionId)} 최애 +{gift.favoriteDelta}";
+                BuyRow(w, ref y, s, gift.id, gift.displayName, gift.price, $"{gift.description}  ({favoriteTag})");
+            }
+
+            break;
+        case 2:
+            GUI.Label(new Rect(0f, y, w, 24f * s), "구입한 장비는 허브 ‘장비’ 메뉴에서 장착·강화한다.",
+                      UiTheme.SmallMuted);
+            y += 30f * s;
+            foreach (EquipmentInfo equip in EquipmentCatalog.All)
+            {
+                string ownerTag = equip.IsExclusive
+                                      ? $"{CharacterGrowthCatalog.DisplayName(equip.requiredCharacterId)} 전용"
+                                      : "공용";
+                string desc =
+                    $"{EquipmentCatalog.SlotLabel(equip.slot)} · {ownerTag} · {EquipmentCatalog.DescribeBonus(equip, 0)}";
+                BuyRow(w, ref y, s, equip.id, equip.displayName, equip.price, desc);
+            }
+
+            break;
+        case 3:
+            GUI.Label(new Rect(0f, y, w, 24f * s), "공방 강화 재료. +2 강화부터 재료가 든다.", UiTheme.SmallMuted);
+            y += 30f * s;
+            foreach (MaterialCatalog.MaterialInfo material in MaterialCatalog.All)
+            {
+                BuyRow(w, ref y, s, material.id, material.displayName, material.price, material.description);
+            }
+
+            break;
+        default:
+            IReadOnlyList<ShopItemInfo> stock =
+                root.ShopRepository != null ? root.ShopRepository.StockFor("hub_market", root.Session) : null;
+            if (stock != null)
+            {
+                foreach (ShopItemInfo item in stock)
+                {
+                    // 재료류(목재 등)는 재료 탭에서 판매하므로 보급품 탭에서는 숨긴다.
+                    if (IsShopItemUnlocked(item) && InventoryService.TypeOf(item.id) != InventoryItemType.Material)
+                    {
+                        BuyRow(w, ref y, s, item.id, item.displayName, item.price, ShopItemDescription(item.id));
+                    }
+                }
+            }
+
+            break;
         }
-        GUI.Label(new Rect(r.x, y + 6f * s, r.width, 40f * s), "· 장비/무공 상점은 이후 버전에서 확장됩니다.",
-                  UiTheme.SmallMuted);
+
+        GUI.EndScrollView();
     }
 
-    private void BuyRow(Rect r, ref float y, float s, string itemId, string item, int price, string desc)
+    private float MarketContentHeight(float s, float minHeight)
     {
-        Rect row = new Rect(r.x, y, r.width, 54f * s);
-        GUI.Label(new Rect(row.x, row.y + 4f * s, row.width * 0.5f, 26f * s), item, UiTheme.Body);
-        GUI.Label(new Rect(row.x, row.y + 28f * s, row.width * 0.6f, 22f * s), desc, UiTheme.SmallMuted);
+        int rows;
+        switch (marketTab)
+        {
+        case 1:
+            rows = GiftCatalog.All.Count;
+            break;
+        case 2:
+            rows = EquipmentCatalog.All.Count;
+            break;
+        case 3:
+            rows = MaterialCatalog.All.Count;
+            break;
+        default:
+            rows = 6;
+            break;
+        }
+
+        return Mathf.Max(minHeight, rows * 60f * s + 64f * s);
+    }
+
+    private void BuyRow(float w, ref float y, float s, string itemId, string item, int price, string desc)
+    {
+        Rect row = new Rect(0f, y, w, 54f * s);
+        bool hover = row.Contains(Event.current.mousePosition);
+        UiTheme.DrawFill(row, hover ? new Color(0.060f, 0.075f, 0.070f, 0.85f)
+                                    : new Color(0.030f, 0.040f, 0.038f, 0.72f));
+        UiTheme.DrawFill(new Rect(row.x, row.y, 4f * s, row.height),
+                         HubInventoryGrid.AccentFor(InventoryService.TypeOf(itemId)));
+        int owned = root.Inventory.GetCount(itemId);
+        string nameLabel = owned > 0 ? $"{item}  <color=#9FB6A0>보유 {owned}</color>" : item;
+        GUI.Label(new Rect(row.x + 14f * s, row.y + 4f * s, row.width * 0.62f, 26f * s), nameLabel, UiTheme.Body);
+        GUI.Label(new Rect(row.x + 14f * s, row.y + 28f * s, row.width - 180f * s, 22f * s), desc,
+                  UiTheme.SmallMuted);
         bool canBuy = root.Flags.GetInt("silver") >= price;
         GUI.enabled = canBuy;
-        if (GUI.Button(new Rect(row.xMax - 150f * s, row.y + 6f * s, 140f * s, 42f * s), $"구매 ({price})",
+        if (GUI.Button(new Rect(row.xMax - 150f * s, row.y + 6f * s, 140f * s, 42f * s), $"구매 ({price}냥)",
                        UiTheme.Button))
         {
             if (root.Inventory.Purchase(root.Flags, itemId, 1, price))
             {
                 ShowToast($"{item} 구매");
-                AddLog($"장터에서 {item}을(를) 샀다. (-{price}은전, 보유 {root.Inventory.GetCount(itemId)})");
+                AddLog($"장터에서 {item}을(를) 샀다. (-{price}은냥, 보유 {root.Inventory.GetCount(itemId)})");
             }
         }
         GUI.enabled = true;

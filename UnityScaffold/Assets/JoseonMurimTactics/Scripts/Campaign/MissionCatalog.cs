@@ -60,7 +60,7 @@ namespace JoseonMurimTactics
                 dangerNotes = "좁은 산길, 나무 엄폐, 짐수레 보호. 빛 속성 검기와 기본 이동 튜토리얼에 적합.",
                 isStory = true
             };
-            m1.rewardPreview.Add("은전 80");
+            m1.rewardPreview.Add("은냥 80");
             m1.rewardPreview.Add("목재와 약초");
             m1.rewardPreview.Add("무공 단서: 새벽일섬");
             list.Add(m1);
@@ -183,7 +183,7 @@ namespace JoseonMurimTactics
                 repeatable = true,
                 consumesFreeTime = true
             };
-            banditLair.rewardPreview.Add("은전 45");
+            banditLair.rewardPreview.Add("은냥 45");
             banditLair.rewardPreview.Add("약재 꾸러미");
             banditLair.rewardPreview.Add("목재 묶음");
             banditLair.rewardPreview.Add("마을 신뢰 +1");
@@ -207,7 +207,7 @@ namespace JoseonMurimTactics
                 repeatable = true,
                 consumesFreeTime = true
             };
-            wolfPass.rewardPreview.Add("은전 38");
+            wolfPass.rewardPreview.Add("은냥 38");
             wolfPass.rewardPreview.Add("산양 젖");
             wolfPass.rewardPreview.Add("질긴 가죽");
             wolfPass.rewardPreview.Add("마을 신뢰 +1");
@@ -231,7 +231,7 @@ namespace JoseonMurimTactics
                 repeatable = true,
                 consumesFreeTime = true
             };
-            tigerRavine.rewardPreview.Add("은전 55");
+            tigerRavine.rewardPreview.Add("은냥 55");
             tigerRavine.rewardPreview.Add("호피 조각");
             tigerRavine.rewardPreview.Add("응급 약재");
             tigerRavine.rewardPreview.Add("마을 신뢰 +1");
@@ -255,7 +255,7 @@ namespace JoseonMurimTactics
                 repeatable = true,
                 consumesFreeTime = true
             };
-            leopardCliff.rewardPreview.Add("은전 50");
+            leopardCliff.rewardPreview.Add("은냥 50");
             leopardCliff.rewardPreview.Add("희귀 약초");
             leopardCliff.rewardPreview.Add("표범 무늬 가죽");
             leopardCliff.rewardPreview.Add("마을 신뢰 +1");

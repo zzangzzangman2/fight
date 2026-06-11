@@ -246,7 +246,16 @@ public enum InventoryItemType
     Consumable,
     Equipment,
     Material,
-    KeyItem
+    KeyItem,
+    Gift
+}
+
+/// <summary>캐릭터 정비창 장비 슬롯(허브 경제 MVP). 의상/보조무기/무공서는 이후 확장.</summary>
+public enum EquipmentSlot
+{
+    Weapon,
+    Armor,
+    Accessory
 }
 
 public enum WorldMapNodeState

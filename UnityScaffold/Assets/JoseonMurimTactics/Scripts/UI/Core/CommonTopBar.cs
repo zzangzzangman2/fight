@@ -23,7 +23,7 @@ public sealed class CommonTopBar : MonoBehaviour
         SetText(chapterText, $"{root.Session.sectName} · {root.Session.currentChapterId}");
         SetText(
             resourceText,
-            $"은전 {root.Flags.GetInt("silver")} · 동료 {root.Session.recruitedCompanionIds.Count} · 행동 {root.Session.actionsTaken}");
+            $"은냥 {root.Flags.GetInt("silver")} · 동료 {root.Session.recruitedCompanionIds.Count} · 행동 {root.Session.actionsTaken}");
     }
 
     private static void SetText(TMP_Text text, string value)
