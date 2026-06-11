@@ -8556,20 +8556,27 @@ public sealed class BattleTestUnitView : MonoBehaviour
     private static readonly Color WorldHpAllyColor = new Color(0.760f, 0.260f, 0.225f, 0.90f);
     private static readonly Color WorldHpEnemyColor = new Color(0.885f, 0.350f, 0.300f, 0.92f);
     private static readonly Color WorldHpDangerColor = new Color(0.960f, 0.675f, 0.255f, 0.95f);
+    private static readonly Color SelectedRingAllyColor = new Color(0.280f, 0.760f, 1f, 0.88f);
+    private static readonly Color SelectedRingEnemyColor = new Color(1f, 0.330f, 0.270f, 0.88f);
+    private static readonly Color SelectedHpHealthyColor = new Color(0.270f, 0.940f, 0.520f, 0.98f);
+    private static readonly Color SelectedHpWoundedColor = new Color(0.980f, 0.300f, 0.210f, 0.98f);
     private const float WorldHpBackScaleX = 0.86f;
     private const float WorldHpFillScaleX = 0.82f;
+    private const float SelectedHpBackScaleX = 1.10f;
+    private const float SelectedHpFillScaleX = 1.04f;
     private const float WorldHpSpriteHalfWidth = 0.31f;
 
     private TextMesh label;
     private MeshRenderer labelRenderer;
     private Transform turnMarkerRoot;
-    private SpriteRenderer turnMarkerArrow;
     private SpriteRenderer turnGroundRing;
     private SpriteRenderer hpBarBack;
     private SpriteRenderer hpBarFill;
+    private SpriteRenderer selectedHpBarBack;
+    private SpriteRenderer selectedHpBarFill;
     private CharacterVisualController visualController;
+    private bool isSelected;
     private Vector3 turnMarkerBasePosition;
-    private static Sprite turnMarkerChevronSprite;
     private static Sprite turnGroundRingSprite;
     private static Sprite hpBarSprite;
 
@@ -8599,20 +8606,24 @@ public sealed class BattleTestUnitView : MonoBehaviour
             return;
         }
 
-        // Fire Emblem style cursor bob: smooth vertical bounce, no scale pumping.
+        // Selection ring pulse: keep the marker attached to the character's feet.
         float wave = Mathf.Sin(Time.time * 4.6f);
-        turnMarkerRoot.localPosition = turnMarkerBasePosition + new Vector3(0f, Mathf.Abs(wave) * 0.085f, 0f);
+        float pulse = Mathf.Abs(wave);
+        turnMarkerRoot.localPosition = turnMarkerBasePosition;
 
         if (turnGroundRing != null && turnGroundRing.gameObject.activeSelf)
         {
             Color color = turnGroundRing.color;
-            color.a = 0.42f + Mathf.Abs(wave) * 0.22f;
+            color.a = 0.54f + pulse * 0.22f;
             turnGroundRing.color = color;
+            float scale = 1f + pulse * 0.035f;
+            turnGroundRing.transform.localScale = new Vector3(scale, scale, 1f);
         }
     }
 
     public void Refresh(bool selected)
     {
+        isSelected = selected;
         if (visualController != null)
         {
             visualController.SetActed(Unit != null && Unit.acted && !Unit.defeated);
@@ -8639,20 +8650,25 @@ public sealed class BattleTestUnitView : MonoBehaviour
         }
 
         bool visible = !Unit.defeated;
-        hpBarBack.gameObject.SetActive(visible);
-        hpBarFill.gameObject.SetActive(visible);
+        bool selectedVisible = visible && isSelected;
+        hpBarBack.gameObject.SetActive(visible && !selectedVisible);
+        hpBarFill.gameObject.SetActive(visible && !selectedVisible);
+        if (selectedHpBarBack != null)
+        {
+            selectedHpBarBack.gameObject.SetActive(selectedVisible);
+        }
+
+        if (selectedHpBarFill != null)
+        {
+            selectedHpBarFill.gameObject.SetActive(selectedVisible);
+        }
+
         if (!visible)
         {
             return;
         }
 
         float ratio = Mathf.Clamp01(Unit.hp / (float)Mathf.Max(1, Unit.definition.maxHp));
-        Transform fill = hpBarFill.transform;
-        Vector3 scale = fill.localScale;
-        scale.x = Mathf.Max(0.001f, WorldHpFillScaleX * ratio);
-        fill.localScale = scale;
-        fill.localPosition = new Vector3(-WorldHpSpriteHalfWidth * WorldHpFillScaleX * (1f - ratio),
-                                         fill.localPosition.y, fill.localPosition.z);
         Color hpColor = Unit.definition.faction == Faction.Enemy ? WorldHpEnemyColor : WorldHpAllyColor;
         if (ratio <= 0.25f)
         {
@@ -8662,10 +8678,46 @@ public sealed class BattleTestUnitView : MonoBehaviour
         hpColor.a = Mathf.Lerp(0.58f, hpColor.a, 1f - ratio) * (Unit == null || Unit.defeated ? 0.45f : 1f);
         hpBarBack.color = WorldHpBackColor;
         hpBarFill.color = hpColor;
+        ApplyHpFill(hpBarFill, ratio, WorldHpFillScaleX);
+
+        if (selectedHpBarBack != null && selectedHpBarFill != null)
+        {
+            selectedHpBarBack.color = new Color(0.010f, 0.014f, 0.014f, 0.82f);
+            selectedHpBarFill.color = SelectedHpColor(ratio);
+            ApplyHpFill(selectedHpBarFill, ratio, SelectedHpFillScaleX);
+        }
+
         if (visualController != null)
         {
             visualController.PlayLowHp(ratio <= 0.25f);
         }
+    }
+
+    private static void ApplyHpFill(SpriteRenderer fillRenderer, float ratio, float fullScaleX)
+    {
+        if (fillRenderer == null)
+        {
+            return;
+        }
+
+        Transform fill = fillRenderer.transform;
+        Vector3 scale = fill.localScale;
+        scale.x = Mathf.Max(0.001f, fullScaleX * ratio);
+        fill.localScale = scale;
+        fill.localPosition = new Vector3(-WorldHpSpriteHalfWidth * fullScaleX * (1f - ratio),
+                                         fill.localPosition.y, fill.localPosition.z);
+    }
+
+    private static Color SelectedHpColor(float ratio)
+    {
+        Color color = Color.Lerp(SelectedHpWoundedColor, SelectedHpHealthyColor, Mathf.Clamp01(ratio));
+        if (ratio <= 0.25f)
+        {
+            color = Color.Lerp(color, WorldHpDangerColor, 0.24f);
+        }
+
+        color.a = 0.98f;
+        return color;
     }
 
     public void FaceToward(Vector3 worldPosition)
@@ -8811,22 +8863,23 @@ public sealed class BattleTestUnitView : MonoBehaviour
         root.transform.SetParent(transform, false);
         turnMarkerRoot = root.transform;
 
-        GameObject arrowObject = new GameObject("Turn Chevron");
-        arrowObject.transform.SetParent(turnMarkerRoot, false);
-        arrowObject.transform.localScale = new Vector3(0.56f, 0.56f, 1f);
-        turnMarkerArrow = arrowObject.AddComponent<SpriteRenderer>();
-        turnMarkerArrow.sprite = GetTurnMarkerChevronSprite();
-        turnMarkerArrow.color = new Color(1f, 0.78f, 0.20f, 0.98f);
-        turnMarkerArrow.sortingLayerName = "Default";
-
         GameObject ringObject = new GameObject("Current Turn Ground Ring");
         ringObject.transform.SetParent(transform, false);
-        ringObject.transform.localPosition = new Vector3(0f, -0.20f, 0.02f);
+        ringObject.transform.localPosition = new Vector3(0f, 0.055f, 0.02f);
         turnGroundRing = ringObject.AddComponent<SpriteRenderer>();
         turnGroundRing.sprite = GetTurnGroundRingSprite();
-        turnGroundRing.color = new Color(1f, 0.78f, 0.20f, 0.55f);
+        turnGroundRing.color = SelectedRingAllyColor;
         turnGroundRing.sortingLayerName = "Default";
         turnGroundRing.gameObject.SetActive(false);
+
+        selectedHpBarBack = CreateBarSprite("Selected HP Bar Back", new Vector3(0f, -0.245f, -0.055f),
+                                            new Color(0.010f, 0.014f, 0.014f, 0.82f));
+        selectedHpBarBack.transform.localScale = new Vector3(SelectedHpBackScaleX, 0.92f, 1f);
+        selectedHpBarFill = CreateBarSprite("Selected HP Bar Fill", new Vector3(0f, -0.245f, -0.065f),
+                                            SelectedHpHealthyColor);
+        selectedHpBarFill.transform.localScale = new Vector3(SelectedHpFillScaleX, 0.66f, 1f);
+        selectedHpBarBack.gameObject.SetActive(false);
+        selectedHpBarFill.gameObject.SetActive(false);
 
         turnMarkerRoot.gameObject.SetActive(false);
     }
@@ -8850,19 +8903,17 @@ public sealed class BattleTestUnitView : MonoBehaviour
             return;
         }
 
-        CharacterVisualData visual = Unit.definition.visual;
-        float markerY = visual == null ? 1.46f : visual.spriteOffset.y + Mathf.Max(1.00f, visual.heightInTiles) + 0.28f;
-        turnMarkerBasePosition = new Vector3(0f, markerY, -0.09f);
+        turnMarkerBasePosition = Vector3.zero;
         turnMarkerRoot.localPosition = turnMarkerBasePosition;
 
         bool enemy = Unit.definition.faction == Faction.Enemy;
-        Color accent = enemy ? new Color(0.96f, 0.28f, 0.22f, 0.98f) : new Color(1f, 0.78f, 0.20f, 0.98f);
-        turnMarkerArrow.color = accent;
+        Color accent = enemy ? SelectedRingEnemyColor : SelectedRingAllyColor;
         if (turnGroundRing != null)
         {
             Color ring = accent;
-            ring.a = 0.55f;
+            ring.a = 0.70f;
             turnGroundRing.color = ring;
+            turnGroundRing.transform.localScale = Vector3.one;
         }
     }
 
@@ -8879,11 +8930,6 @@ public sealed class BattleTestUnitView : MonoBehaviour
             turnGroundRing.sortingOrder = body - 3;
         }
 
-        if (turnMarkerArrow != null)
-        {
-            turnMarkerArrow.sortingOrder = body + 9;
-        }
-
         if (hpBarBack != null)
         {
             hpBarBack.sortingOrder = body + 7;
@@ -8892,6 +8938,16 @@ public sealed class BattleTestUnitView : MonoBehaviour
         if (hpBarFill != null)
         {
             hpBarFill.sortingOrder = body + 8;
+        }
+
+        if (selectedHpBarBack != null)
+        {
+            selectedHpBarBack.sortingOrder = body + 7;
+        }
+
+        if (selectedHpBarFill != null)
+        {
+            selectedHpBarFill.sortingOrder = body + 8;
         }
 
         if (labelRenderer != null)
@@ -8954,42 +9010,6 @@ public sealed class BattleTestUnitView : MonoBehaviour
         }
     }
 
-    private static Sprite GetTurnMarkerChevronSprite()
-    {
-        if (turnMarkerChevronSprite != null)
-        {
-            return turnMarkerChevronSprite;
-        }
-
-        // Double chevron pointing down at the active unit, Fire Emblem cursor style.
-        const int size = 64;
-        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        texture.name = "BattleTestTurnChevron";
-        texture.wrapMode = TextureWrapMode.Clamp;
-        texture.filterMode = FilterMode.Bilinear;
-
-        for (int y = 0; y < size; y++)
-        {
-            float fy = (y + 0.5f) / size;
-            for (int x = 0; x < size; x++)
-            {
-                float nx = Mathf.Abs((((x + 0.5f) / size) * 2f) - 1f);
-                // V stroke: distance from the descending diagonal band.
-                float tip1 = 0.10f + nx * 0.62f;
-                float tip2 = 0.52f + nx * 0.62f;
-                float band = 0.17f;
-                bool inChevron1 = fy > tip1 && fy < tip1 + band && nx < 0.92f;
-                bool inChevron2 = fy > tip2 && fy < tip2 + band && nx < 0.62f;
-                texture.SetPixel(x, y, inChevron1 || inChevron2 ? Color.white : Color.clear);
-            }
-        }
-
-        texture.Apply();
-        turnMarkerChevronSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 1f), 96f);
-        turnMarkerChevronSprite.name = "BattleTestTurnChevron";
-        return turnMarkerChevronSprite;
-    }
-
     private static Sprite GetTurnGroundRingSprite()
     {
         if (turnGroundRingSprite != null)
@@ -8997,9 +9017,9 @@ public sealed class BattleTestUnitView : MonoBehaviour
             return turnGroundRingSprite;
         }
 
-        // Cell-shaped diamond outline so the active unit's tile reads like a cursor.
-        const int textureWidth = 232;
-        const int textureHeight = 124;
+        // Soft ellipse ring around the character's feet, closer to SRPG unit selection cursors.
+        const int textureWidth = 256;
+        const int textureHeight = 144;
         Texture2D texture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
         texture.name = "BattleTestTurnGroundRing";
         texture.wrapMode = TextureWrapMode.Clamp;
@@ -9009,17 +9029,20 @@ public sealed class BattleTestUnitView : MonoBehaviour
         {
             for (int x = 0; x < textureWidth; x++)
             {
-                float nx = Mathf.Abs(((x + 0.5f) / textureWidth * 2f) - 1f) / 0.96f;
-                float ny = Mathf.Abs(((y + 0.5f) / textureHeight * 2f) - 1f) / 0.96f;
-                float d = nx + ny;
-                float ring = Mathf.Clamp01((1f - Mathf.Abs(d - 0.92f) * 11f));
-                texture.SetPixel(x, y, new Color(1f, 1f, 1f, ring));
+                float nx = (((x + 0.5f) / textureWidth) * 2f) - 1f;
+                float ny = (((y + 0.5f) / textureHeight) * 2f) - 1f;
+                float d = Mathf.Sqrt((nx * nx) + (ny * ny));
+                float outer = Mathf.Clamp01(1f - Mathf.Abs(d - 0.84f) * 18f);
+                float inner = Mathf.Clamp01(1f - Mathf.Abs(d - 0.62f) * 26f) * 0.34f;
+                float glow = Mathf.Clamp01(1f - d) * 0.12f;
+                float alpha = Mathf.Clamp01(outer + inner + glow);
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
             }
         }
 
         texture.Apply();
         turnGroundRingSprite = Sprite.Create(texture, new Rect(0f, 0f, textureWidth, textureHeight),
-                                             new Vector2(0.5f, 0.5f), textureWidth / 1.16f);
+                                             new Vector2(0.5f, 0.5f), 205f);
         turnGroundRingSprite.name = "BattleTestTurnGroundRing";
         return turnGroundRingSprite;
     }

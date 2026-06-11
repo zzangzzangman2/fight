@@ -556,7 +556,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         selectionRenderer.transform.localPosition = new Vector3(0f, 0.055f, 0f);
         selectionRenderer.transform.localScale =
             new Vector3(visual.shadowWidth * 1.15f, visual.shadowHeight * 1.35f, 1f);
-        selectionRenderer.color = new Color(1f, 0.78f, 0.18f, 0.62f);
+        selectionRenderer.color = new Color(0.28f, 0.76f, 1f, 0.28f);
         selectionRenderer.enabled = selected && !defeated;
 
         effectRenderer.enabled = false;
@@ -829,8 +829,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         if (selectionRenderer != null)
         {
             selectionRenderer.enabled = selected && !defeated;
-            float ringPulse = 0.54f + Mathf.Abs(Mathf.Sin((time * 4.3f) + phaseSeed)) * 0.22f;
-            selectionRenderer.color = new Color(1f, 0.78f, 0.18f, ringPulse);
+            float ringPulse = 0.18f + Mathf.Abs(Mathf.Sin((time * 4.3f) + phaseSeed)) * 0.14f;
+            selectionRenderer.color = new Color(0.28f, 0.76f, 1f, ringPulse);
         }
 
         UpdateEffect(showEffect, effectSprite, effectPosition, effectScale, effectRotation, effectColor);
