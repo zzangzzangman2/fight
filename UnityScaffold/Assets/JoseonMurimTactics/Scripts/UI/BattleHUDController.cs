@@ -26,6 +26,12 @@ public sealed class BattleHUDController : MonoBehaviour
     private const int MaxRosterSlots = 6;
     private const float ReferenceWidth = 1920f;
     private const float ReferenceHeight = 1080f;
+    private const int CommandMoveIndex = 0;
+    private const int CommandAttackIndex = 1;
+    private const int CommandSkillIndex = 2;
+    private const int CommandGuardIndex = 3;
+    private const int CommandTerrainIndex = 4;
+    private const int CommandWaitIndex = 5;
 
     private BattleTestController owner;
     private Canvas canvas;
@@ -288,11 +294,9 @@ public sealed class BattleHUDController : MonoBehaviour
         AddAccentLine("RosterAccent", rosterPanel, TopLeft(), TopRight(),
                       new Vector2(16f, -9f), new Vector2(-16f, -6f), new Color(LineGold.r, LineGold.g, LineGold.b, 0.62f));
 
-        commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(454f, 260f),
-                                 new Vector2(-28f, 28f), new Color(0.010f, 0.011f, 0.010f, 0.34f),
+        commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(602f, 188f),
+                                 new Vector2(-34f, 30f), new Color(0.010f, 0.011f, 0.010f, 0.10f),
                                  false);
-        AddAccentLine("CommandAccent", commandPanel, TopLeft(), TopRight(),
-                      new Vector2(18f, -10f), new Vector2(-18f, -7f), LineGold);
         BuildCommandButtons();
 
         forecastPanel = PanelRect("ForecastCard", root, BottomCenter(), new Vector2(720f, 144f),
@@ -353,89 +357,107 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private void BuildCommandButtons()
     {
-        AddCommandButton(0, "\uC774\uB3D9", "1", "ui_btn_move", () => owner.HudSetCommand(BattleCommandMode.Move));
-        AddCommandButton(1, "\uAE30\uBCF8\uACF5\uACA9", "2", "ui_btn_attack", () => owner.HudSetCommand(BattleCommandMode.Attack));
-        AddCommandButton(2, "\uBB34\uACF5", "3", "ui_btn_skill", () => owner.HudSetCommand(BattleCommandMode.Skill));
-        AddCommandButton(3, "\uBC29\uC5B4", "4", "ui_btn_guard", () => owner.HudGuard());
-        AddCommandButton(4, "\uC9C0\uD615", "5", "ui_btn_terrain_action", () => owner.HudSetCommand(BattleCommandMode.Interact));
-        AddCommandButton(5, "\uB300\uAE30", "Space", "ui_btn_wait", () => owner.HudWait());
+        AddCommandButton(CommandMoveIndex, "\uC774\uB3D9", "1", "SkillIcons/ui_action_move",
+                         () => owner.HudSetCommand(BattleCommandMode.Move));
+        AddCommandButton(CommandAttackIndex, "\uAE30\uBCF8\uACF5\uACA9", "2", "SkillIcons/ui_action_attack",
+                         () => owner.HudSetCommand(BattleCommandMode.Attack));
+        AddCommandButton(CommandSkillIndex, "\uBB34\uACF5", "3", "SkillIcons/skill_default_wuxia",
+                         () => owner.HudSetCommand(BattleCommandMode.Skill));
+        AddCommandButton(CommandGuardIndex, "\uBC29\uC5B4", "4", "SkillIcons/ui_action_guard", () => owner.HudGuard());
+        AddCommandButton(CommandTerrainIndex, "\uC9C0\uD615", "5", "SkillIcons/ui_action_terrain",
+                         () => owner.HudSetCommand(BattleCommandMode.Interact));
+        AddCommandButton(CommandWaitIndex, "\uB300\uAE30", "Space", "SkillIcons/ui_action_wait", () => owner.HudWait());
     }
 
     private void AddCommandButton(int index, string label, string shortcut, string iconSprite, Action action)
     {
         bool primary = IsPrimaryCommand(index);
         Vector2 size = CommandButtonSize(index);
-        RectTransform buttonRect = MakeButton("CommandButton_" + index, commandPanel, TopLeft(),
-                                              size,
-                                              CommandButtonPosition(index), action,
-                                              out Text text);
-        text.text = label;
-        text.fontSize = primary ? 18 : 16;
-        text.alignment = TextAnchor.MiddleCenter;
-        RectTransform labelRect = text.rectTransform;
-        labelRect.offsetMin = new Vector2(8f, primary ? 30f : 16f);
-        labelRect.offsetMax = new Vector2(-8f, primary ? -56f : -36f);
-
-        float iconHalf = primary ? 31f : 24f;
-        float iconTop = primary ? -8f : -6f;
+        RectTransform buttonRect = MakeIconButton("CommandButton_" + index, commandPanel, TopLeft(),
+                                                  size,
+                                                  CommandButtonPosition(index), action,
+                                                  out Button button,
+                                                  out Image background);
+        float iconSize = primary ? 104f : 72f;
         Image icon = SolidImage("CommandIcon_" + index, buttonRect, TopCenter(), TopCenter(),
-                                new Vector2(-iconHalf, iconTop - iconHalf * 2f),
-                                new Vector2(iconHalf, iconTop), Color.clear);
-        ApplySpriteOrColor(icon, iconSprite, Color.clear, false);
+                                new Vector2(iconSize * -0.5f, -2f - iconSize),
+                                new Vector2(iconSize * 0.5f, -2f), Color.white);
+        ApplySpriteOrColor(icon, iconSprite, Color.white, false);
+        icon.preserveAspect = true;
+
+        Text text = MakeText("CommandLabel_" + index, buttonRect, BottomLeft(), BottomRight(),
+                             new Vector2(-4f, primary ? 4f : 6f), new Vector2(4f, primary ? 34f : 28f),
+                             primary ? 15 : 12, FontStyle.Bold,
+                             TextAnchor.MiddleCenter, TextMain);
+        text.text = label;
+        text.horizontalOverflow = HorizontalWrapMode.Overflow;
+        text.verticalOverflow = VerticalWrapMode.Truncate;
 
         Text badge = MakeText("CommandShortcut_" + index, buttonRect, TopRight(), TopRight(),
-                              new Vector2(primary ? -62f : -50f, -26f), new Vector2(-10f, -6f), primary ? 12 : 11,
+                              new Vector2(primary ? -58f : -46f, primary ? -24f : -20f),
+                              new Vector2(primary ? -8f : -5f, primary ? -4f : -2f), primary ? 12 : 10,
                               FontStyle.Bold,
                               TextAnchor.MiddleRight, TextSub);
         badge.text = shortcut;
 
         Text hint = MakeText("CommandHint_" + index, buttonRect, BottomLeft(), BottomRight(),
-                             new Vector2(8f, 8f), new Vector2(-8f, primary ? 27f : 18f), primary ? 12 : 10,
+                             new Vector2(0f, 0f), new Vector2(0f, primary ? 18f : 14f), primary ? 10 : 9,
                              FontStyle.Normal, TextAnchor.MiddleCenter, TextDim);
         hint.text = CommandHint(index);
-        hint.gameObject.SetActive(primary);
+        hint.gameObject.SetActive(false);
 
-        Image activeFrame = SolidImage("CommandActiveFrame_" + index, buttonRect, StretchMin(), StretchMax(),
-                                       Vector2.zero, Vector2.zero, new Color(LineGold.r, LineGold.g, LineGold.b, 0.10f));
-        AddBorder(activeFrame.gameObject, LineGold, new Vector2(2f, -2f));
-        activeFrame.transform.SetAsFirstSibling();
+        Image activeFrame = SolidImage("CommandActiveFrame_" + index, buttonRect, TopCenter(), TopCenter(),
+                                       new Vector2(iconSize * -0.5f - 6f, -8f - iconSize),
+                                       new Vector2(iconSize * 0.5f + 6f, -2f), Color.white);
+        ApplySpriteOrColor(activeFrame, "SkillIcons/ui_command_active_ring", Color.white, false);
+        activeFrame.preserveAspect = true;
+        activeFrame.raycastTarget = false;
         activeFrame.gameObject.SetActive(false);
 
-        Image disabledOverlay = SolidImage("CommandDisabledOverlay_" + index, buttonRect, StretchMin(), StretchMax(),
-                                           Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.34f));
+        Image disabledOverlay = SolidImage("CommandDisabledOverlay_" + index, buttonRect, TopCenter(), TopCenter(),
+                                           new Vector2(iconSize * -0.5f, -2f - iconSize),
+                                           new Vector2(iconSize * 0.5f, -2f), Color.white);
+        ApplySpriteOrColor(disabledOverlay, "SkillIcons/ui_command_disabled_mask", Color.white, false);
+        disabledOverlay.preserveAspect = true;
+        disabledOverlay.raycastTarget = false;
         disabledOverlay.gameObject.SetActive(false);
 
-        commandViews.Add(new CommandButtonView(buttonRect, buttonRect.GetComponent<Button>(),
-                                               buttonRect.GetComponent<Image>(), icon, badge, hint,
+        activeFrame.transform.SetAsLastSibling();
+        disabledOverlay.transform.SetAsLastSibling();
+        text.transform.SetAsLastSibling();
+        badge.transform.SetAsLastSibling();
+
+        commandViews.Add(new CommandButtonView(buttonRect, button,
+                                               background, icon, badge, hint,
                                                activeFrame, disabledOverlay, text));
     }
 
     private static bool IsPrimaryCommand(int index)
     {
-        return index == 1 || index == 2 || index == 5;
+        return index == CommandAttackIndex || index == CommandSkillIndex;
     }
 
     private static Vector2 CommandButtonSize(int index)
     {
-        return IsPrimaryCommand(index) ? new Vector2(126f, 104f) : new Vector2(126f, 72f);
+        return IsPrimaryCommand(index) ? new Vector2(104f, 132f) : new Vector2(74f, 96f);
     }
 
     private static Vector2 CommandButtonPosition(int index)
     {
         switch (index)
         {
-        case 1:
-            return new Vector2(24f, -132f);
-        case 2:
-            return new Vector2(164f, -132f);
-        case 5:
-            return new Vector2(304f, -132f);
-        case 3:
-            return new Vector2(164f, -40f);
-        case 4:
-            return new Vector2(304f, -40f);
+        case CommandAttackIndex:
+            return new Vector2(284f, -36f);
+        case CommandSkillIndex:
+            return new Vector2(402f, -36f);
+        case CommandGuardIndex:
+            return new Vector2(102f, -74f);
+        case CommandTerrainIndex:
+            return new Vector2(186f, -74f);
+        case CommandWaitIndex:
+            return new Vector2(520f, -74f);
         default:
-            return new Vector2(24f, -40f);
+            return new Vector2(18f, -74f);
         }
     }
 
@@ -490,21 +512,25 @@ public sealed class BattleHUDController : MonoBehaviour
 
         if (snapshot.scoutMode)
         {
-            SetCommand(0, "\uBC30\uCE58", false, false);
-            SetCommand(1, "\uC815\uCC30", false, false);
-            SetCommand(2, "\uD655\uC778", false, false);
-            SetCommand(3, "\uB300\uAE30", false, false);
-            SetCommand(4, "\uC9C0\uD615", false, false);
-            SetCommand(5, "\uC2DC\uC791", snapshot.canWait, true);
+            SetCommand(CommandMoveIndex, "\uBC30\uCE58", false, false);
+            SetCommand(CommandAttackIndex, "\uC815\uCC30", false, false);
+            SetCommand(CommandSkillIndex, "\uD655\uC778", false, false);
+            SetCommand(CommandGuardIndex, "\uBC29\uC5B4", false, false);
+            SetCommand(CommandTerrainIndex, "\uC9C0\uD615", false, false);
+            SetCommand(CommandWaitIndex, "\uC2DC\uC791", snapshot.canWait, true);
             return;
         }
 
-        SetCommand(0, "\uC774\uB3D9", snapshot.canMove, snapshot.commandMode == BattleCommandMode.Move);
-        SetCommand(1, "\uAE30\uBCF8\uACF5\uACA9", snapshot.canAttack, snapshot.commandMode == BattleCommandMode.Attack);
-        SetCommand(2, "\uBB34\uACF5", snapshot.canSkill, snapshot.commandMode == BattleCommandMode.Skill);
-        SetCommand(3, "\uBC29\uC5B4", snapshot.canGuard, false);
-        SetCommand(4, "\uC9C0\uD615", snapshot.canTerrain, snapshot.commandMode == BattleCommandMode.Interact);
-        SetCommand(5, "\uB300\uAE30", snapshot.canWait, false);
+        SetCommandIcon(CommandSkillIndex, SkillIconForUnit(snapshot.activeUnit));
+        SetCommand(CommandMoveIndex, "\uC774\uB3D9", snapshot.canMove, snapshot.commandMode == BattleCommandMode.Move);
+        SetCommand(CommandAttackIndex, "\uAE30\uBCF8\uACF5\uACA9", snapshot.canAttack,
+                   snapshot.commandMode == BattleCommandMode.Attack);
+        SetCommand(CommandSkillIndex, SkillLabelForUnit(snapshot.activeUnit), snapshot.canSkill,
+                   snapshot.commandMode == BattleCommandMode.Skill);
+        SetCommand(CommandGuardIndex, "\uBC29\uC5B4", snapshot.canGuard, false);
+        SetCommand(CommandTerrainIndex, "\uC9C0\uD615", snapshot.canTerrain,
+                   snapshot.commandMode == BattleCommandMode.Interact);
+        SetCommand(CommandWaitIndex, "\uB300\uAE30", snapshot.canWait, false);
     }
 
     private void SetCommand(int index, string label, bool enabled, bool active)
@@ -517,14 +543,28 @@ public sealed class BattleHUDController : MonoBehaviour
         CommandButtonView view = commandViews[index];
         bool activeEnabled = active && enabled;
         view.button.interactable = enabled;
-        view.background.color = enabled ? (activeEnabled ? ButtonActive : Button) : ButtonDisabled;
+        view.background.color = enabled ? (activeEnabled ? new Color(1f, 0.86f, 0.32f, 0.18f) :
+                                new Color(1f, 1f, 1f, 0.01f)) :
+                                new Color(0f, 0f, 0f, 0.01f);
         view.label.text = label;
-        view.label.color = enabled ? TextMain : TextDim;
-        view.icon.color = enabled ? (activeEnabled ? Color.white : new Color(0.82f, 0.86f, 0.82f, 0.95f)) : TextDim;
+        view.label.color = enabled ? (activeEnabled ? LineGold : TextMain) : TextDim;
+        view.icon.color = enabled ? (activeEnabled ? Color.white : new Color(0.88f, 0.90f, 0.86f, 0.94f)) :
+                          new Color(0.42f, 0.42f, 0.40f, 0.62f);
         view.shortcut.color = enabled ? (activeEnabled ? LineGold : TextSub) : TextDim;
         view.hint.color = enabled ? TextDim : new Color(TextDim.r, TextDim.g, TextDim.b, 0.42f);
         view.activeFrame.gameObject.SetActive(activeEnabled);
         view.disabledOverlay.gameObject.SetActive(!enabled);
+    }
+
+    private void SetCommandIcon(int index, string iconSprite)
+    {
+        if (index < 0 || index >= commandViews.Count)
+        {
+            return;
+        }
+
+        ApplySpriteOrColor(commandViews[index].icon, iconSprite, Color.white, false);
+        commandViews[index].icon.preserveAspect = true;
     }
 
     private void UpdateForecast(BattleHudSnapshot snapshot)
@@ -784,6 +824,42 @@ public sealed class BattleHUDController : MonoBehaviour
         return rect;
     }
 
+    private RectTransform MakeIconButton(string name, Transform parent, Vector2 anchor, Vector2 size,
+                                         Vector2 anchoredPosition, Action action, out Button button,
+                                         out Image background)
+    {
+        GameObject buttonObject = new GameObject(name);
+        buttonObject.transform.SetParent(parent, false);
+        RectTransform rect = buttonObject.AddComponent<RectTransform>();
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.pivot = PivotForAnchor(anchor);
+        rect.sizeDelta = size;
+        rect.anchoredPosition = anchoredPosition;
+
+        background = buttonObject.AddComponent<Image>();
+        background.raycastTarget = true;
+        background.color = Color.clear;
+
+        button = buttonObject.AddComponent<Button>();
+        button.targetGraphic = background;
+        button.transition = Selectable.Transition.ColorTint;
+        ColorBlock colors = button.colors;
+        colors.normalColor = new Color(1f, 1f, 1f, 0.01f);
+        colors.highlightedColor = new Color(1f, 1f, 1f, 0.01f);
+        colors.pressedColor = new Color(1f, 0.92f, 0.70f, 0.01f);
+        colors.selectedColor = new Color(1f, 0.88f, 0.50f, 0.01f);
+        colors.disabledColor = new Color(1f, 1f, 1f, 0.01f);
+        colors.fadeDuration = 0.08f;
+        button.colors = colors;
+        if (action != null)
+        {
+            button.onClick.AddListener(() => action());
+        }
+
+        return rect;
+    }
+
     private Image Gauge(string name, Transform parent, Vector2 anchoredPosition, Vector2 size, Color fillColor,
                         string backgroundSpriteId = null, string fillSpriteId = null)
     {
@@ -1012,6 +1088,44 @@ public sealed class BattleHUDController : MonoBehaviour
 
         string trimmed = name.Replace(" ", string.Empty);
         return trimmed.Length <= 2 ? trimmed : trimmed.Substring(0, 2);
+    }
+
+    private static string SkillLabelForUnit(BattleTestUnit unit)
+    {
+        if (unit == null || unit.definition == null || string.IsNullOrEmpty(unit.definition.specialName))
+        {
+            return "\uBB34\uACF5";
+        }
+
+        string name = unit.definition.specialName.Replace(" ", string.Empty);
+        return name.Length <= 5 ? name : name.Substring(0, 5);
+    }
+
+    private static string SkillIconForUnit(BattleTestUnit unit)
+    {
+        if (unit == null || unit.definition == null || string.IsNullOrEmpty(unit.definition.id))
+        {
+            return "SkillIcons/skill_default_wuxia";
+        }
+
+        switch (unit.definition.id)
+        {
+        case "park_sungjun":
+            return "SkillIcons/skill_park_sungjun_baekdu_light_sword";
+        case "baek_ryeon":
+            return "SkillIcons/skill_baek_ryeon_snow_spear";
+        case "do_arin":
+            return "SkillIcons/skill_do_arin_fire_dao";
+        case "jin_seoyul":
+            return "SkillIcons/skill_jin_seoyul_thunder_staff";
+        case "shin_seoa":
+        case "seo_a":
+            return "SkillIcons/skill_shin_seoa_flower_wind_fan";
+        case "han_biyeon":
+            return "SkillIcons/skill_han_biyeon_shadow_poison_needle";
+        default:
+            return "SkillIcons/skill_default_wuxia";
+        }
     }
 
     private static string FirstGlyph(string name)
