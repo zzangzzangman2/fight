@@ -12,5 +12,5 @@ if not exist "%PLAYER_EXE%" (
   exit /b 1
 )
 
-start "" "%PLAYER_EXE%" -screen-fullscreen 0 -screen-width 1280 -screen-height 720 -force-d3d11 %*
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\launch-battletest-window.ps1" -ExePath "%PLAYER_EXE%" %*
 exit /b %ERRORLEVEL%
