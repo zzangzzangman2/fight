@@ -151,7 +151,21 @@ public sealed class BattleHUDController : MonoBehaviour
         };
         List<RaycastResult> results = new List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, results);
-        return results.Count > 0;
+        foreach (RaycastResult result in results)
+        {
+            if (result.gameObject == null || !result.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            Selectable selectable = result.gameObject.GetComponentInParent<Selectable>();
+            if (selectable != null && selectable.IsActive())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void Build()
@@ -851,22 +865,59 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private static Font CreateHudFont()
     {
+        string[] resourceFonts =
+        {
+            "Fonts/MaplestoryOTFBold",
+            "Fonts/MaplestoryOTFLight",
+            "Fonts/MapleStory",
+            "Fonts/Maplestory"
+        };
+        foreach (string resourceFont in resourceFonts)
+        {
+            Font loaded = Resources.Load<Font>(resourceFont);
+            if (loaded != null)
+            {
+                return loaded;
+            }
+        }
+
         string[] preferredFonts =
         {
+            "Maplestory OTF",
+            "Maplestory OTF Bold",
+            "Maplestory OTF Light",
             "Maplestory Bold",
             "MapleStory Bold",
             "MaplestoryOTFBold",
+            "MaplestoryOTFLight",
             "Maplestory Light",
             "MapleStory Light",
+            "MapleStory",
             "NEXON Lv1 Gothic OTF",
             "NEXON Lv1 Gothic",
+            "맑은 고딕",
             "Noto Sans KR",
             "Noto Sans CJK KR",
             "Malgun Gothic",
             "Gulim"
         };
-        Font font = Font.CreateDynamicFontFromOSFont(preferredFonts, 18);
-        return font != null ? font : UiTheme.Font;
+        foreach (string preferredFont in preferredFonts)
+        {
+            try
+            {
+                Font font = Font.CreateDynamicFontFromOSFont(preferredFont, 18);
+                if (font != null)
+                {
+                    return font;
+                }
+            }
+            catch
+            {
+                // Missing OS font candidates are expected on clean machines.
+            }
+        }
+
+        return UiTheme.Font;
     }
 
     private static Vector2 PivotForAnchor(Vector2 anchor)

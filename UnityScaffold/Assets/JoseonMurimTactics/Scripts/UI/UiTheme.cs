@@ -318,10 +318,30 @@ public static class UiTheme
 
     private static Font LoadKoreanFont()
     {
-        // Prefer fonts that exist on a clean Windows install. Unity 6000.4 player builds can
-        // fail to advance through an OS-font candidate array after a missing first family,
-        // which makes every IMGUI label render blank.
-        string[] candidates = { "Malgun Gothic", "맑은 고딕", "Gulim", "굴림", "Dotum", "돋움", "Batang",
+        string[] resourceCandidates =
+        {
+            "Fonts/MaplestoryOTFBold",
+            "Fonts/MaplestoryOTFLight",
+            "Fonts/MapleStory",
+            "Fonts/Maplestory"
+        };
+        foreach (string resourceCandidate in resourceCandidates)
+        {
+            Font loaded = Resources.Load<Font>(resourceCandidate);
+            if (loaded != null)
+            {
+                Debug.Log($"[UiTheme] Using Resources font: {resourceCandidate}");
+                return loaded;
+            }
+        }
+
+        // Prefer Maple/NEXON when installed, then fonts that exist on a clean Windows install.
+        // Unity 6000.4 player builds can fail to advance through an OS-font candidate array
+        // after a missing first family, so try one candidate at a time.
+        string[] candidates = { "Maplestory OTF", "Maplestory OTF Bold", "Maplestory OTF Light",
+                                "MapleStory", "Maplestory Bold", "MapleStory Bold", "Maplestory Light",
+                                "MapleStory Light", "NEXON Lv1 Gothic OTF", "NEXON Lv1 Gothic",
+                                "Malgun Gothic", "맑은 고딕", "Gulim", "굴림", "Dotum", "돋움", "Batang",
                                 "Noto Sans KR", "Noto Sans CJK KR", "Pretendard", "Nanum Gothic",
                                 "NanumGothic", "NanumSquare", "Arial Unicode MS", "Arial" };
 

@@ -1586,10 +1586,44 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        DestroyLegacyCanvasHud();
         GameObject hudObject = new GameObject("Battle HUD");
         hudObject.transform.SetParent(transform, false);
         battleHud = hudObject.AddComponent<BattleHUDController>();
         battleHud.Initialize(this);
+    }
+
+    private void DestroyLegacyCanvasHud()
+    {
+        if (hudCanvas != null)
+        {
+            Destroy(hudCanvas.gameObject);
+        }
+
+        Transform legacy = transform.Find("BattleCanvasHud");
+        if (legacy != null)
+        {
+            Destroy(legacy.gameObject);
+        }
+
+        hudCanvas = null;
+        hudPhaseText = null;
+        hudActiveText = null;
+        hudResourceText = null;
+        hudObjectiveText = null;
+        hudPhaseListText = null;
+        hudLogText = null;
+        hudInspectText = null;
+        hudForecastText = null;
+        hudRosterText = null;
+        hudMoveButton = null;
+        hudAttackButton = null;
+        hudSkillButton = null;
+        hudGuardButton = null;
+        hudInteractButton = null;
+        hudPhaseEndButton = null;
+        hudResetButton = null;
+        hudCommandButtons.Clear();
     }
 
     private void RefreshBattleHud()
@@ -3275,6 +3309,11 @@ public sealed class BattleTestController : MonoBehaviour
                 clickedTile = tile;
                 break;
             }
+        }
+
+        if (clickedTile == null)
+        {
+            clickedTile = TileAt(WorldToGrid(point));
         }
 
         if (phaseTurn.IsPlayerPhase && clickedUnit != null && clickedUnit.definition.faction == Faction.Ally)
@@ -6562,6 +6601,15 @@ public sealed class BattleTestController : MonoBehaviour
         return new Vector3(x, y, 0f);
     }
 
+    private Vector2Int WorldToGrid(Vector2 world)
+    {
+        float gridXMinusY = world.x / Mathf.Max(0.001f, tileWidth * 0.5f);
+        float gridXPlusY = world.y / Mathf.Max(0.001f, tileHeight * 0.5f);
+        int x = Mathf.RoundToInt((gridXMinusY + gridXPlusY) * 0.5f);
+        int y = Mathf.RoundToInt((gridXPlusY - gridXMinusY) * 0.5f);
+        return new Vector2Int(x, y);
+    }
+
     private Vector3 UnitWorldPosition(Vector2Int cell)
     {
         return GridToWorld(cell);
@@ -7694,12 +7742,13 @@ public sealed class BattleTestController : MonoBehaviour
 
     private bool PointerOverHud(Vector3 screenPosition)
     {
-        if (battleHud != null && battleHud.PointerOverHud(screenPosition))
+        if (battleHud != null)
         {
-            return true;
+            return battleHud.PointerOverHud(screenPosition);
         }
 
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        if (hudCanvas != null && hudCanvas.isActiveAndEnabled && EventSystem.current != null &&
+            EventSystem.current.IsPointerOverGameObject())
         {
             return true;
         }
@@ -8379,6 +8428,14 @@ public sealed class BattleTestTile : MonoBehaviour
 
 public sealed class BattleTestUnitView : MonoBehaviour
 {
+    private static readonly Color WorldHpBackColor = new Color(0.020f, 0.022f, 0.026f, 0.74f);
+    private static readonly Color WorldHpAllyColor = new Color(0.760f, 0.260f, 0.225f, 0.90f);
+    private static readonly Color WorldHpEnemyColor = new Color(0.885f, 0.350f, 0.300f, 0.92f);
+    private static readonly Color WorldHpDangerColor = new Color(0.960f, 0.675f, 0.255f, 0.95f);
+    private const float WorldHpBackScaleX = 0.86f;
+    private const float WorldHpFillScaleX = 0.82f;
+    private const float WorldHpSpriteHalfWidth = 0.31f;
+
     private TextMesh label;
     private MeshRenderer labelRenderer;
     private Transform turnMarkerRoot;
@@ -8468,14 +8525,19 @@ public sealed class BattleTestUnitView : MonoBehaviour
         float ratio = Mathf.Clamp01(Unit.hp / (float)Mathf.Max(1, Unit.definition.maxHp));
         Transform fill = hpBarFill.transform;
         Vector3 scale = fill.localScale;
-        scale.x = Mathf.Max(0.001f, ratio);
+        scale.x = Mathf.Max(0.001f, WorldHpFillScaleX * ratio);
         fill.localScale = scale;
-        fill.localPosition = new Vector3(-0.31f * (1f - ratio), fill.localPosition.y, fill.localPosition.z);
-        hpBarFill.color = ratio > 0.5f
-                              ? new Color(0.30f, 0.88f, 0.36f, 0.96f)
-                              : ratio > 0.25f
-                                  ? new Color(0.98f, 0.80f, 0.22f, 0.96f)
-                                  : new Color(0.96f, 0.26f, 0.20f, 0.96f);
+        fill.localPosition = new Vector3(-WorldHpSpriteHalfWidth * WorldHpFillScaleX * (1f - ratio),
+                                         fill.localPosition.y, fill.localPosition.z);
+        Color hpColor = Unit.definition.faction == Faction.Enemy ? WorldHpEnemyColor : WorldHpAllyColor;
+        if (ratio <= 0.25f)
+        {
+            hpColor = Color.Lerp(hpColor, WorldHpDangerColor, 0.42f);
+        }
+
+        hpColor.a = Mathf.Lerp(0.58f, hpColor.a, 1f - ratio) * (Unit == null || Unit.defeated ? 0.45f : 1f);
+        hpBarBack.color = WorldHpBackColor;
+        hpBarFill.color = hpColor;
     }
 
     public void FaceToward(Vector3 worldPosition)
@@ -8702,11 +8764,13 @@ public sealed class BattleTestUnitView : MonoBehaviour
         labelRenderer = labelObject.GetComponent<MeshRenderer>();
         labelRenderer.sortingLayerName = "Default";
 
-        hpBarBack = CreateBarSprite("HP Bar Back", new Vector3(0f, -0.385f, -0.03f),
-                                    new Color(0.05f, 0.045f, 0.04f, 0.80f));
-        hpBarBack.transform.localScale = new Vector3(1.06f, 1.45f, 1f);
+        hpBarBack = CreateBarSprite("HP Bar Back", new Vector3(0f, -0.385f, -0.03f), WorldHpBackColor);
+        hpBarBack.transform.localScale = new Vector3(WorldHpBackScaleX, 0.82f, 1f);
         hpBarFill = CreateBarSprite("HP Bar Fill", new Vector3(0f, -0.385f, -0.04f),
-                                    new Color(0.30f, 0.88f, 0.36f, 0.96f));
+                                    Unit != null && Unit.definition.faction == Faction.Enemy
+                                        ? WorldHpEnemyColor
+                                        : WorldHpAllyColor);
+        hpBarFill.transform.localScale = new Vector3(WorldHpFillScaleX, 0.56f, 1f);
     }
 
     private SpriteRenderer CreateBarSprite(string name, Vector3 localPosition, Color color)
