@@ -253,7 +253,7 @@ MonoBehaviour:
   - id: park_sungjun
     displayName: "\uBC15\uC131\uC900"
     faction: 0
-    visual: {fileID: 11400000, guid: 1acd38455911a5d4fb78dde1a2842834, type: 2}
+    visual: {fileID: 11400000, guid: 81f8b992e3a3c8a488ac523bb2308932, type: 2}
     startCell: {x: 5, y: 8}
     sectName: "\uBC31\uB450 \uB8E8\uBA58\uC624\uB354"
     age: 17
@@ -281,7 +281,7 @@ MonoBehaviour:
   - id: baek_ryeon
     displayName: "\uBC31\uB828"
     faction: 0
-    visual: {fileID: 11400000, guid: cb029eab285bd8548a3cfa2bbed36088, type: 2}
+    visual: {fileID: 11400000, guid: c77c023609474414284dae0354ceec2d, type: 2}
     startCell: {x: 7, y: 8}
     sectName: "\uAC15\uC6D0 \uC124\uC545\uCC3D\uBB38"
     age: 17

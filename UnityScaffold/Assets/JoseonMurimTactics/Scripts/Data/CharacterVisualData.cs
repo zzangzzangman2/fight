@@ -29,6 +29,35 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite[] hitFrames;
     public float idleFrameRate = 4f;
 
+    [Header("Living 2D")]
+    public CharacterLivingMotionProfile livingMotion;
+    public CharacterSpriteAnimationClipData idleClip;
+    public CharacterSpriteAnimationClipData selectedIdleClip;
+    public CharacterSpriteAnimationClipData moveClip;
+    public CharacterSpriteAnimationClipData attackClip;
+    public CharacterSpriteAnimationClipData skillClip;
+    public CharacterSpriteAnimationClipData hitClip;
+    public CharacterSpriteAnimationClipData guardClip;
+    public CharacterSpriteAnimationClipData waitClip;
+    public CharacterSpriteAnimationClipData defeatClip;
+    public CharacterSpriteAnimationClipData victoryClip;
+    public CharacterSpriteAnimationClipData turnStartClip;
+    public CharacterSpriteAnimationClipData lowHpClip;
+
+    [Header("Face / Emotion")]
+    public Sprite blinkFaceSprite;
+    public Sprite happyFaceSprite;
+    public Sprite angryFaceSprite;
+    public Sprite painFaceSprite;
+    public Sprite seriousFaceSprite;
+
+    [Header("Runtime Polish")]
+    public bool enableBlink = true;
+    public bool enableLayerSway = true;
+    public bool enableFootDust = true;
+    public bool enableSelectionPop = true;
+    public bool enableImpactFreeze = true;
+
     [Header("Outfits")]
     public CharacterOutfitData defaultOutfit;
     public CharacterOutfitData[] outfitOptions;

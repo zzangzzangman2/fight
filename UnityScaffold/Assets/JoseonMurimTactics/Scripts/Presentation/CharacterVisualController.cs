@@ -13,7 +13,8 @@ public enum CharacterBattleVisualState
     Guard,
     Defeat,
     Victory,
-    Wait
+    Wait,
+    TurnStart
 }
 
 [DisallowMultipleComponent]
@@ -52,6 +53,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private float stateDuration;
     private float moveStridePhase = -1f;
     private float moveStridePhaseSetAt = -1f;
+    private bool lowHpActive;
+    private float clickReactionStartedAt = -999f;
+    private float assistReactionStartedAt = -999f;
+    private CharacterEmotion activeEmotion = CharacterEmotion.Neutral;
+    private float emotionExpiresAt = -1f;
 
     private static Sprite ovalSprite;
     private static Sprite slashSprite;
@@ -181,6 +187,124 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         return visual == null ? 0.10f : Mathf.Max(0f, visual.MoveSettleTime);
     }
 
+    private CharacterLivingMotionProfile MotionProfile()
+    {
+        return visual == null ? null : visual.livingMotion;
+    }
+
+    private float IdleBreathAmount()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? visual.breathingScale : profile.idleBreathAmount;
+    }
+
+    private float IdleBreathSpeed()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? visual.idleSpeed : profile.idleBreathSpeed;
+    }
+
+    private float IdleBobAmount()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? visual.idleAmplitude : profile.idleBobAmount;
+    }
+
+    private float IdleBobSpeed()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? visual.idleSpeed : profile.idleBobSpeed;
+    }
+
+    private float SelectedPopScale()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 1.06f : Mathf.Max(1f, profile.selectedPopScale);
+    }
+
+    private float SelectedPopDuration()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.15f : Mathf.Max(0.04f, profile.selectedPopDuration);
+    }
+
+    private float TurnStartHop()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.085f : Mathf.Max(0f, profile.turnStartHop);
+    }
+
+    private float TurnStartDuration()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.34f : Mathf.Max(0.10f, profile.turnStartDuration);
+    }
+
+    private float WaitSlouchAmount()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.45f : Mathf.Clamp01(profile.waitSlouchAmount);
+    }
+
+    private float LowHpShakeAmount()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.012f : Mathf.Max(0f, profile.lowHpShakeAmount);
+    }
+
+    private float MoveHopAmount()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.040f : Mathf.Max(0f, profile.moveHopAmount);
+    }
+
+    private float MoveLeanMultiplier()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 1f : Mathf.Max(0f, profile.moveLeanAmount);
+    }
+
+    private float FootDustAmount()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return visual != null && !visual.enableFootDust ? 0f : profile == null ? 1f : Mathf.Max(0f, profile.footDustAmount);
+    }
+
+    private float AttackAnticipationDistance()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.045f : Mathf.Max(0f, profile.attackAnticipationDistance);
+    }
+
+    private float AttackLungeMultiplier()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 1f : Mathf.Max(0f, profile.attackLungeMultiplier);
+    }
+
+    private float ImpactFreezeSeconds()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        if (visual != null && !visual.enableImpactFreeze)
+        {
+            return 0f;
+        }
+
+        return profile == null ? 0.055f : Mathf.Max(0f, profile.impactFreezeSeconds);
+    }
+
+    private float HitShakeAmount()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.025f : Mathf.Max(0f, profile.hitShakeAmount);
+    }
+
+    private float VictoryHopAmount()
+    {
+        CharacterLivingMotionProfile profile = MotionProfile();
+        return profile == null ? 0.060f : Mathf.Max(0f, profile.victoryHopAmount);
+    }
+
     public void PlayIdle()
     {
         if (defeated)
@@ -204,7 +328,9 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     {
         if (!defeated)
         {
-            PlayState(CharacterBattleVisualState.Attack, CreateTimeline(false).Duration);
+            PlayEmotion(CharacterEmotion.Angry, 0.28f);
+            PlayState(CharacterBattleVisualState.Attack, ClipDuration(visual == null ? null : visual.attackClip,
+                                                                      CreateTimeline(false).Duration));
         }
     }
 
@@ -212,7 +338,9 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     {
         if (!defeated)
         {
-            PlayState(CharacterBattleVisualState.Skill, CreateTimeline(true).Duration);
+            PlayEmotion(CharacterEmotion.Serious, 0.42f);
+            PlayState(CharacterBattleVisualState.Skill, ClipDuration(visual == null ? null : visual.skillClip,
+                                                                     CreateTimeline(true).Duration));
         }
     }
 
@@ -220,6 +348,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     {
         if (!defeated)
         {
+            PlayEmotion(CharacterEmotion.Pain, 0.32f);
             PlayState(CharacterBattleVisualState.Hit, 0.30f);
         }
     }
@@ -245,8 +374,66 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     {
         if (!defeated)
         {
+            PlayEmotion(CharacterEmotion.Victory, 0.80f);
             PlayState(CharacterBattleVisualState.Victory, 0f);
         }
+    }
+
+    public void PlayTurnStart()
+    {
+        if (!defeated)
+        {
+            PlayEmotion(CharacterEmotion.Serious, 0.35f);
+            PlayState(CharacterBattleVisualState.TurnStart,
+                      ClipDuration(visual == null ? null : visual.turnStartClip, TurnStartDuration()));
+        }
+    }
+
+    public void PlayLowHp(bool value)
+    {
+        if (lowHpActive == value)
+        {
+            return;
+        }
+
+        lowHpActive = value;
+        if (lowHpActive)
+        {
+            PlayEmotion(CharacterEmotion.LowHp, 0.45f);
+        }
+        else if (activeEmotion == CharacterEmotion.LowHp)
+        {
+            activeEmotion = CharacterEmotion.Neutral;
+            emotionExpiresAt = -1f;
+        }
+    }
+
+    public void PlayEmotion(CharacterEmotion emotion, float seconds)
+    {
+        activeEmotion = emotion;
+        emotionExpiresAt = seconds > 0f ? Time.time + seconds : -1f;
+    }
+
+    public void PlayClickReaction()
+    {
+        if (defeated || visual == null || !visual.enableSelectionPop)
+        {
+            return;
+        }
+
+        clickReactionStartedAt = Time.time;
+        PlayEmotion(CharacterEmotion.Serious, 0.22f);
+    }
+
+    public void PlayAssistReaction()
+    {
+        if (defeated || visual == null)
+        {
+            return;
+        }
+
+        assistReactionStartedAt = Time.time;
+        PlayEmotion(CharacterEmotion.Smile, 0.28f);
     }
 
     public void ApplyVisual()
@@ -257,7 +444,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         {
             if (bodyRenderer != null)
             {
-                bodyRenderer.sprite = null;
+                SetBodySprite(null);
             }
 
             if (effectRenderer != null)
@@ -270,7 +457,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             return;
         }
 
-        bodyRenderer.sprite = SelectStateSprite();
+        SetBodySprite(SelectStateSprite());
         bodyRenderer.color = visual.normalTint;
         bodyRenderer.flipX = false;
         ApplyLayerSprites();
@@ -338,7 +525,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
         if (bodyRenderer != null)
         {
-            bodyRenderer.sprite = SelectStateSprite();
+            SetBodySprite(SelectStateSprite());
             ApplyLayerSprites();
         }
     }
@@ -366,12 +553,17 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         float time = Time.time;
         float stateAge = time - stateStartedAt;
         float progress = stateDuration > 0f ? Mathf.Clamp01(stateAge / stateDuration) : 0f;
-        float pulse = Mathf.Sin((time * Mathf.Max(0.1f, visual.idleSpeed)) + phaseSeed);
-        float idleBob = pulse * visual.idleAmplitude;
-        float breath = 1f + (Mathf.Cos((time * visual.idleSpeed * 0.7f) + phaseSeed) * visual.breathingScale);
+        float pulse = Mathf.Sin((time * Mathf.Max(0.1f, IdleBobSpeed())) + phaseSeed);
+        float idleBob = pulse * IdleBobAmount();
+        float breath = 1f + (Mathf.Cos((time * Mathf.Max(0.1f, IdleBreathSpeed()) * 0.7f) + phaseSeed) *
+                             IdleBreathAmount());
 
-        bodyRenderer.sprite = SelectStateSprite();
-        ApplyLayerSprites();
+        Sprite stateSprite = SelectStateSprite();
+        if (bodyRenderer.sprite != stateSprite)
+        {
+            SetBodySprite(stateSprite);
+            ApplyLayerSprites();
+        }
         Vector3 localPosition = baseBodyPosition + new Vector3(0f, idleBob, 0f);
         Vector3 localScale = new Vector3(baseBodyScale.x * breath, baseBodyScale.y, baseBodyScale.z);
         float rotation = 0f;
@@ -397,7 +589,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         else if (acted || visualState == CharacterBattleVisualState.Wait)
         {
             tint = visual.actedTint;
-            localPosition.y -= Mathf.Abs(idleBob) * 0.45f;
+            localPosition.y -= Mathf.Abs(idleBob) * WaitSlouchAmount();
         }
 
         switch (visualState)
@@ -411,27 +603,37 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             // 실제 걷기 프레임이 있으면 보행감은 그림이 담당하므로 절차 변형은 잔향만 남긴다.
             float gait = HasMoveFrames() ? 0.4f : 1f;
             localPosition.x += facingSign * step * 0.030f * gait;
-            localPosition.y += hop * 0.040f * gait;
+            localPosition.y += hop * MoveHopAmount() * gait;
             localScale.x *= 1f - hop * 0.025f * gait;
             localScale.y *= 1f + hop * 0.035f * gait;
-            rotation = (-facingSign * visual.moveLeanDegrees) + (facingSign * step * 2.4f * gait);
-            if (planted > 0.45f)
+            rotation = ((-facingSign * visual.moveLeanDegrees) + (facingSign * step * 2.4f * gait)) *
+                       MoveLeanMultiplier();
+            float dustAmount = FootDustAmount();
+            if (planted > 0.45f && dustAmount > 0f)
             {
                 showEffect = true;
                 effectSprite = GetFootstepDustSprite();
                 effectPosition = new Vector3(-facingSign * 0.18f, 0.10f, -0.02f);
-                effectScale = Vector3.one * (0.32f + (0.16f * planted));
-                effectColor = Color.Lerp(new Color(0.78f, 0.88f, 0.94f, 0.28f + (0.22f * planted)),
+                effectScale = Vector3.one * (0.32f + (0.16f * planted)) * dustAmount;
+                effectColor = Color.Lerp(new Color(0.78f, 0.88f, 0.94f, (0.28f + (0.22f * planted)) * dustAmount),
                                          ElementPrimary(0.44f), 0.45f);
             }
             break;
         case CharacterBattleVisualState.Attack:
-            float lunge = Mathf.Sin(progress * Mathf.PI);
-            localPosition.x += facingSign * AttackLunge(false) * lunge;
-            localPosition.y += 0.025f * lunge;
-            localScale.x *= 1f + 0.06f * lunge;
-            localScale.y *= 1f - 0.025f * lunge;
-            rotation = -facingSign * 8f * lunge;
+            float anticipation = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 0.22f, progress)) *
+                                 (1f - Mathf.SmoothStep(0.22f, 0.36f, progress));
+            float drive = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.18f, 0.52f, progress));
+            float recover = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.58f, 1f, progress));
+            float impactWindow = Mathf.Clamp01(1f - Mathf.Abs(progress - 0.54f) / Mathf.Max(0.01f, ImpactFreezeSeconds() * 5f));
+            float lunge = Mathf.Clamp01(drive - (recover * 0.85f));
+            float attackShake = Mathf.Sin((time + phaseSeed) * 72f) * impactWindow * HitShakeAmount();
+            localPosition.x -= facingSign * AttackAnticipationDistance() * anticipation;
+            localPosition.x += facingSign * AttackLunge(false) * AttackLungeMultiplier() * lunge;
+            localPosition.x += attackShake;
+            localPosition.y += (0.025f * lunge) - (0.018f * anticipation);
+            localScale.x *= 1f + (0.06f * lunge) - (0.025f * anticipation);
+            localScale.y *= 1f - (0.025f * lunge) + (0.030f * anticipation);
+            rotation = (-facingSign * 8f * lunge) + (facingSign * 3.5f * anticipation);
             showEffect = progress > 0.16f && progress < 0.92f;
             effectSprite = GetElementSlashSprite(ActiveElement());
             effectPosition = new Vector3(facingSign * (0.34f + (0.08f * lunge)), 0.56f, -0.02f);
@@ -441,7 +643,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             break;
         case CharacterBattleVisualState.Skill:
             float skill = Mathf.Sin(progress * Mathf.PI);
-            localPosition.x += facingSign * AttackLunge(true) * 0.55f * skill;
+            localPosition.x += facingSign * AttackLunge(true) * AttackLungeMultiplier() * 0.55f * skill;
             localPosition.y += 0.06f * skill;
             localScale *= 1f + visual.skillPulseScale * skill;
             rotation = Mathf.Sin(progress * Mathf.PI * 2f) * 3.5f;
@@ -456,6 +658,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         case CharacterBattleVisualState.Hit:
             float hit = Mathf.Sin(progress * Mathf.PI);
             localPosition.x -= facingSign * visual.hitRecoil * hit;
+            localPosition.x += Mathf.Sin((time + phaseSeed) * 86f) * HitShakeAmount() * hit;
             localPosition.y += 0.018f * hit;
             rotation = facingSign * 10f * hit;
             tint = Color.Lerp(visual.normalTint, visual.hitTint, hit);
@@ -489,14 +692,38 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             break;
         case CharacterBattleVisualState.Victory:
             float cheer = Mathf.Abs(Mathf.Sin((time * 5.6f) + phaseSeed));
-            localPosition.y += cheer * 0.060f;
+            localPosition.y += cheer * VictoryHopAmount();
             rotation = Mathf.Sin((time * 5.6f) + phaseSeed) * 4f;
             tint = visual.selectedTint;
             break;
         case CharacterBattleVisualState.Wait:
             tint = visual.actedTint;
             break;
+        case CharacterBattleVisualState.TurnStart:
+            float ready = Mathf.Sin(progress * Mathf.PI);
+            localPosition.y += ready * TurnStartHop();
+            localScale.x *= 1f + ready * 0.045f;
+            localScale.y *= 1f - ready * 0.020f;
+            rotation = -facingSign * 4f * ready;
+            tint = visual.selectedTint;
+            showEffect = true;
+            effectSprite = GetGuardRingSprite();
+            effectPosition = new Vector3(0f, 0.18f, -0.03f);
+            effectScale = Vector3.one * (0.44f + (0.18f * ready));
+            effectColor = ElementPrimary(0.20f + (0.24f * ready));
+            break;
         }
+
+        if (lowHpActive && !defeated)
+        {
+            float weakPulse = Mathf.Sin((time * 16f) + phaseSeed);
+            localPosition.x += weakPulse * LowHpShakeAmount();
+            localScale.y *= 1f + Mathf.Abs(weakPulse) * 0.012f;
+            tint = Color.Lerp(tint, visual.hitTint, 0.16f);
+        }
+
+        ApplyEmotionTint(ref tint);
+        ApplyClickAndAssistReactions(time, ref localPosition, ref localScale, ref rotation);
 
         bodyRenderer.flipX = facingSign < 0f;
         bodyRenderer.color = tint;
@@ -505,8 +732,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         bodyTransform.localPosition = localPosition;
         bodyTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
         bodyTransform.localScale = localScale;
+        ApplyLayerSway(time, progress, footStride01);
         UpdateFootContacts(visualState == CharacterBattleVisualState.Move, footStride01);
 
+        UpdateShadowPose(localPosition);
         shadowRenderer.color = new Color(0f, 0f, 0f, shadowAlpha);
         if (selectionRenderer != null)
         {
@@ -516,6 +745,152 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         UpdateEffect(showEffect, effectSprite, effectPosition, effectScale, effectRotation, effectColor);
+    }
+
+    private void ApplyEmotionTint(ref Color tint)
+    {
+        if (emotionExpiresAt > 0f && Time.time > emotionExpiresAt)
+        {
+            activeEmotion = lowHpActive ? CharacterEmotion.LowHp : CharacterEmotion.Neutral;
+            emotionExpiresAt = -1f;
+        }
+
+        switch (activeEmotion)
+        {
+        case CharacterEmotion.Smile:
+            tint = Color.Lerp(tint, visual.selectedTint, 0.18f);
+            break;
+        case CharacterEmotion.Serious:
+        case CharacterEmotion.Angry:
+            tint = Color.Lerp(tint, visual.selectedTint, activeEmotion == CharacterEmotion.Angry ? 0.24f : 0.14f);
+            break;
+        case CharacterEmotion.Pain:
+            tint = Color.Lerp(tint, visual.hitTint, 0.36f);
+            break;
+        case CharacterEmotion.Victory:
+            tint = Color.Lerp(tint, visual.selectedTint, 0.32f);
+            break;
+        case CharacterEmotion.LowHp:
+            tint = Color.Lerp(tint, visual.hitTint, 0.18f);
+            break;
+        }
+    }
+
+    private void ApplyClickAndAssistReactions(float time, ref Vector3 localPosition, ref Vector3 localScale,
+                                             ref float rotation)
+    {
+        if (visual != null && visual.enableSelectionPop)
+        {
+            float clickT = Mathf.Clamp01((time - clickReactionStartedAt) / SelectedPopDuration());
+            if (clickT < 1f)
+            {
+                float pop = Mathf.Sin(clickT * Mathf.PI);
+                float scale = Mathf.Lerp(1f, SelectedPopScale(), pop);
+                localScale *= scale;
+                localPosition.y += pop * 0.055f;
+                rotation += -facingSign * pop * 2.5f;
+            }
+        }
+
+        float assistT = Mathf.Clamp01((time - assistReactionStartedAt) / 0.24f);
+        if (assistT < 1f)
+        {
+            float pulse = Mathf.Sin(assistT * Mathf.PI);
+            localPosition.y += pulse * 0.035f;
+            rotation += facingSign * pulse * 2f;
+        }
+    }
+
+    private void UpdateShadowPose(Vector3 localPosition)
+    {
+        if (shadowRenderer == null || visual == null)
+        {
+            return;
+        }
+
+        float lift = Mathf.Max(0f, localPosition.y - baseBodyPosition.y);
+        float squash = Mathf.Clamp01(lift / 0.14f);
+        float width = visual.shadowWidth * (1f + squash * 0.10f);
+        float height = visual.shadowHeight * (1f - squash * 0.18f);
+        if (visualState == CharacterBattleVisualState.Wait || lowHpActive)
+        {
+            width *= 1.04f;
+            height *= 0.94f;
+        }
+
+        shadowRenderer.transform.localPosition = Vector3.zero;
+        shadowRenderer.transform.localScale = new Vector3(width, Mathf.Max(0.02f, height), 1f);
+    }
+
+    private void ApplyLayerSway(float time, float progress, float footStride01)
+    {
+        if (visual == null || !visual.enableLayerSway)
+        {
+            ResetLayerPose(baseLayerRenderer);
+            ResetLayerPose(outfitLayerRenderer);
+            ResetLayerPose(hairLayerRenderer);
+            ResetLayerPose(faceLayerRenderer);
+            ResetLayerPose(weaponLayerRenderer);
+            ResetLayerPose(accessoryLayerRenderer);
+            return;
+        }
+
+        CharacterLivingMotionProfile profile = MotionProfile();
+        float hairAmount = profile == null ? 1f : profile.hairSwayAmount;
+        float weaponAmount = profile == null ? 1f : profile.weaponSwayAmount;
+        float accessoryAmount = profile == null ? 1f : profile.accessorySwayAmount;
+        float idle = Mathf.Sin((time * 1.7f) + phaseSeed);
+        float move = visualState == CharacterBattleVisualState.Move && footStride01 >= 0f
+                         ? Mathf.Sin(footStride01 * Mathf.PI * 2f)
+                         : 0f;
+        float attack = visualState == CharacterBattleVisualState.Attack || visualState == CharacterBattleVisualState.Skill
+                           ? Mathf.Sin(progress * Mathf.PI)
+                           : 0f;
+        float hit = visualState == CharacterBattleVisualState.Hit ? Mathf.Sin(progress * Mathf.PI) : 0f;
+        float wait = visualState == CharacterBattleVisualState.Wait ? 0.45f : 1f;
+
+        SetLayerPose(hairLayerRenderer,
+                     new Vector3(facingSign * ((idle * 0.006f) + (move * 0.012f) - (attack * 0.010f) + (hit * 0.014f)) *
+                                 hairAmount * wait,
+                                 ((Mathf.Abs(idle) * 0.004f) + (Mathf.Abs(move) * 0.006f)) * hairAmount * wait,
+                                 0f),
+                     ((idle * 1.3f) + (move * 2.0f) - (attack * 3.0f) + (hit * 5f)) * hairAmount * wait);
+        SetLayerPose(weaponLayerRenderer,
+                     new Vector3(facingSign * ((idle * 0.004f) + (move * 0.010f) - (attack * 0.030f) +
+                                               (hit * 0.018f)) * weaponAmount * wait,
+                                 Mathf.Abs(move) * 0.004f * weaponAmount * wait,
+                                 0f),
+                     ((idle * 0.9f) + (move * 2.6f) - (attack * 7.0f) + (hit * 6f)) * weaponAmount * wait);
+        SetLayerPose(accessoryLayerRenderer,
+                     new Vector3(facingSign * ((idle * 0.005f) + (move * 0.009f) - (attack * 0.012f)) *
+                                 accessoryAmount * wait,
+                                 Mathf.Abs(idle) * 0.003f * accessoryAmount * wait,
+                                 0f),
+                     ((idle * 1.2f) + (move * 1.8f) - (attack * 3.5f)) * accessoryAmount * wait);
+        SetLayerPose(outfitLayerRenderer,
+                     new Vector3(facingSign * ((idle * 0.003f) + (move * 0.006f) - (attack * 0.006f)) * wait,
+                                 Mathf.Abs(move) * 0.003f * wait,
+                                 0f),
+                     ((idle * 0.5f) + (move * 1.0f) - (attack * 1.5f)) * wait);
+        SetLayerPose(faceLayerRenderer, Vector3.zero, 0f);
+        SetLayerPose(baseLayerRenderer, Vector3.zero, 0f);
+    }
+
+    private static void ResetLayerPose(SpriteRenderer renderer)
+    {
+        SetLayerPose(renderer, Vector3.zero, 0f);
+    }
+
+    private static void SetLayerPose(SpriteRenderer renderer, Vector3 localPosition, float rotation)
+    {
+        if (renderer == null || !renderer.enabled)
+        {
+            return;
+        }
+
+        renderer.transform.localPosition = localPosition;
+        renderer.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        renderer.transform.localScale = Vector3.one;
     }
 
     private void UpdateEffect(bool show, Sprite sprite, Vector3 localPosition, Vector3 localScale, float rotation,
@@ -631,18 +1006,36 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         case CharacterBattleVisualState.Move:
         {
             // 걷기 프레임은 시간이 아니라 보폭 위상(발 디딤)에 동기화한다.
+            Sprite clipFrame = ClipSprite(visual.moveClip, stateAge, MoveStride01(stateAge), true);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             Sprite frame = FrameSprite(outfit != null ? outfit.moveFrames : null, visual.moveFrames,
                                        MoveStride01(stateAge), true);
             return frame != null ? frame : SelectMoveCycleSprite();
         }
         case CharacterBattleVisualState.Attack:
         {
+            Sprite clipFrame = ClipSprite(visual.attackClip, stateAge, progress, false);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             Sprite frame = FrameSprite(outfit != null ? outfit.attackFrames : null, visual.attackFrames, progress,
                                        false);
             return frame != null ? frame : AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
         }
         case CharacterBattleVisualState.Skill:
         {
+            Sprite clipFrame = ClipSprite(visual.skillClip, stateAge, progress, false);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             Sprite frame = FrameSprite(outfit != null ? outfit.skillFrames : null, visual.skillFrames, progress,
                                        false);
             if (frame == null)
@@ -656,23 +1049,93 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
         case CharacterBattleVisualState.Hit:
         {
+            Sprite clipFrame = ClipSprite(visual.hitClip, stateAge, progress, false);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             Sprite frame = FrameSprite(outfit != null ? outfit.hitFrames : null, visual.hitFrames, progress, false);
             return frame != null ? frame : HitPoseSprite() != null ? HitPoseSprite() : SelectIdleFallback();
         }
         case CharacterBattleVisualState.Guard:
+        {
+            Sprite clipFrame = ClipSprite(visual.guardClip, stateAge, progress, false);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             return AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
+        }
         case CharacterBattleVisualState.Defeat:
+        {
+            Sprite clipFrame = ClipSprite(visual.defeatClip, stateAge, progress, false);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             return DefeatedPoseSprite() != null ? DefeatedPoseSprite() : SelectIdleFallback();
+        }
         case CharacterBattleVisualState.Victory:
+        {
+            Sprite clipFrame = ClipSprite(visual.victoryClip, stateAge, progress, true);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             return SkillPoseSprite() != null ? SkillPoseSprite() : SelectIdleFallback();
+        }
         case CharacterBattleVisualState.Wait:
+        {
+            Sprite clipFrame = ClipSprite(visual.waitClip, stateAge, progress, true);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             return ActedPoseSprite() != null ? ActedPoseSprite() : SelectIdleFallback();
+        }
+        case CharacterBattleVisualState.TurnStart:
+        {
+            Sprite clipFrame = ClipSprite(visual.turnStartClip, stateAge, progress, false);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
+            return AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
+        }
         default:
         {
+            CharacterSpriteAnimationClipData clip = visualState == CharacterBattleVisualState.SelectedIdle
+                                                        ? visual.selectedIdleClip
+                                                        : lowHpActive
+                                                            ? visual.lowHpClip
+                                                            : visual.idleClip;
+            Sprite clipFrame = ClipSprite(clip, stateAge, 0f, true);
+            if (clipFrame != null)
+            {
+                return clipFrame;
+            }
+
             Sprite frame = IdleFrameSprite(outfit);
             return frame != null ? frame : SelectIdleFallback();
         }
         }
+    }
+
+    private static float ClipDuration(CharacterSpriteAnimationClipData clip, float fallback)
+    {
+        return clip != null && clip.Duration > 0f ? clip.Duration : fallback;
+    }
+
+    private static Sprite ClipSprite(CharacterSpriteAnimationClipData clip, float elapsedSeconds,
+                                     float normalizedFallback, bool defaultLoop)
+    {
+        return clip != null && clip.HasFrames ? clip.Evaluate(elapsedSeconds, normalizedFallback, defaultLoop) : null;
     }
 
     /// <summary>프레임 배열에서 위상(t01)에 맞는 장을 고른다. 배열이 비면 null을 돌려 단일 포즈 폴백을 쓴다.</summary>
@@ -841,6 +1304,14 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         SetLayerSprite(accessoryLayerRenderer, hasLayerSprites ? outfit.accessoryLayer : null);
     }
 
+    private void SetBodySprite(Sprite sprite)
+    {
+        if (bodyRenderer != null && bodyRenderer.sprite != sprite)
+        {
+            bodyRenderer.sprite = sprite;
+        }
+    }
+
     private static void SetLayerSprite(SpriteRenderer renderer, Sprite sprite)
     {
         if (renderer == null)
@@ -848,11 +1319,15 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             return;
         }
 
+        bool changed = renderer.sprite != sprite || renderer.enabled != (sprite != null);
         renderer.sprite = sprite;
         renderer.enabled = sprite != null;
-        renderer.transform.localPosition = Vector3.zero;
-        renderer.transform.localRotation = Quaternion.identity;
-        renderer.transform.localScale = Vector3.one;
+        if (changed)
+        {
+            renderer.transform.localPosition = Vector3.zero;
+            renderer.transform.localRotation = Quaternion.identity;
+            renderer.transform.localScale = Vector3.one;
+        }
     }
 
     private void ApplyLayerTint(Color tint)
@@ -1002,7 +1477,8 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         return state == CharacterBattleVisualState.Attack ||
                state == CharacterBattleVisualState.Skill ||
                state == CharacterBattleVisualState.Hit ||
-               state == CharacterBattleVisualState.Guard;
+               state == CharacterBattleVisualState.Guard ||
+               state == CharacterBattleVisualState.TurnStart;
     }
 
     private static Sprite GetOvalSprite()

@@ -3177,6 +3177,10 @@ public sealed class BattleTestController : MonoBehaviour
         AddLog($"[페이즈] 제 {round}턴 아군 페이즈");
         RefreshHighlights();
         RefreshUnits();
+        if (activeUnit != null)
+        {
+            activeUnit.view.PlayTurnStart();
+        }
         if (!suppressCameraFocus)
         {
             FocusCameraOnUnit(activeUnit, 0.36f);
@@ -3406,6 +3410,7 @@ public sealed class BattleTestController : MonoBehaviour
         AddLog($"[선택] {unit.definition.displayName}");
         RefreshHighlights();
         RefreshUnits();
+        unit.view.PlayClickReaction();
         FocusCameraOnUnit(unit, 0.24f);
     }
 
@@ -4382,6 +4387,10 @@ public sealed class BattleTestController : MonoBehaviour
         }
         RefreshHighlights();
         RefreshUnits();
+        if (activeUnit != null)
+        {
+            activeUnit.view.PlayTurnStart();
+        }
         FocusCameraOnUnit(activeUnit, 0.28f);
         return false;
     }
@@ -8538,6 +8547,10 @@ public sealed class BattleTestUnitView : MonoBehaviour
         hpColor.a = Mathf.Lerp(0.58f, hpColor.a, 1f - ratio) * (Unit == null || Unit.defeated ? 0.45f : 1f);
         hpBarBack.color = WorldHpBackColor;
         hpBarFill.color = hpColor;
+        if (visualController != null)
+        {
+            visualController.PlayLowHp(ratio <= 0.25f);
+        }
     }
 
     public void FaceToward(Vector3 worldPosition)
@@ -8583,6 +8596,30 @@ public sealed class BattleTestUnitView : MonoBehaviour
         if (visualController != null)
         {
             visualController.PlayMove();
+        }
+    }
+
+    public void PlayTurnStart()
+    {
+        if (visualController != null)
+        {
+            visualController.PlayTurnStart();
+        }
+    }
+
+    public void PlayClickReaction()
+    {
+        if (visualController != null)
+        {
+            visualController.PlayClickReaction();
+        }
+    }
+
+    public void PlayLowHp(bool value)
+    {
+        if (visualController != null)
+        {
+            visualController.PlayLowHp(value);
         }
     }
 
