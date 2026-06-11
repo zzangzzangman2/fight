@@ -125,15 +125,42 @@ public sealed class BattleResultController : MonoBehaviour
                 y += 32f * s;
             }
 
-            int silver = applyOutcome != null && applyOutcome.replayRewardsReduced ? Mathf.Max(1, result.silver / 4)
-                                                                                   : result.silver;
-            GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), $"은냥 {silver}", UiTheme.Body);
-            y += 32f * s;
-            if (applyOutcome == null || !applyOutcome.replayRewardsReduced)
+            bool duplicate = applyOutcome != null && applyOutcome.duplicate;
+            if (!duplicate)
             {
-                foreach (string item in result.rewardItems)
+                int silver = applyOutcome != null && applyOutcome.replayRewardsReduced
+                                 ? Mathf.Max(1, result.silver / 4)
+                                 : result.silver;
+                GUI.Label(new Rect(lx + 10f * s, y, lw, 28f * s), $"은냥 {silver}", UiTheme.Body);
+                y += 32f * s;
+                if (applyOutcome == null || !applyOutcome.replayRewardsReduced)
                 {
-                    GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), "· " + item, UiTheme.Small);
+                    List<string> rewardLines = InventoryService.FormatRewardLines(result.rewardItems);
+                    for (int i = 0; i < rewardLines.Count; i++)
+                    {
+                        GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), "· " + rewardLines[i],
+                                  UiTheme.Small);
+                        y += 28f * s;
+                    }
+                }
+
+                List<string> lootLines = CollectLootLines();
+                if (lootLines.Count > 0)
+                {
+                    y += 4f * s;
+                    GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 24f * s), "추가 전리품", UiTheme.SmallMuted);
+                    y += 24f * s;
+                    for (int i = 0; i < lootLines.Count; i++)
+                    {
+                        GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), "· " + lootLines[i],
+                                  UiTheme.Small);
+                        y += 28f * s;
+                    }
+                }
+                else if (applyOutcome != null && applyOutcome.replayRewardsReduced)
+                {
+                    GUI.Label(new Rect(lx + 10f * s, y, lw - 10f * s, 26f * s), "· 추가 전리품 없음",
+                              UiTheme.SmallMuted);
                     y += 28f * s;
                 }
             }
@@ -315,6 +342,43 @@ public sealed class BattleResultController : MonoBehaviour
     private static string Signed(int v)
     {
         return v > 0 ? "+" + v : v.ToString();
+    }
+
+    private List<string> CollectLootLines()
+    {
+        List<string> itemIds = new List<string>();
+        List<int> deltas = new List<int>();
+        if (result == null || result.specialFlags == null)
+        {
+            return new List<string>();
+        }
+
+        for (int i = 0; i < result.specialFlags.Count; i++)
+        {
+            string flag = result.specialFlags[i];
+            if (string.IsNullOrEmpty(flag) || !flag.StartsWith("loot:"))
+            {
+                continue;
+            }
+
+            string payload = flag.Substring("loot:".Length);
+            int split = payload.LastIndexOf(':');
+            if (split <= 0 || split >= payload.Length - 1)
+            {
+                continue;
+            }
+
+            string itemId = payload.Substring(0, split);
+            if (!int.TryParse(payload.Substring(split + 1), out int delta) || delta <= 0)
+            {
+                continue;
+            }
+
+            itemIds.Add(itemId);
+            deltas.Add(delta);
+        }
+
+        return InventoryService.FormatRewardDeltaLines(itemIds, deltas);
     }
 }
 }

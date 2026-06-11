@@ -38,11 +38,13 @@ public sealed class EquipmentService
 {
     private readonly GameSession session;
     private readonly InventoryService inventory;
+    private readonly StoryFlagService flags;
 
     public EquipmentService(GameSession session)
     {
         this.session = session;
         inventory = new InventoryService(session);
+        flags = new StoryFlagService(session);
     }
 
     public static string EquipKey(string characterId, EquipmentSlot slot)
@@ -278,14 +280,14 @@ public sealed class EquipmentService
 
     private int GetSilver()
     {
-        return session != null && session.intVars.TryGetValue("silver", out int value) ? value : 0;
+        return session == null ? 0 : flags.GetInt("silver");
     }
 
     private void AddSilver(int delta)
     {
         if (session != null)
         {
-            session.intVars["silver"] = GetSilver() + delta;
+            flags.AddInt("silver", delta);
         }
     }
 }

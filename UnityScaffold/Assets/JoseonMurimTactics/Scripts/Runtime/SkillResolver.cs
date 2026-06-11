@@ -179,15 +179,24 @@ public sealed class SkillResolver
         int distance = movement.GridDistance(actor.currentCell, target.currentCell);
         int statMod = actor.StatModifier(skill.stat);
         int terrainBonus = TerrainAttackBonus(actor, target, skill);
-        int total = d20.total + statMod + actor.Proficiency + skill.attackBonus + terrainBonus;
-        int defense = target.data.armorClass + lineOfSight.CoverBonus(target.currentCell, distance);
+        int equipmentAttackBonus = actor.AttackBonus;
+        int total = d20.total + statMod + actor.Proficiency + skill.attackBonus + terrainBonus +
+                    equipmentAttackBonus;
+        int defense = target.ArmorClass + lineOfSight.CoverBonus(target.currentCell, distance);
         bool critical = d20.natural == 20;
         bool fumble = d20.natural == 1;
         bool hit = critical || (!fumble && total >= defense);
 
+        string equipmentAttackText = equipmentAttackBonus == 0
+                                         ? string.Empty
+                                         : " + 장비 " + Signed(equipmentAttackBonus);
+        string equipmentDefenseText = target.equipmentBonus.guard == 0
+                                          ? string.Empty
+                                          : " (장비 " + Signed(target.equipmentBonus.guard) + ")";
         log.Add("Dice", actor.DisplayName + " " + skill.displayName + ": d20 " + d20.detail + " + 스탯 " + statMod +
                             " + 숙련 " + actor.Proficiency + " + 무공 " + skill.attackBonus + " + 지형 " +
-                            terrainBonus + " = " + total + " vs 방어 " + defense);
+                            terrainBonus + equipmentAttackText + " = " + total + " vs 방어 " + defense +
+                            equipmentDefenseText);
 
         if (fumble)
         {
@@ -206,7 +215,8 @@ public sealed class SkillResolver
         }
 
         DiceRoll damageDice = dice.RollDice(skill.damageDice, critical ? 2 : 1);
-        int damage = Mathf.Max(1, damageDice.total + statMod);
+        int equipmentDamageBonus = actor.DamageBonus;
+        int damage = Mathf.Max(1, damageDice.total + statMod + equipmentDamageBonus);
         target.ApplyDamage(damage);
         target.breakGauge = Mathf.Min(100, target.breakGauge + skill.breakGain + (critical ? 12 : 0));
         target.morale = Mathf.Max(0, target.morale - Mathf.Max(3, skill.moraleDamage));
@@ -226,7 +236,9 @@ public sealed class SkillResolver
             target.AddStatus("파훼");
         }
 
-        log.Add("Hit", target.DisplayName + " 피해 " + damage + ", 파훼 " + target.breakGauge + "/100.");
+        string equipmentDamageText = equipmentDamageBonus == 0 ? string.Empty : " (장비 " + Signed(equipmentDamageBonus) + ")";
+        log.Add("Hit", target.DisplayName + " 피해 " + damage + equipmentDamageText + ", 파훼 " +
+                       target.breakGauge + "/100.");
 
         if (target.hp > 0 && skill.pushDistance > 0)
         {
@@ -519,8 +531,8 @@ public sealed class SkillResolver
         int distance = movement.GridDistance(actorCell, targetCell);
         int statMod = actor.StatModifier(skill.stat);
         int terrainBonus = TerrainAttackBonus(actor, actorCell, target, targetCell, skill);
-        int attackBonus = statMod + actor.Proficiency + skill.attackBonus + terrainBonus;
-        int defense = target.data.armorClass + lineOfSight.CoverBonus(targetCell, distance);
+        int attackBonus = statMod + actor.Proficiency + skill.attackBonus + terrainBonus + actor.AttackBonus;
+        int defense = target.ArmorClass + lineOfSight.CoverBonus(targetCell, distance);
         int requiredRoll = defense - attackBonus;
         RollMode rollMode = ResolveRollMode(actor, actorCell, skill, target, targetCell);
         int hitChancePercent = CalculateHitChancePercent(requiredRoll, rollMode);
@@ -528,8 +540,9 @@ public sealed class SkillResolver
         int maxDamage;
         int criticalMinDamage;
         int criticalMaxDamage;
-        GetDamageRange(skill.damageDice, statMod, 1, out minDamage, out maxDamage);
-        GetDamageRange(skill.damageDice, statMod, 2, out criticalMinDamage, out criticalMaxDamage);
+        GetDamageRange(skill.damageDice, statMod + actor.DamageBonus, 1, out minDamage, out maxDamage);
+        GetDamageRange(skill.damageDice, statMod + actor.DamageBonus, 2, out criticalMinDamage,
+                       out criticalMaxDamage);
 
         if (counter)
         {
@@ -600,6 +613,11 @@ public sealed class SkillResolver
         }
 
         return naturalRoll >= requiredRoll;
+    }
+
+    private static string Signed(int value)
+    {
+        return value > 0 ? "+" + value : value.ToString();
     }
 
     private void GetDamageRange(string expression, int statMod, int multiplier, out int minDamage, out int maxDamage)

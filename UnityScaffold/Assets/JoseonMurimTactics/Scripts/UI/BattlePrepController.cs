@@ -142,10 +142,9 @@ public sealed class BattlePrepController : MonoBehaviour
         List<string> rewards = mission != null && mission.rewardPreview.Count > 0
                                    ? new List<string>(mission.rewardPreview)
                                    : def.rewardItems;
-        foreach (string item in rewards)
+        List<string> rewardLines = InventoryService.FormatRewardLines(rewards);
+        foreach (string item in rewardLines)
         {
-            if (item.StartsWith("은전") || item.StartsWith("은냥"))
-                continue;
             GUI.Label(new Rect(rx + 10f * s, ry, rw - 10f * s, 26f * s), "· " + item, UiTheme.Small);
             ry += 28f * s;
         }

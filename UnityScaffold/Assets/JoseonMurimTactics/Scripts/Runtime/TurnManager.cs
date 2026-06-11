@@ -80,17 +80,23 @@ public sealed class TurnManager : MonoBehaviour
         skillResolver = new SkillResolver(dice, movementResolver, lineOfSightResolver, combatLog);
         terrainResolver = new TerrainResolver(battleMap, dice, movementResolver, combatLog);
         turnOrder.Clear();
+        GameRoot root = GameRoot.EnsureExists();
 
         for (int i = 0; i < combatants.Count; i++)
         {
             CombatantData data = combatants[i];
             Vector2Int cell = i < startCells.Count ? startCells[i] : Vector2Int.zero;
-            CombatantRuntime runtime = new CombatantRuntime(data, cell);
+            EquipmentBonus equipmentBonus = BuildEquipmentBonus(root, data);
+            CombatantRuntime runtime = new CombatantRuntime(data, cell, equipmentBonus);
             DiceRoll initiative = dice.RollD20();
             int initiativeScore = initiative.total + data.stats.Modifier(StatType.Agility);
             runtime.cooldowns["_initiative"] = initiativeScore;
             turnOrder.Add(runtime);
             combatLog.Add("Init", data.displayName + " 선공권 " + initiativeScore + ".");
+            if (!equipmentBonus.IsEmpty)
+            {
+                combatLog.Add("Equip", data.displayName + " 장비 보정 " + equipmentBonus + ".");
+            }
         }
 
         turnOrder.Sort((a, b) => b.cooldowns["_initiative"].CompareTo(a.cooldowns["_initiative"]));
@@ -127,6 +133,17 @@ public sealed class TurnManager : MonoBehaviour
 
         active.StartTurn();
         combatLog.Add("Turn", round + "라운드 " + active.DisplayName + " 차례.");
+    }
+
+    private static EquipmentBonus BuildEquipmentBonus(GameRoot root, CombatantData data)
+    {
+        if (root == null || root.Equipment == null || data == null || data.faction != Faction.Ally)
+        {
+            return new EquipmentBonus();
+        }
+
+        string characterId = !string.IsNullOrEmpty(data.id) ? data.id : data.displayName;
+        return root.Equipment.BuildBonus(CharacterGrowthCatalog.NormalizeCharacterId(characterId));
     }
 }
 }

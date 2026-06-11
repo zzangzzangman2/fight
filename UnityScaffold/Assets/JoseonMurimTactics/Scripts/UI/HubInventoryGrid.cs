@@ -101,8 +101,13 @@ public sealed class HubInventoryGrid
                 alignment = TextAnchor.UpperLeft,
                 clipping = TextClipping.Clip
             };
-            GUI.Label(new Rect(cell.x + 12f * s, cell.y + 32f * s, cell.width - 58f * s, 20f * s),
-                      TypeLabel(stack.type), sub);
+            string typeLine = TypeLabel(stack.type);
+            if (equipment != null && stack.type == InventoryItemType.Equipment)
+            {
+                typeLine += " · 장착 " + equipment.EquippedCount(stack.itemId);
+            }
+
+            GUI.Label(new Rect(cell.x + 12f * s, cell.y + 32f * s, cell.width - 58f * s, 20f * s), typeLine, sub);
 
             GUIStyle countStyle = new GUIStyle(UiTheme.Body)
             {

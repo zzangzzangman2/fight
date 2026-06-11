@@ -100,6 +100,7 @@ namespace JoseonMurimTactics
                 return;
             }
 
+            InventoryService inventory = new InventoryService(session);
             for (int i = 0; i < bundle.materialRewards.Count; i++)
             {
                 RewardDelta material = bundle.materialRewards[i];
@@ -114,9 +115,7 @@ namespace JoseonMurimTactics
                     continue;
                 }
 
-                int oldValue;
-                session.inventory.TryGetValue(itemId, out oldValue);
-                session.inventory[itemId] = oldValue + material.delta;
+                inventory.AddDelta(itemId, material.delta);
             }
         }
 
@@ -143,6 +142,21 @@ namespace JoseonMurimTactics
             if (bundle.replayMultiplier < 1f)
             {
                 AddFlag(result, "progression:재전투 성장 보상 x" + bundle.replayMultiplier.ToString("0.##"));
+            }
+
+            for (int i = 0; i < bundle.materialRewards.Count; i++)
+            {
+                RewardDelta material = bundle.materialRewards[i];
+                if (material == null || string.IsNullOrEmpty(material.id) || material.delta <= 0)
+                {
+                    continue;
+                }
+
+                string itemId = InventoryService.NormalizeItemId(material.id);
+                if (!string.IsNullOrEmpty(itemId))
+                {
+                    AddFlag(result, "loot:" + itemId + ":" + material.delta);
+                }
             }
 
             for (int i = 0; i < bundle.summaryLines.Count; i++)

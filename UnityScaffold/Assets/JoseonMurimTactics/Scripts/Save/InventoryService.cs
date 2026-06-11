@@ -22,6 +22,12 @@ public sealed class InventoryService
 {
     private readonly GameSession session;
 
+    private struct DisplayCount
+    {
+        public string label;
+        public int count;
+    }
+
     public InventoryService(GameSession session)
     {
         this.session = session;
@@ -68,6 +74,28 @@ public sealed class InventoryService
         int next = GetCount(key) + count;
         session.inventory[key] = next;
         return next;
+    }
+
+    public int AddDelta(string itemId, int delta)
+    {
+        if (string.IsNullOrEmpty(itemId) || session == null)
+        {
+            return 0;
+        }
+
+        if (delta > 0)
+        {
+            return AddItem(itemId, delta);
+        }
+
+        if (delta < 0)
+        {
+            int next = Math.Max(0, GetCount(itemId) + delta);
+            SetCount(itemId, next);
+            return next;
+        }
+
+        return GetCount(itemId);
     }
 
     public bool Consume(string itemId, int count = 1)
@@ -252,6 +280,86 @@ public sealed class InventoryService
         }
     }
 
+    public static List<string> FormatRewardLines(IEnumerable<string> rewards)
+    {
+        List<string> lines = new List<string>();
+        if (rewards == null)
+        {
+            return lines;
+        }
+
+        Dictionary<string, DisplayCount> counts = new Dictionary<string, DisplayCount>();
+        List<string> order = new List<string>();
+        foreach (string reward in rewards)
+        {
+            if (string.IsNullOrWhiteSpace(reward) || IsCurrencyLine(reward))
+            {
+                continue;
+            }
+
+            AddDisplayCount(counts, order, reward, 1);
+        }
+
+        for (int i = 0; i < order.Count; i++)
+        {
+            DisplayCount entry = counts[order[i]];
+            lines.Add(entry.count > 1 ? entry.label + " x" + entry.count : entry.label);
+        }
+
+        return lines;
+    }
+
+    public static List<string> FormatRewardDeltaLines(IEnumerable<string> itemIds, IEnumerable<int> deltas)
+    {
+        List<string> lines = new List<string>();
+        if (itemIds == null || deltas == null)
+        {
+            return lines;
+        }
+
+        Dictionary<string, DisplayCount> counts = new Dictionary<string, DisplayCount>();
+        List<string> order = new List<string>();
+        IEnumerator<string> itemEnumerator = itemIds.GetEnumerator();
+        IEnumerator<int> deltaEnumerator = deltas.GetEnumerator();
+        try
+        {
+            while (itemEnumerator.MoveNext() && deltaEnumerator.MoveNext())
+            {
+                if (deltaEnumerator.Current <= 0)
+                {
+                    continue;
+                }
+
+                AddDisplayCount(counts, order, itemEnumerator.Current, deltaEnumerator.Current);
+            }
+        }
+        finally
+        {
+            itemEnumerator.Dispose();
+            deltaEnumerator.Dispose();
+        }
+
+        for (int i = 0; i < order.Count; i++)
+        {
+            DisplayCount entry = counts[order[i]];
+            lines.Add(entry.count > 1 ? entry.label + " x" + entry.count : entry.label);
+        }
+
+        return lines;
+    }
+
+    public static bool IsCurrencyLine(string reward)
+    {
+        if (string.IsNullOrWhiteSpace(reward))
+        {
+            return false;
+        }
+
+        string trimmed = reward.Trim();
+        return trimmed.StartsWith("은냥", StringComparison.Ordinal) ||
+               trimmed.StartsWith("은전", StringComparison.Ordinal);
+    }
+
     /// <summary>아이템 id의 분류(장터/정비창 탭 분류용).</summary>
     public static InventoryItemType TypeOf(string itemId)
     {
@@ -282,6 +390,36 @@ public sealed class InventoryService
         }
 
         return InventoryItemType.Consumable;
+    }
+
+    private static void AddDisplayCount(Dictionary<string, DisplayCount> counts, List<string> order, string itemId,
+                                        int count)
+    {
+        if (count <= 0 || string.IsNullOrWhiteSpace(itemId))
+        {
+            return;
+        }
+
+        string key = NormalizeItemId(itemId);
+        if (string.IsNullOrEmpty(key))
+        {
+            return;
+        }
+
+        if (!counts.TryGetValue(key, out DisplayCount entry))
+        {
+            string label = Label(itemId);
+            entry = new DisplayCount
+            {
+                label = string.IsNullOrEmpty(label) ? itemId : label,
+                count = 0
+            };
+            counts[key] = entry;
+            order.Add(key);
+        }
+
+        entry.count += count;
+        counts[key] = entry;
     }
 
     private void NormalizeStoredKeys()

@@ -13,6 +13,7 @@ public sealed class CombatantRuntime
     public int breakGauge;
     public bool defeated;
     public bool surrendered;
+    public EquipmentBonus equipmentBonus;
     public readonly ActionEconomy actions = new ActionEconomy();
     public readonly Dictionary<string, int> cooldowns = new Dictionary<string, int>();
     public readonly Dictionary<string, int> usesLeft = new Dictionary<string, int>();
@@ -42,16 +43,58 @@ public sealed class CombatantRuntime
             return data.maxHp >= 36 ? 2 : 1;
         }
     }
+    public int MaxHp
+    {
+        get {
+            return Mathf.Max(1, data.maxHp + equipmentBonus.hp);
+        }
+    }
+    public int MaxInner
+    {
+        get {
+            return Mathf.Max(0, data.maxInner + equipmentBonus.inner);
+        }
+    }
+    public int ArmorClass
+    {
+        get {
+            return Mathf.Max(0, data.armorClass + equipmentBonus.guard);
+        }
+    }
+    public int Movement
+    {
+        get {
+            return Mathf.Max(0, data.movement + equipmentBonus.move);
+        }
+    }
+    public int AttackBonus
+    {
+        get {
+            return equipmentBonus.acc;
+        }
+    }
+    public int DamageBonus
+    {
+        get {
+            return equipmentBonus.atk;
+        }
+    }
 
     public CombatantRuntime(CombatantData source, Vector2Int startCell)
+        : this(source, startCell, new EquipmentBonus())
+    {
+    }
+
+    public CombatantRuntime(CombatantData source, Vector2Int startCell, EquipmentBonus equipmentBonus)
     {
         data = source;
         currentCell = startCell;
-        hp = source.maxHp;
-        inner = source.maxInner;
+        this.equipmentBonus = equipmentBonus;
+        hp = MaxHp;
+        inner = MaxInner;
         morale = 60;
         breakGauge = 0;
-        actions.ResetForTurn(source.movement);
+        actions.ResetForTurn(Movement);
 
         foreach (SkillData skill in source.skills)
         {
@@ -99,12 +142,12 @@ public sealed class CombatantRuntime
 
     public void Heal(int amount)
     {
-        hp = Mathf.Min(data.maxHp, hp + Mathf.Max(0, amount));
+        hp = Mathf.Min(MaxHp, hp + Mathf.Max(0, amount));
     }
 
     public void StartTurn()
     {
-        actions.ResetForTurn(data.movement);
+        actions.ResetForTurn(Movement);
         List<string> keys = new List<string>(cooldowns.Keys);
         foreach (string key in keys)
         {
