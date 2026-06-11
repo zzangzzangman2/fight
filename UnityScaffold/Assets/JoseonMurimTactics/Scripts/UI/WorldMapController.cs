@@ -14,6 +14,13 @@ public sealed class WorldMapController : MonoBehaviour
 
     private static readonly Vector2 InitialFocus = new Vector2(0.5f, 0.5f);
 
+    private enum SelectionMode
+    {
+        StoryNode,
+        FactionGroup,
+        FactionPin
+    }
+
     private static readonly MapNode[] Nodes = {
         new MapNode("백두천광검문", "박성준 · 빛/검", new Vector2(0.846f, 0.405f), "거점",
                     "백두산 천지의 새벽빛을 검에 담는 문파. 꺼져가는 천광이 다시 타오르려 한다.", UiTheme.Gold),
@@ -38,11 +45,7 @@ public sealed class WorldMapController : MonoBehaviour
     };
 
     private static readonly MapLabel[] Labels = {
-        new MapLabel("구파일방", "장경각 · 진무궁", new Vector2(0.245f, 0.245f), "派", UiTheme.Gold, new Vector2(32f, -54f), true),
-        new MapLabel("오대세가", "남궁검각 · 기문루", new Vector2(0.430f, 0.520f), "家", UiTheme.Teal, new Vector2(-148f, -34f), true),
         new MapLabel("중원무림맹", "의협전 · 총단", new Vector2(0.535f, 0.395f), "盟", UiTheme.Gold, new Vector2(-92f, -62f), true),
-        new MapLabel("마교", "천마신전 · 혈월단", new Vector2(0.145f, 0.695f), "魔", UiTheme.SealRed, new Vector2(28f, -58f), true),
-        new MapLabel("모용세가", "모용별궁 · 사절로", new Vector2(0.535f, 0.610f), "慕", UiTheme.SealRed, new Vector2(28f, -50f), true),
 
         new MapLabel("백두천광검문", "백두산 천검단", new Vector2(0.846f, 0.405f), "本", UiTheme.Gold, new Vector2(24f, -54f), false),
         new MapLabel("설악창문", "설악빙창대", new Vector2(0.852f, 0.563f), "槍", UiTheme.NavyLight, new Vector2(-126f, -42f), false),
@@ -53,12 +56,8 @@ public sealed class WorldMapController : MonoBehaviour
     };
 
     private static readonly MapMonument[] Monuments = {
-        new MapMonument(new Vector2(0.245f, 0.245f), "寺", UiTheme.Gold, 1.2f),
         new MapMonument(new Vector2(0.360f, 0.185f), "山", UiTheme.NavyLight, 1.0f),
-        new MapMonument(new Vector2(0.430f, 0.520f), "家", UiTheme.Teal, 1.05f),
         new MapMonument(new Vector2(0.535f, 0.395f), "盟", UiTheme.Gold, 1.15f),
-        new MapMonument(new Vector2(0.145f, 0.695f), "魔", UiTheme.SealRed, 1.2f),
-        new MapMonument(new Vector2(0.535f, 0.610f), "慕", UiTheme.SealRed, 1.0f),
         new MapMonument(new Vector2(0.846f, 0.405f), "本", UiTheme.Gold, 1.05f),
         new MapMonument(new Vector2(0.852f, 0.563f), "槍", UiTheme.NavyLight, 0.74f),
         new MapMonument(new Vector2(0.815f, 0.612f), "雷", UiTheme.Teal, 0.74f),
@@ -70,6 +69,9 @@ public sealed class WorldMapController : MonoBehaviour
     private GameRoot root;
     private Texture2D worldMap;
     private int selectedNode;
+    private SelectionMode selectionMode = SelectionMode.StoryNode;
+    private string selectedFactionId;
+    private WorldMapFactionGroup selectedGroup = WorldMapFactionGroup.Other;
     private float zoom = InitialZoom;
     private Vector2 centerUv = InitialFocus;
     private bool dragging;
@@ -138,7 +140,9 @@ public sealed class WorldMapController : MonoBehaviour
         UiTheme.DrawFill(new Rect(0f, 0f, viewport.width, viewport.height),
                          new Color(UiTheme.Hanji.r, UiTheme.Hanji.g, UiTheme.Hanji.b, 0.04f));
         DrawMonuments(mapRect, s);
+        DrawRegionGroupLabels(mapRect, s);
         DrawLabels(mapRect, s);
+        DrawFactionPins(mapRect, s);
         DrawNodes(mapRect, s);
         GUI.EndGroup();
 
@@ -177,6 +181,23 @@ public sealed class WorldMapController : MonoBehaviour
     private void DrawSidePanel(Rect panel, float s)
     {
         UiTheme.DrawPanel(panel, true);
+        if (selectionMode == SelectionMode.FactionPin)
+        {
+            DrawFactionPinSidePanel(panel, s);
+            return;
+        }
+
+        if (selectionMode == SelectionMode.FactionGroup)
+        {
+            DrawFactionGroupSidePanel(panel, s);
+            return;
+        }
+
+        DrawStoryNodeSidePanel(panel, s);
+    }
+
+    private void DrawStoryNodeSidePanel(Rect panel, float s)
+    {
         MapNode node = Nodes[Mathf.Clamp(selectedNode, 0, Nodes.Length - 1)];
 
         float x = panel.x + 22f * s;
@@ -208,6 +229,115 @@ public sealed class WorldMapController : MonoBehaviour
                   UiTheme.Small);
     }
 
+    private void DrawFactionGroupSidePanel(Rect panel, float s)
+    {
+        WorldMapFactionGroupInfo group = WorldMapFactionPinCatalog.GetGroupInfo(selectedGroup);
+        int total = WorldMapFactionPinCatalog.Count(group.group);
+        int defeated = WorldMapFactionPinCatalog.DefeatedCount(root != null ? root.Session : null, group.group);
+        int minLevel;
+        int maxLevel;
+        WorldMapFactionPinCatalog.LevelRange(group.group, out minLevel, out maxLevel);
+
+        float x = panel.x + 22f * s;
+        float y = panel.y + 18f * s;
+        float w = panel.width - 44f * s;
+
+        GUI.Label(new Rect(x, y, w, 34f * s), group.displayName, UiTheme.Heading);
+        UiTheme.DrawSeal(new Rect(panel.xMax - 64f * s, panel.y + 16f * s, 42f * s, 42f * s), group.glyph);
+        y += 42f * s;
+
+        GUI.Label(new Rect(x, y, w, 26f * s), group.groupId, UiTheme.SmallMuted);
+        y += 38f * s;
+        Line(x, ref y, w, s, "진행", $"격파 {defeated}/{total}");
+        Line(x, ref y, w, s, "권장", total > 1 ? $"Lv{minLevel}~{maxLevel}" : $"Lv{minLevel}+");
+        Line(x, ref y, w, s, "표시", zoom >= group.revealZoom ? "개별 핀 표시" : "권역 라벨");
+        y += 12f * s;
+
+        Rect story = new Rect(x, y, w, 108f * s);
+        UiTheme.DrawFill(story, new Color(1f, 0.98f, 0.92f, 0.82f));
+        GUI.Label(new Rect(story.x + 12f * s, story.y + 10f * s, story.width - 24f * s, story.height - 20f * s),
+                  group.description, UiTheme.Body);
+        y = story.yMax + 14f * s;
+
+        if (GUI.Button(new Rect(x, y, w, 38f * s), "권역 확대", UiTheme.ButtonPrimary))
+        {
+            FocusFactionGroup(group);
+        }
+
+        y += 52f * s;
+        GUI.Label(new Rect(x, y, w, 28f * s), "하위 세력", UiTheme.Heading);
+        y += 34f * s;
+
+        FactionConquestService service = new FactionConquestService(root != null ? root.Session : null);
+        for (int i = 0; i < WorldMapFactionPinCatalog.Pins.Length; i++)
+        {
+            WorldMapFactionPin pin = WorldMapFactionPinCatalog.Pins[i];
+            if (pin.group != group.group)
+            {
+                continue;
+            }
+
+            FactionConquestInfo info = FactionConquestCatalog.Get(pin.factionId);
+            FactionConquestState state = service.GetState(pin.factionId);
+            string status = FactionStateGlyph(info, state);
+            GUI.Label(new Rect(x, y, w, 24f * s), $"{status} {pin.displayName}  Lv{info.recommendedLevel}  {StateText(info, state)}",
+                      UiTheme.Small);
+            y += 24f * s;
+            if (y > panel.yMax - 20f * s)
+            {
+                break;
+            }
+        }
+    }
+
+    private void DrawFactionPinSidePanel(Rect panel, float s)
+    {
+        WorldMapFactionPin pin = WorldMapFactionPinCatalog.GetByFactionId(selectedFactionId);
+        FactionConquestInfo info = FactionConquestCatalog.Get(pin.factionId);
+        FactionConquestState state = GetConquestState(pin.factionId);
+
+        float x = panel.x + 22f * s;
+        float y = panel.y + 18f * s;
+        float w = panel.width - 44f * s;
+
+        GUI.Label(new Rect(x, y, w, 34f * s), pin.displayName, UiTheme.Heading);
+        UiTheme.DrawSeal(new Rect(panel.xMax - 64f * s, panel.y + 16f * s, 42f * s, 42f * s), pin.glyph);
+        y += 42f * s;
+
+        GUI.Label(new Rect(x, y, w, 26f * s), $"{pin.regionName} · {WorldMapFactionPinCatalog.GroupName(pin.group)}",
+                  UiTheme.SmallMuted);
+        y += 38f * s;
+        Line(x, ref y, w, s, "상태", StateText(info, state));
+        Line(x, ref y, w, s, "권장", $"Lv{info.recommendedLevel}");
+        Line(x, ref y, w, s, "장", CampaignArcCatalog.GetById(info.arcId).displayName);
+        Line(x, ref y, w, s, "결전", string.IsNullOrEmpty(info.finalBattleId) ? "미연결" : info.finalBattleId);
+        y += 10f * s;
+
+        DrawMeter(x, ref y, w, s, "정복", state.stage);
+        DrawMeter(x, ref y, w, s, "영향", state.influence);
+        DrawMeter(x, ref y, w, s, "적대", state.hostility);
+        DrawMeter(x, ref y, w, s, "장악", state.control);
+        y += 10f * s;
+
+        Rect story = new Rect(x, y, w, 112f * s);
+        UiTheme.DrawFill(story, new Color(1f, 0.98f, 0.92f, 0.82f));
+        GUI.Label(new Rect(story.x + 12f * s, story.y + 10f * s, story.width - 24f * s, story.height - 20f * s),
+                  pin.description, UiTheme.Body);
+        y = story.yMax + 14f * s;
+
+        if (GUI.Button(new Rect(x, y, w, 38f * s), "해당 지역 확대", UiTheme.ButtonPrimary))
+        {
+            centerUv = pin.uv;
+            zoom = Mathf.Max(zoom, 1.58f);
+        }
+
+        y += 48f * s;
+        bool oldEnabled = GUI.enabled;
+        GUI.enabled = false;
+        GUI.Button(new Rect(x, y, w, 36f * s), "관련 임무 준비 중", UiTheme.Button);
+        GUI.enabled = oldEnabled;
+    }
+
     private void DrawBottomBar(Rect bar, float s)
     {
         UiTheme.DrawPanel(bar, true);
@@ -222,9 +352,8 @@ public sealed class WorldMapController : MonoBehaviour
             root.Flow.GoToMissionBoard();
         }
 
-        MapNode node = Nodes[Mathf.Clamp(selectedNode, 0, Nodes.Length - 1)];
         GUI.Label(new Rect(bar.x + 424f * s, bar.y + 10f * s, bar.width - 440f * s, 38f * s),
-                  $"{node.name} · {node.status}", UiTheme.Body);
+                  CurrentSelectionSummary(), UiTheme.Body);
     }
 
     private void HandleMapInput(Rect viewport, Vector2 drawSize)
@@ -276,6 +405,168 @@ public sealed class WorldMapController : MonoBehaviour
         }
     }
 
+    private void DrawRegionGroupLabels(Rect mapRect, float s)
+    {
+        for (int i = 0; i < WorldMapFactionPinCatalog.Groups.Length; i++)
+        {
+            WorldMapFactionGroupInfo group = WorldMapFactionPinCatalog.Groups[i];
+            bool selected = selectionMode != SelectionMode.StoryNode && selectedGroup == group.group;
+            bool show = zoom < group.revealZoom || (!selected && zoom < 1.55f);
+            if (!show)
+            {
+                continue;
+            }
+
+            DrawRegionGroupLabel(group, mapRect, s);
+        }
+    }
+
+    private void DrawRegionGroupLabel(WorldMapFactionGroupInfo group, Rect mapRect, float s)
+    {
+        Vector2 anchor = MapToLocal(mapRect, group.centerUv);
+        Vector2 offset = GroupLabelOffset(group.group) * s;
+        float width = 168f * s;
+        float height = 62f * s;
+        Rect rect = new Rect(anchor.x + offset.x, anchor.y + offset.y, width, height);
+        rect.x = Mathf.Clamp(rect.x, 8f * s, mapRect.width - rect.width - 8f * s);
+        rect.y = Mathf.Clamp(rect.y, 8f * s, mapRect.height - rect.height - 8f * s);
+
+        Vector2 edge = new Vector2(Mathf.Clamp(anchor.x, rect.x, rect.xMax), Mathf.Clamp(anchor.y, rect.y, rect.yMax));
+        DrawLine(anchor, edge, new Color(group.color.r, group.color.g, group.color.b, 0.62f), 2.0f * s);
+
+        bool selected = selectionMode == SelectionMode.FactionGroup && selectedGroup == group.group;
+        Color fill = selected ? new Color(1f, 0.960f, 0.760f, 0.96f) : new Color(1f, 0.945f, 0.760f, 0.90f);
+        UiTheme.DrawFill(new Rect(rect.x + 3f * s, rect.y + 4f * s, rect.width, rect.height),
+                         new Color(0.050f, 0.037f, 0.026f, 0.30f));
+        UiTheme.DrawFill(rect, fill);
+        UiTheme.DrawFill(new Rect(rect.x, rect.y, 4f * s, rect.height), new Color(group.color.r, group.color.g, group.color.b, 0.90f));
+
+        Rect seal = new Rect(rect.x + 9f * s, rect.y + 10f * s, 34f * s, 34f * s);
+        UiTheme.DrawSeal(seal, group.glyph, -4f);
+
+        int total = WorldMapFactionPinCatalog.Count(group.group);
+        int defeated = WorldMapFactionPinCatalog.DefeatedCount(root != null ? root.Session : null, group.group);
+        int minLevel;
+        int maxLevel;
+        WorldMapFactionPinCatalog.LevelRange(group.group, out minLevel, out maxLevel);
+
+        GUIStyle nameStyle = new GUIStyle(UiTheme.Body)
+        {
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.UpperLeft,
+            clipping = TextClipping.Clip
+        };
+        nameStyle.normal.textColor = UiTheme.Navy;
+        GUIStyle detailStyle = new GUIStyle(UiTheme.SmallMuted) { clipping = TextClipping.Clip };
+
+        float textX = seal.xMax + 8f * s;
+        GUI.Label(new Rect(textX, rect.y + 7f * s, rect.xMax - textX - 6f * s, 22f * s), group.displayName, nameStyle);
+        GUI.Label(new Rect(textX, rect.y + 30f * s, rect.xMax - textX - 6f * s, 18f * s), $"격파 {defeated}/{total}", detailStyle);
+        GUI.Label(new Rect(textX, rect.y + 45f * s, rect.xMax - textX - 6f * s, 16f * s),
+                  total > 1 ? $"Lv{minLevel}~{maxLevel}" : $"Lv{minLevel}+", detailStyle);
+
+        if (GUI.Button(rect, GUIContent.none, GUIStyle.none))
+        {
+            FocusFactionGroup(group);
+        }
+    }
+
+    private void DrawFactionPins(Rect mapRect, float s)
+    {
+        for (int i = 0; i < WorldMapFactionPinCatalog.Pins.Length; i++)
+        {
+            WorldMapFactionPin pin = WorldMapFactionPinCatalog.Pins[i];
+            FactionConquestInfo info = FactionConquestCatalog.Get(pin.factionId);
+            FactionConquestState state = GetConquestState(pin.factionId);
+            bool locked = IsPinLocked(info, state);
+
+            if (!ShouldShowFactionPin(pin, info, state))
+            {
+                continue;
+            }
+
+            DrawFactionPin(pin, info, state, locked, mapRect, s);
+        }
+    }
+
+    private void DrawFactionPin(WorldMapFactionPin pin, FactionConquestInfo info, FactionConquestState state,
+                                bool locked, Rect mapRect, float s)
+    {
+        Vector2 pos = MapToLocal(mapRect, pin.uv);
+        bool selected = selectionMode == SelectionMode.FactionPin && selectedFactionId == pin.factionId;
+        float radius = (selected ? 18f : 13f) * s;
+        Rect hit = new Rect(pos.x - 38f * s, pos.y - 38f * s, 76f * s, 76f * s);
+        float alpha = locked ? 0.18f : selected ? 0.52f : 0.32f;
+
+        UiTheme.DrawFill(new Rect(pos.x - radius, pos.y - radius, radius * 2f, radius * 2f),
+                         new Color(pin.color.r, pin.color.g, pin.color.b, alpha));
+        if (selected)
+        {
+            UiTheme.DrawFill(new Rect(pos.x - radius - 3f * s, pos.y - radius - 3f * s,
+                                      (radius + 3f * s) * 2f, (radius + 3f * s) * 2f),
+                             new Color(UiTheme.GoldBright.r, UiTheme.GoldBright.g, UiTheme.GoldBright.b, 0.22f));
+        }
+
+        Color oldColor = GUI.color;
+        GUI.color = locked ? new Color(1f, 1f, 1f, 0.48f) : Color.white;
+        UiTheme.DrawSeal(new Rect(pos.x - radius * 0.74f, pos.y - radius * 0.74f, radius * 1.48f, radius * 1.48f),
+                         pin.glyph, selected ? -7f : -4f);
+        GUI.color = oldColor;
+
+        string statusGlyph = FactionStateGlyph(info, state);
+        Rect badge = new Rect(pos.x + radius * 0.35f, pos.y - radius * 0.95f, 22f * s, 22f * s);
+        UiTheme.DrawFill(badge, locked ? new Color(0.08f, 0.08f, 0.08f, 0.72f) : new Color(pin.color.r, pin.color.g, pin.color.b, 0.76f));
+        GUIStyle badgeStyle = new GUIStyle(UiTheme.Small)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold,
+            clipping = TextClipping.Clip
+        };
+        badgeStyle.normal.textColor = UiTheme.Ink;
+        GUI.Label(badge, statusGlyph, badgeStyle);
+
+        DrawFactionPinLabel(pin, info, state, locked, selected, pos, mapRect, s);
+
+        if (GUI.Button(hit, GUIContent.none, GUIStyle.none))
+        {
+            selectionMode = SelectionMode.FactionPin;
+            selectedFactionId = pin.factionId;
+            selectedGroup = pin.group;
+            centerUv = pin.uv;
+            zoom = Mathf.Max(zoom, 1.45f);
+        }
+    }
+
+    private void DrawFactionPinLabel(WorldMapFactionPin pin, FactionConquestInfo info, FactionConquestState state,
+                                     bool locked, bool selected, Vector2 anchor, Rect mapRect, float s)
+    {
+        Vector2 offset = pin.labelOffset * s;
+        float width = 122f * s;
+        float height = 40f * s;
+        Rect tag = new Rect(anchor.x + offset.x, anchor.y + offset.y, width, height);
+        tag.x = Mathf.Clamp(tag.x, 8f * s, mapRect.width - tag.width - 8f * s);
+        tag.y = Mathf.Clamp(tag.y, 8f * s, mapRect.height - tag.height - 8f * s);
+
+        Vector2 edge = new Vector2(Mathf.Clamp(anchor.x, tag.x, tag.xMax), Mathf.Clamp(anchor.y, tag.y, tag.yMax));
+        DrawLine(anchor, edge, new Color(pin.color.r, pin.color.g, pin.color.b, locked ? 0.18f : 0.42f), locked ? 1.0f * s : 1.4f * s);
+        UiTheme.DrawFill(tag, locked ? new Color(0.12f, 0.12f, 0.10f, 0.54f) :
+                         selected ? new Color(1f, 0.96f, 0.78f, 0.88f) : new Color(1f, 0.955f, 0.810f, 0.78f));
+        UiTheme.DrawFill(new Rect(tag.x, tag.y, 3f * s, tag.height), new Color(pin.color.r, pin.color.g, pin.color.b, locked ? 0.36f : 0.82f));
+
+        GUIStyle nameStyle = new GUIStyle(UiTheme.Small)
+        {
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.UpperLeft,
+            clipping = TextClipping.Clip
+        };
+        nameStyle.normal.textColor = locked ? UiTheme.InkSoft : UiTheme.Navy;
+        GUIStyle detailStyle = new GUIStyle(UiTheme.SmallMuted) { clipping = TextClipping.Clip };
+
+        GUI.Label(new Rect(tag.x + 9f * s, tag.y + 4f * s, tag.width - 18f * s, 19f * s), pin.displayName, nameStyle);
+        GUI.Label(new Rect(tag.x + 9f * s, tag.y + 21f * s, tag.width - 18f * s, 17f * s),
+                  $"Lv{info.recommendedLevel} · {StateText(info, state)}", detailStyle);
+    }
+
     private void DrawNodes(Rect mapRect, float s)
     {
         for (int i = 0; i < Nodes.Length; i++)
@@ -303,6 +594,9 @@ public sealed class WorldMapController : MonoBehaviour
             if (GUI.Button(hit, GUIContent.none, GUIStyle.none))
             {
                 selectedNode = i;
+                selectionMode = SelectionMode.StoryNode;
+                selectedFactionId = null;
+                selectedGroup = WorldMapFactionGroup.Other;
                 centerUv = n.uv;
                 zoom = Mathf.Max(zoom, 1.28f);
             }
@@ -370,6 +664,163 @@ public sealed class WorldMapController : MonoBehaviour
         }
     }
 
+    private void FocusFactionGroup(WorldMapFactionGroupInfo group)
+    {
+        selectionMode = SelectionMode.FactionGroup;
+        selectedGroup = group.group;
+        selectedFactionId = null;
+        centerUv = group.centerUv;
+        zoom = Mathf.Max(zoom, 1.45f);
+    }
+
+    private static Vector2 GroupLabelOffset(WorldMapFactionGroup group)
+    {
+        switch (group)
+        {
+        case WorldMapFactionGroup.NineSects:
+            return new Vector2(-82f, -70f);
+        case WorldMapFactionGroup.FiveHouses:
+            return new Vector2(24f, -58f);
+        case WorldMapFactionGroup.DemonCult:
+            return new Vector2(28f, -58f);
+        default:
+            return new Vector2(20f, -52f);
+        }
+    }
+
+    private FactionConquestState GetConquestState(string factionId)
+    {
+        FactionConquestService service = new FactionConquestService(root != null ? root.Session : null);
+        return service.GetState(factionId);
+    }
+
+    private int CurrentArcIndex()
+    {
+        return CampaignArcCatalog.GetCurrent(root != null ? root.Session : null).index;
+    }
+
+    private bool IsPinLocked(FactionConquestInfo info, FactionConquestState state)
+    {
+        if (state != null && state.discovered)
+        {
+            return false;
+        }
+
+        CampaignArcInfo required = CampaignArcCatalog.GetById(info != null ? info.arcId : CampaignArcCatalog.Arc00Prologue);
+        return CurrentArcIndex() < required.index;
+    }
+
+    private bool ShouldShowFactionPin(WorldMapFactionPin pin, FactionConquestInfo info, FactionConquestState state)
+    {
+        bool selected = selectionMode != SelectionMode.StoryNode && selectedGroup == pin.group;
+        if (selected)
+        {
+            return true;
+        }
+
+        bool locked = IsPinLocked(info, state);
+        if (zoom >= 1.55f && !locked)
+        {
+            return true;
+        }
+
+        return zoom >= 1.75f;
+    }
+
+    private string FactionStateGlyph(FactionConquestInfo info, FactionConquestState state)
+    {
+        if (state != null && state.defeated)
+        {
+            return "完";
+        }
+
+        if (IsPinLocked(info, state))
+        {
+            return "鎖";
+        }
+
+        if (state != null && state.stage > 0)
+        {
+            return "戰";
+        }
+
+        if (state != null && state.hostility >= 50)
+        {
+            return "危";
+        }
+
+        if (state != null && state.discovered)
+        {
+            return "探";
+        }
+
+        return "?";
+    }
+
+    private string StateText(FactionConquestInfo info, FactionConquestState state)
+    {
+        if (state != null && state.defeated)
+        {
+            return "격파 완료";
+        }
+
+        if (IsPinLocked(info, state))
+        {
+            return "잠김";
+        }
+
+        if (state != null && state.stage > 0)
+        {
+            return $"진행 {Mathf.Clamp(state.stage, 0, 100)}%";
+        }
+
+        if (state != null && state.hostility >= 50)
+        {
+            return "위험";
+        }
+
+        if (state != null && state.discovered)
+        {
+            return "정찰 가능";
+        }
+
+        return "소문";
+    }
+
+    private void DrawMeter(float x, ref float y, float w, float s, string label, int value)
+    {
+        int clamped = Mathf.Clamp(value, 0, 100);
+        GUI.Label(new Rect(x, y, w * 0.24f, 24f * s), label, UiTheme.SmallMuted);
+        Rect bar = new Rect(x + w * 0.27f, y + 6f * s, w * 0.58f, 10f * s);
+        UiTheme.DrawFill(bar, new Color(0.020f, 0.028f, 0.026f, 0.86f));
+        UiTheme.DrawFill(new Rect(bar.x, bar.y, bar.width * (clamped / 100f), bar.height),
+                         new Color(UiTheme.Teal.r, UiTheme.Teal.g, UiTheme.Teal.b, 0.82f));
+        GUI.Label(new Rect(x + w * 0.87f, y, w * 0.13f, 24f * s), clamped.ToString(), UiTheme.SmallMuted);
+        y += 26f * s;
+    }
+
+    private string CurrentSelectionSummary()
+    {
+        if (selectionMode == SelectionMode.FactionPin && !string.IsNullOrEmpty(selectedFactionId))
+        {
+            WorldMapFactionPin pin = WorldMapFactionPinCatalog.GetByFactionId(selectedFactionId);
+            FactionConquestInfo info = FactionConquestCatalog.Get(pin.factionId);
+            FactionConquestState state = GetConquestState(pin.factionId);
+            return $"{pin.displayName} · {WorldMapFactionPinCatalog.GroupName(pin.group)} · {StateText(info, state)}";
+        }
+
+        if (selectionMode == SelectionMode.FactionGroup)
+        {
+            WorldMapFactionGroupInfo group = WorldMapFactionPinCatalog.GetGroupInfo(selectedGroup);
+            int total = WorldMapFactionPinCatalog.Count(group.group);
+            int defeated = WorldMapFactionPinCatalog.DefeatedCount(root != null ? root.Session : null, group.group);
+            return $"{group.displayName} · 격파 {defeated}/{total}";
+        }
+
+        MapNode node = Nodes[Mathf.Clamp(selectedNode, 0, Nodes.Length - 1)];
+        return $"{node.name} · {node.status}";
+    }
+
     private static Vector2 MapToLocal(Rect mapRect, Vector2 uv)
     {
         return new Vector2(mapRect.x + mapRect.width * uv.x, mapRect.y + mapRect.height * uv.y);
@@ -399,11 +850,25 @@ public sealed class WorldMapController : MonoBehaviour
         {
             zoom = MinZoom;
             centerUv = new Vector2(0.5f, 0.5f);
+            selectionMode = SelectionMode.StoryNode;
+            selectedFactionId = null;
+            selectedGroup = WorldMapFactionGroup.Other;
         }
         else
         {
             zoom = InitialZoom;
-            centerUv = Nodes[Mathf.Clamp(selectedNode, 0, Nodes.Length - 1)].uv;
+            if (selectionMode == SelectionMode.FactionPin && !string.IsNullOrEmpty(selectedFactionId))
+            {
+                centerUv = WorldMapFactionPinCatalog.GetByFactionId(selectedFactionId).uv;
+            }
+            else if (selectionMode == SelectionMode.FactionGroup)
+            {
+                centerUv = WorldMapFactionPinCatalog.GetGroupInfo(selectedGroup).centerUv;
+            }
+            else
+            {
+                centerUv = Nodes[Mathf.Clamp(selectedNode, 0, Nodes.Length - 1)].uv;
+            }
         }
     }
 

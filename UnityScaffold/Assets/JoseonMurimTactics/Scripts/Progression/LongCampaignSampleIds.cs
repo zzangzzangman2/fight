@@ -8,6 +8,12 @@ namespace JoseonMurimTactics
     {
         public const string BattleNineHuashanOuter = "BATTLE_NINE_HUASHAN_OUTER";
         public const string BattleNineWudangLeader = "BATTLE_NINE_WUDANG_LEADER";
+        public const string BattleNineKongtongMaster = "BATTLE_NINE_KONGTONG_MASTER";
+        public const string BattleHouseNamgungHead = "BATTLE_HOUSE_NAMGUNG_HEAD";
+        public const string BattleHouseTangHead = "BATTLE_HOUSE_TANG_HEAD";
+        public const string BattleHousePengHead = "BATTLE_HOUSE_PENG_HEAD";
+        public const string BattleHouseZhugeHead = "BATTLE_HOUSE_ZHUGE_HEAD";
+        public const string BattleHouseMoyongHead = "BATTLE_HOUSE_MOYONG_HEAD";
         public const string BattleDemonBlackAltar = "BATTLE_DEMON_BLACK_ALTAR";
         public const string BattleDemonCultLeader = "BATTLE_DEMON_CULT_LEADER";
 

@@ -173,7 +173,7 @@ public sealed class BattleTestController : MonoBehaviour
     private bool showSightOverlay;
     private bool showObjectiveOverlay;
     private bool showTerrainNames;
-    private bool showHudLog = true;
+    private bool showHudLog;
     private bool scoutMode;
     private string hudNotice;
     private float hudNoticeUntil;
@@ -1892,6 +1892,13 @@ public sealed class BattleTestController : MonoBehaviour
     public void HudToggleLog()
     {
         showHudLog = !showHudLog;
+    }
+
+    public void HudToggleObjective()
+    {
+        showObjectiveOverlay = !showObjectiveOverlay;
+        ShowHudNotice(showObjectiveOverlay ? "목표 표시" : "목표 접힘");
+        RefreshHighlights();
     }
 
     public void HudResetBattle()
