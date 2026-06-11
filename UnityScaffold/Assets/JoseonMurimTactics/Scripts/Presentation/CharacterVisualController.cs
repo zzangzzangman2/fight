@@ -1078,13 +1078,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         case CharacterBattleVisualState.Victory:
             return visual.victoryClip;
         case CharacterBattleVisualState.Wait:
-            return visual.waitClip;
+            return null;
         case CharacterBattleVisualState.TurnStart:
-            return visual.turnStartClip;
+            return null;
         default:
-            return visualState == CharacterBattleVisualState.SelectedIdle
-                       ? visual.selectedIdleClip
-                       : lowHpActive ? visual.lowHpClip : visual.idleClip;
+            return null;
         }
     }
 
@@ -1601,123 +1599,31 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             return null;
         }
 
-        float stateAge = Time.time - stateStartedAt;
-        float progress = stateDuration > 0f ? Mathf.Clamp01(stateAge / stateDuration) : 0f;
-        CharacterOutfitData outfit = ActiveOutfit();
-
         switch (visualState)
         {
         case CharacterBattleVisualState.SelectedIdle:
             return SelectIdleFallback();
         case CharacterBattleVisualState.Move:
-        {
-            // 걷기 프레임은 시간이 아니라 보폭 위상(발 디딤)에 동기화한다.
-            Sprite clipFrame = ClipSprite(visual.moveClip, stateAge, MoveStride01(stateAge), true);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
-            Sprite frame = FrameSprite(outfit != null ? outfit.moveFrames : null, visual.moveFrames,
-                                       MoveStride01(stateAge), true);
-            return frame != null ? frame : SelectMoveCycleSprite();
-        }
+            return MovePoseSprite() != null ? MovePoseSprite() : SelectIdleFallback();
         case CharacterBattleVisualState.Attack:
-        {
-            Sprite clipFrame = ClipSprite(visual.attackClip, stateAge, progress, false);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
-            Sprite frame = FrameSprite(outfit != null ? outfit.attackFrames : null, visual.attackFrames, progress,
-                                       false);
-            return frame != null ? frame : AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
-        }
-        case CharacterBattleVisualState.Skill:
-        {
-            Sprite clipFrame = ClipSprite(visual.skillClip, stateAge, progress, false);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
-            Sprite frame = FrameSprite(outfit != null ? outfit.skillFrames : null, visual.skillFrames, progress,
-                                       false);
-            if (frame == null)
-            {
-                frame = FrameSprite(outfit != null ? outfit.attackFrames : null, visual.attackFrames, progress, false);
-            }
-
-            return frame != null ? frame :
-                   SkillPoseSprite() != null ? SkillPoseSprite() :
-                   AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
-        }
-        case CharacterBattleVisualState.Hit:
-        {
-            Sprite clipFrame = ClipSprite(visual.hitClip, stateAge, progress, false);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
-            Sprite frame = FrameSprite(outfit != null ? outfit.hitFrames : null, visual.hitFrames, progress, false);
-            return frame != null ? frame : HitPoseSprite() != null ? HitPoseSprite() : SelectIdleFallback();
-        }
-        case CharacterBattleVisualState.Guard:
-        {
-            Sprite clipFrame = ClipSprite(visual.guardClip, stateAge, progress, false);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
             return AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
-        }
+        case CharacterBattleVisualState.Skill:
+            return SkillPoseSprite() != null ? SkillPoseSprite() :
+                   AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
+        case CharacterBattleVisualState.Hit:
+            return HitPoseSprite() != null ? HitPoseSprite() : SelectIdleFallback();
+        case CharacterBattleVisualState.Guard:
+            return AttackPoseSprite() != null ? AttackPoseSprite() : SelectIdleFallback();
         case CharacterBattleVisualState.Defeat:
-        {
-            Sprite clipFrame = ClipSprite(visual.defeatClip, stateAge, progress, false);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
             return DefeatedPoseSprite() != null ? DefeatedPoseSprite() : SelectIdleFallback();
-        }
         case CharacterBattleVisualState.Victory:
-        {
-            Sprite clipFrame = ClipSprite(visual.victoryClip, stateAge, progress, true);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
             return SkillPoseSprite() != null ? SkillPoseSprite() : SelectIdleFallback();
-        }
         case CharacterBattleVisualState.Wait:
-        {
-            Sprite clipFrame = ClipSprite(visual.waitClip, stateAge, progress, true);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
             return ActedPoseSprite() != null ? ActedPoseSprite() : SelectIdleFallback();
-        }
         case CharacterBattleVisualState.TurnStart:
             return SelectIdleFallback();
         default:
-        {
-            CharacterSpriteAnimationClipData clip = lowHpActive ? visual.lowHpClip : visual.idleClip;
-            Sprite clipFrame = ClipSprite(clip, stateAge, 0f, true);
-            if (clipFrame != null)
-            {
-                return clipFrame;
-            }
-
-            Sprite frame = IdleFrameSprite(outfit);
-            return frame != null ? frame : SelectIdleFallback();
-        }
+            return SelectIdleFallback();
         }
     }
 
@@ -1900,7 +1806,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
     private static bool CanUseLayeredSpritesForState(CharacterBattleVisualState state)
     {
-        return state == CharacterBattleVisualState.Idle;
+        return false;
     }
 
     private void SetBodySprite(Sprite sprite)
