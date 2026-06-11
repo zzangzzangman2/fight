@@ -25,6 +25,7 @@ public static class BattleTestSceneLauncher
         scene.name = "BattleTest";
 
         CreateCamera();
+        CreateLighting();
         CreateController();
 
         EditorSceneManager.MarkSceneDirty(scene);
@@ -44,6 +45,16 @@ public static class BattleTestSceneLauncher
         cameraObject.transform.position = new Vector3(1.1f, 4.2f, -10f);
         cameraObject.tag = "MainCamera";
         cameraObject.AddComponent<AudioListener>();
+    }
+
+    private static void CreateLighting()
+    {
+        GameObject lightObject = new GameObject("Battle Character Key Light");
+        Light light = lightObject.AddComponent<Light>();
+        light.type = LightType.Directional;
+        light.color = new Color(1f, 0.96f, 0.88f, 1f);
+        light.intensity = 1.15f;
+        lightObject.transform.rotation = Quaternion.Euler(42f, -32f, 0f);
     }
 
     private static void CreateController()
