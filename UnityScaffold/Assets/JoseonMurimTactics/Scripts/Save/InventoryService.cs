@@ -145,6 +145,12 @@ public sealed class InventoryService
             return "throwing_dagger_bundle";
         case "목재 묶음":
             return "wood_bundle";
+        case "철광석":
+            return "iron_ore";
+        case "질긴 천":
+            return "fine_cloth";
+        case "옥 조각":
+            return "jade_shard";
         case "무공 단서: 새벽일섬":
             return "skill_clue_dawn_flash";
         default:

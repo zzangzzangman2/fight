@@ -537,7 +537,7 @@ public sealed class HubController : MonoBehaviour
 
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "동료", UiTheme.Heading);
         float y = r.y + 48f * s;
-        float cardH = 126f * s;
+        float cardH = 144f * s;
         foreach (string id in root.Session.recruitedCompanionIds)
         {
             CompanionInfo info = CompanionCatalog.Info(id);
@@ -549,13 +549,25 @@ public sealed class HubController : MonoBehaviour
                       $"{info.name} · {info.title}", UiTheme.Body);
             GUI.Label(
                 new Rect(card.x + 16f * s, card.y + 42f * s, card.width - 180f * s, 26f * s),
-                $"{info.age}세 · {info.mbti} · {info.region} {info.sectName} · {info.element}/{info.weapon}   |   연애도 {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})",
+                $"{info.age}세 · {info.mbti} · {info.region} {info.sectName} · {info.element}/{info.weapon}   |   유대 {root.Approval.GetStageLabel(id)} ({root.Approval.Get(id)})",
                 UiTheme.SmallMuted);
             GUI.Label(new Rect(card.x + 16f * s, card.y + 68f * s, card.width - 180f * s, 24f * s),
                       "고민: " + CompanionConcern(id), UiTheme.SmallMuted);
             GUI.Label(new Rect(card.x + 16f * s, card.y + 92f * s, card.width - 180f * s, 24f * s),
                       $"다음 대화: {NextCompanionTalk(id)}   |   상태: {CompanionStatusText(id)}",
                       UiTheme.SmallMuted);
+
+            // 장비 요약(후속 지시 §9) — 장비가 적용된 상태인지 동료 목록에서 바로 보이게 한다.
+            string equipSummary = root.Equipment != null ? root.Equipment.Summary(id) : string.Empty;
+            GUIStyle equipStyle = new GUIStyle(UiTheme.SmallMuted);
+            if (!string.IsNullOrEmpty(equipSummary))
+            {
+                equipStyle.normal.textColor = UiTheme.GoldBright;
+            }
+
+            GUI.Label(new Rect(card.x + 16f * s, card.y + 116f * s, card.width - 180f * s, 24f * s),
+                      "장비: " + (string.IsNullOrEmpty(equipSummary) ? "없음 — ‘장비’ 메뉴에서 정비" : equipSummary),
+                      equipStyle);
             if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + 14f * s, 128f * s, 44f * s), "대화",
                            UiTheme.Button))
             {
@@ -603,22 +615,22 @@ public sealed class HubController : MonoBehaviour
             return;
         }
 
-        // 연애도 현황
+        // 유대 현황
         int approval = root.Approval.Get(companionId);
         Rect status = new Rect(r.x, r.y + 46f * s, r.width, 54f * s);
         UiTheme.DrawFill(status, new Color(0.030f, 0.040f, 0.038f, 0.85f));
-        Color rose = new Color(0.94f, 0.45f, 0.62f, 1f);
         GUIStyle gaugeTitle = new GUIStyle(UiTheme.Small) { fontStyle = FontStyle.Bold };
-        gaugeTitle.normal.textColor = rose;
+        gaugeTitle.normal.textColor = UiTheme.Teal;
         GUI.Label(new Rect(status.x + 14f * s, status.y + 6f * s, status.width * 0.4f, 24f * s),
-                  $"연애도 {approval}/100 · {root.Approval.GetStageLabel(companionId)}", gaugeTitle);
+                  $"유대 {approval}/100 · {root.Approval.GetStageLabel(companionId)}", gaugeTitle);
         bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(companionId);
         GUIStyle stateStyle = new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleRight };
         GUI.Label(new Rect(status.x + status.width * 0.5f, status.y + 6f * s, status.width * 0.5f - 14f * s, 24f * s),
                   giftedToday ? "오늘은 이미 선물을 건넸다" : "오늘 선물 가능", stateStyle);
         Rect barBg = new Rect(status.x + 14f * s, status.y + 34f * s, status.width - 28f * s, 10f * s);
         UiTheme.DrawFill(barBg, UiTheme.HanjiPanelAlt);
-        UiTheme.DrawFill(new Rect(barBg.x, barBg.y, barBg.width * Mathf.Clamp01(approval / 100f), barBg.height), rose);
+        UiTheme.DrawFill(new Rect(barBg.x, barBg.y, barBg.width * Mathf.Clamp01(approval / 100f), barBg.height),
+                         UiTheme.Teal);
 
         // 보유 선물 목록
         List<InventoryStack> gifts = new List<InventoryStack>();
@@ -658,13 +670,13 @@ public sealed class HubController : MonoBehaviour
                                         : new Color(0.030f, 0.040f, 0.038f, 0.75f));
             bool favorite = gift.IsFavoriteOf(companionId);
             UiTheme.DrawFill(new Rect(row.x, row.y, 4f * s, row.height),
-                             favorite ? rose : HubInventoryGrid.AccentFor(InventoryItemType.Gift));
+                             favorite ? UiTheme.GoldBright : HubInventoryGrid.AccentFor(InventoryItemType.Gift));
 
             GUI.Label(new Rect(row.x + 14f * s, row.y + 6f * s, row.width * 0.6f, 26f * s),
-                      favorite ? $"{gift.displayName}  <color=#F0709C>최애 선물 ◆</color>" : gift.displayName,
+                      favorite ? $"{gift.displayName}  <color=#F5C75C>최애 선물 ◆</color>" : gift.displayName,
                       UiTheme.Body);
             GUI.Label(new Rect(row.x + 14f * s, row.y + 32f * s, row.width - 220f * s, 24f * s),
-                      $"{gift.description}  (연애도 +{gift.DeltaFor(companionId)})", UiTheme.SmallMuted);
+                      $"{gift.description}  (유대 +{gift.DeltaFor(companionId)})", UiTheme.SmallMuted);
             GUIStyle countStyle = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleRight };
             GUI.Label(new Rect(row.xMax - 196f * s, row.y + 6f * s, 40f * s, 24f * s), "x" + stack.count, countStyle);
 
@@ -677,7 +689,7 @@ public sealed class HubController : MonoBehaviour
                 GiftResult result = root.Gifts.Give(companionId, gift.id);
                 if (result.success)
                 {
-                    ShowToast(result.wasFavorite ? $"최애 선물! 연애도 +{result.delta}" : $"연애도 +{result.delta}");
+                    ShowToast(result.wasFavorite ? $"최애 선물! 유대 +{result.delta}" : $"유대 +{result.delta}");
                     AddLog(result.message.Replace("\n", " "));
                 }
                 else
@@ -915,12 +927,12 @@ public sealed class HubController : MonoBehaviour
         {
         case 1:
             GUI.Label(new Rect(0f, y, w, 24f * s),
-                      "동료들의 마음을 여는 공략 선물. 하루 1회씩 건넬 수 있다.", UiTheme.SmallMuted);
+                      "선물을 주면 동료의 유대가 오른다. 동료당 하루 1회.", UiTheme.SmallMuted);
             y += 30f * s;
             foreach (GiftInfo gift in GiftCatalog.All)
             {
                 string favoriteTag = string.IsNullOrEmpty(gift.favoriteCompanionId)
-                                         ? $"범용 · 연애도 +{gift.baseDelta}"
+                                         ? $"범용 · 유대 +{gift.baseDelta}"
                                          : $"{CompanionCatalog.Name(gift.favoriteCompanionId)} 최애 +{gift.favoriteDelta}";
                 BuyRow(w, ref y, s, gift.id, gift.displayName, gift.price, $"{gift.description}  ({favoriteTag})");
             }

@@ -135,6 +135,7 @@ namespace JoseonMurimTactics
 
             d.rewardItems.Add("약재 꾸러미");
             d.rewardItems.Add("목재 묶음");
+            d.rewardItems.Add("철광석"); // 폐광 입구 — 무기 강화 재료 수급처(후속 지시 §6)
             d.rewardItems.Add("마을 감사패");
 
             d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +1));
@@ -162,6 +163,7 @@ namespace JoseonMurimTactics
                 "북쪽 늑대 굴 봉쇄",
                 "산양 젖",
                 "질긴 가죽",
+                "질긴 천", // 방어구 강화 재료 수급처(후속 지시 §6)
                 "마을 감사패");
         }
 
@@ -184,6 +186,7 @@ namespace JoseonMurimTactics
                 "동쪽 바위 선반 확보",
                 "호피 조각",
                 "응급 약재",
+                "옥 조각", // 장신구 강화 재료 수급처(후속 지시 §6)
                 "마을 감사패");
         }
 
@@ -206,6 +209,7 @@ namespace JoseonMurimTactics
                 "절벽 매복 피해 최소화",
                 "희귀 약초",
                 "표범 무늬 가죽",
+                "철광석", // 무기 강화 재료 보조 수급처(후속 지시 §6)
                 "마을 감사패");
         }
 

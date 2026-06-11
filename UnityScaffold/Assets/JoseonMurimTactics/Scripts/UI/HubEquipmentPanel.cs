@@ -6,7 +6,7 @@ namespace JoseonMurimTactics
 {
 /// <summary>
 /// 허브 "장비" 메뉴 — 캐릭터 정비창(설계 §D).
-/// 좌: 캐릭터 목록 / 중: 캐릭터 카드(상징색 인장 + 연애도) / 우: 장비 3칸 /
+/// 좌: 캐릭터 목록 / 중: 캐릭터 카드(상징색 인장 + 유대 게이지) / 우: 장비 3칸 /
 /// 하: 인벤토리 그리드(장비·선물·소모품·재료 탭) + 상세(장착/해제/강화/선물).
 /// HubController가 비대해지지 않도록 별도 패널 클래스로 분리한다.
 /// </summary>
@@ -212,11 +212,11 @@ public sealed class HubEquipmentPanel
 
         if (!isHero)
         {
-            // 연애도 게이지 — 히로인 공략 지표.
+            // 유대 게이지 — 동료와의 신뢰 지표(기본 시스템 표기는 유대, 후속 지시 §2).
             int approval = root.Approval.Get(selectedCharId);
             GUIStyle gaugeTitle = new GUIStyle(UiTheme.Small) { fontStyle = FontStyle.Bold };
-            gaugeTitle.normal.textColor = Rose;
-            GUI.Label(new Rect(inner.x, y, inner.width * 0.5f, 24f * s), "연애도", gaugeTitle);
+            gaugeTitle.normal.textColor = UiTheme.Teal;
+            GUI.Label(new Rect(inner.x, y, inner.width * 0.5f, 24f * s), "유대", gaugeTitle);
             GUIStyle stageStyle = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.UpperRight };
             GUI.Label(new Rect(inner.x + inner.width * 0.5f, y, inner.width * 0.5f, 24f * s),
                       $"{StageLabel(selectedCharId)} · {approval}/100", stageStyle);
@@ -225,15 +225,18 @@ public sealed class HubEquipmentPanel
             Rect barBg = new Rect(inner.x, y, inner.width, 12f * s);
             UiTheme.DrawFill(barBg, UiTheme.HanjiPanelAlt);
             UiTheme.DrawFill(new Rect(barBg.x, barBg.y, barBg.width * Mathf.Clamp01(approval / 100f), barBg.height),
-                             Rose);
-            DrawFrame(barBg, Mathf.Max(1f, 1f * s), new Color(Rose.r, Rose.g, Rose.b, 0.45f));
+                             UiTheme.Teal);
+            DrawFrame(barBg, Mathf.Max(1f, 1f * s),
+                      new Color(UiTheme.Teal.r, UiTheme.Teal.g, UiTheme.Teal.b, 0.45f));
             y += 20f * s;
 
             int pips = Mathf.Clamp(approval / 20, 0, 5);
             for (int i = 0; i < 5; i++)
             {
                 Vector2 c = new Vector2(inner.x + 10f * s + i * 24f * s, y + 8f * s);
-                DrawPip(c, 11f * s, i < pips ? Rose : new Color(Rose.r, Rose.g, Rose.b, 0.18f));
+                DrawPip(c, 11f * s,
+                        i < pips ? UiTheme.Teal
+                                 : new Color(UiTheme.Teal.r, UiTheme.Teal.g, UiTheme.Teal.b, 0.18f));
             }
 
             bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(selectedCharId);
@@ -538,7 +541,7 @@ public sealed class HubEquipmentPanel
         y += 44f * s;
 
         string favorite = string.IsNullOrEmpty(gift.favoriteCompanionId)
-                              ? $"모든 동료 연애도 +{gift.baseDelta}"
+                              ? $"모든 동료 유대 +{gift.baseDelta}"
                               : $"{CompanionCatalog.Name(gift.favoriteCompanionId)} 최애 +{gift.favoriteDelta} · 그 외 +{gift.baseDelta}";
         GUIStyle fav = new GUIStyle(UiTheme.Small) { fontStyle = FontStyle.Bold };
         fav.normal.textColor = Rose;
@@ -558,7 +561,7 @@ public sealed class HubEquipmentPanel
             GiftResult result = root.Gifts.Give(selectedCharId, gift.id);
             if (result.success)
             {
-                showToast(result.wasFavorite ? $"최애 선물! 연애도 +{result.delta}" : $"연애도 +{result.delta}");
+                showToast(result.wasFavorite ? $"최애 선물! 유대 +{result.delta}" : $"유대 +{result.delta}");
                 addLog(result.message.Replace("\n", " "));
             }
         }
@@ -599,7 +602,7 @@ public sealed class HubEquipmentPanel
         UiTheme.DrawFill(new Rect(rect.xMax - thick, rect.y, thick, rect.height), color);
     }
 
-    /// <summary>45도 회전한 마름모 핍(연애도/상징색 표시).</summary>
+    /// <summary>45도 회전한 마름모 핍(유대/상징색 표시).</summary>
     private static void DrawPip(Vector2 center, float size, Color color)
     {
         Matrix4x4 saved = GUI.matrix;

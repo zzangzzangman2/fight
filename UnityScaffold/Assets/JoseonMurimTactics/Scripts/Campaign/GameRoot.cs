@@ -122,6 +122,8 @@ public sealed class GameRoot : MonoBehaviour
     public void BeginNewSession()
     {
         BindSession(new GameSession());
+        // 시작 은냥(후속 지시 §6): 첫 허브 진입 때 장터에서 선물/초급 장비를 바로 살 수 있는 밑천.
+        Flags.SetInt("silver", 300);
     }
 
     public void LoadExistingSession(GameSession session)
