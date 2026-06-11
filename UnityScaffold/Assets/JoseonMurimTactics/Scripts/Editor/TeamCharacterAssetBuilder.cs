@@ -17,7 +17,6 @@ public static class TeamCharacterAssetBuilder
     private const string WeaponAssetFolder = Root + "/ScriptableObjects/Weapons";
     private const string UnitPrefabFolder = Root + "/Prefabs/Units";
     private const string EnemyCharacterRoot = CharacterRoot + "/Enemies";
-    private const string Character3DWuxiaVisualFolder = Root + "/Art/Characters3D/WuxiaVariants/VisualData";
     private const float PosePixelsPerUnit = 420f;
     private const float PortraitPixelsPerUnit = 420f;
     private const float IconPixelsPerUnit = 220f;
@@ -625,19 +624,7 @@ public static class TeamCharacterAssetBuilder
 
     private static CharacterVisualData GetBattleSceneVisual(string id)
     {
-        string visualPath = null;
-        if (id == "park_sungjun")
-        {
-            visualPath = Character3DWuxiaVisualFolder + "/park_sungjun_3d_navy_gold_visual.asset";
-        }
-        else if (id == "baek_ryeon")
-        {
-            visualPath = Character3DWuxiaVisualFolder + "/baek_ryeon_3d_snow_blue_visual.asset";
-        }
-
-        CharacterVisualData visual = string.IsNullOrEmpty(visualPath)
-                                         ? null : AssetDatabase.LoadAssetAtPath<CharacterVisualData>(visualPath);
-        return visual != null ? visual : GetVisual(id);
+        return GetVisual(id);
     }
 
     private static CharacterVisualData GetEnemyVisual(string id, string fallbackTeamId)

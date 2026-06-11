@@ -2,12 +2,6 @@ using UnityEngine;
 
 namespace JoseonMurimTactics
 {
-public enum CharacterBattleVisualMode
-{
-    Sprite2D,
-    Model3D
-}
-
 [CreateAssetMenu(menuName = "Joseon Murim Tactics/Character Visual Data")]
 public sealed class CharacterVisualData : ScriptableObject
 {
@@ -46,19 +40,6 @@ public sealed class CharacterVisualData : ScriptableObject
     public float heightInTiles = 1.18f;
     public Vector2 spriteOffset = new Vector2(0f, 0.12f);
     public int sortingOffset;
-
-    [Header("3D Battle Model")]
-    public CharacterBattleVisualMode battleVisualMode = CharacterBattleVisualMode.Sprite2D;
-    public GameObject modelPrefab;
-    public RuntimeAnimatorController modelAnimatorController;
-    public Vector3 modelLocalOffset = Vector3.zero;
-    public Vector3 modelLocalEuler = new Vector3(0f, 180f, 0f);
-    public float modelScale = 1f;
-    public float modelGroundY;
-    public float modelShadowWidth = 0.72f;
-    public float modelShadowHeight = 0.18f;
-    public bool modelFaceByYaw = true;
-    public bool modelKeepFeetOnGround = true;
 
     [Header("Presence")]
     public float idleAmplitude = 0.035f;

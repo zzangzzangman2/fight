@@ -3102,7 +3102,7 @@ public sealed class BattleTestController : MonoBehaviour
             unitObject.transform.SetParent(unitRoot, false);
             unitObject.transform.position = UnitWorldPosition(definition.startCell);
 
-            BattleUnitVisualAdapter visual = unitObject.AddComponent<BattleUnitVisualAdapter>();
+            CharacterVisualController visual = unitObject.AddComponent<CharacterVisualController>();
             visual.visual = definition.visual;
             visual.sortingLayerName = "Default";
             // Authored diorama floor rows occupy (rows - (x+y)) * 40 + [0..28]; base 1000 puts the
@@ -8386,7 +8386,7 @@ public sealed class BattleTestUnitView : MonoBehaviour
     private SpriteRenderer turnGroundRing;
     private SpriteRenderer hpBarBack;
     private SpriteRenderer hpBarFill;
-    private BattleUnitVisualAdapter visualController;
+    private CharacterVisualController visualController;
     private Vector3 turnMarkerBasePosition;
     private static Sprite turnMarkerChevronSprite;
     private static Sprite turnGroundRingSprite;
@@ -8394,30 +8394,20 @@ public sealed class BattleTestUnitView : MonoBehaviour
 
     public BattleTestUnit Unit { get; private set; }
 
-    public void Bind(BattleTestUnit unit, BattleUnitVisualAdapter controller)
+    public void Bind(BattleTestUnit unit, CharacterVisualController controller)
     {
         Unit = unit;
         visualController = controller;
         if (visualController != null)
         {
-            visualController.Bind(Unit == null || Unit.definition == null ? null : Unit.definition.visual, false);
+            visualController.visual = Unit == null || Unit.definition == null ? null : Unit.definition.visual;
+            visualController.ApplyVisual();
+            visualController.SetSelected(false);
         }
 
         CreateLabel();
         CreateTurnMarker();
         Refresh(false);
-    }
-
-    public void Bind(BattleTestUnit unit, CharacterVisualController controller)
-    {
-        BattleUnitVisualAdapter adapter = controller == null ? GetComponent<BattleUnitVisualAdapter>() : controller.GetComponent<BattleUnitVisualAdapter>();
-        if (adapter == null)
-        {
-            adapter = gameObject.AddComponent<BattleUnitVisualAdapter>();
-        }
-
-        adapter.BindExisting(controller, unit == null || unit.definition == null ? null : unit.definition.visual, false);
-        Bind(unit, adapter);
     }
 
     private void LateUpdate()
