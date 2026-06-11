@@ -29,7 +29,8 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private BattleTestController owner;
     private Canvas canvas;
-    private Font koreanFont;
+    private Font hudBoldFont;
+    private Font hudBodyFont;
 
     private Text phaseTitle;
     private Text phaseInstruction;
@@ -85,7 +86,8 @@ public sealed class BattleHUDController : MonoBehaviour
         owner = controller;
         EnsureEventSystem();
         UiTheme.EnsureStyles();
-        koreanFont = CreateHudFont();
+        hudBoldFont = CreateHudFont(true);
+        hudBodyFont = CreateHudFont(false);
         objectiveIntroUntil = Time.time + 1.35f;
         Build();
     }
@@ -163,6 +165,30 @@ public sealed class BattleHUDController : MonoBehaviour
             {
                 return true;
             }
+
+            if (result.gameObject.GetComponentInParent<ScrollRect>() != null ||
+                result.gameObject.GetComponentInParent<InputField>() != null ||
+                IsHudInputMarker(result.gameObject))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsHudInputMarker(GameObject gameObject)
+    {
+        Transform current = gameObject == null ? null : gameObject.transform;
+        while (current != null)
+        {
+            if (current.name.IndexOf("HudMarker", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                current.name.IndexOf("HudInputBlocker", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            current = current.parent;
         }
 
         return false;
@@ -183,39 +209,40 @@ public sealed class BattleHUDController : MonoBehaviour
         canvasObject.AddComponent<GraphicRaycaster>();
         RectTransform root = canvasObject.GetComponent<RectTransform>();
 
-        RectTransform phasePanel = PanelRect("TopPhaseRibbon", root, TopCenter(), new Vector2(560f, 58f),
-                                             new Vector2(0f, -18f), PanelStrong, true);
+        RectTransform phasePanel = PanelRect("TopPhaseRibbon", root, TopCenter(), new Vector2(620f, 64f),
+                                             new Vector2(0f, -18f), PanelStrong, true,
+                                             "ui_battle_panel_phase_ribbon_9slice");
         AddAccentLine("PhaseAccent", phasePanel, BottomLeft(), BottomRight(), new Vector2(16f, 6f),
                       new Vector2(-16f, 10f), LineGold);
         phaseTitle = MakeText("PhaseTitleText", phasePanel, StretchMin(), StretchMax(),
-                              new Vector2(20f, 22f), new Vector2(-20f, -6f), 22, FontStyle.Bold,
+                              new Vector2(24f, 25f), new Vector2(-24f, -6f), 24, FontStyle.Bold,
                               TextAnchor.MiddleCenter, TextMain);
         phaseInstruction = MakeText("PhaseInstructionText", phasePanel, StretchMin(), StretchMax(),
-                                    new Vector2(20f, 4f), new Vector2(-20f, -31f), 13, FontStyle.Bold,
+                                    new Vector2(24f, 5f), new Vector2(-24f, -36f), 14, FontStyle.Normal,
                                     TextAnchor.MiddleCenter, TextSub);
 
-        RectTransform objectiveButton = MakeButton("ObjectiveMiniButton", root, TopLeft(), new Vector2(108f, 34f),
+        RectTransform objectiveButton = MakeButton("ObjectiveMiniButton", root, TopLeft(), new Vector2(112f, 38f),
                                                    new Vector2(24f, -24f), () => owner.HudToggleObjective(),
                                                    out objectiveMiniLabel);
         objectiveMiniLabel.fontSize = 13;
         objectiveMiniLabel.text = "\uBAA9\uD45C O";
 
-        objectivePanel = PanelRect("ObjectiveExpandedPanel", root, TopLeft(), new Vector2(350f, 142f),
-                                   new Vector2(24f, -66f), PanelStrong, true);
+        objectivePanel = PanelRect("ObjectiveExpandedPanel", root, TopLeft(), new Vector2(370f, 172f),
+                                   new Vector2(24f, -72f), PanelStrong, true, "ui_scroll_frame");
         objectiveText = MakeText("ObjectiveText", objectivePanel, StretchMin(), StretchMax(),
-                                 new Vector2(16f, 12f), new Vector2(-16f, -12f), 14, FontStyle.Bold,
+                                 new Vector2(18f, 14f), new Vector2(-18f, -14f), 15, FontStyle.Normal,
                                  TextAnchor.UpperLeft, TextMain);
 
-        RectTransform helpButton = MakeButton("HelpMiniButton", root, TopRight(), new Vector2(104f, 34f),
+        RectTransform helpButton = MakeButton("HelpMiniButton", root, TopRight(), new Vector2(108f, 38f),
                                               new Vector2(-24f, -24f), () => helpVisible = !helpVisible,
                                               out Text helpMiniLabel);
         helpMiniLabel.fontSize = 13;
         helpMiniLabel.text = "F1 \uB3C4\uC6C0";
 
-        helpPanel = PanelRect("HelpOverlayPanel", root, TopRight(), new Vector2(332f, 230f),
-                              new Vector2(-24f, -66f), PanelStrong, true);
+        helpPanel = PanelRect("HelpOverlayPanel", root, TopRight(), new Vector2(350f, 248f),
+                              new Vector2(-24f, -72f), PanelStrong, true, "ui_tooltip_frame");
         helpText = MakeText("HelpText", helpPanel, StretchMin(), StretchMax(), new Vector2(16f, 14f),
-                            new Vector2(-16f, -14f), 13, FontStyle.Bold, TextAnchor.UpperLeft, TextMain);
+                            new Vector2(-16f, -14f), 14, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
         helpText.text =
             "\uC804\uD22C \uB3C4\uC6C0\uB9D0\n" +
             "1 \uC774\uB3D9   2 \uACF5\uACA9   3 \uBB34\uACF5\n" +
@@ -224,45 +251,45 @@ public sealed class BattleHUDController : MonoBehaviour
             "O \uBAA9\uD45C   L \uAE30\uB85D   Esc \uCDE8\uC18C";
         helpPanel.gameObject.SetActive(false);
 
-        selectedPromptCard = PanelRect("SelectedPromptCard", root, BottomLeft(), new Vector2(250f, 42f),
-                                       new Vector2(24f, 24f), Panel, true);
+        selectedPromptCard = PanelRect("SelectedPromptCard", root, BottomLeft(), new Vector2(276f, 48f),
+                                       new Vector2(24f, 24f), Panel, true, "ui_unit_status_card");
         MakeText("SelectedPromptText", selectedPromptCard, StretchMin(), StretchMax(),
                  new Vector2(14f, 0f), new Vector2(-14f, 0f), 14, FontStyle.Bold,
                  TextAnchor.MiddleCenter, TextSub).text = "\uD589\uB3D9\uD560 \uC544\uAD70 \uC120\uD0DD";
 
-        selectedUnitCard = PanelRect("SelectedUnitCard", root, BottomLeft(), new Vector2(378f, 108f),
-                                     new Vector2(24f, 24f), PanelStrong, true);
+        selectedUnitCard = PanelRect("SelectedUnitCard", root, BottomLeft(), new Vector2(390f, 118f),
+                                     new Vector2(24f, 24f), PanelStrong, true, "ui_unit_status_card");
         RectTransform portrait = PanelRect("PortraitFrame", selectedUnitCard, TopLeft(), new Vector2(66f, 66f),
-                                           new Vector2(14f, -16f), PanelSoft, true);
+                                           new Vector2(16f, -18f), PanelSoft, true, "ui_panel_gold_frame");
         selectedPortraitText = MakeText("PortraitGlyph", portrait, StretchMin(), StretchMax(),
                                         Vector2.zero, Vector2.zero, 26, FontStyle.Bold, TextAnchor.MiddleCenter,
                                         LineGold);
         selectedNameText = MakeText("SelectedNameText", selectedUnitCard, TopLeft(), TopRight(),
-                                    new Vector2(92f, -34f), new Vector2(-16f, -10f), 18, FontStyle.Bold,
+                                    new Vector2(96f, -36f), new Vector2(-18f, -10f), 19, FontStyle.Bold,
                                     TextAnchor.MiddleLeft, TextMain);
         selectedSectText = MakeText("SelectedSectText", selectedUnitCard, TopLeft(), TopRight(),
-                                    new Vector2(92f, -55f), new Vector2(-16f, -34f), 12, FontStyle.Bold,
+                                    new Vector2(96f, -59f), new Vector2(-18f, -36f), 13, FontStyle.Normal,
                                     TextAnchor.MiddleLeft, TextSub);
-        selectedHpFill = Gauge("SelectedHpGauge", selectedUnitCard, new Vector2(92f, -64f),
-                               new Vector2(222f, 9f), HpFill);
-        selectedInnerFill = Gauge("SelectedInnerGauge", selectedUnitCard, new Vector2(92f, -80f),
-                                  new Vector2(222f, 9f), InnerFill);
+        selectedHpFill = Gauge("SelectedHpGauge", selectedUnitCard, new Vector2(96f, -68f),
+                               new Vector2(230f, 11f), HpFill, "ui_hp_bar_bg", "ui_hp_bar_fill");
+        selectedInnerFill = Gauge("SelectedInnerGauge", selectedUnitCard, new Vector2(96f, -86f),
+                                  new Vector2(230f, 10f), InnerFill, "ui_inner_bar_bg", "ui_inner_bar_fill");
         selectedMoveText = MakeText("SelectedMoveText", selectedUnitCard, TopLeft(), TopRight(),
-                                    new Vector2(92f, -101f), new Vector2(-16f, -82f), 12, FontStyle.Bold,
+                                    new Vector2(96f, -111f), new Vector2(-18f, -91f), 13, FontStyle.Normal,
                                     TextAnchor.MiddleLeft, TextSub);
         selectedStatusText = MakeText("SelectedStatusText", selectedUnitCard, BottomLeft(), BottomRight(),
-                                      new Vector2(14f, 5f), new Vector2(-14f, 23f), 11, FontStyle.Bold,
+                                      new Vector2(16f, 6f), new Vector2(-16f, 25f), 12, FontStyle.Normal,
                                       TextAnchor.MiddleLeft, TextDim);
 
-        rosterPanel = PanelRect("RosterStrip", root, BottomCenter(), new Vector2(684f, 76f), new Vector2(0f, 18f),
-                                Panel, true);
+        rosterPanel = PanelRect("RosterStrip", root, BottomCenter(), new Vector2(720f, 82f), new Vector2(0f, 18f),
+                                Panel, true, "ui_turn_order_card");
 
-        commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(448f, 108f),
-                                 new Vector2(-24f, 24f), PanelStrong, true);
+        commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(536f, 166f),
+                                 new Vector2(-24f, 24f), PanelStrong, true, "ui_battle_command_panel");
         BuildCommandButtons();
 
-        forecastPanel = PanelRect("ForecastCard", root, BottomCenter(), new Vector2(650f, 120f),
-                                  new Vector2(0f, 112f), PanelStrong, true);
+        forecastPanel = PanelRect("ForecastCard", root, BottomCenter(), new Vector2(720f, 144f),
+                                  new Vector2(0f, 112f), PanelStrong, true, "ui_battle_forecast_panel");
         forecastTitle = MakeText("ForecastTitle", forecastPanel, TopLeft(), TopRight(),
                                  new Vector2(18f, -30f), new Vector2(-18f, -8f), 15, FontStyle.Bold,
                                  TextAnchor.MiddleCenter, LineGold);
@@ -277,32 +304,32 @@ public sealed class BattleHUDController : MonoBehaviour
                                  TextAnchor.UpperRight, TextMain);
 
         hoverPanel = PanelRect("HoverTooltip", root, BottomLeft(), new Vector2(300f, 96f), Vector2.zero,
-                               PanelStrong, true);
+                               PanelStrong, true, "ui_tooltip_frame");
         hoverPanel.pivot = new Vector2(0f, 1f);
         hoverTitle = MakeText("HoverTitle", hoverPanel, TopLeft(), TopRight(),
                               new Vector2(14f, -30f), new Vector2(-14f, -8f), 14, FontStyle.Bold,
                               TextAnchor.MiddleLeft, LineGold);
         hoverBody = MakeText("HoverBody", hoverPanel, StretchMin(), StretchMax(), new Vector2(14f, 10f),
-                             new Vector2(-14f, -34f), 12, FontStyle.Bold, TextAnchor.UpperLeft, TextMain);
+                             new Vector2(-14f, -34f), 12, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
 
-        MakeButton("LogMiniButton", root, BottomRight(), new Vector2(92f, 30f), new Vector2(-24f, 96f),
+        MakeButton("LogMiniButton", root, BottomRight(), new Vector2(92f, 32f), new Vector2(-24f, 204f),
                    () => owner.HudToggleLog(), out logMiniLabel).gameObject.SetActive(true);
         logMiniLabel.fontSize = 12;
         logMiniLabel.text = "\uAE30\uB85D L";
 
         logToastPanel = PanelRect("LogToast", root, BottomRight(), new Vector2(372f, 44f), new Vector2(-24f, 144f),
-                                  PanelStrong, true);
+                                  PanelStrong, true, "ui_toast_frame");
         logToastText = MakeText("LogToastText", logToastPanel, StretchMin(), StretchMax(),
-                                new Vector2(14f, 0f), new Vector2(-14f, 0f), 13, FontStyle.Bold,
+                                new Vector2(14f, 0f), new Vector2(-14f, 0f), 13, FontStyle.Normal,
                                 TextAnchor.MiddleLeft, TextMain);
 
         logPanel = PanelRect("ExpandedLogPanel", root, RightCenter(), new Vector2(380f, 350f), new Vector2(-24f, 0f),
-                             PanelStrong, true);
+                             PanelStrong, true, "ui_scroll_frame");
         logText = MakeText("LogText", logPanel, StretchMin(), StretchMax(), new Vector2(16f, 16f),
-                           new Vector2(-16f, -16f), 13, FontStyle.Bold, TextAnchor.UpperLeft, TextMain);
+                           new Vector2(-16f, -16f), 13, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
 
         noticePanel = PanelRect("BattleNoticeToast", root, Center(), new Vector2(430f, 92f), new Vector2(0f, 120f),
-                                PanelStrong, true);
+                                PanelStrong, true, "ui_toast_frame");
         noticeText = MakeText("BattleNoticeText", noticePanel, StretchMin(), StretchMax(),
                               new Vector2(16f, 8f), new Vector2(-16f, -8f), 22, FontStyle.Bold,
                               TextAnchor.MiddleCenter, LineGold);
@@ -317,33 +344,42 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private void BuildCommandButtons()
     {
-        AddCommandButton(0, "\uC774\uB3D9", "\u2197", () => owner.HudSetCommand(BattleCommandMode.Move));
-        AddCommandButton(1, "\uACF5\uACA9", "\u528D", () => owner.HudSetCommand(BattleCommandMode.Attack));
-        AddCommandButton(2, "\uBB34\uACF5", "\u6B66", () => owner.HudSetCommand(BattleCommandMode.Skill));
-        AddCommandButton(3, "\uBC29\uC5B4", "\u76FE", () => owner.HudGuard());
-        AddCommandButton(4, "\uC9C0\uD615", "\u5730", () => owner.HudSetCommand(BattleCommandMode.Interact));
-        AddCommandButton(5, "\uB300\uAE30", "\u5F85", () => owner.HudWait());
+        AddCommandButton(0, "\uC774\uB3D9", "1", "ui_btn_move", () => owner.HudSetCommand(BattleCommandMode.Move));
+        AddCommandButton(1, "\uACF5\uACA9", "2", "ui_btn_attack", () => owner.HudSetCommand(BattleCommandMode.Attack));
+        AddCommandButton(2, "\uBB34\uACF5", "3", "ui_btn_skill", () => owner.HudSetCommand(BattleCommandMode.Skill));
+        AddCommandButton(3, "\uBC29\uC5B4", "4", "ui_btn_guard", () => owner.HudGuard());
+        AddCommandButton(4, "\uC9C0\uD615", "5", "ui_btn_terrain_action", () => owner.HudSetCommand(BattleCommandMode.Interact));
+        AddCommandButton(5, "\uB300\uAE30", "Space", "ui_btn_wait", () => owner.HudWait());
     }
 
-    private void AddCommandButton(int index, string label, string glyph, Action action)
+    private void AddCommandButton(int index, string label, string shortcut, string iconSprite, Action action)
     {
         int column = index % 3;
         int row = index / 3;
         RectTransform buttonRect = MakeButton("CommandButton_" + index, commandPanel, TopLeft(),
-                                              new Vector2(128f, 38f),
-                                              new Vector2(20f + column * 136f, -18f - row * 46f), action,
+                                              new Vector2(154f, 64f),
+                                              new Vector2(22f + column * 168f, -22f - row * 76f), action,
                                               out Text text);
         text.text = label;
-        text.fontSize = 14;
+        text.fontSize = 15;
         text.alignment = TextAnchor.MiddleLeft;
         RectTransform labelRect = text.rectTransform;
-        labelRect.offsetMin = new Vector2(44f, 0f);
-        labelRect.offsetMax = new Vector2(-8f, 0f);
+        labelRect.offsetMin = new Vector2(58f, 14f);
+        labelRect.offsetMax = new Vector2(-10f, -4f);
 
-        Text icon = MakeText("CommandGlyph_" + index, buttonRect, StretchMin(), StretchMax(),
-                             new Vector2(10f, 0f), new Vector2(-82f, 0f), 20, FontStyle.Bold,
-                             TextAnchor.MiddleCenter, LineGold);
-        icon.text = glyph;
+        Image icon = SolidImage("CommandIcon_" + index, buttonRect, TopLeft(), TopLeft(),
+                                new Vector2(12f, -52f), new Vector2(52f, -12f), Color.clear);
+        ApplySpriteOrColor(icon, iconSprite, Color.clear, false);
+
+        Text badge = MakeText("CommandShortcut_" + index, buttonRect, TopRight(), TopRight(),
+                              new Vector2(-52f, -24f), new Vector2(-10f, -6f), 11, FontStyle.Bold,
+                              TextAnchor.MiddleRight, TextSub);
+        badge.text = shortcut;
+
+        Text hint = MakeText("CommandHint_" + index, buttonRect, BottomLeft(), BottomRight(),
+                             new Vector2(58f, 8f), new Vector2(-10f, 22f), 10, FontStyle.Normal,
+                             TextAnchor.MiddleLeft, TextDim);
+        hint.text = "\uC804\uC220";
 
         Image activeFrame = SolidImage("CommandActiveFrame_" + index, buttonRect, StretchMin(), StretchMax(),
                                        Vector2.zero, Vector2.zero, new Color(LineGold.r, LineGold.g, LineGold.b, 0.10f));
@@ -356,8 +392,8 @@ public sealed class BattleHUDController : MonoBehaviour
         disabledOverlay.gameObject.SetActive(false);
 
         commandViews.Add(new CommandButtonView(buttonRect, buttonRect.GetComponent<Button>(),
-                                               buttonRect.GetComponent<Image>(), icon, activeFrame,
-                                               disabledOverlay, text));
+                                               buttonRect.GetComponent<Image>(), icon, badge, hint,
+                                               activeFrame, disabledOverlay, text));
     }
 
     private void UpdateSelectedUnit(BattleHudSnapshot snapshot)
@@ -426,7 +462,9 @@ public sealed class BattleHUDController : MonoBehaviour
         view.background.color = enabled ? (activeEnabled ? ButtonActive : Button) : ButtonDisabled;
         view.label.text = label;
         view.label.color = enabled ? TextMain : TextDim;
-        view.icon.color = enabled ? (activeEnabled ? LineGold : TextSub) : TextDim;
+        view.icon.color = enabled ? (activeEnabled ? Color.white : new Color(0.82f, 0.86f, 0.82f, 0.95f)) : TextDim;
+        view.shortcut.color = enabled ? (activeEnabled ? LineGold : TextSub) : TextDim;
+        view.hint.color = enabled ? TextDim : new Color(TextDim.r, TextDim.g, TextDim.b, 0.42f);
         view.activeFrame.gameObject.SetActive(activeEnabled);
         view.disabledOverlay.gameObject.SetActive(!enabled);
     }
@@ -514,9 +552,10 @@ public sealed class BattleHUDController : MonoBehaviour
         Text detail = MakeText("RosterDetail_" + index, buttonRect, TopLeft(), TopRight(),
                                new Vector2(54f, -21f), new Vector2(-8f, -3f), 11, FontStyle.Bold,
                                TextAnchor.MiddleRight, TextSub);
-        Image hpFill = Gauge("RosterHp_" + index, buttonRect, new Vector2(8f, -30f), new Vector2(82f, 6f), HpFill);
+        Image hpFill = Gauge("RosterHp_" + index, buttonRect, new Vector2(8f, -30f), new Vector2(82f, 6f),
+                             HpFill, "ui_hp_bar_bg", "ui_hp_bar_fill");
         Image innerFill = Gauge("RosterInner_" + index, buttonRect, new Vector2(8f, -42f), new Vector2(82f, 5f),
-                                InnerFill);
+                                InnerFill, "ui_inner_bar_bg", "ui_inner_bar_fill");
         Text badge = MakeText("RosterBadge_" + index, buttonRect, StretchMin(), StretchMax(), Vector2.zero, Vector2.zero,
                               18, FontStyle.Bold, TextAnchor.MiddleCenter, LineGold);
         badge.gameObject.SetActive(false);
@@ -601,7 +640,7 @@ public sealed class BattleHUDController : MonoBehaviour
     }
 
     private RectTransform PanelRect(string name, Transform parent, Vector2 anchor, Vector2 size,
-                                    Vector2 anchoredPosition, Color color, bool border)
+                                    Vector2 anchoredPosition, Color color, bool border, string spriteId = null)
     {
         GameObject panelObject = new GameObject(name);
         panelObject.transform.SetParent(parent, false);
@@ -613,8 +652,8 @@ public sealed class BattleHUDController : MonoBehaviour
         rect.anchoredPosition = anchoredPosition;
 
         Image image = panelObject.AddComponent<Image>();
-        image.color = color;
         image.raycastTarget = false;
+        ApplySpriteOrColor(image, spriteId, color, true);
         if (border)
         {
             AddBorder(panelObject, new Color(LineGold.r, LineGold.g, LineGold.b, 0.24f), new Vector2(1f, -1f));
@@ -635,13 +674,19 @@ public sealed class BattleHUDController : MonoBehaviour
         rect.offsetMax = offsetMax;
 
         Text text = textObject.AddComponent<Text>();
-        text.font = koreanFont;
+        text.font = style == FontStyle.Bold ? (hudBoldFont != null ? hudBoldFont : hudBodyFont) :
+                    (hudBodyFont != null ? hudBodyFont : hudBoldFont);
+        if (text.font == null)
+        {
+            text.font = UiTheme.Font;
+        }
+
         text.fontSize = size;
         text.fontStyle = style;
         text.alignment = alignment;
         text.color = color;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Truncate;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
         text.raycastTarget = false;
         text.supportRichText = true;
 
@@ -664,19 +709,13 @@ public sealed class BattleHUDController : MonoBehaviour
         rect.anchoredPosition = anchoredPosition;
 
         Image image = buttonObject.AddComponent<Image>();
-        image.color = Button;
         image.raycastTarget = true;
+        ApplySpriteOrColor(image, "ui_battle_button_normal_9slice", Button, true);
         AddBorder(buttonObject, new Color(LineGold.r, LineGold.g, LineGold.b, 0.20f), new Vector2(1f, -1f));
 
         Button button = buttonObject.AddComponent<Button>();
-        button.transition = Selectable.Transition.ColorTint;
-        ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(1f, 1f, 1f, 1.15f);
-        colors.pressedColor = new Color(0.84f, 0.78f, 0.64f, 1f);
-        colors.disabledColor = new Color(1f, 1f, 1f, 0.55f);
-        colors.colorMultiplier = 1f;
-        button.colors = colors;
+        button.targetGraphic = image;
+        ConfigureButtonSpriteState(button);
         if (action != null)
         {
             button.onClick.AddListener(() => action());
@@ -687,9 +726,11 @@ public sealed class BattleHUDController : MonoBehaviour
         return rect;
     }
 
-    private Image Gauge(string name, Transform parent, Vector2 anchoredPosition, Vector2 size, Color fillColor)
+    private Image Gauge(string name, Transform parent, Vector2 anchoredPosition, Vector2 size, Color fillColor,
+                        string backgroundSpriteId = null, string fillSpriteId = null)
     {
-        RectTransform bg = PanelRect(name + "_Bg", parent, TopLeft(), size, anchoredPosition, GaugeBg, true);
+        RectTransform bg = PanelRect(name + "_Bg", parent, TopLeft(), size, anchoredPosition, GaugeBg, true,
+                                     backgroundSpriteId);
         foreach (Outline outline in bg.GetComponents<Outline>())
         {
             Destroy(outline);
@@ -703,7 +744,7 @@ public sealed class BattleHUDController : MonoBehaviour
         fillRect.offsetMin = new Vector2(1f, 1f);
         fillRect.offsetMax = new Vector2(-1f, -1f);
         Image fill = fillObject.AddComponent<Image>();
-        fill.color = fillColor;
+        ApplySpriteOrColor(fill, fillSpriteId, fillColor, true);
         fill.type = Image.Type.Filled;
         fill.fillMethod = Image.FillMethod.Horizontal;
         fill.raycastTarget = false;
@@ -734,6 +775,63 @@ public sealed class BattleHUDController : MonoBehaviour
         image.color = color;
         image.raycastTarget = false;
         return image;
+    }
+
+    private static void ApplySpriteOrColor(Image image, string spriteId, Color fallbackColor, bool allowSliced)
+    {
+        if (image == null)
+        {
+            return;
+        }
+
+        Sprite sprite = string.IsNullOrEmpty(spriteId) ? null : BattleHudAssetRegistry.LoadSprite(spriteId);
+        if (sprite == null)
+        {
+            image.sprite = null;
+            image.type = Image.Type.Simple;
+            image.color = fallbackColor;
+            return;
+        }
+
+        image.sprite = sprite;
+        image.type = allowSliced && HasBorder(sprite) ? Image.Type.Sliced : Image.Type.Simple;
+        image.color = Color.white;
+    }
+
+    private static void ConfigureButtonSpriteState(Button button)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        Sprite highlighted = BattleHudAssetRegistry.LoadSprite("ui_battle_button_hover_9slice");
+        Sprite pressed = BattleHudAssetRegistry.LoadSprite("ui_battle_button_pressed_9slice");
+        Sprite disabled = BattleHudAssetRegistry.LoadSprite("ui_battle_button_disabled_9slice");
+        if (highlighted != null || pressed != null || disabled != null)
+        {
+            button.transition = Selectable.Transition.SpriteSwap;
+            SpriteState state = button.spriteState;
+            state.highlightedSprite = highlighted;
+            state.pressedSprite = pressed;
+            state.disabledSprite = disabled;
+            button.spriteState = state;
+            return;
+        }
+
+        button.transition = Selectable.Transition.ColorTint;
+        ColorBlock colors = button.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(1f, 1f, 1f, 1.12f);
+        colors.pressedColor = new Color(0.84f, 0.78f, 0.64f, 1f);
+        colors.disabledColor = new Color(1f, 1f, 1f, 0.55f);
+        colors.colorMultiplier = 1f;
+        button.colors = colors;
+    }
+
+    private static bool HasBorder(Sprite sprite)
+    {
+        return sprite != null && sprite.border != Vector4.zero;
     }
 
     private static void AddAccentLine(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax,
@@ -863,12 +961,22 @@ public sealed class BattleHUDController : MonoBehaviour
         return string.IsNullOrEmpty(name) ? "?" : name.Substring(0, 1);
     }
 
-    private static Font CreateHudFont()
+    private static Font CreateHudFont(bool bold)
     {
+        string primary = bold ? "Fonts/MaplestoryOTFBold" : "Fonts/MaplestoryOTFLight";
+        Font primaryFont = Resources.Load<Font>(primary);
+        if (primaryFont != null)
+        {
+            return primaryFont;
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.LogWarning("[BattleHUDController] Missing required HUD font resource: " + primary);
+#endif
+
         string[] resourceFonts =
         {
-            "Fonts/MaplestoryOTFBold",
-            "Fonts/MaplestoryOTFLight",
+            bold ? "Fonts/MaplestoryOTFLight" : "Fonts/MaplestoryOTFBold",
             "Fonts/MapleStory",
             "Fonts/Maplestory"
         };
@@ -1010,18 +1118,22 @@ public sealed class BattleHUDController : MonoBehaviour
         public readonly RectTransform root;
         public readonly Button button;
         public readonly Image background;
-        public readonly Text icon;
+        public readonly Image icon;
+        public readonly Text shortcut;
+        public readonly Text hint;
         public readonly Image activeFrame;
         public readonly Image disabledOverlay;
         public readonly Text label;
 
-        public CommandButtonView(RectTransform root, Button button, Image background, Text icon,
-                                 Image activeFrame, Image disabledOverlay, Text label)
+        public CommandButtonView(RectTransform root, Button button, Image background, Image icon, Text shortcut,
+                                 Text hint, Image activeFrame, Image disabledOverlay, Text label)
         {
             this.root = root;
             this.button = button;
             this.background = background;
             this.icon = icon;
+            this.shortcut = shortcut;
+            this.hint = hint;
             this.activeFrame = activeFrame;
             this.disabledOverlay = disabledOverlay;
             this.label = label;

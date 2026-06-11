@@ -408,6 +408,7 @@ public sealed class BattleTestController : MonoBehaviour
     private void LateUpdate()
     {
         RefreshTileNameVisibility();
+        DestroyLegacyCanvasHud();
         RefreshBattleHud();
     }
 
