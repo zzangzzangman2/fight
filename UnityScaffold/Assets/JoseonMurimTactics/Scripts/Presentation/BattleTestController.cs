@@ -1523,6 +1523,35 @@ public sealed class BattleTestController : MonoBehaviour
         return result.ToArray();
     }
 
+    private static BattleTestUnitDefinition[] BuildSeorakPassRescueUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
+    {
+        List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
+        AddNamedAlly(result, baseDefinitions, "park_sungjun", new Vector2Int(6, 1));
+        AddNamedAlly(result, baseDefinitions, "baek_ryeon", new Vector2Int(7, 2));
+
+        BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "bandit_guard_1") ??
+                                        FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
+                                        FindFirstDefinition(baseDefinitions, Faction.Enemy);
+        BattleTestUnitDefinition scout = FindDefinition(baseDefinitions, "bandit_scout_1") ?? guard;
+        BattleTestUnitDefinition captain = FindDefinition(baseDefinitions, "bandit_captain") ??
+                                           FindDefinition(baseDefinitions, "iron_wolf_captain") ?? guard;
+
+        result.Add(BanditUnit(guard, "seorak_bandit_blade_1", "철비채 도객", new Vector2Int(4, 7),
+                              "철비채", "눈먼 탐욕", "도", 22, 2, 13, 14, 4, 1, 5, 12, 4, 7, "길목 베기",
+                              1, 1, 2, 3, 1, BattleSpecialEffect.Strike));
+        result.Add(BanditUnit(scout, "seorak_bandit_archer_1", "철비채 궁수", new Vector2Int(10, 6),
+                              "철비채", "매복", "각궁", 18, 2, 15, 16, 4, 3, 4, 11, 3, 6, "수레 노리기",
+                              3, 1, 2, 0, 0, BattleSpecialEffect.Mark));
+        result.Add(BanditUnit(guard, "seorak_bandit_axe_1", "철비채 도끼병", new Vector2Int(12, 7),
+                              "철비채", "완력", "도끼", 26, 2, 11, 12, 3, 1, 6, 14, 5, 9, "수레 내려찍기",
+                              1, 1, 2, 4, 1, BattleSpecialEffect.BreakGuard));
+        result.Add(BanditUnit(captain, "seorak_bandit_boss_yudalgeun", "철비채 두목 유달근",
+                              new Vector2Int(13, 8), "철비채", "협박", "대도", 34, 3, 12, 13, 4, 1, 7,
+                              15, 6, 10, "목숨값 흥정", 1, 1, 2, 4, 2, BattleSpecialEffect.BreakGuard));
+
+        return result.ToArray();
+    }
+
     private static void AddFreeTimeAllies(List<BattleTestUnitDefinition> result, BattleTestUnitDefinition[] baseDefinitions,
                                           Vector2Int[] allyCells)
     {
@@ -1544,6 +1573,20 @@ public sealed class BattleTestController : MonoBehaviour
             result.Add(ally);
             allyIndex++;
         }
+    }
+
+    private static void AddNamedAlly(List<BattleTestUnitDefinition> result, BattleTestUnitDefinition[] baseDefinitions,
+                                     string id, Vector2Int cell)
+    {
+        BattleTestUnitDefinition definition = FindDefinition(baseDefinitions, id);
+        if (definition == null || definition.faction != Faction.Ally)
+        {
+            return;
+        }
+
+        BattleTestUnitDefinition ally = CloneUnitDefinition(definition);
+        ally.startCell = cell;
+        result.Add(ally);
     }
 
     private static BattleTestUnitDefinition BanditUnit(BattleTestUnitDefinition template, string id, string displayName,
@@ -1871,6 +1914,10 @@ public sealed class BattleTestController : MonoBehaviour
         if (mapVariant == BattleTestMapVariant.LeopardCliff)
         {
             return $"{MapDisplayName}\n주 목표: 그림자 표범 격퇴 / 약초길 개방\n보조: 밧줄다리 병목, 절벽 매복 회피, 약초 선반 확보\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
+        }
+        if (mapVariant == BattleTestMapVariant.SeorakPassRescue)
+        {
+            return $"{MapDisplayName}\n주 목표: 유달근 격파 / 약초 수레와 피난민 보호\n보조: 백련과 협공, 밧줄다리 병목, 대나무 덤불 엄폐\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
         }
 
         return $"{MapDisplayName}\n주 목표: 관문 정찰조장 제압\n보조: 협로 엄폐, 고저차, 지형 상호작용 활용\n단축: S 정찰 / Tab 위협 / H 고저 / C 엄폐 / V 시야 / O 목표";
@@ -2420,6 +2467,12 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (mapVariant == BattleTestMapVariant.SeorakPassRescue)
+        {
+            CreateSeorakPassRescueInteractables(propRoot);
+            return;
+        }
+
         AddInteractable(propRoot, "signboard", "백두천광 현판", BattleTestInteractableKind.Objective,
                         new Vector2Int(7, 10), new Color(0.92f, 0.76f, 0.34f, 1f));
         AddInteractable(propRoot, "incense", "제단 향로", BattleTestInteractableKind.Smoke, new Vector2Int(7, 9),
@@ -2531,6 +2584,22 @@ public sealed class BattleTestController : MonoBehaviour
                         new Vector2Int(12, 7), new Color(0.50f, 0.46f, 0.39f, 1f));
         AddInteractable(propRoot, "smoke", "절벽 안개", BattleTestInteractableKind.Smoke,
                         new Vector2Int(5, 8), new Color(0.54f, 0.60f, 0.56f, 1f));
+    }
+
+    private void CreateSeorakPassRescueInteractables(Transform propRoot)
+    {
+        AddInteractable(propRoot, "wine_cart", "약초 수레와 피난민", BattleTestInteractableKind.Objective,
+                        new Vector2Int(14, 8), new Color(0.86f, 0.74f, 0.42f, 1f));
+        AddInteractable(propRoot, "bridge_rope", "설운령 밧줄다리", BattleTestInteractableKind.CollapseBridge,
+                        new Vector2Int(8, 5), new Color(0.42f, 0.28f, 0.16f, 1f));
+        AddInteractable(propRoot, "bamboo_bundle", "눈 젖은 대나무 덤불", BattleTestInteractableKind.BambooFall,
+                        new Vector2Int(4, 7), new Color(0.18f, 0.48f, 0.32f, 1f));
+        AddInteractable(propRoot, "fallen_wall", "수레 길 바위 엄폐", BattleTestInteractableKind.Cover,
+                        new Vector2Int(10, 6), new Color(0.50f, 0.46f, 0.38f, 1f));
+        AddInteractable(propRoot, "stone_lantern", "흔들리는 선반 바위", BattleTestInteractableKind.Rockfall,
+                        new Vector2Int(12, 7), new Color(0.55f, 0.52f, 0.45f, 1f));
+        AddInteractable(propRoot, "smoke", "서리 안개", BattleTestInteractableKind.Smoke,
+                        new Vector2Int(5, 8), new Color(0.56f, 0.64f, 0.66f, 1f));
     }
 
     private void AddInteractable(Transform parent, string id, string displayName, BattleTestInteractableKind kind,
@@ -4815,6 +4884,8 @@ public sealed class BattleTestController : MonoBehaviour
             return "[목표] 갇힌 주민입니다. 산군을 떼어내고 바위 선반 길을 열어 구조하세요.";
         case BattleTestMapVariant.LeopardCliff:
             return "[목표] 약초꾼 호송 지점입니다. 표범 매복을 정리한 뒤 지나갈 수 있습니다.";
+        case BattleTestMapVariant.SeorakPassRescue:
+            return "[목표] 약초 수레와 피난민입니다. 유달근을 묶어두고 수레 주변 전열을 유지하세요.";
         default:
             return "[목표] 현판은 지켜야 합니다. 적이 닿기 전에 병목을 막으세요.";
         }
@@ -7348,6 +7419,8 @@ public sealed class BattleTestController : MonoBehaviour
             return ResolveTigerRavineTerrain(x, y);
         case BattleTestMapVariant.LeopardCliff:
             return ResolveLeopardCliffTerrain(x, y);
+        case BattleTestMapVariant.SeorakPassRescue:
+            return ResolveLeopardCliffTerrain(x, y);
         default:
             return ResolveBaekduSnowGateTerrain(x, y);
         }
@@ -8881,7 +8954,8 @@ public enum BattleTestMapVariant
     BanditLair,
     WolfPass,
     TigerRavine,
-    LeopardCliff
+    LeopardCliff,
+    SeorakPassRescue
 }
 
 public enum BattleSpecialEffect
