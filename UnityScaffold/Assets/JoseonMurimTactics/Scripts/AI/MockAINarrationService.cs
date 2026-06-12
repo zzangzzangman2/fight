@@ -16,6 +16,11 @@ public sealed class MockAINarrationService : IAINarrationService
 
         if (result.Won)
         {
+            if (result.battleId == HubController.SeorakPassRescueBattleId)
+            {
+                return "설운령 산길에서 철비채가 물러났다. 백두의 소문주가 설악창문의 백련과 함께 약초 수레를 구했고, 북방 문파가 다시 서로의 이름을 부르기 시작했다 한다.";
+            }
+
             string boss = string.IsNullOrEmpty(result.defeatedBoss) ? "철랑문 정찰조장" : result.defeatedBoss;
             return $"백두산 소백촌 길목의 검은 표식이 드러났다. 박성준이 {boss}을(를) 물리치고 백두천광검문의 이름을 다시 세웠다 한다.";
         }

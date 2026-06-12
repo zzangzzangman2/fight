@@ -200,6 +200,16 @@ namespace JoseonMurimTactics
                 return t;
             }
 
+            if (id == "MISSION_CH01_SEORAK_REQUEST" || battleId == HubController.SeorakPassRescueBattleId)
+            {
+                ProgressionMissionTuning t = BaseStory(battleId, questId, "설운령 약초 수레 호위전", CampaignArcCatalog.Arc00Prologue, 4);
+                t.materialRewards.Add(new RewardDelta("supply:herb", 2));
+                t.masteryTags.Add("mastery:spear");
+                t.masteryTags.Add("mastery:formation");
+                t.masteryTags.Add("mastery:medicine");
+                return t;
+            }
+
             if (id == "MISSION_FREE_SOBAEK_BANDIT_LAIR" || battleId == HubController.BanditLairBattleId)
             {
                 ProgressionMissionTuning t = BaseFree(battleId, questId, "소백촌 도적 소굴 토벌", 2, 45);
