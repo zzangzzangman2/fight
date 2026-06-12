@@ -2413,6 +2413,12 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             return footstepDustSprite;
         }
 
+        footstepDustSprite = Resources.Load<Sprite>("UI/BattleHUD/Tactical/vfx_foot_dust_01");
+        if (footstepDustSprite != null)
+        {
+            return footstepDustSprite;
+        }
+
         Texture2D texture = new Texture2D(96, 48, TextureFormat.RGBA32, false);
         texture.name = "GeneratedFootstepDust";
         texture.wrapMode = TextureWrapMode.Clamp;
@@ -2440,6 +2446,12 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
     private static Sprite GetFootContactSprite()
     {
+        if (footContactSprite != null)
+        {
+            return footContactSprite;
+        }
+
+        footContactSprite = Resources.Load<Sprite>("UI/BattleHUD/Tactical/vfx_step_flash");
         if (footContactSprite != null)
         {
             return footContactSprite;

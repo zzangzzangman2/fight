@@ -23,7 +23,13 @@ namespace JoseonMurimTactics
         {
             Current,
             Reachable,
-            Blocked
+            Blocked,
+            PathStraight,
+            PathTurn,
+            PathStart,
+            PathEnd,
+            CursorTarget,
+            CursorInvalid
         }
 
         private const BindingFlags AnyInstance = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -55,6 +61,15 @@ namespace JoseonMurimTactics
         private BattleTestController controller;
         private Transform overlayRoot;
         private Sprite diamondSprite;
+        private Sprite currentCellSprite;
+        private Sprite reachableCellSprite;
+        private Sprite blockedCellSprite;
+        private Sprite pathStraightSprite;
+        private Sprite pathTurnSprite;
+        private Sprite pathStartSprite;
+        private Sprite pathEndSprite;
+        private Sprite cursorTargetSprite;
+        private Sprite cursorInvalidSprite;
         private readonly List<SpriteRenderer> visibleRenderers = new List<SpriteRenderer>(128);
         private readonly Stack<SpriteRenderer> rendererPool = new Stack<SpriteRenderer>(128);
         private readonly Dictionary<Vector2Int, int> reachableCells = new Dictionary<Vector2Int, int>(128);
@@ -65,6 +80,7 @@ namespace JoseonMurimTactics
         private int clickedFrame = -1000;
         private object lastActiveUnit;
         private Vector2Int lastActiveCell = new Vector2Int(int.MinValue, int.MinValue);
+        private Vector2Int lastHoverCell = new Vector2Int(int.MinValue, int.MinValue);
         private string lastCommandName = string.Empty;
         private bool lastVisible;
         private float nextRefreshTime;
@@ -123,6 +139,7 @@ namespace JoseonMurimTactics
             {
                 lastActiveUnit = activeUnit;
                 lastActiveCell = new Vector2Int(int.MinValue, int.MinValue);
+                lastHoverCell = new Vector2Int(int.MinValue, int.MinValue);
                 lastCommandName = string.Empty;
             }
 
@@ -336,14 +353,17 @@ namespace JoseonMurimTactics
         private void Rebuild(object activeUnit)
         {
             Vector2Int start = ReadCell(activeUnit);
+            Vector2Int hoverCell = ResolveHoverCell();
             string commandName = (GetValue(controller, "commandMode") ?? string.Empty).ToString();
-            if (ReferenceEquals(activeUnit, lastActiveUnit) && start == lastActiveCell && commandName == lastCommandName && visibleRenderers.Count > 0)
+            if (ReferenceEquals(activeUnit, lastActiveUnit) && start == lastActiveCell &&
+                hoverCell == lastHoverCell && commandName == lastCommandName && visibleRenderers.Count > 0)
             {
                 // Keep the overlay stable unless the selected unit or command changed.
                 return;
             }
 
             lastActiveCell = start;
+            lastHoverCell = hoverCell;
             lastCommandName = commandName;
             HideOverlay();
             reachableCells.Clear();
@@ -367,44 +387,44 @@ namespace JoseonMurimTactics
                 DrawCell(pair.Key, PreviewKind.Reachable, pair.Value, tileWidth, tileHeight);
             }
 
-            if (!showBlockedCells)
+            if (showBlockedCells)
             {
-                return;
-            }
+                int blockedRadius = Mathf.Max(1, moveBudget) + Mathf.Max(0, blockedPreviewPadding);
+                cachedTiles.Clear();
+                CollectTiles(cachedTiles);
 
-            int blockedRadius = Mathf.Max(1, moveBudget) + Mathf.Max(0, blockedPreviewPadding);
-            cachedTiles.Clear();
-            CollectTiles(cachedTiles);
-
-            for (int i = 0; i < cachedTiles.Count; i++)
-            {
-                object tile = cachedTiles[i];
-                Vector2Int cell = ReadCell(tile);
-                if (cell == start || reachableCells.ContainsKey(cell))
+                for (int i = 0; i < cachedTiles.Count; i++)
                 {
-                    continue;
+                    object tile = cachedTiles[i];
+                    Vector2Int cell = ReadCell(tile);
+                    if (cell == start || reachableCells.ContainsKey(cell))
+                    {
+                        continue;
+                    }
+
+                    int distance = Manhattan(start, cell);
+                    if (distance > blockedRadius)
+                    {
+                        continue;
+                    }
+
+                    if (!ShouldDrawBlocked(tile, cell, start, moveBudget, distance))
+                    {
+                        continue;
+                    }
+
+                    blockedScratch.Add(cell);
                 }
 
-                int distance = Manhattan(start, cell);
-                if (distance > blockedRadius)
+                blockedScratch.Sort((a, b) => Manhattan(start, a).CompareTo(Manhattan(start, b)));
+                int count = Mathf.Min(maxBlockedCells, blockedScratch.Count);
+                for (int i = 0; i < count; i++)
                 {
-                    continue;
+                    DrawCell(blockedScratch[i], PreviewKind.Blocked, -1, tileWidth, tileHeight);
                 }
-
-                if (!ShouldDrawBlocked(tile, cell, start, moveBudget, distance))
-                {
-                    continue;
-                }
-
-                blockedScratch.Add(cell);
             }
 
-            blockedScratch.Sort((a, b) => Manhattan(start, a).CompareTo(Manhattan(start, b)));
-            int count = Mathf.Min(maxBlockedCells, blockedScratch.Count);
-            for (int i = 0; i < count; i++)
-            {
-                DrawCell(blockedScratch[i], PreviewKind.Blocked, -1, tileWidth, tileHeight);
-            }
+            DrawHoverPath(activeUnit, start, hoverCell, tileWidth, tileHeight);
         }
 
         private bool ShouldDrawBlocked(object tile, Vector2Int cell, Vector2Int start, int budget, int distance)
@@ -433,7 +453,7 @@ namespace JoseonMurimTactics
         {
             SpriteRenderer renderer = GetRenderer();
             renderer.name = kind + "_" + cell.x + "_" + cell.y;
-            renderer.sprite = diamondSprite;
+            renderer.sprite = SpriteFor(kind) == null ? diamondSprite : SpriteFor(kind);
             ApplyDefaultSpriteMaterial(renderer);
             renderer.color = ColorFor(kind, cost);
             renderer.sortingLayerName = "Default";
@@ -441,9 +461,92 @@ namespace JoseonMurimTactics
             renderer.transform.SetParent(overlayRoot, false);
             renderer.transform.position = CellWorldPosition(cell) + worldOffset;
             renderer.transform.localRotation = Quaternion.identity;
-            renderer.transform.localScale = new Vector3(tileWidth * tileScalePadding, tileHeight * tileScalePadding, 1f);
+            renderer.transform.localScale = ScaleToWorldSize(renderer.sprite, tileWidth * tileScalePadding,
+                                                             tileHeight * tileScalePadding);
             renderer.gameObject.SetActive(true);
             visibleRenderers.Add(renderer);
+        }
+
+        private void DrawHoverPath(object activeUnit, Vector2Int start, Vector2Int hoverCell, float tileWidth,
+                                   float tileHeight)
+        {
+            if (IsInvalidCell(hoverCell) || hoverCell == start)
+            {
+                return;
+            }
+
+            object occupant = InvokeMethod(controller, "UnitAt", hoverCell);
+            bool validDestination = reachableCells.ContainsKey(hoverCell) &&
+                                    (occupant == null || ReferenceEquals(occupant, activeUnit));
+            if (!validDestination)
+            {
+                DrawPathMarker(hoverCell, PreviewKind.CursorInvalid, 0f, tileWidth, tileHeight);
+                return;
+            }
+
+            List<Vector2Int> path = ReadPath(InvokeMethod(controller, "FindMovePath", activeUnit, hoverCell));
+            if (path.Count < 2)
+            {
+                DrawPathMarker(hoverCell, PreviewKind.CursorTarget, 0f, tileWidth, tileHeight);
+                return;
+            }
+
+            for (int i = 0; i < path.Count; i++)
+            {
+                PreviewKind kind;
+                float rotation;
+                if (i == 0)
+                {
+                    kind = PreviewKind.PathStart;
+                    rotation = AngleFromTo(path[i], path[i + 1]);
+                }
+                else if (i == path.Count - 1)
+                {
+                    kind = PreviewKind.PathEnd;
+                    rotation = AngleFromTo(path[i - 1], path[i]);
+                }
+                else
+                {
+                    Vector2Int incoming = path[i] - path[i - 1];
+                    Vector2Int outgoing = path[i + 1] - path[i];
+                    kind = incoming == outgoing ? PreviewKind.PathStraight : PreviewKind.PathTurn;
+                    rotation = AngleFromTo(path[i], path[i + 1]);
+                }
+
+                DrawPathMarker(path[i], kind, rotation, tileWidth, tileHeight);
+            }
+
+            DrawPathMarker(hoverCell, PreviewKind.CursorTarget, 0f, tileWidth, tileHeight);
+        }
+
+        private void DrawPathMarker(Vector2Int cell, PreviewKind kind, float rotation, float tileWidth,
+                                    float tileHeight)
+        {
+            SpriteRenderer renderer = GetRenderer();
+            renderer.name = kind + "_" + cell.x + "_" + cell.y;
+            renderer.sprite = SpriteFor(kind) == null ? diamondSprite : SpriteFor(kind);
+            ApplyDefaultSpriteMaterial(renderer);
+            renderer.color = ColorFor(kind, 0);
+            renderer.sortingLayerName = "Default";
+            renderer.sortingOrder = sortingOrder + 9;
+            renderer.transform.SetParent(overlayRoot, false);
+            renderer.transform.position = CellWorldPosition(cell) + worldOffset + new Vector3(0f, 0.030f, -0.03f);
+            renderer.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+            float size = Mathf.Min(tileWidth, tileHeight) * (kind == PreviewKind.CursorTarget ||
+                         kind == PreviewKind.CursorInvalid ? 0.92f : 0.62f);
+            renderer.transform.localScale = ScaleToWorldSize(renderer.sprite, size, size);
+            renderer.gameObject.SetActive(true);
+            visibleRenderers.Add(renderer);
+        }
+
+        private static Vector3 ScaleToWorldSize(Sprite sprite, float worldWidth, float worldHeight)
+        {
+            if (sprite == null || sprite.bounds.size.x <= 0.001f || sprite.bounds.size.y <= 0.001f)
+            {
+                return new Vector3(worldWidth, worldHeight, 1f);
+            }
+
+            return new Vector3(worldWidth / sprite.bounds.size.x, worldHeight / sprite.bounds.size.y, 1f);
         }
 
         private Color ColorFor(PreviewKind kind, int cost)
@@ -454,6 +557,13 @@ namespace JoseonMurimTactics
                     return currentColor;
                 case PreviewKind.Blocked:
                     return blockedColor;
+                case PreviewKind.PathStraight:
+                case PreviewKind.PathTurn:
+                case PreviewKind.PathStart:
+                case PreviewKind.PathEnd:
+                case PreviewKind.CursorTarget:
+                case PreviewKind.CursorInvalid:
+                    return Color.white;
                 default:
                     if (cost <= 0)
                     {
@@ -463,6 +573,31 @@ namespace JoseonMurimTactics
                     // Slightly fade expensive edge cells so the movement budget reads like a graph.
                     float alpha = Mathf.Clamp(reachableColor.a - (cost * 0.012f), 0.22f, reachableColor.a);
                     return new Color(reachableColor.r, reachableColor.g, reachableColor.b, alpha);
+            }
+        }
+
+        private Sprite SpriteFor(PreviewKind kind)
+        {
+            switch (kind)
+            {
+                case PreviewKind.Current:
+                    return currentCellSprite;
+                case PreviewKind.Blocked:
+                    return blockedCellSprite;
+                case PreviewKind.PathStraight:
+                    return pathStraightSprite;
+                case PreviewKind.PathTurn:
+                    return pathTurnSprite;
+                case PreviewKind.PathStart:
+                    return pathStartSprite;
+                case PreviewKind.PathEnd:
+                    return pathEndSprite;
+                case PreviewKind.CursorTarget:
+                    return cursorTargetSprite;
+                case PreviewKind.CursorInvalid:
+                    return cursorInvalidSprite;
+                default:
+                    return reachableCellSprite;
             }
         }
 
@@ -756,6 +891,17 @@ namespace JoseonMurimTactics
 
         private void EnsureSprite()
         {
+            currentCellSprite = LoadTacticalSprite("ui_tile_current_unit");
+            reachableCellSprite = LoadTacticalSprite("ui_tile_move_reachable");
+            blockedCellSprite = LoadTacticalSprite("ui_tile_move_blocked");
+            pathStraightSprite = LoadTacticalSprite("ui_path_arrow_straight");
+            pathTurnSprite = LoadTacticalSprite("ui_path_arrow_turn");
+            pathStartSprite = LoadTacticalSprite("ui_path_arrow_start");
+            pathEndSprite = LoadTacticalSprite("ui_path_arrow_end");
+            cursorTargetSprite = LoadTacticalSprite("ui_cursor_target");
+            cursorInvalidSprite = LoadTacticalSprite("ui_cursor_invalid");
+
+            diamondSprite = reachableCellSprite;
             if (diamondSprite != null)
             {
                 return;
@@ -801,6 +947,89 @@ namespace JoseonMurimTactics
             texture.Apply(false, true);
             diamondSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size, 0, SpriteMeshType.FullRect);
             diamondSprite.name = "RuntimeDiamondPreviewSprite";
+        }
+
+        private static Sprite LoadTacticalSprite(string id)
+        {
+            return string.IsNullOrEmpty(id) ? null : Resources.Load<Sprite>("UI/BattleHUD/Tactical/" + id);
+        }
+
+        private Vector2Int ResolveHoverCell()
+        {
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                return InvalidCell();
+            }
+
+            Camera camera = Camera.main;
+            if (camera == null)
+            {
+                return InvalidCell();
+            }
+
+            Vector3 world = camera.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 point = new Vector2(world.x, world.y);
+            Collider2D[] hits = Physics2D.OverlapPointAll(point);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                BattleTestTile tile = hits[i] == null ? null : hits[i].GetComponent<BattleTestTile>();
+                if (tile != null)
+                {
+                    return tile.cell;
+                }
+            }
+
+            object gridCell = InvokeMethod(controller, "WorldToGrid", point);
+            if (gridCell is Vector2Int)
+            {
+                object tile = InvokeMethod(controller, "TileAt", gridCell);
+                return tile == null ? InvalidCell() : (Vector2Int)gridCell;
+            }
+
+            return InvalidCell();
+        }
+
+        private static List<Vector2Int> ReadPath(object source)
+        {
+            List<Vector2Int> path = new List<Vector2Int>();
+            IEnumerable enumerable = source as IEnumerable;
+            if (enumerable == null)
+            {
+                return path;
+            }
+
+            foreach (object item in enumerable)
+            {
+                if (item is Vector2Int)
+                {
+                    path.Add((Vector2Int)item);
+                }
+            }
+
+            return path;
+        }
+
+        private float AngleFromTo(Vector2Int from, Vector2Int to)
+        {
+            Vector3 start = CellWorldPosition(from);
+            Vector3 end = CellWorldPosition(to);
+            Vector3 delta = end - start;
+            if (delta.sqrMagnitude <= 0.000001f)
+            {
+                return 0f;
+            }
+
+            return Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
+        }
+
+        private static Vector2Int InvalidCell()
+        {
+            return new Vector2Int(int.MinValue, int.MinValue);
+        }
+
+        private static bool IsInvalidCell(Vector2Int cell)
+        {
+            return cell.x == int.MinValue && cell.y == int.MinValue;
         }
 
         private static object GetValue(object target, string memberName)
