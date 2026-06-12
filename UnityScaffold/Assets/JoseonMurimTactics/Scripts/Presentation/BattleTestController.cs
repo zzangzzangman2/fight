@@ -3262,7 +3262,7 @@ public sealed class BattleTestController : MonoBehaviour
     private bool IsValidInitialSpawnCell(Vector2Int cell, HashSet<Vector2Int> occupied, bool deploymentOnly)
     {
         BattleTestTile tile = TileAt(cell);
-        if (tile == null || !tile.walkable || occupied.Contains(cell))
+        if (tile == null || !tile.walkable || IsCellBlockedByInteractable(cell) || occupied.Contains(cell))
         {
             return false;
         }
@@ -3542,7 +3542,8 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
-        if (!destination.walkable || UnitAt(destination.cell) != null)
+        if (!destination.walkable || IsCellBlockedByInteractable(destination.cell) ||
+            UnitAt(destination.cell) != null)
         {
             AddLog("[정찰] 해당 배치칸은 사용할 수 없습니다.");
             return false;
@@ -3584,7 +3585,8 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
-        if (!destination.walkable || UnitAt(destination.cell) != null)
+        if (!destination.walkable || IsCellBlockedByInteractable(destination.cell) ||
+            UnitAt(destination.cell) != null)
         {
             AddLog("[이동] 진입할 수 없는 칸입니다.");
             return;
@@ -5249,7 +5251,7 @@ public sealed class BattleTestController : MonoBehaviour
                 return true;
             }
 
-            if (UnitAt(nextCell) != null)
+            if (UnitAt(nextCell) != null || IsCellBlockedByInteractable(nextCell))
             {
                 SyncPushedView();
                 DealTerrainDamage(target, 3, reason + " collision");
@@ -5591,6 +5593,42 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         return null;
+    }
+
+    private bool IsCellBlockedByInteractable(Vector2Int cell)
+    {
+        foreach (BattleTestInteractable interactable in interactables)
+        {
+            if (interactable == null || interactable.used || interactable.cell != cell)
+            {
+                continue;
+            }
+
+            if (IsBlockingInteractable(interactable))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsBlockingInteractable(BattleTestInteractable interactable)
+    {
+        if (interactable == null)
+        {
+            return false;
+        }
+
+        switch (interactable.kind)
+        {
+        case BattleTestInteractableKind.Objective:
+        case BattleTestInteractableKind.Smoke:
+        case BattleTestInteractableKind.CollapseBridge:
+            return false;
+        default:
+            return true;
+        }
     }
 
     private string TileHazardText(BattleTestTile tile)
@@ -6033,6 +6071,11 @@ public sealed class BattleTestController : MonoBehaviour
                     continue;
                 }
 
+                if (IsCellBlockedByInteractable(next))
+                {
+                    continue;
+                }
+
                 BattleTestUnit occupant = UnitAt(next);
                 if (occupant != null && occupant != unit)
                 {
@@ -6087,6 +6130,11 @@ public sealed class BattleTestController : MonoBehaviour
             {
                 BattleTestTile tile = TileAt(next);
                 if (tile == null || !tile.walkable)
+                {
+                    continue;
+                }
+
+                if (IsCellBlockedByInteractable(next))
                 {
                     continue;
                 }
