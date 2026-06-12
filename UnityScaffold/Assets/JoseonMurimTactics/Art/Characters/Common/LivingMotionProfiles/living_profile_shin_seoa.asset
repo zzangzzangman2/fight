@@ -29,7 +29,7 @@ MonoBehaviour:
   stateEnterDuration: 0.13
   moveHopAmount: 0.052
   moveLeanAmount: 0.82
-  footDustAmount: 0
+  footDustAmount: 0.52
   attackAnticipationDistance: 0.05
   attackLungeMultiplier: 0.92
   impactFreezeSeconds: 0.048

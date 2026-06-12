@@ -71,7 +71,7 @@ MonoBehaviour:
   seriousFaceSprite: {fileID: 0}
   enableBlink: 1
   enableLayerSway: 1
-  enableFootDust: 0
+  enableFootDust: 1
   enableSelectionPop: 1
   enableImpactFreeze: 1
   defaultOutfit: {fileID: 11400000, guid: ebf2caebbee9aa445b7e8fd2696c52fc, type: 2}
