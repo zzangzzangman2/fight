@@ -22,21 +22,21 @@ public sealed class WorldMapController : MonoBehaviour
     }
 
     private static readonly MapNode[] Nodes = {
-        new MapNode("백두천광검문", "박성준 · 빛/검", new Vector2(0.846f, 0.405f), "거점",
+        new MapNode("백두천광검문", "박성준 · 빛/검", new Vector2(0.785f, 0.300f), "거점",
                     "백두산 천지의 새벽빛을 검에 담는 문파. 꺼져가는 천광이 다시 타오르려 한다.", UiTheme.Gold),
-        new MapNode("설악창문", "백련 · 서리/창", new Vector2(0.852f, 0.563f), "영입 문파",
+        new MapNode("설악창문", "백련 · 서리/창", new Vector2(0.815f, 0.450f), "영입 문파",
                     "강원 설악산 자락의 창문. 차가운 창끝과 의원의 마음을 함께 지닌 백련의 본가.", UiTheme.NavyLight),
-        new MapNode("천뢰봉문", "진서율 · 전기/봉", new Vector2(0.815f, 0.612f), "영입 단서",
+        new MapNode("천뢰봉문", "진서율 · 전기/봉", new Vector2(0.795f, 0.505f), "영입 단서",
                     "경성의 봉술 문파. 천재 봉술가 진서율이 번개처럼 소문을 몰고 다닌다.", UiTheme.Teal),
-        new MapNode("흑련암문", "한비연 · 어둠/독", new Vector2(0.852f, 0.610f), "영입 단서",
+        new MapNode("흑련암문", "한비연 · 어둠/독", new Vector2(0.830f, 0.525f), "영입 단서",
                     "황해도 구월산의 암기 문파. 한비연의 그림자가 독살 누명의 단서를 쫓는다.", UiTheme.Navy),
-        new MapNode("화접풍류문", "신서아 · 바람/꽃/부채", new Vector2(0.798f, 0.686f), "영입 문파",
+        new MapNode("화접풍류문", "신서아 · 바람/꽃/부채", new Vector2(0.800f, 0.565f), "영입 문파",
                     "전라 남원 쪽 풍류 문파. 막내 신서아의 부채와 꽃바람이 연합의 숨통을 틔운다.", UiTheme.Teal),
-        new MapNode("화왕도문", "도아린 · 불/도", new Vector2(0.823f, 0.680f), "영입 문파",
+        new MapNode("화왕도문", "도아린 · 불/도", new Vector2(0.815f, 0.575f), "영입 문파",
                     "경상 화왕산의 도문. 도아린이 불길 같은 돌파력으로 길을 연다.", UiTheme.SealRed),
-        new MapNode("소백촌", "마을 신뢰", new Vector2(0.700f, 0.520f), "탐색 가능",
+        new MapNode("소백촌", "마을 신뢰", new Vector2(0.785f, 0.455f), "탐색 가능",
                     "백두천광검문 아래 마을. 생계, 복구, 신뢰가 1장의 중심이다.", UiTheme.Teal),
-        new MapNode("철랑문", "2장 적대 문파", new Vector2(0.675f, 0.565f), "위험",
+        new MapNode("철랑문", "2장 적대 문파", new Vector2(0.790f, 0.540f), "위험",
                     "백두산 영맥과 천광검문의 비급을 노리는 중원 하위 문파.", UiTheme.SealRed),
         new MapNode("모용세가 사절로", "3장 위협", new Vector2(0.535f, 0.610f), "잠김",
                     "후견을 명분으로 백두산에 손을 뻗는 오대세가의 길목.", UiTheme.Navy),
@@ -47,23 +47,23 @@ public sealed class WorldMapController : MonoBehaviour
     private static readonly MapLabel[] Labels = {
         new MapLabel("중원무림맹", "의협전 · 총단", new Vector2(0.535f, 0.395f), "盟", UiTheme.Gold, new Vector2(-92f, -62f), true),
 
-        new MapLabel("백두천광검문", "백두산 천검단", new Vector2(0.846f, 0.405f), "本", UiTheme.Gold, new Vector2(24f, -54f), false),
-        new MapLabel("설악창문", "설악빙창대", new Vector2(0.852f, 0.563f), "槍", UiTheme.NavyLight, new Vector2(-126f, -42f), false),
-        new MapLabel("천뢰봉문", "경성 번뢰전", new Vector2(0.815f, 0.612f), "雷", UiTheme.Teal, new Vector2(-126f, 6f), false),
-        new MapLabel("흑련암문", "구월산 흑련별원", new Vector2(0.852f, 0.610f), "毒", UiTheme.Navy, new Vector2(26f, -10f), false),
-        new MapLabel("화접풍류문", "남원 매화풍루", new Vector2(0.798f, 0.686f), "花", UiTheme.Teal, new Vector2(-118f, 10f), false),
-        new MapLabel("화왕도문", "화왕산 도장", new Vector2(0.823f, 0.680f), "火", UiTheme.SealRed, new Vector2(28f, 24f), false),
+        new MapLabel("백두천광검문", "백두산 천검단", new Vector2(0.785f, 0.300f), "本", UiTheme.Gold, new Vector2(24f, -54f), false),
+        new MapLabel("설악창문", "설악빙창대", new Vector2(0.815f, 0.450f), "槍", UiTheme.NavyLight, new Vector2(-126f, -42f), false),
+        new MapLabel("천뢰봉문", "경성 번뢰전", new Vector2(0.795f, 0.505f), "雷", UiTheme.Teal, new Vector2(-126f, 6f), false),
+        new MapLabel("흑련암문", "구월산 흑련별원", new Vector2(0.830f, 0.525f), "毒", UiTheme.Navy, new Vector2(26f, -10f), false),
+        new MapLabel("화접풍류문", "남원 매화풍루", new Vector2(0.800f, 0.565f), "花", UiTheme.Teal, new Vector2(-118f, 10f), false),
+        new MapLabel("화왕도문", "화왕산 도장", new Vector2(0.815f, 0.575f), "火", UiTheme.SealRed, new Vector2(28f, 24f), false),
     };
 
     private static readonly MapMonument[] Monuments = {
         new MapMonument(new Vector2(0.360f, 0.185f), "山", UiTheme.NavyLight, 1.0f),
         new MapMonument(new Vector2(0.535f, 0.395f), "盟", UiTheme.Gold, 1.15f),
-        new MapMonument(new Vector2(0.846f, 0.405f), "本", UiTheme.Gold, 1.05f),
-        new MapMonument(new Vector2(0.852f, 0.563f), "槍", UiTheme.NavyLight, 0.74f),
-        new MapMonument(new Vector2(0.815f, 0.612f), "雷", UiTheme.Teal, 0.74f),
-        new MapMonument(new Vector2(0.852f, 0.610f), "毒", UiTheme.Navy, 0.74f),
-        new MapMonument(new Vector2(0.798f, 0.686f), "花", UiTheme.Teal, 0.74f),
-        new MapMonument(new Vector2(0.823f, 0.680f), "火", UiTheme.SealRed, 0.74f),
+        new MapMonument(new Vector2(0.785f, 0.300f), "本", UiTheme.Gold, 1.05f),
+        new MapMonument(new Vector2(0.815f, 0.450f), "槍", UiTheme.NavyLight, 0.74f),
+        new MapMonument(new Vector2(0.795f, 0.505f), "雷", UiTheme.Teal, 0.74f),
+        new MapMonument(new Vector2(0.830f, 0.525f), "毒", UiTheme.Navy, 0.74f),
+        new MapMonument(new Vector2(0.800f, 0.565f), "花", UiTheme.Teal, 0.74f),
+        new MapMonument(new Vector2(0.815f, 0.575f), "火", UiTheme.SealRed, 0.74f),
     };
 
     private GameRoot root;
