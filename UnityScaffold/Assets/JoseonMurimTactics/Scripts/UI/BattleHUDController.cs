@@ -128,7 +128,8 @@ public sealed class BattleHUDController : MonoBehaviour
         }
 
         phaseTitle.text = PhaseText(snapshot.phase, snapshot.battleOver) + "  |  " +
-                          "\uB77C\uC6B4\uB4DC " + snapshot.round.ToString();
+                          "\uB77C\uC6B4\uB4DC " + snapshot.round.ToString() + "/" +
+                          Mathf.Max(1, snapshot.turnLimit).ToString();
         phaseInstruction.text = CompactInstruction(snapshot);
 
         bool objectiveExpanded = Time.time < objectiveIntroUntil || snapshot.showObjectiveOverlay;
@@ -1354,6 +1355,7 @@ public sealed class BattleHudSnapshot
 {
     public BattlePhase phase;
     public int round;
+    public int turnLimit;
     public bool battleOver;
     public bool scoutMode;
     public string instruction;

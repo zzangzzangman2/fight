@@ -103,6 +103,24 @@ public sealed class BattleResultApplyService
             root.Flags.SetFlag(StoryFlags.EnvoyDefeated);
             root.Flags.SetFlag(StoryFlags.HubUnlocked);
             root.Session.unlockedCodexEntryIds.Add("lore_black_mark");
+
+            if (definition != null && definition.id == HubController.FirstBattleId)
+            {
+                root.Flags.SetFlag(StoryFlags.Chapter1FirstDefenseCleared);
+                root.Flags.SetFlag(StoryFlags.Chapter1SeorakRequestUnlocked);
+            }
+
+            if (definition != null && definition.id == HubController.SeorakPassRescueBattleId)
+            {
+                root.Flags.SetFlag(StoryFlags.Chapter1MetBaekRyeon);
+                root.Flags.SetFlag(StoryFlags.Chapter1RescuedSeorakCart);
+                root.Flags.SetFlag(StoryFlags.Chapter1InvitedToSeorakSpearHall);
+                root.Flags.SetFlag(StoryFlags.Chapter1SeorakPactStarted);
+                root.Flags.SetFlag(StoryFlags.CompanionBaekRyeonTempJoined);
+                root.Flags.SetFlag(StoryFlags.AllianceSeorakScoutSupport);
+                root.Flags.SetFlag(StoryFlags.BaekRyeonRecruited);
+                root.Session.RecruitCompanion(CompanionCatalog.BaekRyeon);
+            }
         }
 
         outcome.autosaveSucceeded = root.Save.Save(root.Session);

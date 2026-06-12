@@ -59,6 +59,10 @@ namespace JoseonMurimTactics
             {
                 return CreateLeopardCliffBattle();
             }
+            if (battleId == HubController.SeorakPassRescueBattleId)
+            {
+                return CreateSeorakPassRescueBattle();
+            }
 
             return CreatePyesadangDefenseBattle(battleId);
         }
@@ -99,6 +103,46 @@ namespace JoseonMurimTactics
 
             d.factionOnWin.Add(new IdDelta(FactionIds.ZhongyuanAlliance, -3));
             d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +3));
+
+            return d;
+        }
+
+        private static BattleDefinition CreateSeorakPassRescueBattle()
+        {
+            BattleDefinition d = new BattleDefinition
+            {
+                id = HubController.SeorakPassRescueBattleId,
+                title = "설운령 약초 수레 호위전",
+                location = "백두산 동남쪽 설운령 산길",
+                bossName = "철비채 두목 유달근",
+                victoryCondition = "유달근 격파와 약초 수레·피난민 보호",
+                mapHint = "남쪽 산길에서 진입한다. 중앙 밧줄다리와 대나무 덤불을 넘으면 약초 수레가 있는 북동쪽 선반이 열린다. 백련의 창으로 길목을 막고 박성준은 후방을 끊어라.",
+                silverReward = 120,
+                joseonRenownOnWin = 5,
+                questId = "MISSION_CH01_SEORAK_REQUEST"
+            };
+
+            d.roster.Add("박성준");
+            d.roster.Add("백련");
+
+            d.defeatConditions.Add("박성준 전투불능");
+            d.defeatConditions.Add("백련 전투불능");
+            d.defeatConditions.Add("약초 수레 파괴 또는 피난민 2명 이상 피해");
+
+            d.objectives.Add(new BattleObjective("OBJ_DEFEAT_YUDALGEUN", "철비채 두목 유달근 격파", false));
+            d.objectives.Add(new BattleObjective("OBJ_PROTECT_HERB_CART", "약초 수레와 피난민 보호", false));
+            d.objectives.Add(new BattleObjective("OBJ_FIRST_COOP_BAEK_RYEON", "박성준과 백련 협공 각도 만들기", true));
+            d.objectives.Add(new BattleObjective("OBJ_KEEP_CART_INTACT", "약초 수레 피해 최소화", true));
+
+            d.rewardItems.Add("약초 꾸러미");
+            d.rewardItems.Add("약초 꾸러미");
+            d.rewardItems.Add("하급 영약");
+            d.rewardItems.Add("철비채 밀서");
+
+            d.factionOnWin.Add(new IdDelta(FactionIds.JoseonSects, +3));
+            d.factionOnWin.Add(new IdDelta(FactionIds.SeorakSpear, +5));
+            d.factionOnWin.Add(new IdDelta(FactionIds.MurimInspectors, -2));
+            d.approvalOnWin.Add(new IdDelta(CompanionCatalog.BaekRyeon, +4));
 
             return d;
         }

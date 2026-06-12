@@ -67,42 +67,44 @@ namespace JoseonMurimTactics
 
             MissionInfo m2 = new MissionInfo
             {
-                id = "MISSION_CH02_IRON_WOLF_CLAW",
-                title = "철랑문의 발톱",
-                location = "백두산 소백촌 장터",
-                battleId = "",
-                recommendedLevel = 2,
-                enemyFaction = "철랑문",
+                id = "MISSION_CH01_SEORAK_REQUEST",
+                title = "설악으로 가는 서리길",
+                location = "백두산 동남쪽 설운령 산길",
+                battleId = HubController.SeorakPassRescueBattleId,
+                recommendedLevel = 3,
+                enemyFaction = "철비채 산적 · 중원 감찰단 하수인",
                 difficulty = "보통",
-                summary = "철랑문 무인들이 소백촌에 통행세를 요구하고 식량과 은전을 빼앗기 시작한다. 박성준은 처음으로 문파와 마을을 함께 지키는 싸움에 나선다.",
-                victoryConditionShort = "주민 보호와 철랑문 격퇴 (준비 중)",
+                summary = "첫 공세를 막아낸 백두천광검문은 단독 방어의 한계를 마주한다. 박성준은 설악창문에 원군을 청하러 가던 길에, 약초 수레와 피난민을 지키는 창수 백련과 만난다.",
+                victoryConditionShort = "유달근 격파와 약초 수레·피난민 보호",
                 requiredFlag = StoryFlags.FirstBattleWon,
-                completeFlag = "CH2_IRON_WOLF_APPEARED",
-                dangerNotes = "주민 보호, 야간 전투, 불붙은 창고, 인질 구출 튜토리얼 예정.",
+                completeFlag = StoryFlags.BaekRyeonRecruited,
+                dangerNotes = "좁은 절벽길, 약초 수레 보호, 백련 게스트 합류, 빛/서리 협공 튜토리얼에 적합.",
                 isStory = true
             };
-            m2.rewardPreview.Add("광명호신기 해금 (예정)");
-            m2.rewardPreview.Add("백두천광검문 평판 상승");
+            m2.rewardPreview.Add("백련 정식 합류");
+            m2.rewardPreview.Add("설악창문 평판 +5");
+            m2.rewardPreview.Add("약초 꾸러미 2개");
+            m2.rewardPreview.Add("북방 문파 연합 단서");
             list.Add(m2);
 
             MissionInfo m3 = new MissionInfo
             {
-                id = "MISSION_CH03_SEORAK_FROST",
-                title = "설악의 서리창",
-                location = "강원도 설악창문",
+                id = "MISSION_CH02_IRON_WOLF_CLAW",
+                title = "철랑문의 발톱",
+                location = "백두산 소백촌 장터",
                 battleId = "",
-                recommendedLevel = 3,
-                enemyFaction = "모용세가 사절단 · 빙계곡 술사",
-                difficulty = "어려움",
-                summary = "더 큰 세력인 모용세가가 백두산의 후견을 제안한다. 거절 뒤 설악창문 빙계곡이 흔들리고, 박성준은 첫 동료 백련과 만난다.",
-                victoryConditionShort = "빙계곡 정화와 백련 생존 (준비 중)",
-                requiredFlag = StoryFlags.FirstBattleWon,
-                completeFlag = StoryFlags.BaekRyeonRecruited,
-                dangerNotes = "빙판 지형, 빙맥 파괴, 협공 튜토리얼 예정.",
+                recommendedLevel = 4,
+                enemyFaction = "철랑문",
+                difficulty = "보통",
+                summary = "철랑문 무인들이 소백촌에 통행세를 요구하고 식량과 은전을 빼앗기 시작한다. 설악창문의 첫 창을 얻은 박성준은 문파와 마을을 함께 지키는 싸움을 준비한다.",
+                victoryConditionShort = "주민 보호와 철랑문 격퇴 (준비 중)",
+                requiredFlag = StoryFlags.BaekRyeonRecruited,
+                completeFlag = "CH2_IRON_WOLF_APPEARED",
+                dangerNotes = "주민 보호, 야간 전투, 불붙은 창고, 인질 구출 튜토리얼 예정.",
                 isStory = true
             };
-            m3.rewardPreview.Add("백련 정식 합류 (예정)");
-            m3.rewardPreview.Add("동료 시스템 해금");
+            m3.rewardPreview.Add("광명호신기 해금 (예정)");
+            m3.rewardPreview.Add("백두천광검문 평판 상승");
             list.Add(m3);
 
             MissionInfo m4 = new MissionInfo

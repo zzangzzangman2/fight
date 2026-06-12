@@ -1,7 +1,4 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -11,7 +8,7 @@ namespace JoseonMurimTactics
     /// Fire-Emblem style movement preview for BattleTest.
     ///
     /// The existing BattleTestController already owns the real movement rules.
-    /// This component reads that state with reflection and only paints a preview overlay when the
+    /// This component reads the controller preview API and only paints a preview overlay when the
     /// player has directly clicked the currently acting ally. If the selected unit is not the unit
     /// whose turn/action is currently active, the overlay stays hidden.
     /// </summary>
@@ -32,9 +29,6 @@ namespace JoseonMurimTactics
             CursorInvalid
         }
 
-        private const BindingFlags AnyInstance = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-        private const BindingFlags AnyStatic = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-        private static readonly Type Vector2IntType = typeof(Vector2Int);
         private static Material defaultSpriteMaterial;
 
         [Header("Selection Gate")]
@@ -73,12 +67,12 @@ namespace JoseonMurimTactics
         private readonly List<SpriteRenderer> visibleRenderers = new List<SpriteRenderer>(128);
         private readonly Stack<SpriteRenderer> rendererPool = new Stack<SpriteRenderer>(128);
         private readonly Dictionary<Vector2Int, int> reachableCells = new Dictionary<Vector2Int, int>(128);
-        private readonly List<object> cachedTiles = new List<object>(256);
+        private readonly List<BattleTestTile> cachedTiles = new List<BattleTestTile>(256);
         private readonly List<Vector2Int> blockedScratch = new List<Vector2Int>(128);
 
-        private object clickedUnit;
+        private BattleTestUnit clickedUnit;
         private int clickedFrame = -1000;
-        private object lastActiveUnit;
+        private BattleTestUnit lastActiveUnit;
         private Vector2Int lastActiveCell = new Vector2Int(int.MinValue, int.MinValue);
         private Vector2Int lastHoverCell = new Vector2Int(int.MinValue, int.MinValue);
         private string lastCommandName = string.Empty;
@@ -134,7 +128,7 @@ namespace JoseonMurimTactics
 
             nextRefreshTime = Time.unscaledTime + Mathf.Max(0.005f, refreshInterval);
 
-            object activeUnit = GetValue(controller, "activeUnit");
+            BattleTestUnit activeUnit = controller.PreviewActiveUnit;
             if (!ReferenceEquals(activeUnit, lastActiveUnit))
             {
                 lastActiveUnit = activeUnit;
@@ -167,7 +161,7 @@ namespace JoseonMurimTactics
                 return;
             }
 
-            object clicked = PickUnitUnderMouse();
+            BattleTestUnit clicked = PickUnitUnderMouse();
             if (clicked == null)
             {
                 clickedUnit = null;
@@ -179,7 +173,7 @@ namespace JoseonMurimTactics
             clickedFrame = Time.frameCount;
         }
 
-        private object PickUnitUnderMouse()
+        private BattleTestUnit PickUnitUnderMouse()
         {
             Camera camera = Camera.main;
             if (camera == null)
@@ -193,7 +187,7 @@ namespace JoseonMurimTactics
 
             for (int i = 0; i < hits.Length; i++)
             {
-                object unit = ExtractUnitFromCollider(hits[i]);
+                BattleTestUnit unit = ExtractUnitFromCollider(hits[i]);
                 if (unit != null)
                 {
                     return unit;
@@ -202,11 +196,11 @@ namespace JoseonMurimTactics
 
             // Some runtime unit views may not have a collider on the full sprite.
             // Fallback: choose the nearest unit transform around the clicked cell.
-            object nearest = null;
+            BattleTestUnit nearest = null;
             float best = clickPickRadius * clickPickRadius;
-            foreach (object unit in EnumerateUnits())
+            foreach (BattleTestUnit unit in EnumerateUnits())
             {
-                if (unit == null || ReadBool(unit, "defeated"))
+                if (unit == null || unit.defeated)
                 {
                     continue;
                 }
@@ -223,57 +217,25 @@ namespace JoseonMurimTactics
             return nearest;
         }
 
-        private object ExtractUnitFromCollider(Collider2D hit)
+        private BattleTestUnit ExtractUnitFromCollider(Collider2D hit)
         {
             if (hit == null)
             {
                 return null;
             }
 
-            Transform cursor = hit.transform;
-            while (cursor != null)
-            {
-                MonoBehaviour[] behaviours = cursor.GetComponents<MonoBehaviour>();
-                for (int i = 0; i < behaviours.Length; i++)
-                {
-                    MonoBehaviour behaviour = behaviours[i];
-                    if (behaviour == null)
-                    {
-                        continue;
-                    }
-
-                    Type type = behaviour.GetType();
-                    if (type.Name == "BattleTestUnitView")
-                    {
-                        object unit = GetValue(behaviour, "Unit") ?? GetValue(behaviour, "unit");
-                        if (unit != null)
-                        {
-                            return unit;
-                        }
-                    }
-
-                    // CharacterVisualController usually lives under a BattleTestUnitView.
-                    object possibleUnit = GetValue(behaviour, "Unit");
-                    if (possibleUnit != null && possibleUnit.GetType().Name.Contains("BattleTestUnit"))
-                    {
-                        return possibleUnit;
-                    }
-                }
-
-                cursor = cursor.parent;
-            }
-
-            return null;
+            BattleTestUnitView view = hit.GetComponentInParent<BattleTestUnitView>();
+            return view == null ? null : view.Unit;
         }
 
-        private bool ShouldShow(object activeUnit)
+        private bool ShouldShow(BattleTestUnit activeUnit)
         {
-            if (activeUnit == null || ReadBool(controller, "battleOver"))
+            if (activeUnit == null || controller.PreviewBattleOver)
             {
                 return false;
             }
 
-            if (hideWhenBusy && ReadBool(controller, "busy"))
+            if (hideWhenBusy && controller.PreviewBusy)
             {
                 return false;
             }
@@ -288,7 +250,7 @@ namespace JoseonMurimTactics
                 return false;
             }
 
-            if (ReadBool(activeUnit, "defeated"))
+            if (activeUnit.defeated)
             {
                 return false;
             }
@@ -298,14 +260,12 @@ namespace JoseonMurimTactics
                 return false;
             }
 
-            if (ReadBool(activeUnit, "moved") || ReadBool(activeUnit, "acted"))
+            if (activeUnit.moved || activeUnit.acted)
             {
-                // 이미 움직였거나 행동 완료한 캐릭터는 이동 미리보기를 띄우지 않는다.
                 return false;
             }
 
-            object canMove = GetValue(activeUnit, "CanMove");
-            if (canMove is bool && !(bool)canMove)
+            if (!activeUnit.CanMove)
             {
                 return false;
             }
@@ -320,41 +280,24 @@ namespace JoseonMurimTactics
 
         private bool IsPlayerPhase()
         {
-            object phaseTurn = GetValue(controller, "phaseTurn");
-            if (phaseTurn == null)
-            {
-                object phase = GetValue(controller, "phase");
-                return phase == null || string.Equals(phase.ToString(), "PlayerPhase", StringComparison.OrdinalIgnoreCase);
-            }
-
-            object isPlayer = GetValue(phaseTurn, "IsPlayerPhase");
-            if (isPlayer is bool)
-            {
-                return (bool)isPlayer;
-            }
-
-            object phaseValue = GetValue(phaseTurn, "CurrentPhase") ?? GetValue(phaseTurn, "Phase");
-            return phaseValue == null || string.Equals(phaseValue.ToString(), "PlayerPhase", StringComparison.OrdinalIgnoreCase);
+            return controller != null && controller.PreviewIsPlayerPhase;
         }
 
         private bool IsMoveCommand()
         {
-            object commandMode = GetValue(controller, "commandMode");
-            return commandMode == null || string.Equals(commandMode.ToString(), "Move", StringComparison.OrdinalIgnoreCase);
+            return controller == null || controller.PreviewCommandMode == BattleCommandMode.Move;
         }
 
-        private bool IsAlly(object unit)
+        private bool IsAlly(BattleTestUnit unit)
         {
-            object definition = GetValue(unit, "definition");
-            object faction = GetValue(definition, "faction") ?? GetValue(unit, "faction");
-            return faction == null || string.Equals(faction.ToString(), "Ally", StringComparison.OrdinalIgnoreCase);
+            return unit != null && unit.definition != null && unit.definition.faction == Faction.Ally;
         }
 
-        private void Rebuild(object activeUnit)
+        private void Rebuild(BattleTestUnit activeUnit)
         {
             Vector2Int start = ReadCell(activeUnit);
             Vector2Int hoverCell = ResolveHoverCell();
-            string commandName = (GetValue(controller, "commandMode") ?? string.Empty).ToString();
+            string commandName = controller == null ? string.Empty : controller.PreviewCommandMode.ToString();
             if (ReferenceEquals(activeUnit, lastActiveUnit) && start == lastActiveCell &&
                 hoverCell == lastHoverCell && commandName == lastCommandName && visibleRenderers.Count > 0)
             {
@@ -395,7 +338,7 @@ namespace JoseonMurimTactics
 
                 for (int i = 0; i < cachedTiles.Count; i++)
                 {
-                    object tile = cachedTiles[i];
+                    BattleTestTile tile = cachedTiles[i];
                     Vector2Int cell = ReadCell(tile);
                     if (cell == start || reachableCells.ContainsKey(cell))
                     {
@@ -427,19 +370,19 @@ namespace JoseonMurimTactics
             DrawHoverPath(activeUnit, start, hoverCell, tileWidth, tileHeight);
         }
 
-        private bool ShouldDrawBlocked(object tile, Vector2Int cell, Vector2Int start, int budget, int distance)
+        private bool ShouldDrawBlocked(BattleTestTile tile, Vector2Int cell, Vector2Int start, int budget, int distance)
         {
             if (tile == null)
             {
                 return false;
             }
 
-            if (!ReadBool(tile, "walkable", true) || ReadBool(tile, "blocksMovement"))
+            if (!tile.walkable)
             {
                 return true;
             }
 
-            object occupant = InvokeMethod(controller, "UnitAt", cell);
+            BattleTestUnit occupant = controller == null ? null : controller.GetPreviewUnitAt(cell);
             if (occupant != null && !ReferenceEquals(occupant, lastActiveUnit))
             {
                 return true;
@@ -467,7 +410,7 @@ namespace JoseonMurimTactics
             visibleRenderers.Add(renderer);
         }
 
-        private void DrawHoverPath(object activeUnit, Vector2Int start, Vector2Int hoverCell, float tileWidth,
+        private void DrawHoverPath(BattleTestUnit activeUnit, Vector2Int start, Vector2Int hoverCell, float tileWidth,
                                    float tileHeight)
         {
             if (IsInvalidCell(hoverCell) || hoverCell == start)
@@ -475,7 +418,7 @@ namespace JoseonMurimTactics
                 return;
             }
 
-            object occupant = InvokeMethod(controller, "UnitAt", hoverCell);
+            BattleTestUnit occupant = controller == null ? null : controller.GetPreviewUnitAt(hoverCell);
             bool validDestination = reachableCells.ContainsKey(hoverCell) &&
                                     (occupant == null || ReferenceEquals(occupant, activeUnit));
             if (!validDestination)
@@ -484,7 +427,9 @@ namespace JoseonMurimTactics
                 return;
             }
 
-            List<Vector2Int> path = ReadPath(InvokeMethod(controller, "FindMovePath", activeUnit, hoverCell));
+            List<Vector2Int> path = controller == null
+                                        ? new List<Vector2Int>()
+                                        : controller.GetPreviewMovePath(activeUnit, hoverCell);
             if (path.Count < 2)
             {
                 DrawPathMarker(hoverCell, PreviewKind.CursorTarget, 0f, tileWidth, tileHeight);
@@ -665,63 +610,31 @@ namespace JoseonMurimTactics
             // BattleTestController.RefreshHighlights can be called by command/phase changes.
             // Clearing here keeps movement highlights click-gated even when the controller auto-selects
             // the next ally or the player clicks a unit that cannot currently act.
-            InvokeMethod(controller, "ClearHighlights");
-        }
-
-        private void FillReachable(object activeUnit, Dictionary<Vector2Int, int> output)
-        {
-            object result = InvokeMethod(controller, "GetReachableCells", activeUnit);
-            if (result == null)
+            if (controller != null)
             {
-                return;
-            }
-
-            IDictionary dictionary = result as IDictionary;
-            if (dictionary != null)
-            {
-                foreach (DictionaryEntry entry in dictionary)
-                {
-                    if (entry.Key is Vector2Int)
-                    {
-                        output[(Vector2Int)entry.Key] = SafeInt(entry.Value, 0);
-                    }
-                }
-
-                return;
-            }
-
-            IEnumerable enumerable = result as IEnumerable;
-            if (enumerable == null)
-            {
-                return;
-            }
-
-            foreach (object item in enumerable)
-            {
-                object key = GetValue(item, "Key");
-                object value = GetValue(item, "Value");
-                if (key is Vector2Int)
-                {
-                    output[(Vector2Int)key] = SafeInt(value, 0);
-                }
+                controller.ClearPreviewHighlights();
             }
         }
 
-        private int ResolveMoveBudget(object activeUnit, Dictionary<Vector2Int, int> reachable)
+        private void FillReachable(BattleTestUnit activeUnit, Dictionary<Vector2Int, int> output)
         {
-            object effective = InvokeMethod(controller, "EffectiveMoveRange", activeUnit);
-            int budget = SafeInt(effective, 0);
-
-            if (budget <= 0)
+            if (controller == null || activeUnit == null)
             {
-                object definition = GetValue(activeUnit, "definition");
-                budget = SafeInt(GetValue(definition, "moveRange"), 0);
+                return;
             }
 
-            if (budget <= 0)
+            foreach (KeyValuePair<Vector2Int, int> pair in controller.GetPreviewReachableCells(activeUnit))
             {
-                object actions = GetValue(activeUnit, "actions");
-                budget = SafeInt(GetValue(actions, "movementLeft"), 0);
+                output[pair.Key] = pair.Value;
+            }
+        }
+
+        private int ResolveMoveBudget(BattleTestUnit activeUnit, Dictionary<Vector2Int, int> reachable)
+        {
+            int budget = controller == null || activeUnit == null ? 0 : controller.GetPreviewMoveRange(activeUnit);
+            if (budget <= 0 && activeUnit != null)
+            {
+                budget = activeUnit.actions == null ? 0 : activeUnit.actions.movementLeft;
             }
 
             if (budget <= 0)
@@ -735,13 +648,11 @@ namespace JoseonMurimTactics
             return Mathf.Max(1, budget);
         }
 
-        private void CollectTiles(List<object> output)
+        private void CollectTiles(List<BattleTestTile> output)
         {
-            object tiles = GetValue(controller, "tiles");
-            IEnumerable enumerable = tiles as IEnumerable;
-            if (enumerable != null)
+            if (controller != null && controller.PreviewTiles != null)
             {
-                foreach (object tile in enumerable)
+                foreach (BattleTestTile tile in controller.PreviewTiles)
                 {
                     if (tile != null)
                     {
@@ -752,78 +663,44 @@ namespace JoseonMurimTactics
                 return;
             }
 
-            BattleMapSceneController sceneController = UnityEngine.Object.FindAnyObjectByType<BattleMapSceneController>();
-            if (sceneController != null && sceneController.Cells != null)
+        }
+
+        private IEnumerable<BattleTestUnit> EnumerateUnits()
+        {
+            if (controller != null && controller.PreviewUnits != null)
             {
-                foreach (object cell in sceneController.Cells)
+                foreach (BattleTestUnit unit in controller.PreviewUnits)
                 {
-                    if (cell != null)
+                    if (unit != null)
                     {
-                        output.Add(cell);
+                        yield return unit;
                     }
                 }
-            }
-        }
 
-        private IEnumerable<object> EnumerateUnits()
-        {
-            object units = GetValue(controller, "units");
-            IEnumerable enumerable = units as IEnumerable;
-            if (enumerable == null)
-            {
                 yield break;
             }
-
-            foreach (object unit in enumerable)
-            {
-                if (unit != null)
-                {
-                    yield return unit;
-                }
-            }
         }
 
-        private Vector2Int ReadCell(object source)
+        private static Vector2Int ReadCell(BattleTestUnit source)
         {
-            object value = GetValue(source, "cell") ?? GetValue(source, "currentCell");
-            if (value is Vector2Int)
-            {
-                return (Vector2Int)value;
-            }
-
-            return new Vector2Int(int.MinValue, int.MinValue);
+            return source == null ? InvalidCell() : source.cell;
         }
 
-        private Vector3 UnitWorldPosition(object unit)
+        private static Vector2Int ReadCell(BattleTestTile source)
         {
-            object view = GetValue(unit, "view");
-            Component component = view as Component;
-            if (component != null)
-            {
-                return component.transform.position;
-            }
+            return source == null ? InvalidCell() : source.cell;
+        }
 
-            Transform transformValue = view as Transform;
-            if (transformValue != null)
-            {
-                return transformValue.position;
-            }
-
-            return CellWorldPosition(ReadCell(unit));
+        private Vector3 UnitWorldPosition(BattleTestUnit unit)
+        {
+            return unit == null || unit.view == null ? CellWorldPosition(ReadCell(unit)) : unit.view.transform.position;
         }
 
         private Vector3 CellWorldPosition(Vector2Int cell)
         {
-            object direct = InvokeMethod(controller, "UnitWorldPosition", cell);
-            if (direct is Vector3)
+            if (controller != null)
             {
-                return (Vector3)direct;
-            }
-
-            direct = InvokeMethod(controller, "TileWorldPosition", cell);
-            if (direct is Vector3)
-            {
-                return (Vector3)direct;
+                return controller.GetPreviewUnitWorldPosition(cell);
             }
 
             BattleMapSceneController sceneController = UnityEngine.Object.FindAnyObjectByType<BattleMapSceneController>();
@@ -979,34 +856,14 @@ namespace JoseonMurimTactics
                 }
             }
 
-            object gridCell = InvokeMethod(controller, "WorldToGrid", point);
-            if (gridCell is Vector2Int)
+            if (controller != null)
             {
-                object tile = InvokeMethod(controller, "TileAt", gridCell);
-                return tile == null ? InvalidCell() : (Vector2Int)gridCell;
+                Vector2Int gridCell = controller.GetPreviewGridCell(point);
+                BattleTestTile tile = controller.GetPreviewTileAt(gridCell);
+                return tile == null ? InvalidCell() : gridCell;
             }
 
             return InvalidCell();
-        }
-
-        private static List<Vector2Int> ReadPath(object source)
-        {
-            List<Vector2Int> path = new List<Vector2Int>();
-            IEnumerable enumerable = source as IEnumerable;
-            if (enumerable == null)
-            {
-                return path;
-            }
-
-            foreach (object item in enumerable)
-            {
-                if (item is Vector2Int)
-                {
-                    path.Add((Vector2Int)item);
-                }
-            }
-
-            return path;
         }
 
         private float AngleFromTo(Vector2Int from, Vector2Int to)
@@ -1032,129 +889,6 @@ namespace JoseonMurimTactics
             return cell.x == int.MinValue && cell.y == int.MinValue;
         }
 
-        private static object GetValue(object target, string memberName)
-        {
-            if (target == null || string.IsNullOrEmpty(memberName))
-            {
-                return null;
-            }
-
-            Type type = target.GetType();
-            while (type != null)
-            {
-                FieldInfo field = type.GetField(memberName, AnyInstance);
-                if (field != null)
-                {
-                    return field.GetValue(target);
-                }
-
-                PropertyInfo property = type.GetProperty(memberName, AnyInstance);
-                if (property != null && property.GetIndexParameters().Length == 0)
-                {
-                    return property.GetValue(target, null);
-                }
-
-                type = type.BaseType;
-            }
-
-            return null;
-        }
-
-        private static object InvokeMethod(object target, string methodName, params object[] args)
-        {
-            if (target == null || string.IsNullOrEmpty(methodName))
-            {
-                return null;
-            }
-
-            Type type = target.GetType();
-            while (type != null)
-            {
-                MethodInfo method = FindMethod(type, methodName, args);
-                if (method != null)
-                {
-                    return method.Invoke(target, args);
-                }
-
-                type = type.BaseType;
-            }
-
-            return null;
-        }
-
-        private static MethodInfo FindMethod(Type type, string methodName, object[] args)
-        {
-            MethodInfo[] methods = type.GetMethods(AnyInstance | AnyStatic);
-            for (int i = 0; i < methods.Length; i++)
-            {
-                MethodInfo method = methods[i];
-                if (method.Name != methodName)
-                {
-                    continue;
-                }
-
-                ParameterInfo[] parameters = method.GetParameters();
-                if (parameters.Length != args.Length)
-                {
-                    continue;
-                }
-
-                bool compatible = true;
-                for (int p = 0; p < parameters.Length; p++)
-                {
-                    if (args[p] == null)
-                    {
-                        continue;
-                    }
-
-                    Type parameterType = parameters[p].ParameterType;
-                    if (!parameterType.IsInstanceOfType(args[p]))
-                    {
-                        // Reflection does not consider Vector2Int boxed as custom structs through IsInstanceOfType in every Unity profile.
-                        if (!(parameterType == Vector2IntType && args[p] is Vector2Int))
-                        {
-                            compatible = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (compatible)
-                {
-                    return method;
-                }
-            }
-
-            return null;
-        }
-
-        private static bool ReadBool(object target, string memberName, bool defaultValue = false)
-        {
-            object value = GetValue(target, memberName);
-            if (value is bool)
-            {
-                return (bool)value;
-            }
-
-            return defaultValue;
-        }
-
-        private static int SafeInt(object value, int defaultValue)
-        {
-            if (value == null)
-            {
-                return defaultValue;
-            }
-
-            try
-            {
-                return Convert.ToInt32(value);
-            }
-            catch
-            {
-                return defaultValue;
-            }
-        }
 
         private static int Manhattan(Vector2Int a, Vector2Int b)
         {

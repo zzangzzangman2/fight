@@ -15,6 +15,7 @@ public sealed class HubController : MonoBehaviour
     public const string WolfPassBattleId = "BATTLE_SOBAEK_WOLF_PASS";
     public const string TigerRavineBattleId = "BATTLE_SOBAEK_TIGER_RAVINE";
     public const string LeopardCliffBattleId = "BATTLE_SOBAEK_LEOPARD_CLIFF";
+    public const string SeorakPassRescueBattleId = "BATTLE_CH1_SEORAK_PASS_RESCUE";
     private const int MaxDailyActions = 3;
     public const string ActionPointKey = "hub:daily_actions_remaining";
     private const string ActionPointInitializedFlag = "FLAG_HUB_ACTION_POINTS_READY";

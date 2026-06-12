@@ -6,6 +6,8 @@ param(
     [string[]]$ExtraArgs
 )
 
+. "$PSScriptRoot\Use-ProjectUtf8.ps1"
+
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type @"

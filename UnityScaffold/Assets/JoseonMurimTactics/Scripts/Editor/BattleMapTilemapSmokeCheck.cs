@@ -73,9 +73,11 @@ public static class BattleMapTilemapSmokeCheck
                 "Painted battle map should keep terrain tilemaps empty so runtime tints do not band the backdrop.");
         Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
                 "Expected generated interactable props to carry MapPropView metadata.");
+        VerifyTacticalCellColliderShape(controller);
         VerifyBlockedMapCells(controller);
         VerifyElevationMovementRules(controller);
         VerifyPlayerMoveFlow(controller);
+        VerifyBattleEndAndStatusRules(controller);
 
         CleanupGeneratedChildren(controller.transform);
         VerifyBanditLairFreeTimeMap(controller);
@@ -158,6 +160,83 @@ public static class BattleMapTilemapSmokeCheck
         return (int)InvokePrivate(controller, "StepMoveCost", from, to);
     }
 
+    private static void VerifyTacticalCellColliderShape(BattleTestController controller)
+    {
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        BattleTestTile tile = RequireTile(tiles, new Vector2Int(8, 5), "collider sample");
+        PolygonCollider2D collider = tile.GetComponent<PolygonCollider2D>();
+        Require(collider != null, "Tactical cells should have polygon colliders.");
+        Require(collider.points != null && collider.points.Length == 4, "Tactical cell collider should be a diamond.");
+        float expectedHalfHeight = controller.tileHeight / Mathf.Max(0.01f, controller.tileWidth * 2f);
+        Require(Mathf.Abs(collider.points[0].y - expectedHalfHeight) <= 0.003f,
+                "Tactical cell collider vertical radius should match the rendered diamond height.");
+    }
+
+    private static void VerifyBattleEndAndStatusRules(BattleTestController controller)
+    {
+        ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduMountainSnowfield);
+        List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        BattleTestUnit hero = FindUnit(units, "park_sungjun");
+        Require(hero != null, "Expected Park Sungjun for hero defeat rule.");
+        hero.defeated = true;
+        hero.view.SetDefeated(true);
+        Require((bool)InvokePrivate(controller, "CheckBattleEnd"),
+                "Park Sungjun defeat should immediately end the battle.");
+        Require(GetPrivate<bool>(controller, "battleOver"), "Hero defeat should set battleOver.");
+
+        ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduMountainSnowfield);
+        SetPrivate(controller, "round", 13);
+        Require((bool)InvokePrivate(controller, "CheckBattleEnd"),
+                "Entering round 13 should immediately end the battle by turn limit.");
+        Require(GetPrivate<bool>(controller, "battleOver"), "Turn-limit defeat should set battleOver.");
+        BattleHudSnapshot snapshot = (BattleHudSnapshot)InvokePrivate(controller, "CreateHudSnapshot");
+        Require(snapshot.turnLimit == 12, "HUD snapshot should expose the 12 turn limit.");
+
+        ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduMountainSnowfield);
+        units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        BattleTestUnit statusTarget = FindUnit(units, "han_biyeon") ?? FindUnit(units, "park_sungjun");
+        Require(statusTarget != null, "Expected an ally for status duration smoke test.");
+        int startHp = statusTarget.hp;
+        statusTarget.poisoned = true;
+        statusTarget.poisonTurnsLeft = 1;
+        InvokePrivate(controller, "ApplyStartOfTurn", statusTarget);
+        Require(statusTarget.hp == Mathf.Max(0, startHp - 3), "Poison should still tick at turn start.");
+        Require(!statusTarget.poisoned && statusTarget.poisonTurnsLeft == 0,
+                "Poison should clear when its duration reaches zero.");
+
+        statusTarget.chilled = true;
+        statusTarget.chilledTurnsLeft = 2;
+        InvokePrivate(controller, "ApplyStartOfTurn", statusTarget);
+        Require(statusTarget.chilled && statusTarget.chilledTurnsLeft == 1,
+                "Chill should remain for the first status turn.");
+        InvokePrivate(controller, "ApplyStartOfTurn", statusTarget);
+        Require(!statusTarget.chilled && statusTarget.chilledTurnsLeft == 0,
+                "Chill should clear when its duration reaches zero.");
+    }
+
+    private static void ResetControllerForBattleRuleSmoke(BattleTestController controller, BattleTestMapVariant variant)
+    {
+        InvokePrivate(controller, "ClearGeneratedObjects");
+        GetPrivate<List<BattleTestUnit>>(controller, "units").Clear();
+        GetPrivate<List<BattleTestInteractable>>(controller, "interactables").Clear();
+        GetPrivate<List<string>>(controller, "battleLog").Clear();
+        controller.mapVariant = variant;
+        controller.useAuthoredSceneMap = false;
+        controller.useTilemapBattlefield = true;
+        controller.useLegacyDiamondTerrain = false;
+        SetPrivate(controller, "round", 1);
+        SetPrivate(controller, "busy", false);
+        SetPrivate(controller, "aiQueued", false);
+        SetPrivate(controller, "battleOver", false);
+        SetPrivate(controller, "activeUnit", null);
+        SetPrivate(controller, "scoutMode", false);
+        GetPrivate<PhaseTurnController>(controller, "phaseTurn").Reset();
+        InvokePrivate(controller, "EnsureMapVisualSprites");
+        InvokePrivate(controller, "CreateTerrain");
+        InvokePrivate(controller, "SpawnUnits");
+        InvokePrivate(controller, "BeginPlayerPhase");
+    }
+
     private static void VerifyPlayerMoveFlow(BattleTestController controller)
     {
         InvokePrivate(controller, "SpawnUnits");
@@ -178,8 +257,22 @@ public static class BattleMapTilemapSmokeCheck
         BattleTestTile destination = FindReachableDestination(first, reachable, tiles, units);
         Require(destination != null, "Expected at least one reachable movement tile.");
 
+        Vector2Int originalCell = first.cell;
+        int originalHp = first.hp;
+        int originalMovement = first.actions.movementLeft;
         InvokePrivate(controller, "TryMove", first, destination);
         Require(first.moved, "Moved ally should be marked as moved.");
+        Require((bool)InvokePrivate(controller, "TryUndoPendingMove", first),
+                "Moved ally should be able to undo movement before committing an action.");
+        Require(first.cell == originalCell, "Undo should restore the ally's original cell.");
+        Require(first.hp == originalHp, "Undo should restore terrain-entry HP changes.");
+        Require(!first.moved, "Undo should clear the moved flag.");
+        Require(first.actions.movementLeft == originalMovement, "Undo should restore remaining movement.");
+        Require(GetPrivate<BattleCommandMode>(controller, "commandMode") == BattleCommandMode.Move,
+                "Undo should return to move command mode.");
+
+        InvokePrivate(controller, "TryMove", first, destination);
+        Require(first.moved, "Moved ally should be marked as moved after recommitting movement.");
         Require(first.actions.movementLeft == 0, "Committed movement should spend all remaining movement.");
         Require(!first.CanMove, "Moved ally should not be able to move again.");
         Require(GetPrivate<BattleCommandMode>(controller, "commandMode") != BattleCommandMode.Move,

@@ -41,6 +41,14 @@
 
 Unity 6000.4 계열에서 `UnityScaffold` 프로젝트를 열고 `Boot` 씬을 실행합니다.
 
+### Windows PowerShell 한글 인코딩
+
+이 저장소의 텍스트 파일은 UTF-8입니다. Windows PowerShell 5.1에서 `Get-Content`를 인코딩 지정 없이 실행하면 BOM 없는 UTF-8 한글을 CP949처럼 읽어 깨져 보일 수 있습니다.
+
+- 프로젝트용 셸: `utf8-powershell.cmd`
+- 기존 PowerShell에서 적용: `. .\tools\Use-ProjectUtf8.ps1`
+- 텍스트 인코딩 검증: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\Test-Utf8Text.ps1`
+
 기본 루프:
 
 ```text

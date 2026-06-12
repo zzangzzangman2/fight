@@ -11,6 +11,7 @@ public static class FactionIds
     public const string RoyalCourt = "ROYAL_COURT";               // 조정
     public const string DemonicCult = "DEMONIC_CULT";             // 마교
     public const string BlackHatGuild = "BLACK_HAT_GUILD";        // 흑립방(사파)
+    public const string SeorakSpear = "SEORAK_SPEAR";             // 설악창문
 
     public static string Label(string factionId)
     {
@@ -28,6 +29,8 @@ public static class FactionIds
             return "마교";
         case BlackHatGuild:
             return "흑립방";
+        case SeorakSpear:
+            return "설악창문";
         default:
             return factionId;
         }

@@ -28,6 +28,15 @@ public sealed class BattleTestController : MonoBehaviour
     private const int FireInteractDamage = 4;
     private const int FallDamage = 10;
     private const int HighGroundRangeBonusElevation = 2;
+    private const int DefaultTurnLimit = 12;
+    private const int DefaultPoisonTurns = 2;
+    private const int DefaultChilledTurns = 2;
+    private const string RequiredHeroUnitId = "park_sungjun";
+    private const float EnemyPhaseStartDelay = 0.15f;
+    private const float EnemyFocusSeconds = 0.12f;
+    private const float EnemyFocusSettleDelay = 0.12f;
+    private const float EnemyPostMoveDelay = 0.08f;
+    private const float EnemyBetweenUnitDelay = 0.15f;
     private const string SnowGatePaintedBattleMapResource = "MapAssets/Backgrounds/baekdu_snow_gate_srpg_ground";
     private const string SnowfieldPaintedBattleMapResource = "MapAssets/Backgrounds/baekdu_mountain_snowfield_srpg_ground";
     private const string SnowGateMapDisplayName = "백두산 설문 관문전";
@@ -36,6 +45,7 @@ public sealed class BattleTestController : MonoBehaviour
     private const string WolfPassMapDisplayName = "소백촌 늑대 고개";
     private const string TigerRavineMapDisplayName = "백호 바위골";
     private const string LeopardCliffMapDisplayName = "표범 절벽길";
+    private const string SeorakPassRescueMapDisplayName = "설운령 약초 수레 호위전";
     private const string SnowGateMapConcept =
         "중앙 1칸 협로, 좌측 설죽림 우회로, 우측 절벽 고지, 얼어붙은 여울과 붕괴 가능한 다리 밧줄을 쓰는 대표 수작업 전장";
     private const string SnowfieldMapConcept =
@@ -48,6 +58,8 @@ public sealed class BattleTestController : MonoBehaviour
         "억새 엄폐, 막힌 바위벽, 낙석 협곡, H3 바위 선반으로 주민을 구조하는 산군 토벌 전장";
     private const string LeopardCliffMapConcept =
         "낭떠러지, 대나무 덤불, 밧줄다리, H3 약초 선반으로 매복을 읽는 표범 호송 전장";
+    private const string SeorakPassRescueMapConcept =
+        "설운령 산길, 약초 수레, 피난민, 밧줄다리 병목과 대나무 덤불을 활용하는 백련 첫 합류 호위전";
     private static readonly bool UseLegacyOnGui = false;
     private const float TacticalCameraMinSize = 3.05f;
     private const float TacticalCameraMaxSize = 3.45f;
@@ -64,6 +76,7 @@ public sealed class BattleTestController : MonoBehaviour
             case BattleTestMapVariant.WolfPass:
             case BattleTestMapVariant.TigerRavine:
             case BattleTestMapVariant.LeopardCliff:
+            case BattleTestMapVariant.SeorakPassRescue:
                 return string.Empty;
             default:
                 return SnowGatePaintedBattleMapResource;
@@ -87,6 +100,8 @@ public sealed class BattleTestController : MonoBehaviour
                 return TigerRavineMapDisplayName;
             case BattleTestMapVariant.LeopardCliff:
                 return LeopardCliffMapDisplayName;
+            case BattleTestMapVariant.SeorakPassRescue:
+                return SeorakPassRescueMapDisplayName;
             default:
                 return SnowGateMapDisplayName;
             }
@@ -109,6 +124,8 @@ public sealed class BattleTestController : MonoBehaviour
                 return TigerRavineMapConcept;
             case BattleTestMapVariant.LeopardCliff:
                 return LeopardCliffMapConcept;
+            case BattleTestMapVariant.SeorakPassRescue:
+                return SeorakPassRescueMapConcept;
             default:
                 return SnowGateMapConcept;
             }
@@ -178,6 +195,7 @@ public sealed class BattleTestController : MonoBehaviour
     private string hudNotice;
     private float hudNoticeUntil;
     private BattleCommandMode commandMode = BattleCommandMode.Move;
+    private MovementUndoState pendingMovementUndo;
 
     private void Start()
     {
@@ -281,8 +299,18 @@ public sealed class BattleTestController : MonoBehaviour
 
         showTerrainNames = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
 
-        if (activeUnit != null && Input.GetKeyDown(KeyCode.Escape))
+        if (activeUnit != null && (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)))
         {
+            if (TryUndoPendingMove(activeUnit))
+            {
+                return;
+            }
+
+            if (!Input.GetKeyDown(KeyCode.Escape))
+            {
+                return;
+            }
+
             SetCommandMode(BattleCommandMode.Move);
         }
         else if (activeUnit != null && Input.GetKeyDown(KeyCode.Alpha1))
@@ -1102,6 +1130,7 @@ public sealed class BattleTestController : MonoBehaviour
         aiQueued = false;
         battleOver = false;
         commandMode = BattleCommandMode.Move;
+        pendingMovementUndo = default;
         scoutMode = false;
         showThreatOverlay = false;
         showElevationOverlay = false;
@@ -1146,7 +1175,14 @@ public sealed class BattleTestController : MonoBehaviour
 
         foreach (Transform child in children)
         {
-            Destroy(child.gameObject);
+            if (Application.isPlaying)
+            {
+                Destroy(child.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(child.gameObject);
+            }
         }
 
         tilemapBattlefield = null;
@@ -1227,6 +1263,16 @@ public sealed class BattleTestController : MonoBehaviour
             width = 16;
             height = 12;
             unitDefinitions = BuildLeopardCliffUnitDefinitions(baselineUnitDefinitions);
+            return;
+        }
+
+        if (battleId == HubController.SeorakPassRescueBattleId)
+        {
+            mapVariant = BattleTestMapVariant.SeorakPassRescue;
+            useAuthoredSceneMap = false;
+            width = 16;
+            height = 12;
+            unitDefinitions = BuildSeorakPassRescueUnitDefinitions(baselineUnitDefinitions);
             return;
         }
 
@@ -1684,6 +1730,7 @@ public sealed class BattleTestController : MonoBehaviour
         {
             phase = phaseTurn.CurrentPhase,
             round = round,
+            turnLimit = DefaultTurnLimit,
             battleOver = battleOver,
             scoutMode = scoutMode,
             instruction = BuildHudInstructionText(),
@@ -1730,6 +1777,76 @@ public sealed class BattleTestController : MonoBehaviour
 
         snapshot.logs.AddRange(battleLog);
         return snapshot;
+    }
+
+    public BattleTestUnit PreviewActiveUnit => activeUnit;
+    public bool PreviewBattleOver => battleOver;
+    public bool PreviewBusy => busy;
+    public bool PreviewIsPlayerPhase => phaseTurn.IsPlayerPhase;
+    public BattleCommandMode PreviewCommandMode => commandMode;
+    public IEnumerable<BattleTestUnit> PreviewUnits => units;
+    public IEnumerable<BattleTestTile> PreviewTiles
+    {
+        get
+        {
+            if (tiles == null)
+            {
+                yield break;
+            }
+
+            foreach (BattleTestTile tile in tiles)
+            {
+                if (tile != null)
+                {
+                    yield return tile;
+                }
+            }
+        }
+    }
+
+    public Dictionary<Vector2Int, int> GetPreviewReachableCells(BattleTestUnit unit)
+    {
+        return unit == null ? new Dictionary<Vector2Int, int>() : GetReachableCells(unit);
+    }
+
+    public int GetPreviewMoveRange(BattleTestUnit unit)
+    {
+        return unit == null ? 0 : EffectiveMoveRange(unit);
+    }
+
+    public BattleTestUnit GetPreviewUnitAt(Vector2Int cell)
+    {
+        return UnitAt(cell);
+    }
+
+    public BattleTestTile GetPreviewTileAt(Vector2Int cell)
+    {
+        return TileAt(cell);
+    }
+
+    public List<Vector2Int> GetPreviewMovePath(BattleTestUnit unit, Vector2Int destination)
+    {
+        return unit == null ? new List<Vector2Int>() : FindMovePath(unit, destination);
+    }
+
+    public Vector3 GetPreviewUnitWorldPosition(Vector2Int cell)
+    {
+        return UnitWorldPosition(cell);
+    }
+
+    public Vector3 GetPreviewTileWorldPosition(Vector2Int cell)
+    {
+        return GridToWorld(cell);
+    }
+
+    public Vector2Int GetPreviewGridCell(Vector2 worldPoint)
+    {
+        return WorldToGrid(worldPoint);
+    }
+
+    public void ClearPreviewHighlights()
+    {
+        ClearHighlights();
     }
 
     private string BuildHudObjectiveText()
@@ -2171,7 +2288,8 @@ public sealed class BattleTestController : MonoBehaviour
         tileObject.transform.localScale = new Vector3(tileWidth, tileWidth, 1f);
 
         PolygonCollider2D collider = tileObject.AddComponent<PolygonCollider2D>();
-        collider.points = new[] { new Vector2(0f, 0.25f), new Vector2(0.5f, 0f), new Vector2(0f, -0.25f),
+        float halfHeight = tileHeight / Mathf.Max(0.01f, tileWidth * 2f);
+        collider.points = new[] { new Vector2(0f, halfHeight), new Vector2(0.5f, 0f), new Vector2(0f, -halfHeight),
                                   new Vector2(-0.5f, 0f) };
 
         BattleTestTile tile = tileObject.AddComponent<BattleTestTile>();
@@ -3284,7 +3402,7 @@ public sealed class BattleTestController : MonoBehaviour
                 return true;
             }
 
-            if (IsLargeInitialSpawnAvoidanceProp(interactable) && GridDistance(interactable.cell, cell) <= 1)
+            if (IsLargeInitialSpawnAvoidanceProp(interactable) && ChebyshevDistance(interactable.cell, cell) <= 1)
             {
                 return true;
             }
@@ -3319,6 +3437,7 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        pendingMovementUndo = default;
         phaseTurn.BeginPlayerPhase();
         round = phaseTurn.Round;
         aiQueued = false;
@@ -3351,6 +3470,7 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        pendingMovementUndo = default;
         phaseTurn.BeginEnemyPhase();
         aiQueued = false;
         activeUnit = null;
@@ -3390,6 +3510,7 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         BattleTestUnit waitingUnit = activeUnit;
+        CommitPendingMove(waitingUnit);
         waitingUnit.view.PlayWait();
         waitingUnit.SpendMainAction();
         AddLog($"[대기] {waitingUnit.definition.displayName} 행동 종료.");
@@ -3398,6 +3519,7 @@ public sealed class BattleTestController : MonoBehaviour
 
     private void EndPlayerPhase()
     {
+        pendingMovementUndo = default;
         activeUnit = null;
         ClearHighlights();
         BeginEnemyPhase();
@@ -3562,6 +3684,11 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (pendingMovementUndo.active && pendingMovementUndo.unit != unit)
+        {
+            CommitPendingMove(pendingMovementUndo.unit);
+        }
+
         activeUnit = unit;
         commandMode = DefaultCommandForUnit(unit);
         AddLog($"[선택] {unit.definition.displayName}");
@@ -3648,6 +3775,15 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (unit.definition.faction == Faction.Ally && phaseTurn.IsPlayerPhase)
+        {
+            pendingMovementUndo = MovementUndoState.Capture(unit);
+        }
+        else
+        {
+            pendingMovementUndo = default;
+        }
+
         unit.cell = destination.cell;
         unit.SpendMovement(reachable[destination.cell]);
         ApplyTileEntry(unit, destination);
@@ -3669,6 +3805,76 @@ public sealed class BattleTestController : MonoBehaviour
             RefreshUnits();
         }
         AddLog($"[이동] {unit.definition.displayName} 이동.");
+    }
+
+    private bool TryUndoPendingMove(BattleTestUnit unit)
+    {
+        if (!CanUndoPendingMove(unit))
+        {
+            return false;
+        }
+
+        RestoreMovementUndo(pendingMovementUndo);
+        pendingMovementUndo = default;
+        activeUnit = unit;
+        commandMode = BattleCommandMode.Move;
+        AddLog("[Move] Movement canceled.");
+        RefreshHighlights();
+        RefreshUnits();
+        FocusCameraOnUnit(unit, 0.12f);
+        return true;
+    }
+
+    private bool CanUndoPendingMove(BattleTestUnit unit)
+    {
+        return pendingMovementUndo.active && pendingMovementUndo.unit == unit && unit != null &&
+               !busy && !battleOver && phaseTurn.IsPlayerPhase &&
+               unit.definition.faction == Faction.Ally && !unit.acted;
+    }
+
+    private void CommitPendingMove(BattleTestUnit unit)
+    {
+        if (pendingMovementUndo.active && (unit == null || pendingMovementUndo.unit == unit))
+        {
+            pendingMovementUndo = default;
+        }
+    }
+
+    private void RestoreMovementUndo(MovementUndoState state)
+    {
+        BattleTestUnit unit = state.unit;
+        if (unit == null)
+        {
+            return;
+        }
+
+        unit.cell = state.cell;
+        unit.hp = state.hp;
+        unit.inner = state.inner;
+        unit.specialCooldownLeft = state.specialCooldownLeft;
+        unit.moved = state.moved;
+        unit.acted = state.acted;
+        unit.defeated = state.defeated;
+        unit.guarded = state.guarded;
+        unit.poisoned = state.poisoned;
+        unit.poisonTurnsLeft = state.poisonTurnsLeft;
+        unit.chilled = state.chilled;
+        unit.chilledTurnsLeft = state.chilledTurnsLeft;
+        unit.marked = state.marked;
+        unit.actions.mainAction = state.mainAction;
+        unit.actions.bonusAction = state.bonusAction;
+        unit.actions.reaction = state.reaction;
+        unit.actions.movementLeft = state.movementLeft;
+
+        if (unit.view != null)
+        {
+            unit.view.SetDefeated(unit.defeated);
+            unit.view.transform.position = UnitWorldPosition(unit.cell);
+            if (!unit.defeated)
+            {
+                unit.view.PlayIdle();
+            }
+        }
     }
 
     private bool TryAttack(BattleTestUnit attacker, BattleTestUnit target, bool endAfterAttack)
@@ -3697,6 +3903,8 @@ public sealed class BattleTestController : MonoBehaviour
             AddLog("[공격] 대나무숲/연막/담장에 시야가 막혔습니다.");
             return false;
         }
+
+        CommitPendingMove(attacker);
 
         if (Application.isPlaying)
         {
@@ -4003,12 +4211,12 @@ public sealed class BattleTestController : MonoBehaviour
         switch (actor.definition.specialEffect)
         {
         case BattleSpecialEffect.Poison:
-            target.poisoned = true;
+            ApplyPoison(target, DefaultPoisonTurns);
             CreatePoisonSmoke(target.cell);
             AddLog($"[Status] {target.definition.displayName} poisoned.");
             break;
         case BattleSpecialEffect.Freeze:
-            target.chilled = true;
+            ApplyChill(target, DefaultChilledTurns);
             FreezeWaterAround(target.cell);
             AddLog($"[Status] {target.definition.displayName} chilled.");
             break;
@@ -4027,6 +4235,41 @@ public sealed class BattleTestController : MonoBehaviour
 
         actor.inner = Mathf.Max(0, actor.inner - actor.definition.specialCost);
         actor.specialCooldownLeft = actor.definition.specialCooldown;
+    }
+
+    private void ApplyPoison(BattleTestUnit target, int turns)
+    {
+        if (target == null || target.defeated)
+        {
+            return;
+        }
+
+        target.poisoned = true;
+        target.poisonTurnsLeft = Mathf.Max(target.poisonTurnsLeft, Mathf.Max(1, turns));
+    }
+
+    private void ApplyChill(BattleTestUnit target, int turns)
+    {
+        if (target == null || target.defeated)
+        {
+            return;
+        }
+
+        target.chilled = true;
+        target.chilledTurnsLeft = Mathf.Max(target.chilledTurnsLeft, Mathf.Max(1, turns));
+    }
+
+    private void ClearNegativeStatuses(BattleTestUnit target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        target.poisoned = false;
+        target.poisonTurnsLeft = 0;
+        target.chilled = false;
+        target.chilledTurnsLeft = 0;
     }
 
     private IEnumerator WaitActionSeconds(float seconds)
@@ -4089,6 +4332,8 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
+        CommitPendingMove(actor);
+
         bool specialAttackLike = IsHostileAttackSpecial(actor.definition.specialEffect);
         if (Application.isPlaying && specialAttackLike)
         {
@@ -4126,8 +4371,7 @@ public sealed class BattleTestController : MonoBehaviour
             int healed =
                 Mathf.Min(target.definition.maxHp - target.hp, actor.definition.specialPower + random.Next(4, 9));
             target.hp += Mathf.Max(0, healed);
-            target.poisoned = false;
-            target.chilled = false;
+            ClearNegativeStatuses(target);
             AddLog(
                 $"[무공] {actor.definition.displayName}: {actor.definition.specialName}. {target.definition.displayName} 회복 {healed}.");
             return false;
@@ -4135,7 +4379,7 @@ public sealed class BattleTestController : MonoBehaviour
             bool poisonHit = ResolveAttack(actor, target, true);
             if (allowStatus && poisonHit && !target.defeated)
             {
-                target.poisoned = true;
+                ApplyPoison(target, DefaultPoisonTurns);
                 CreatePoisonSmoke(target.cell);
                 AddLog($"[상태] {target.definition.displayName} 중독.");
             }
@@ -4144,7 +4388,7 @@ public sealed class BattleTestController : MonoBehaviour
             bool freezeHit = ResolveAttack(actor, target, true);
             if (allowStatus && freezeHit && !target.defeated)
             {
-                target.chilled = true;
+                ApplyChill(target, DefaultChilledTurns);
                 FreezeWaterAround(target.cell);
                 AddLog($"[상태] {target.definition.displayName} 둔화.");
             }
@@ -4434,6 +4678,8 @@ public sealed class BattleTestController : MonoBehaviour
             return false;
         }
 
+        CommitPendingMove(actor);
+
         interactable.used = true;
         FadeInteractable(interactable);
 
@@ -4515,6 +4761,7 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        CommitPendingMove(activeUnit);
         activeUnit.guarded = true;
         activeUnit.view.PlayGuard();
         activeUnit.SpendMainAction();
@@ -4530,6 +4777,8 @@ public sealed class BattleTestController : MonoBehaviour
         {
             return false;
         }
+
+        CommitPendingMove(actor);
 
         if (phaseTurn.AllFactionUnitsActed(units, Faction.Ally))
         {
@@ -4642,7 +4891,7 @@ public sealed class BattleTestController : MonoBehaviour
     private IEnumerator RunEnemyPhase()
     {
         busy = true;
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(EnemyPhaseStartDelay);
 
         foreach (BattleTestUnit enemy in units)
         {
@@ -4655,8 +4904,8 @@ public sealed class BattleTestController : MonoBehaviour
             commandMode = BattleCommandMode.Move;
             RefreshHighlights();
             RefreshUnits();
-            yield return PanCameraToUnit(activeUnit, 0.22f);
-            yield return new WaitForSeconds(0.25f);
+            yield return PanCameraToUnit(activeUnit, EnemyFocusSeconds);
+            yield return new WaitForSeconds(EnemyFocusSettleDelay);
 
             BattleTestUnit target = FindNearestEnemy(activeUnit);
             if (target == null)
@@ -4688,7 +4937,7 @@ public sealed class BattleTestController : MonoBehaviour
                     activeUnit.SpendMovement(moveCost);
                     ApplyTileEntry(activeUnit, best);
                     yield return AnimateMove(activeUnit, path);
-                    yield return new WaitForSeconds(0.15f);
+                    yield return new WaitForSeconds(EnemyPostMoveDelay);
                 }
             }
 
@@ -4705,7 +4954,7 @@ public sealed class BattleTestController : MonoBehaviour
                 yield break;
             }
 
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(EnemyBetweenUnitDelay);
         }
 
         busy = false;
@@ -4822,12 +5071,43 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (unit.poisoned)
         {
+            if (unit.poisonTurnsLeft <= 0)
+            {
+                unit.poisonTurnsLeft = 1;
+            }
+
             unit.hp = Mathf.Max(0, unit.hp - 3);
             AddLog($"[상태] {unit.definition.displayName} 중독 피해 3.");
             if (unit.hp == 0)
             {
                 unit.defeated = true;
                 unit.view.SetDefeated(true);
+                ClearNegativeStatuses(unit);
+                return;
+            }
+
+            unit.poisonTurnsLeft--;
+            if (unit.poisonTurnsLeft <= 0)
+            {
+                unit.poisoned = false;
+                unit.poisonTurnsLeft = 0;
+                AddLog($"[Status] {unit.definition.displayName} poison faded.");
+            }
+        }
+
+        if (unit.chilled)
+        {
+            if (unit.chilledTurnsLeft <= 0)
+            {
+                unit.chilledTurnsLeft = 1;
+            }
+
+            unit.chilledTurnsLeft--;
+            if (unit.chilledTurnsLeft <= 0)
+            {
+                unit.chilled = false;
+                unit.chilledTurnsLeft = 0;
+                AddLog($"[Status] {unit.definition.displayName} chill faded.");
             }
         }
     }
@@ -5242,12 +5522,12 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (tile.hazardType == HazardType.DeepWater || tile.terrain == TerrainType.DeepWater)
         {
-            unit.chilled = true;
+            ApplyChill(unit, 1);
             DealTerrainDamage(unit, 6, reason + " into deep water");
         }
         else if (tile.hazardType == HazardType.Ice || tile.hazardType == HazardType.Slippery)
         {
-            unit.chilled = true;
+            ApplyChill(unit, 1);
             AddLog($"[Terrain] {unit.definition.displayName} loses footing on ice.");
         }
     }
@@ -5304,7 +5584,7 @@ public sealed class BattleTestController : MonoBehaviour
             {
                 if (nextTile.hazardType == HazardType.DeepWater || nextTile.terrain == TerrainType.DeepWater)
                 {
-                    target.chilled = true;
+                    ApplyChill(target, 1);
                     SyncPushedView();
                     DealTerrainDamage(target, 6, reason + " into deep water");
                     return true;
@@ -6622,12 +6902,32 @@ public sealed class BattleTestController : MonoBehaviour
 
     private bool CheckBattleEnd()
     {
+        if (battleOver)
+        {
+            return true;
+        }
+
+        if (round > DefaultTurnLimit)
+        {
+            battleOver = true;
+            ClearHighlights();
+            PlayBattleOutcomeVisuals(false);
+            AddLog("[Battle End] Defeat. Turn limit exceeded.");
+            return true;
+        }
+
         bool alliesAlive = false;
         bool enemiesAlive = false;
         bool objectiveBreached = false;
+        bool requiredHeroDefeated = false;
 
         foreach (BattleTestUnit unit in units)
         {
+            if (unit.definition != null && unit.definition.id == RequiredHeroUnitId && unit.defeated)
+            {
+                requiredHeroDefeated = true;
+            }
+
             if (unit.defeated)
             {
                 continue;
@@ -6646,6 +6946,15 @@ public sealed class BattleTestController : MonoBehaviour
                     objectiveBreached = true;
                 }
             }
+        }
+
+        if (requiredHeroDefeated)
+        {
+            battleOver = true;
+            ClearHighlights();
+            PlayBattleOutcomeVisuals(false);
+            AddLog("[Battle End] Defeat. Park Sungjun has fallen.");
+            return true;
         }
 
         if (objectiveBreached)
@@ -6722,6 +7031,11 @@ public sealed class BattleTestController : MonoBehaviour
     private int GridDistance(Vector2Int a, Vector2Int b)
     {
         return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
+    }
+
+    private int ChebyshevDistance(Vector2Int a, Vector2Int b)
+    {
+        return Mathf.Max(Mathf.Abs(a.x - b.x), Mathf.Abs(a.y - b.y));
     }
 
     private bool HasLineOfSight(Vector2Int fromCell, Vector2Int toCell)
@@ -8429,6 +8743,60 @@ public sealed class BattleTestController : MonoBehaviour
         }
     }
 
+    private struct MovementUndoState
+    {
+        public bool active;
+        public BattleTestUnit unit;
+        public Vector2Int cell;
+        public int hp;
+        public int inner;
+        public int specialCooldownLeft;
+        public bool moved;
+        public bool acted;
+        public bool defeated;
+        public bool guarded;
+        public bool poisoned;
+        public int poisonTurnsLeft;
+        public bool chilled;
+        public int chilledTurnsLeft;
+        public bool marked;
+        public bool mainAction;
+        public bool bonusAction;
+        public bool reaction;
+        public int movementLeft;
+
+        public static MovementUndoState Capture(BattleTestUnit unit)
+        {
+            if (unit == null)
+            {
+                return default;
+            }
+
+            return new MovementUndoState
+            {
+                active = true,
+                unit = unit,
+                cell = unit.cell,
+                hp = unit.hp,
+                inner = unit.inner,
+                specialCooldownLeft = unit.specialCooldownLeft,
+                moved = unit.moved,
+                acted = unit.acted,
+                defeated = unit.defeated,
+                guarded = unit.guarded,
+                poisoned = unit.poisoned,
+                poisonTurnsLeft = unit.poisonTurnsLeft,
+                chilled = unit.chilled,
+                chilledTurnsLeft = unit.chilledTurnsLeft,
+                marked = unit.marked,
+                mainAction = unit.actions.mainAction,
+                bonusAction = unit.actions.bonusAction,
+                reaction = unit.actions.reaction,
+                movementLeft = unit.actions.movementLeft
+            };
+        }
+    }
+
     private readonly struct TerrainProfile
     {
         public readonly TerrainType terrain;
@@ -9166,6 +9534,7 @@ public sealed class BattleTestUnitView : MonoBehaviour
         hpBarSprite.name = "BattleTestHpBar";
         return hpBarSprite;
     }
+
 }
 
 public sealed class BattleTestUnit
@@ -9183,7 +9552,9 @@ public sealed class BattleTestUnit
     public bool defeated;
     public bool guarded;
     public bool poisoned;
+    public int poisonTurnsLeft;
     public bool chilled;
+    public int chilledTurnsLeft;
     public bool marked;
 
     public BattleTestUnit(BattleTestUnitDefinition definition, BattleTestUnitView view)

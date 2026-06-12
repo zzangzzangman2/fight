@@ -7,6 +7,8 @@ param(
     [int]$Height = 900
 )
 
+. "$PSScriptRoot\Use-ProjectUtf8.ps1"
+
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms

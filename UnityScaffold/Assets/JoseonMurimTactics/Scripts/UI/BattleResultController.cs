@@ -16,6 +16,8 @@ public sealed class BattleResultController : MonoBehaviour
     private string grade;
     private string rumor;
     private BattleResultApplyOutcome applyOutcome;
+    private DialogueController postDialogue;
+    private bool postDialogueCommitted;
 
     private void Awake()
     {
@@ -33,6 +35,11 @@ public sealed class BattleResultController : MonoBehaviour
         grade = ComputeGrade();
         rumor = root.Narration != null ? root.Narration.GenerateRumor(result) : string.Empty;
         applyOutcome = root.BattleResults.Apply(result, def);
+        if (result.Won && def != null && def.id == HubController.SeorakPassRescueBattleId &&
+            !root.Flags.HasFlag(StoryFlags.Chapter1BaekRyeonJoinDialogueSeen))
+        {
+            postDialogue = TryBuildAuthoredDialogue("chapter1_baek_ryeon_join_after_battle");
+        }
     }
 
     private string ComputeGrade()
@@ -84,6 +91,21 @@ public sealed class BattleResultController : MonoBehaviour
         float h = Screen.height;
         float s = UiTheme.Scale;
         float margin = 48f * s;
+
+        if (postDialogue != null)
+        {
+            if (!postDialogue.IsFinished)
+            {
+                UiTheme.DrawTitleBackdrop();
+                GUI.Label(new Rect(0f, 24f * s, w, 44f * s), "설악창문 회랑의 맹세", UiTheme.Title);
+                GUI.Label(new Rect(0f, 70f * s, w, 28f * s), "첫 동맹 — 첫 동료 합류", UiTheme.BodyCenter);
+                UiTheme.DrawDivider(w * 0.5f, 108f * s, 480f * s);
+                postDialogue.Draw(w, h);
+                return;
+            }
+
+            CommitPostDialogue();
+        }
 
         bool won = result.Won;
         string banner = won ? "승 리" : "패 배";
@@ -330,6 +352,14 @@ public sealed class BattleResultController : MonoBehaviour
             return "약초꾼 호송로 개방";
         case "OBJ_AVOID_CLIFF_AMBUSH":
             return "절벽 매복 피해 최소화";
+        case "OBJ_DEFEAT_YUDALGEUN":
+            return "철비채 두목 유달근 격파";
+        case "OBJ_PROTECT_HERB_CART":
+            return "약초 수레와 피난민 보호";
+        case "OBJ_FIRST_COOP_BAEK_RYEON":
+            return "박성준과 백련 협공 각도 만들기";
+        case "OBJ_KEEP_CART_INTACT":
+            return "약초 수레 피해 최소화";
         case "OBJ_SAVE_PORTERS":
             return "마을 짐꾼 생존";
         case "OBJ_INSPECT_MARK":
@@ -342,6 +372,29 @@ public sealed class BattleResultController : MonoBehaviour
     private static string Signed(int v)
     {
         return v > 0 ? "+" + v : v.ToString();
+    }
+
+    private void CommitPostDialogue()
+    {
+        if (postDialogueCommitted)
+        {
+            return;
+        }
+
+        postDialogueCommitted = true;
+        root.Flags.SetFlag(StoryFlags.Chapter1BaekRyeonJoinDialogueSeen);
+        root.Flags.SetFlag(StoryFlags.Chapter1SeorakPactStarted);
+        root.Flags.SetFlag(StoryFlags.AllianceSeorakScoutSupport);
+        root.Flags.SetFlag(StoryFlags.BaekRyeonRecruited);
+        root.Session.RecruitCompanion(CompanionCatalog.BaekRyeon);
+        root.Save.Save(root.Session);
+    }
+
+    private static DialogueScript TryBuildAuthoredDialogue(string sceneId)
+    {
+        AuthoringContentManifest manifest = AuthoringContentManifest.LoadFromResources();
+        DialogueScript script = AuthoringDialogueAdapter.ToDialogueScript(manifest, sceneId);
+        return script.Nodes.Count > 0 ? script : null;
     }
 
     private List<string> CollectLootLines()

@@ -13,6 +13,8 @@ public sealed class BattlePrepController : MonoBehaviour
     private GameRoot root;
     private BattleDefinition def;
     private MissionInfo mission;
+    private DialogueController introDialogue;
+    private bool introDialogueCommitted;
 
     private void Awake()
     {
@@ -21,6 +23,11 @@ public sealed class BattlePrepController : MonoBehaviour
                                                                              : BattleEntryAdapter.PendingBattleId;
         def = BattleCatalog.Get(id);
         mission = FindMission(id);
+        if (def != null && def.id == HubController.SeorakPassRescueBattleId &&
+            !root.Flags.HasFlag(StoryFlags.Chapter1SeorakRequestStarted))
+        {
+            introDialogue = TryBuildAuthoredDialogue("chapter1_baek_ryeon_join_before_battle");
+        }
     }
 
     private static MissionInfo FindMission(string battleId)
@@ -41,6 +48,21 @@ public sealed class BattlePrepController : MonoBehaviour
         float h = Screen.height;
         float s = UiTheme.Scale;
         float margin = 44f * s;
+
+        if (introDialogue != null)
+        {
+            if (!introDialogue.IsFinished)
+            {
+                UiTheme.DrawTitleBackdrop();
+                GUI.Label(new Rect(0f, 24f * s, w, 44f * s), "제1장 2막 · 서리창의 약속", UiTheme.Title);
+                GUI.Label(new Rect(0f, 70f * s, w, 28f * s), "설운령 산길 — 약초 수레 호위", UiTheme.BodyCenter);
+                UiTheme.DrawDivider(w * 0.5f, 108f * s, 480f * s);
+                introDialogue.Draw(w, h);
+                return;
+            }
+
+            CommitIntroDialogue();
+        }
 
         GUI.Label(new Rect(margin, 26f * s, w - margin * 2f, 46f * s), "출격 준비", UiTheme.Title);
         GUI.Label(new Rect(margin, 74f * s, w - margin * 2f, 28f * s), $"{def.title} · {def.location}",
@@ -194,7 +216,11 @@ public sealed class BattlePrepController : MonoBehaviour
         UiTheme.DrawFill(mapRect, UiTheme.HanjiPanelAlt);
         Rect previewRect = new Rect(mapRect.x + 12f * s, mapRect.y + 12f * s, 146f * s,
                                     mapRect.height - 24f * s);
-        if (def != null && def.id == HubController.BanditLairBattleId)
+        if (def != null && def.id == HubController.SeorakPassRescueBattleId)
+        {
+            DrawSeorakPassMapPreview(previewRect, s);
+        }
+        else if (def != null && def.id == HubController.BanditLairBattleId)
         {
             DrawBanditLairMapPreview(previewRect, s);
         }
@@ -257,6 +283,27 @@ public sealed class BattlePrepController : MonoBehaviour
         return root == null || root.Flags == null ? 0 : Mathf.Max(0, root.Flags.GetInt(HubController.ActionPointKey));
     }
 
+    private void CommitIntroDialogue()
+    {
+        if (introDialogueCommitted)
+        {
+            return;
+        }
+
+        introDialogueCommitted = true;
+        root.Flags.SetFlag(StoryFlags.Chapter1SeorakRequestStarted);
+        root.Flags.SetFlag(StoryFlags.Chapter1MetBaekRyeon);
+        root.Flags.SetFlag(StoryFlags.CompanionBaekRyeonTempJoined);
+        root.Save.Save(root.Session);
+    }
+
+    private static DialogueScript TryBuildAuthoredDialogue(string sceneId)
+    {
+        AuthoringContentManifest manifest = AuthoringContentManifest.LoadFromResources();
+        DialogueScript script = AuthoringDialogueAdapter.ToDialogueScript(manifest, sceneId);
+        return script.Nodes.Count > 0 ? script : null;
+    }
+
     private static void Pair(float x, ref float y, float w, float s, string label, string value)
     {
         GUI.Label(new Rect(x + 10f * s, y, w * 0.34f, 28f * s), label, UiTheme.SmallMuted);
@@ -283,6 +330,16 @@ public sealed class BattlePrepController : MonoBehaviour
     {
         if (def == null || def.id != HubController.FirstBattleId)
         {
+            if (def != null && def.id == HubController.SeorakPassRescueBattleId)
+            {
+                return "설운령 약초 수레 호위전\n" +
+                       "• 남쪽 산길: 박성준 진입로, 수레까지 최단 이동\n" +
+                       "• 중앙 밧줄다리: 1칸 병목, 산적을 끊어내기 좋음\n" +
+                       "• 좌측 대나무 덤불: 시야 차단, 백련 창수 견제에 유리\n" +
+                       "• 북동쪽 약초 선반: 약초 수레와 피난민 보호 지점\n" +
+                       "• 목표: 유달근 격파 전에 보호 대상이 무너지지 않게 전열 유지";
+            }
+
             return def == null ? string.Empty : def.mapHint;
         }
 
@@ -351,6 +408,31 @@ public sealed class BattlePrepController : MonoBehaviour
         GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "폐광 / 보급 상자",
                   new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         GUI.Label(new Rect(rect.x, rect.yMax - 20f * s, rect.width, 18f * s), "아군 진입",
+                  new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+    }
+
+    private static void DrawSeorakPassMapPreview(Rect rect, float s)
+    {
+        UiTheme.DrawFill(rect, new Color(0.10f, 0.14f, 0.15f, 0.46f));
+
+        Color cliff = new Color(0.34f, 0.36f, 0.34f, 0.94f);
+        Color road = new Color(0.52f, 0.46f, 0.34f, 0.94f);
+        Color bamboo = new Color(0.13f, 0.34f, 0.25f, 0.92f);
+        Color bridge = new Color(0.43f, 0.27f, 0.15f, 0.96f);
+        Color cart = new Color(0.92f, 0.76f, 0.38f, 1f);
+        Color danger = new Color(0.72f, 0.18f, 0.10f, 0.88f);
+
+        UiTheme.DrawFill(new Rect(rect.x + 8f * s, rect.y + 18f * s, 34f * s, rect.height - 36f * s), bamboo);
+        UiTheme.DrawFill(new Rect(rect.center.x - 10f * s, rect.y + 24f * s, 20f * s, rect.height - 42f * s), road);
+        UiTheme.DrawFill(new Rect(rect.center.x - 18f * s, rect.center.y - 8f * s, 52f * s, 16f * s), bridge);
+        UiTheme.DrawFill(new Rect(rect.xMax - 46f * s, rect.y + 34f * s, 32f * s, 62f * s), cliff);
+        UiTheme.DrawFill(new Rect(rect.xMax - 36f * s, rect.y + 44f * s, 16f * s, 16f * s), cart);
+        UiTheme.DrawFill(new Rect(rect.center.x + 26f * s, rect.center.y + 18f * s, 14f * s, 14f * s), danger);
+        UiTheme.DrawFill(new Rect(rect.center.x - 34f * s, rect.center.y + 4f * s, 14f * s, 14f * s), danger);
+
+        GUI.Label(new Rect(rect.x, rect.y + 2f * s, rect.width, 18f * s), "약초 수레 / H3 선반",
+                  new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+        GUI.Label(new Rect(rect.x, rect.yMax - 20f * s, rect.width, 18f * s), "박성준·백련 진입",
                   new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
     }
 

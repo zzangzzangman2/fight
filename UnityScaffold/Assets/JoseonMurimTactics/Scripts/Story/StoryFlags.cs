@@ -10,6 +10,16 @@ public static class StoryFlags
     public const string Chapter1TrainingIntroDone = "CH1_TRAINING_INTRO_DONE";
     public const string Chapter1VillageTrustUnlocked = "CH1_VILLAGE_TRUST_UNLOCKED";
     public const string Chapter1VillageWorkStarted = "CH1_VILLAGE_WORK_STARTED";
+    public const string Chapter1FirstDefenseCleared = "CH1_FIRST_DEFENSE_CLEARED";
+    public const string Chapter1SeorakRequestUnlocked = "CH1_SEORAK_REQUEST_UNLOCKED";
+    public const string Chapter1SeorakRequestStarted = "CH1_SEORAK_REQUEST_STARTED";
+    public const string Chapter1MetBaekRyeon = "CH1_MET_BAEK_RYEON";
+    public const string Chapter1RescuedSeorakCart = "CH1_RESCUED_SEORAK_CART";
+    public const string Chapter1InvitedToSeorakSpearHall = "CH1_INVITED_TO_SEORAK_SPEAR_HALL";
+    public const string Chapter1SeorakPactStarted = "CH1_SEORAK_PACT_STARTED";
+    public const string CompanionBaekRyeonTempJoined = "COMPANION_BAEK_RYEON_TEMP_JOINED";
+    public const string AllianceSeorakScoutSupport = "ALLIANCE_SEORAK_SCOUT_SUPPORT";
+    public const string Chapter1BaekRyeonJoinDialogueSeen = "CH1_BAEK_RYEON_JOIN_DIALOGUE_SEEN";
     public const string FirstBattleWon = "first_battle_won";
     public const string EnvoyDefeated = "envoy_defeated";
     public const string JoseonAllianceStarted = "joseon_alliance_started";

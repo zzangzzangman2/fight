@@ -1,6 +1,10 @@
 @echo off
 setlocal
 
+chcp 65001 >nul
+set "PYTHONUTF8=1"
+set "PYTHONIOENCODING=utf-8"
+
 set "PROJECT_DIR=%~dp0UnityScaffold"
 set "UNITY_EXE=C:\Program Files\Unity\Hub\Editor\6000.4.9f1\Editor\Unity.exe"
 set "PLAYER_EXE=%PROJECT_DIR%\Builds\Windows\JoseonMurimTactics.exe"

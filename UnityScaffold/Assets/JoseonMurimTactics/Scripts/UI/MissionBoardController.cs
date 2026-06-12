@@ -323,7 +323,17 @@ public sealed class MissionBoardController : MonoBehaviour
 
     private static string ObjectiveSummary(MissionInfo mission)
     {
-        if (mission == null || !mission.repeatable)
+        if (mission == null)
+        {
+            return "지형 목표 확보 / 부상자 최소화 / 빠른 정리";
+        }
+
+        if (mission.battleId == HubController.SeorakPassRescueBattleId)
+        {
+            return "피난민 전원 생존 / 약초 수레 보존 / 박성준·백련 협공";
+        }
+
+        if (!mission.repeatable)
         {
             return "제단 보존 / 부상자 최소화 / 8턴 이내";
         }
@@ -350,7 +360,17 @@ public sealed class MissionBoardController : MonoBehaviour
 
     private static string FailureSummary(MissionInfo mission)
     {
-        if (mission == null || !mission.repeatable)
+        if (mission == null)
+        {
+            return "임무 정보 없음";
+        }
+
+        if (mission.battleId == HubController.SeorakPassRescueBattleId)
+        {
+            return "설악창문 원군 요청 지연, 산길 피난민 피해 확대";
+        }
+
+        if (!mission.repeatable)
         {
             return "중원무림맹 위압 상승, 허브 기능 일부 지연";
         }
@@ -365,7 +385,17 @@ public sealed class MissionBoardController : MonoBehaviour
 
     private static string ExpectedChangeSummary(MissionInfo mission)
     {
-        if (mission == null || !mission.repeatable)
+        if (mission == null)
+        {
+            return "변화 없음";
+        }
+
+        if (mission.battleId == HubController.SeorakPassRescueBattleId)
+        {
+            return "설악창문 +5 / 백련 신뢰 +4 / 북방 동맹 개시";
+        }
+
+        if (!mission.repeatable)
         {
             return "조선문파연합 +5 / 감찰단 적대 +5";
         }
