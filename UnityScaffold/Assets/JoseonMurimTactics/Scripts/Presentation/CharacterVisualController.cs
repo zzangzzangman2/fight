@@ -33,6 +33,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     public SpriteRenderer weaponLayerRenderer;
     public SpriteRenderer accessoryLayerRenderer;
     public SpriteRenderer shadowRenderer;
+    public SpriteRenderer shadowCoreRenderer;
+    public SpriteRenderer castShadowRenderer;
+    public SpriteRenderer groundBlendRenderer;
+    public SpriteRenderer inkRimRenderer;
+    public SpriteRenderer footOcclusionRenderer;
     public SpriteRenderer leftFootRenderer;
     public SpriteRenderer rightFootRenderer;
     public SpriteRenderer selectionRenderer;
@@ -82,8 +87,15 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private float motionTrailRotation;
     private bool motionTrailFlipX;
     private Color motionTrailColor = Color.white;
+    private Color sceneAmbientTint = Color.white;
+    private Color groundBlendTint = new Color(0.28f, 0.25f, 0.21f, 0.22f);
+    private Color inkRimTint = new Color(0.055f, 0.050f, 0.044f, 0.20f);
+    private Color footOcclusionTint = new Color(0.30f, 0.26f, 0.20f, 0.30f);
+    private float sceneDesaturation = 0.07f;
 
     private static Sprite ovalSprite;
+    private static Sprite groundBlendSprite;
+    private static Sprite footOcclusionSprite;
     private static Sprite slashSprite;
     private static Sprite skillBurstSprite;
     private static Sprite guardRingSprite;
@@ -194,6 +206,35 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     {
         outfitOverride = outfit;
         ApplyVisual();
+    }
+
+    public void SetSceneIntegration(Color ambientTint, Color groundTint, float desaturation = 0.07f,
+                                    Color? occlusionTint = null)
+    {
+        sceneAmbientTint = new Color(Mathf.Max(0f, ambientTint.r),
+                                     Mathf.Max(0f, ambientTint.g),
+                                     Mathf.Max(0f, ambientTint.b),
+                                     1f);
+        groundBlendTint = new Color(Mathf.Clamp01(groundTint.r),
+                                    Mathf.Clamp01(groundTint.g),
+                                    Mathf.Clamp01(groundTint.b),
+                                    Mathf.Clamp01(groundTint.a));
+        Color footTint = occlusionTint ?? groundTint;
+        footOcclusionTint = new Color(Mathf.Clamp01(footTint.r),
+                                      Mathf.Clamp01(footTint.g),
+                                      Mathf.Clamp01(footTint.b),
+                                      Mathf.Clamp01(footTint.a));
+        inkRimTint = new Color(Mathf.Clamp01(0.060f * ambientTint.r),
+                               Mathf.Clamp01(0.054f * ambientTint.g),
+                               Mathf.Clamp01(0.048f * ambientTint.b),
+                               0.20f);
+        sceneDesaturation = Mathf.Clamp01(desaturation);
+
+        if (visual != null && bodyRenderer != null && bodyRenderer.sprite != null)
+        {
+            ApplyProceduralPose();
+            UpdateSorting();
+        }
     }
 
     public void SetMoveStridePhase(float phase)
@@ -513,6 +554,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                 effectRenderer.enabled = false;
             }
 
+            ClearRenderer(shadowCoreRenderer);
+            ClearRenderer(castShadowRenderer);
+            ClearRenderer(groundBlendRenderer);
+            ClearRenderer(inkRimRenderer);
+            ClearRenderer(footOcclusionRenderer);
             ClearMotionTrail();
             ClearEmotionFace();
 
@@ -521,10 +567,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         SetBodySprite(SelectStateSprite());
-        bodyRenderer.color = visual.normalTint;
+        bodyRenderer.color = ApplySceneTint(visual.normalTint);
         bodyRenderer.flipX = false;
         ApplyLayerSprites();
-        ApplyLayerTint(visual.normalTint);
+        ApplyLayerTint(ApplySceneTint(visual.normalTint));
 
         if (animator != null)
         {
@@ -551,7 +597,26 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         shadowRenderer.sprite = GetOvalSprite();
         shadowRenderer.transform.localPosition = new Vector3(0f, 0.055f, 0f);
         shadowRenderer.transform.localScale = new Vector3(visual.shadowWidth, visual.shadowHeight, 1f);
-        shadowRenderer.color = new Color(0f, 0f, 0f, 0.34f);
+        shadowRenderer.color = new Color(0f, 0f, 0f, 0.18f);
+
+        shadowCoreRenderer.sprite = GetOvalSprite();
+        shadowCoreRenderer.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+        shadowCoreRenderer.transform.localScale = new Vector3(visual.shadowWidth * 0.55f, visual.shadowHeight * 0.52f, 1f);
+        shadowCoreRenderer.color = new Color(0f, 0f, 0f, 0.45f);
+
+        castShadowRenderer.enabled = false;
+        castShadowRenderer.color = new Color(0f, 0f, 0f, 0.20f);
+
+        inkRimRenderer.enabled = false;
+        inkRimRenderer.color = inkRimTint;
+
+        groundBlendRenderer.sprite = GetGroundBlendSprite();
+        groundBlendRenderer.color = groundBlendTint;
+        groundBlendRenderer.enabled = bodyRenderer.sprite != null;
+
+        footOcclusionRenderer.sprite = GetFootOcclusionSprite();
+        footOcclusionRenderer.color = footOcclusionTint;
+        footOcclusionRenderer.enabled = bodyRenderer.sprite != null;
 
         selectionRenderer.sprite = GetOvalSprite();
         selectionRenderer.transform.localPosition = new Vector3(0f, 0.055f, 0f);
@@ -814,19 +879,23 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
                        ref effectRotation, ref effectColor);
         StabilizeFootAnchor(ref localPosition, localScale);
 
+        Color integratedTint = ApplySceneTint(tint);
         bodyRenderer.flipX = facingSign < 0f;
-        bodyRenderer.color = tint;
+        bodyRenderer.color = integratedTint;
         ApplyLayerFlip(facingSign < 0f);
-        ApplyLayerTint(tint);
-        UpdateEmotionFace(time, tint);
+        ApplyLayerTint(integratedTint);
+        UpdateEmotionFace(time, integratedTint);
         bodyTransform.localPosition = localPosition;
         bodyTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
         bodyTransform.localScale = localScale;
         ApplyLayerSway(time, progress, footStride01);
         UpdateFootContacts(visualState == CharacterBattleVisualState.Move, footStride01);
 
-        UpdateShadowPose(localPosition);
-        shadowRenderer.color = new Color(0f, 0f, 0f, shadowAlpha);
+        UpdateShadowPose(localPosition, shadowAlpha);
+        UpdateCastShadow(shadowAlpha);
+        UpdateGroundBlendOverlay();
+        UpdateInkRim();
+        UpdateFootOcclusion();
         if (selectionRenderer != null)
         {
             selectionRenderer.enabled = selected && !defeated;
@@ -1433,7 +1502,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         return maxY > minY + 0.0001f;
     }
 
-    private void UpdateShadowPose(Vector3 localPosition)
+    private void UpdateShadowPose(Vector3 localPosition, float stateShadowAlpha)
     {
         if (shadowRenderer == null || visual == null)
         {
@@ -1450,8 +1519,162 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             height *= 0.94f;
         }
 
+        float defeatedScale = visualState == CharacterBattleVisualState.Defeat ? 0.78f : 1f;
+        float softAlpha = Mathf.Min(stateShadowAlpha, 0.18f) * defeatedScale;
+        float coreAlpha = (visualState == CharacterBattleVisualState.Defeat ? 0.24f : 0.45f) *
+                          Mathf.Clamp01(stateShadowAlpha / 0.34f);
+
         shadowRenderer.transform.localPosition = new Vector3(0f, 0.055f, 0f);
-        shadowRenderer.transform.localScale = new Vector3(width, Mathf.Max(0.02f, height), 1f);
+        shadowRenderer.transform.localScale = new Vector3(width * 1.10f, Mathf.Max(0.02f, height * 1.06f), 1f);
+        shadowRenderer.color = new Color(0f, 0f, 0f, softAlpha);
+
+        if (shadowCoreRenderer != null)
+        {
+            shadowCoreRenderer.enabled = true;
+            shadowCoreRenderer.sprite = GetOvalSprite();
+            shadowCoreRenderer.transform.localPosition = new Vector3(0f, 0.025f, 0f);
+            shadowCoreRenderer.transform.localScale =
+                new Vector3(width * 0.55f, Mathf.Max(0.018f, height * 0.52f), 1f);
+            shadowCoreRenderer.color = new Color(0f, 0f, 0f, coreAlpha);
+        }
+    }
+
+    private void UpdateCastShadow(float stateShadowAlpha)
+    {
+        if (castShadowRenderer == null || bodyRenderer == null || bodyRenderer.sprite == null ||
+            bodyTransform == null || visual == null)
+        {
+            ClearRenderer(castShadowRenderer);
+            return;
+        }
+
+        float motionFade = visualState == CharacterBattleVisualState.Move ? 0.72f : 1f;
+        float defeatedFade = visualState == CharacterBattleVisualState.Defeat ? 0.55f : 1f;
+        float alpha = 0.20f * Mathf.Clamp01(stateShadowAlpha / 0.34f) * motionFade * defeatedFade;
+        castShadowRenderer.enabled = alpha > 0.01f;
+        if (!castShadowRenderer.enabled)
+        {
+            return;
+        }
+
+        float xScale = Mathf.Abs(bodyTransform.localScale.x) * 0.92f;
+        float yScale = Mathf.Abs(bodyTransform.localScale.y) * 0.23f;
+        castShadowRenderer.sprite = bodyRenderer.sprite;
+        castShadowRenderer.flipX = false;
+        castShadowRenderer.transform.localPosition = new Vector3(0.16f, 0.075f, 0f);
+        castShadowRenderer.transform.localRotation = Quaternion.Euler(0f, 0f, -38f);
+        castShadowRenderer.transform.localScale = new Vector3(xScale, yScale, 1f);
+        castShadowRenderer.color = new Color(0f, 0f, 0f, alpha);
+    }
+
+    private void UpdateGroundBlendOverlay()
+    {
+        if (groundBlendRenderer == null || bodyRenderer == null || bodyRenderer.sprite == null)
+        {
+            ClearRenderer(groundBlendRenderer);
+            return;
+        }
+
+        Sprite blendSprite = GetGroundBlendSprite();
+        Bounds bodyBounds = bodyRenderer.sprite.bounds;
+        Bounds blendBounds = blendSprite.bounds;
+        float width = Mathf.Max(0.01f, bodyBounds.size.x * 1.08f);
+        float height = Mathf.Max(0.01f, bodyBounds.size.y * 0.16f);
+
+        groundBlendRenderer.enabled = true;
+        groundBlendRenderer.sprite = blendSprite;
+        groundBlendRenderer.transform.localPosition = new Vector3(0f, bodyBounds.min.y - 0.002f, 0f);
+        groundBlendRenderer.transform.localRotation = Quaternion.identity;
+        groundBlendRenderer.transform.localScale =
+            new Vector3(width / Mathf.Max(0.001f, blendBounds.size.x),
+                        height / Mathf.Max(0.001f, blendBounds.size.y),
+                        1f);
+        groundBlendRenderer.color = defeated
+                                        ? new Color(groundBlendTint.r, groundBlendTint.g, groundBlendTint.b,
+                                                    groundBlendTint.a * 0.70f)
+                                        : groundBlendTint;
+    }
+
+    private void UpdateInkRim()
+    {
+        if (inkRimRenderer == null || bodyRenderer == null || bodyRenderer.sprite == null || bodyTransform == null)
+        {
+            ClearRenderer(inkRimRenderer);
+            return;
+        }
+
+        float alpha = visualState == CharacterBattleVisualState.Defeat ? inkRimTint.a * 0.65f : inkRimTint.a;
+        inkRimRenderer.enabled = alpha > 0.01f;
+        if (!inkRimRenderer.enabled)
+        {
+            return;
+        }
+
+        inkRimRenderer.sprite = bodyRenderer.sprite;
+        inkRimRenderer.flipX = bodyRenderer.flipX;
+        inkRimRenderer.transform.localPosition = bodyTransform.localPosition + new Vector3(0f, -0.002f, 0f);
+        inkRimRenderer.transform.localRotation = bodyTransform.localRotation;
+        inkRimRenderer.transform.localScale = bodyTransform.localScale * 1.008f;
+        inkRimRenderer.color = new Color(inkRimTint.r, inkRimTint.g, inkRimTint.b, alpha);
+    }
+
+    private void UpdateFootOcclusion()
+    {
+        if (footOcclusionRenderer == null || bodyRenderer == null || bodyRenderer.sprite == null ||
+            bodyTransform == null || visual == null)
+        {
+            ClearRenderer(footOcclusionRenderer);
+            return;
+        }
+
+        Sprite occlusionSprite = GetFootOcclusionSprite();
+        Bounds spriteBounds = occlusionSprite.bounds;
+        Bounds bodyBounds = bodyRenderer.sprite.bounds;
+        float bodyBottom = bodyTransform.localPosition.y + (bodyBounds.min.y * bodyTransform.localScale.y);
+        float width = Mathf.Max(0.18f, visual.shadowWidth * 0.88f);
+        float height = Mathf.Max(0.035f, visual.shadowHeight * 0.58f);
+        float alpha = visualState == CharacterBattleVisualState.Defeat ? footOcclusionTint.a * 0.65f : footOcclusionTint.a;
+
+        footOcclusionRenderer.enabled = alpha > 0.01f;
+        if (!footOcclusionRenderer.enabled)
+        {
+            return;
+        }
+
+        footOcclusionRenderer.sprite = occlusionSprite;
+        footOcclusionRenderer.flipX = false;
+        footOcclusionRenderer.transform.localPosition = new Vector3(0f, bodyBottom + 0.022f, 0f);
+        footOcclusionRenderer.transform.localRotation = Quaternion.identity;
+        footOcclusionRenderer.transform.localScale =
+            new Vector3(width / Mathf.Max(0.001f, spriteBounds.size.x),
+                        height / Mathf.Max(0.001f, spriteBounds.size.y),
+                        1f);
+        footOcclusionRenderer.color =
+            new Color(footOcclusionTint.r, footOcclusionTint.g, footOcclusionTint.b, alpha);
+    }
+
+    private Color ApplySceneTint(Color source)
+    {
+        Color tinted = new Color(source.r * sceneAmbientTint.r,
+                                 source.g * sceneAmbientTint.g,
+                                 source.b * sceneAmbientTint.b,
+                                 source.a);
+        float gray = tinted.grayscale;
+        tinted.r = Mathf.Lerp(tinted.r, gray, sceneDesaturation);
+        tinted.g = Mathf.Lerp(tinted.g, gray, sceneDesaturation);
+        tinted.b = Mathf.Lerp(tinted.b, gray, sceneDesaturation);
+        return tinted;
+    }
+
+    private static void ClearRenderer(SpriteRenderer renderer)
+    {
+        if (renderer == null)
+        {
+            return;
+        }
+
+        renderer.sprite = null;
+        renderer.enabled = false;
     }
 
     private void ApplyLayerSway(float time, float progress, float footStride01)
@@ -1550,10 +1773,15 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private void EnsureRenderers()
     {
         shadowRenderer = shadowRenderer != null ? shadowRenderer : EnsureChildRenderer("Shadow");
+        shadowCoreRenderer = shadowCoreRenderer != null ? shadowCoreRenderer : EnsureChildRenderer("ShadowCore");
+        castShadowRenderer = castShadowRenderer != null ? castShadowRenderer : EnsureChildRenderer("CastShadow");
+        inkRimRenderer = inkRimRenderer != null ? inkRimRenderer : EnsureChildRenderer("InkRim");
         leftFootRenderer = leftFootRenderer != null ? leftFootRenderer : EnsureChildRenderer("LeftFootContact");
         rightFootRenderer = rightFootRenderer != null ? rightFootRenderer : EnsureChildRenderer("RightFootContact");
         selectionRenderer = selectionRenderer != null ? selectionRenderer : EnsureChildRenderer("SelectionRing");
         bodyRenderer = bodyRenderer != null ? bodyRenderer : EnsureChildRenderer("FullBody");
+        groundBlendRenderer = groundBlendRenderer != null ? groundBlendRenderer : EnsureChildRenderer("GroundBlend", bodyRenderer.transform);
+        footOcclusionRenderer = footOcclusionRenderer != null ? footOcclusionRenderer : EnsureChildRenderer("FootOcclusion");
         baseLayerRenderer = baseLayerRenderer != null ? baseLayerRenderer : EnsureChildRenderer("Layer_Base", bodyRenderer.transform);
         outfitLayerRenderer = outfitLayerRenderer != null ? outfitLayerRenderer : EnsureChildRenderer("Layer_Outfit", bodyRenderer.transform);
         hairLayerRenderer = hairLayerRenderer != null ? hairLayerRenderer : EnsureChildRenderer("Layer_Hair", bodyRenderer.transform);
@@ -1599,8 +1827,9 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
     private void UpdateSorting()
     {
-        if (shadowRenderer == null || bodyRenderer == null || selectionRenderer == null ||
-            motionTrailRenderer == null || effectRenderer == null ||
+        if (shadowRenderer == null || shadowCoreRenderer == null || castShadowRenderer == null ||
+            groundBlendRenderer == null || inkRimRenderer == null || footOcclusionRenderer == null ||
+            bodyRenderer == null || selectionRenderer == null || motionTrailRenderer == null || effectRenderer == null ||
             leftFootRenderer == null || rightFootRenderer == null)
         {
             return;
@@ -1613,11 +1842,19 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         int order = baseSortingOrder + 350 - Mathf.RoundToInt(transform.position.y * (40f / 0.31f)) +
                     (visual != null ? visual.sortingOffset : 0) + selectedBoost;
         shadowRenderer.sortingLayerName = sortingLayerName;
+        shadowCoreRenderer.sortingLayerName = sortingLayerName;
+        castShadowRenderer.sortingLayerName = sortingLayerName;
+        groundBlendRenderer.sortingLayerName = sortingLayerName;
+        inkRimRenderer.sortingLayerName = sortingLayerName;
+        footOcclusionRenderer.sortingLayerName = sortingLayerName;
         bodyRenderer.sortingLayerName = sortingLayerName;
         selectionRenderer.sortingLayerName = sortingLayerName;
         motionTrailRenderer.sortingLayerName = sortingLayerName;
         effectRenderer.sortingLayerName = sortingLayerName;
-        shadowRenderer.sortingOrder = order - 2;
+        shadowRenderer.sortingOrder = order - 4;
+        shadowCoreRenderer.sortingOrder = order - 3;
+        castShadowRenderer.sortingOrder = order - 2;
+        inkRimRenderer.sortingOrder = order - 1;
         leftFootRenderer.sortingLayerName = sortingLayerName;
         rightFootRenderer.sortingLayerName = sortingLayerName;
         leftFootRenderer.sortingOrder = order - 1;
@@ -1631,9 +1868,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         SetLayerSorting(faceLayerRenderer, order + 3);
         SetLayerSorting(weaponLayerRenderer, order + 4);
         SetLayerSorting(accessoryLayerRenderer, order + 5);
+        SetLayerSorting(groundBlendRenderer, order + 6);
+        footOcclusionRenderer.sortingOrder = order + 7;
         int emotionFaceOrderOffset = visual == null ? 6 : visual.emotionFaceSortingOffset;
-        SetLayerSorting(emotionFaceRenderer, order + emotionFaceOrderOffset);
-        effectRenderer.sortingOrder = order + Mathf.Max(7, emotionFaceOrderOffset + 1);
+        SetLayerSorting(emotionFaceRenderer, order + Mathf.Max(8, emotionFaceOrderOffset));
+        effectRenderer.sortingOrder = order + Mathf.Max(9, emotionFaceOrderOffset + 1);
     }
 
     private Sprite SelectStateSprite()
@@ -2059,6 +2298,74 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
             Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 64f);
         ovalSprite.name = "GeneratedCharacterOval";
         return ovalSprite;
+    }
+
+    private static Sprite GetGroundBlendSprite()
+    {
+        if (groundBlendSprite != null)
+        {
+            return groundBlendSprite;
+        }
+
+        Texture2D texture = new Texture2D(128, 48, TextureFormat.RGBA32, false);
+        texture.name = "GeneratedCharacterGroundBlend";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            float vertical = 1f - ((y + 0.5f) / texture.height);
+            float fadeUp = vertical * vertical;
+            for (int x = 0; x < texture.width; x++)
+            {
+                float nx = Mathf.Abs(((x + 0.5f) / texture.width * 2f) - 1f);
+                float sideFade = 1f - Mathf.SmoothStep(0.56f, 1f, nx);
+                float alpha = Mathf.Clamp01(fadeUp * sideFade);
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        groundBlendSprite =
+            Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0f), 128f);
+        groundBlendSprite.name = "GeneratedCharacterGroundBlend";
+        return groundBlendSprite;
+    }
+
+    private static Sprite GetFootOcclusionSprite()
+    {
+        if (footOcclusionSprite != null)
+        {
+            return footOcclusionSprite;
+        }
+
+        Texture2D texture = new Texture2D(160, 44, TextureFormat.RGBA32, false);
+        texture.name = "GeneratedCharacterFootOcclusion";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            float vy = (y + 0.5f) / texture.height;
+            for (int x = 0; x < texture.width; x++)
+            {
+                float u = (x + 0.5f) / texture.width;
+                float nx = Mathf.Abs((u * 2f) - 1f);
+                float mound = 0.34f + Mathf.PerlinNoise(u * 8.0f + 4.1f, 11.7f) * 0.30f;
+                float notches = Mathf.PerlinNoise(u * 22.0f + 0.7f, 3.5f) * 0.15f;
+                float edgeFade = 1f - Mathf.SmoothStep(0.68f, 1f, nx);
+                float verticalFade = 1f - Mathf.SmoothStep(mound - notches, mound + 0.20f, vy);
+                float baseFade = Mathf.SmoothStep(0.02f, 0.18f, vy);
+                float alpha = Mathf.Clamp01(edgeFade * verticalFade * baseFade);
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply();
+        footOcclusionSprite =
+            Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.25f), 128f);
+        footOcclusionSprite.name = "GeneratedCharacterFootOcclusion";
+        return footOcclusionSprite;
     }
 
     private static Sprite GetSlashSprite()

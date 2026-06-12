@@ -24,7 +24,7 @@ namespace JoseonMurimTactics
         [SerializeField] private bool reinforceShadow = true;
         [SerializeField] private float shadowY = 0.0f;
         [SerializeField] private float shadowScaleBoost = 1.08f;
-        [SerializeField] private float shadowAlpha = 0.40f;
+        [SerializeField] private float shadowAlpha = 0.18f;
 
         private CharacterVisualController visual;
         private SpriteRenderer bodyRenderer;

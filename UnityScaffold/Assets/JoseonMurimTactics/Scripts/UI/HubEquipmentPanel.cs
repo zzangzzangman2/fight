@@ -24,6 +24,8 @@ public sealed class HubEquipmentPanel
     private string selectedItemId;
     private Vector2 charScroll;
 
+    private int DayIndex => Mathf.Max(1, root.Flags.GetInt("calendar:day") + 1);
+
     public HubEquipmentPanel(GameRoot root, Action<string> showToast, Action<string> addLog)
     {
         this.root = root;
@@ -237,9 +239,11 @@ public sealed class HubEquipmentPanel
             }
 
             bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(selectedCharId);
+            bool visitedToday = HasVisitedCompanionToday(selectedCharId);
+            string visitState = giftedToday ? "오늘 선물 완료" : visitedToday ? "오늘 방문 완료" : "오늘 선물 가능";
             GUIStyle giftState = new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.UpperRight };
             GUI.Label(new Rect(inner.x + inner.width * 0.4f, y, inner.width * 0.6f, 22f * s),
-                      giftedToday ? "오늘 선물 완료" : "오늘 선물 가능", giftState);
+                      visitState, giftState);
             y += 26f * s;
         }
         else
@@ -550,7 +554,20 @@ public sealed class HubEquipmentPanel
         float by = inner.yMax - bh;
         bool isHero = selectedCharId == CharacterGrowthCatalog.ProtagonistId;
         string reason = string.Empty;
-        bool canGive = !isHero && root.Gifts != null && root.Gifts.CanGift(selectedCharId, gift.id, out reason);
+        bool visitedToday = !isHero && HasVisitedCompanionToday(selectedCharId);
+        bool canGive = !isHero && !visitedToday && root.Gifts != null &&
+                       root.Gifts.CanGift(selectedCharId, gift.id, out reason);
+        if (!isHero && visitedToday)
+        {
+            reason = root.Gifts != null && root.Gifts.HasGiftedToday(selectedCharId)
+                         ? "오늘은 이미 이 동료에게 선물을 줬다."
+                         : "오늘은 이미 이 동료와 시간을 보냈다.";
+        }
+        else if (!isHero && root.Gifts == null)
+        {
+            reason = "선물 기능을 사용할 수 없다.";
+        }
+
         GUI.enabled = canGive;
         string label = isHero ? "동료를 선택하세요" : $"{CharacterGrowthCatalog.DisplayName(selectedCharId)}에게 선물";
         if (GUI.Button(new Rect(inner.x, by, inner.width, bh), label, UiTheme.ButtonPrimary))
@@ -560,6 +577,8 @@ public sealed class HubEquipmentPanel
             {
                 showToast(result.wasFavorite ? $"최애 선물! 연애도 +{result.delta}" : $"연애도 +{result.delta}");
                 addLog(result.message.Replace("\n", " "));
+                MarkCompanionVisited(selectedCharId);
+                SaveHubProgress();
             }
         }
 
@@ -586,6 +605,37 @@ public sealed class HubEquipmentPanel
             return "암기 보급.";
         default:
             return "보급품.";
+        }
+    }
+
+    private bool HasVisitedCompanionToday(string companionId)
+    {
+        if (string.IsNullOrEmpty(companionId))
+        {
+            return false;
+        }
+
+        bool visited = root.Flags.GetInt("companion:visit:last_day:" + companionId) >= DayIndex;
+        bool gifted = root.Gifts != null && root.Gifts.HasGiftedToday(companionId);
+        return visited || gifted;
+    }
+
+    private void MarkCompanionVisited(string companionId)
+    {
+        if (string.IsNullOrEmpty(companionId))
+        {
+            return;
+        }
+
+        root.Flags.SetInt("companion:visit:last_day:" + companionId, DayIndex);
+        root.Flags.AddInt("companion:visit:count:" + companionId, 1);
+    }
+
+    private void SaveHubProgress()
+    {
+        if (root != null && root.Save != null && root.Session != null)
+        {
+            root.Save.Save(root.Session);
         }
     }
 

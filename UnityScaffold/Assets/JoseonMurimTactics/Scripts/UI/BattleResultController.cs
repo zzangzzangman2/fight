@@ -38,7 +38,8 @@ public sealed class BattleResultController : MonoBehaviour
         if (result.Won && def != null && def.id == HubController.SeorakPassRescueBattleId &&
             !root.Flags.HasFlag(StoryFlags.Chapter1BaekRyeonJoinDialogueSeen))
         {
-            postDialogue = TryBuildAuthoredDialogue("chapter1_baek_ryeon_join_after_battle");
+            DialogueScript script = TryBuildAuthoredDialogue("chapter1_baek_ryeon_join_after_battle");
+            postDialogue = script == null ? null : new DialogueController(script, root);
         }
     }
 

@@ -26,7 +26,8 @@ public sealed class BattlePrepController : MonoBehaviour
         if (def != null && def.id == HubController.SeorakPassRescueBattleId &&
             !root.Flags.HasFlag(StoryFlags.Chapter1SeorakRequestStarted))
         {
-            introDialogue = TryBuildAuthoredDialogue("chapter1_baek_ryeon_join_before_battle");
+            DialogueScript script = TryBuildAuthoredDialogue("chapter1_baek_ryeon_join_before_battle");
+            introDialogue = script == null ? null : new DialogueController(script, root);
         }
     }
 

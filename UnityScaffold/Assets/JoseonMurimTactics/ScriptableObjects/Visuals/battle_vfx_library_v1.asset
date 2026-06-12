@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da4d6ac2ff0efcd4ea64f379c4835723, type: 3}
+  m_Name: battle_vfx_library_v1
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleVfxLibrary
+  swordSlash: {fileID: 7400000, guid: bff482ca070cecc4a853ffad52bf83a2, type: 2}
+  frostSpear: {fileID: 7400000, guid: eb04ff7fef5b30a40ae21729716e9218, type: 2}
+  hitSpark: {fileID: 7400000, guid: 7291faf4953cd5b419d9cfdce64b4718, type: 2}
+  healPulse: {fileID: 7400000, guid: 04d8444c776e9e64e86a226de28656b7, type: 2}
+  snowStep: {fileID: 7400000, guid: 61c00f8fa43495148a98a6c006e224d1, type: 2}
+  counterFlash: {fileID: 7400000, guid: 1a41cd8c8e041014590fbc7e69077b42, type: 2}
+  dangerAura: {fileID: 7400000, guid: e09fcac09af06b14baea65a59d3dd2c6, type: 2}
+  phaseSnowSwirl: {fileID: 7400000, guid: 3fb447d453b1b49448ff1a3bbd92e528, type: 2}

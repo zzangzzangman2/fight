@@ -53,6 +53,8 @@ public sealed class HubController : MonoBehaviour
     private Vector2 marketScroll;
     private string giftTargetId;
     private Vector2 giftScroll;
+    private string visitCompanionId;
+    private Vector2 visitScroll;
 
     private void Awake()
     {
@@ -536,6 +538,19 @@ public sealed class HubController : MonoBehaviour
             }
         }
 
+        if (!string.IsNullOrEmpty(visitCompanionId))
+        {
+            if (!root.Session.HasCompanion(visitCompanionId))
+            {
+                visitCompanionId = null;
+            }
+            else
+            {
+                DrawCompanionVisit(r, s, visitCompanionId);
+                return;
+            }
+        }
+
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "동료", UiTheme.Heading);
         float y = r.y + 48f * s;
         float cardH = 144f * s;
@@ -545,7 +560,13 @@ public sealed class HubController : MonoBehaviour
             if (info == null)
                 continue;
             Rect card = new Rect(r.x, y, r.width, cardH);
+            bool visitedToday = HasVisitedCompanionToday(id);
             UiTheme.DrawPanel(card, true);
+            if (visitedToday)
+            {
+                UiTheme.DrawFill(card, new Color(0f, 0f, 0f, 0.30f));
+            }
+
             GUI.Label(new Rect(card.x + 16f * s, card.y + 10f * s, card.width - 180f * s, 30f * s),
                       $"{info.name} · {info.title}", UiTheme.Body);
             GUI.Label(
@@ -569,23 +590,27 @@ public sealed class HubController : MonoBehaviour
             GUI.Label(new Rect(card.x + 16f * s, card.y + 116f * s, card.width - 180f * s, 24f * s),
                       "장비: " + (string.IsNullOrEmpty(equipSummary) ? "없음 — ‘장비’ 메뉴에서 정비" : equipSummary),
                       equipStyle);
-            if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + 14f * s, 128f * s, 44f * s), "대화",
-                           UiTheme.Button))
+            GUI.enabled = !visitedToday;
+            if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + 14f * s, 128f * s, 44f * s),
+                           visitedToday ? "방문 완료" : "방문",
+                           visitedToday ? UiTheme.Button : UiTheme.ButtonPrimary))
             {
-                if (TrySpendAction("동료 대화"))
-                {
-                    talk = new DialogueController(BuildCompanionTalk(id), root);
-                    root.Session.actionsTaken++;
-                }
+                visitCompanionId = id;
+                visitScroll = Vector2.zero;
             }
+            GUI.enabled = true;
 
             bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(id);
+            bool canOpenGift = !visitedToday && !giftedToday;
+            GUI.enabled = canOpenGift;
             if (GUI.Button(new Rect(card.xMax - 144f * s, card.y + cardH - 58f * s, 128f * s, 44f * s),
-                           giftedToday ? "선물 완료" : "선물", giftedToday ? UiTheme.Button : UiTheme.ButtonPrimary))
+                           visitedToday ? "방문 완료" : giftedToday ? "선물 완료" : "선물",
+                           canOpenGift ? UiTheme.ButtonPrimary : UiTheme.Button))
             {
                 giftTargetId = id;
                 giftScroll = Vector2.zero;
             }
+            GUI.enabled = true;
 
             y += cardH + 12f * s;
         }
@@ -601,6 +626,480 @@ public sealed class HubController : MonoBehaviour
                       $"🔒 {info.name} — {info.region} {info.sectName} / {info.element} / {info.weapon}",
                       UiTheme.SmallMuted);
             y += 28f * s;
+        }
+    }
+
+    private void DrawCompanionVisit(Rect r, float s, string companionId)
+    {
+        CompanionInfo info = CompanionCatalog.Info(companionId);
+        if (info == null)
+        {
+            visitCompanionId = null;
+            return;
+        }
+
+        GUI.Label(new Rect(r.x, r.y, r.width - 150f * s, 36f * s), $"{info.name} 방문", UiTheme.Heading);
+        if (GUI.Button(new Rect(r.xMax - 140f * s, r.y, 128f * s, 38f * s), "← 동료", UiTheme.Button))
+        {
+            visitCompanionId = null;
+            return;
+        }
+
+        Rect body = new Rect(r.x, r.y + 46f * s, r.width, r.height - 46f * s);
+        float contentH = Mathf.Max(body.height, 720f * s);
+        visitScroll = GUI.BeginScrollView(body, visitScroll, new Rect(0f, 0f, body.width - 18f * s, contentH));
+
+        float x = 0f;
+        float y = 0f;
+        float w = body.width - 18f * s;
+        bool visitedToday = HasVisitedCompanionToday(companionId);
+        Rect profile = new Rect(x, y, w, 160f * s);
+        UiTheme.DrawPanel(profile, true);
+        if (visitedToday)
+        {
+            UiTheme.DrawFill(profile, new Color(0f, 0f, 0f, 0.20f));
+        }
+
+        GUI.Label(new Rect(profile.x + 16f * s, profile.y + 12f * s, profile.width - 32f * s, 28f * s),
+                  $"{CompanionVisitPlace(companionId)} · {info.title}", UiTheme.Body);
+        GUI.Label(new Rect(profile.x + 16f * s, profile.y + 44f * s, profile.width - 32f * s, 24f * s),
+                  $"{info.region} {info.sectName} · {info.element}/{info.weapon} · {info.mbti}", UiTheme.SmallMuted);
+        GUI.Label(new Rect(profile.x + 16f * s, profile.y + 70f * s, profile.width - 32f * s, 44f * s),
+                  VisitMoodLine(companionId), UiTheme.SmallMuted);
+
+        int approval = root.Approval.Get(companionId);
+        Rect gaugeBg = new Rect(profile.x + 16f * s, profile.y + 122f * s, profile.width - 32f * s, 12f * s);
+        UiTheme.DrawFill(gaugeBg, UiTheme.HanjiPanelAlt);
+        UiTheme.DrawFill(new Rect(gaugeBg.x, gaugeBg.y, gaugeBg.width * Mathf.Clamp01(approval / 100f), gaugeBg.height),
+                         UiTheme.Teal);
+        GUI.Label(new Rect(profile.x + 16f * s, profile.y + 136f * s, profile.width * 0.46f, 22f * s),
+                  $"호감도 {approval}/100 · {root.Approval.GetStageLabel(companionId)}", UiTheme.SmallMuted);
+        GUI.Label(new Rect(profile.x + profile.width * 0.52f, profile.y + 136f * s, profile.width * 0.44f, 22f * s),
+                  VisitTodayText(companionId), new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleRight });
+
+        y += profile.height + 12f * s;
+
+        Rect state = new Rect(x, y, w, 126f * s);
+        UiTheme.DrawPanel(state);
+        float sx = state.x + 14f * s;
+        float sy = state.y + 10f * s;
+        Line(sx, ref sy, state.width - 28f * s, s, "상태", CompanionStatusText(companionId));
+        Line(sx, ref sy, state.width - 28f * s, s, "관심사", CompanionConcern(companionId));
+        Line(sx, ref sy, state.width - 28f * s, s, "지원 효과", SupportPreview(companionId, approval));
+        y += state.height + 14f * s;
+
+        GUI.Label(new Rect(x, y, w, 30f * s), "방문 행동", UiTheme.Heading);
+        if (visitedToday)
+        {
+            GUI.Label(new Rect(x + 96f * s, y + 2f * s, w - 96f * s, 26f * s),
+                      "오늘은 이미 이 동료와 시간을 보냈다. 내일 다시 방문 가능.", UiTheme.SmallMuted);
+        }
+        y += 38f * s;
+
+        float gap = 10f * s;
+        float colW = (w - gap) * 0.5f;
+        float actionH = 72f * s;
+        if (VisitActionButton(new Rect(x, y, colW, actionH), s, "대화하기", NextCompanionTalk(companionId),
+                              true, !visitedToday))
+        {
+            StartCompanionTalk(companionId);
+        }
+
+        if (VisitActionButton(new Rect(x + colW + gap, y, colW, actionH), s, "자유 대화",
+                              "근황과 속마음 · 호감 선택", false, !visitedToday))
+        {
+            StartGeneratedCompanionTalk(companionId);
+        }
+        y += actionH + gap;
+
+        bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(companionId);
+        if (VisitActionButton(new Rect(x, y, colW, actionH), s,
+                              giftedToday ? "선물 완료" : visitedToday ? "방문 완료" : "선물주기",
+                              FavoriteGiftHint(companionId), !visitedToday && !giftedToday,
+                              !visitedToday && !giftedToday))
+        {
+            giftTargetId = companionId;
+            giftScroll = Vector2.zero;
+        }
+
+        if (VisitActionButton(new Rect(x + colW + gap, y, colW, actionH), s, "합련",
+                              "합련 +6 · 호감 +2 · 피로 +10", false, !visitedToday))
+        {
+            ApplyCompanionVisitTraining(companionId);
+        }
+        y += actionH + gap;
+
+        if (VisitActionButton(new Rect(x, y, colW, actionH), s, "산책/순찰",
+                              "마을 신뢰 +1 · 위명 +1 · 호감 +2", false, !visitedToday))
+        {
+            ApplyCompanionVisitPatrol(companionId);
+        }
+
+        if (VisitActionButton(new Rect(x + colW + gap, y, colW, actionH), s, "휴식/간호",
+                              IsWounded(companionId) ? "부상 회복 · 호감 +2" : "피로 -20 · 호감 +1",
+                              false, !visitedToday))
+        {
+            ApplyCompanionVisitRest(companionId);
+        }
+        y += actionH + gap;
+
+        if (VisitActionButton(new Rect(x, y, colW, actionH), s, "전술 회의",
+                              "전술 이해 +6 · 호감 +1", false, !visitedToday))
+        {
+            ApplyCompanionVisitStrategy(companionId);
+        }
+
+        Rect memo = new Rect(x + colW + gap, y, colW, actionH);
+        UiTheme.DrawPanel(memo);
+        GUI.Label(new Rect(memo.x + 12f * s, memo.y + 8f * s, memo.width - 24f * s, 24f * s), "개인 과제",
+                  UiTheme.Body);
+        GUI.Label(new Rect(memo.x + 12f * s, memo.y + 34f * s, memo.width - 24f * s, 32f * s),
+                  CompanionVisitHook(companionId), UiTheme.SmallMuted);
+        y += actionH + 14f * s;
+
+        GUI.Label(new Rect(x, y, w, 78f * s), info.profile, UiTheme.SmallMuted);
+        GUI.EndScrollView();
+    }
+
+    private bool VisitActionButton(Rect rect, float s, string title, string hint, bool primary = false,
+                                   bool enabled = true)
+    {
+        bool oldEnabled = GUI.enabled;
+        GUI.enabled = oldEnabled && enabled;
+        bool clicked = GUI.Button(rect, title, primary ? UiTheme.ButtonPrimary : UiTheme.Button);
+        GUI.enabled = oldEnabled;
+        GUI.Label(new Rect(rect.x + 12f * s, rect.y + 40f * s, rect.width - 24f * s, 24f * s), hint,
+                  enabled ? UiTheme.SmallMuted : UiTheme.Small);
+        return enabled && clicked;
+    }
+
+    private void StartCompanionTalk(string companionId)
+    {
+        if (HasVisitedCompanionToday(companionId))
+        {
+            ShowToast("오늘은 이미 방문했습니다.");
+            return;
+        }
+
+        if (!TrySpendAction("동료 방문 대화"))
+        {
+            return;
+        }
+
+        talk = new DialogueController(BuildCompanionTalk(companionId), root);
+        root.Session.actionsTaken++;
+        MarkCompanionVisited(companionId);
+        SaveHubProgress();
+    }
+
+    private void StartGeneratedCompanionTalk(string companionId)
+    {
+        if (HasVisitedCompanionToday(companionId))
+        {
+            ShowToast("오늘은 이미 방문했습니다.");
+            return;
+        }
+
+        if (!TrySpendAction("동료 자유 대화"))
+        {
+            return;
+        }
+
+        talk = new DialogueController(BuildGeneratedVisitTalk(companionId), root);
+        root.Session.actionsTaken++;
+        root.Flags.AddInt("companion:free_talk_count:" + companionId, 1);
+        MarkCompanionVisited(companionId);
+        SaveHubProgress();
+    }
+
+    private DialogueScript BuildGeneratedVisitTalk(string companionId)
+    {
+        DialogueScript script = new DialogueScript();
+        CompanionInfo info = CompanionCatalog.Info(companionId);
+        string name = info != null ? info.name : CompanionCatalog.Name(companionId);
+        string line = root.Narration != null
+                          ? root.Narration.GenerateCompanionReaction(companionId, "hub_companion_visit")
+                          : $"{name}이 조용히 고개를 끄덕인다.";
+
+        DialogueNode opener = new DialogueNode("visit_ai_001", name, line, "visit_ai_002", companionId);
+        opener.speakerTitle = info != null ? info.sectName : null;
+        opener.backgroundId = CompanionVisitBackground(companionId);
+        script.Add(opener);
+
+        DialogueNode choice = new DialogueNode("visit_ai_002", "박성준", "(어떻게 답할까?)");
+        choice.backgroundId = CompanionVisitBackground(companionId);
+        choice.choices.Add(new DialogueChoice("오늘은 그 마음을 기억하겠습니다.", HeroDisposition.Chivalrous)
+                               .Approval(companionId, +2));
+        choice.choices.Add(new DialogueChoice("전장에서도 그렇게 맞춰보죠.", HeroDisposition.Royal)
+                               .Approval(companionId, +1)
+                               .Battle("visit_bond:" + companionId, +1));
+        choice.choices.Add(new DialogueChoice("좋습니다. 다음엔 더 어려운 이야기도 듣죠.", HeroDisposition.Romantic)
+                               .Approval(companionId, +2));
+        script.Add(choice);
+        return script;
+    }
+
+    private void ApplyCompanionVisitTraining(string companionId)
+    {
+        if (HasVisitedCompanionToday(companionId))
+        {
+            ShowToast("오늘은 이미 방문했습니다.");
+            return;
+        }
+
+        if (!TrySpendAction("동료 합련"))
+        {
+            return;
+        }
+
+        root.Session.actionsTaken++;
+        root.Flags.AddInt("growth:teamwork_xp", 6);
+        root.Flags.AddInt("growth:martial_xp", 4);
+        root.Approval.Add(companionId, +2);
+        if (root.CompanionStates != null)
+        {
+            root.CompanionStates.AddFatigue(companionId, +10);
+        }
+
+        MarkCompanionVisited(companionId);
+        ShowToast($"{CompanionCatalog.Name(companionId)} 호감 +2");
+        AddLog($"{CompanionCatalog.Name(companionId)}와 합련했다. 합련 +6, 무공 경험 +4, 호감 +2.");
+        SaveHubProgress();
+    }
+
+    private void ApplyCompanionVisitPatrol(string companionId)
+    {
+        if (HasVisitedCompanionToday(companionId))
+        {
+            ShowToast("오늘은 이미 방문했습니다.");
+            return;
+        }
+
+        if (!TrySpendAction("동료 산책/순찰"))
+        {
+            return;
+        }
+
+        root.Session.actionsTaken++;
+        root.Flags.AddInt("sect:village_trust", 1);
+        root.Reputation.Add(FactionIds.JoseonSects, +1);
+        root.Approval.Add(companionId, +2);
+        if (root.CompanionStates != null)
+        {
+            root.CompanionStates.AddFatigue(companionId, +5);
+        }
+
+        MarkCompanionVisited(companionId);
+        ShowToast("마을 신뢰 +1");
+        AddLog($"{CompanionCatalog.Name(companionId)}와 소백촌 길목을 돌았다. 마을 신뢰 +1, 위명 +1, 호감 +2.");
+        SaveHubProgress();
+    }
+
+    private void ApplyCompanionVisitRest(string companionId)
+    {
+        if (HasVisitedCompanionToday(companionId))
+        {
+            ShowToast("오늘은 이미 방문했습니다.");
+            return;
+        }
+
+        if (!TrySpendAction("동료 휴식/간호"))
+        {
+            return;
+        }
+
+        root.Session.actionsTaken++;
+        bool wounded = IsWounded(companionId);
+        if (root.CompanionStates != null)
+        {
+            if (wounded)
+            {
+                root.CompanionStates.Heal(companionId);
+            }
+            else
+            {
+                root.CompanionStates.AddFatigue(companionId, -20);
+            }
+        }
+
+        root.Approval.Add(companionId, wounded ? +2 : +1);
+        MarkCompanionVisited(companionId);
+        ShowToast(wounded ? "부상 회복" : "피로 회복");
+        AddLog(wounded
+                   ? $"{CompanionCatalog.Name(companionId)}의 상처를 살폈다. 부상 회복, 호감 +2."
+                   : $"{CompanionCatalog.Name(companionId)}와 조용히 쉬었다. 피로 -20, 호감 +1.");
+        SaveHubProgress();
+    }
+
+    private void ApplyCompanionVisitStrategy(string companionId)
+    {
+        if (HasVisitedCompanionToday(companionId))
+        {
+            ShowToast("오늘은 이미 방문했습니다.");
+            return;
+        }
+
+        if (!TrySpendAction("동료 전술 회의"))
+        {
+            return;
+        }
+
+        root.Session.actionsTaken++;
+        root.Flags.AddInt("growth:tactics_xp", 6);
+        root.Flags.AddInt("support:plan:" + companionId, 1);
+        root.Approval.Add(companionId, +1);
+        MarkCompanionVisited(companionId);
+        ShowToast("전술 이해 +6");
+        AddLog($"{CompanionCatalog.Name(companionId)}와 다음 전장의 역할을 맞췄다. 전술 이해 +6, 호감 +1.");
+        SaveHubProgress();
+    }
+
+    private void MarkCompanionVisited(string companionId)
+    {
+        if (string.IsNullOrEmpty(companionId))
+        {
+            return;
+        }
+
+        root.Flags.SetInt("companion:visit:last_day:" + companionId, DayIndex);
+        root.Flags.AddInt("companion:visit:count:" + companionId, 1);
+    }
+
+    private bool HasVisitedCompanionToday(string companionId)
+    {
+        if (string.IsNullOrEmpty(companionId))
+        {
+            return false;
+        }
+
+        bool visited = root.Flags.GetInt("companion:visit:last_day:" + companionId) >= DayIndex;
+        bool gifted = root.Gifts != null && root.Gifts.HasGiftedToday(companionId);
+        return visited || gifted;
+    }
+
+    private string VisitTodayText(string companionId)
+    {
+        bool visitedToday = HasVisitedCompanionToday(companionId);
+        bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(companionId);
+        string visit = visitedToday ? "오늘 방문함" : "오늘 방문 전";
+        string gift = giftedToday ? "선물 완료" : visitedToday ? "선물 불가" : "선물 가능";
+        return visit + " · " + gift + " · 기력 " + ActionsRemaining + "/" + MaxDailyActions;
+    }
+
+    private static string CompanionVisitPlace(string companionId)
+    {
+        switch (companionId)
+        {
+        case "baek_ryeon":
+            return "후산 약재 정자";
+        case "do_arin":
+            return "연무장 화로 옆";
+        case "jin_seoyul":
+            return "검각 처마 밑";
+        case "seo_a":
+            return "소백촌 꽃길";
+        case "han_biyeon":
+            return "서고 뒤 그림자길";
+        default:
+            return "후산 정자";
+        }
+    }
+
+    private static string CompanionVisitBackground(string companionId)
+    {
+        switch (companionId)
+        {
+        case "baek_ryeon":
+            return "bg_seorak_spear_council_hall";
+        case "do_arin":
+            return "bg_hwawang_blade_training_ground";
+        case "jin_seoyul":
+            return "bg_cheonroe_staff_dojo_gyeongseong";
+        case "seo_a":
+            return "bg_hwajeop_flower_fan_courtyard";
+        case "han_biyeon":
+            return "bg_heukryeon_shadow_cliff_temple";
+        default:
+            return "bg_pyesadang_courtyard_dawn";
+        }
+    }
+
+    private static string VisitMoodLine(string companionId)
+    {
+        switch (companionId)
+        {
+        case "baek_ryeon":
+            return "약재 향이 남은 창대가 벽에 기대어 있다. 백련은 다친 사람의 이름을 먼저 확인한다.";
+        case "do_arin":
+            return "도아린은 불씨를 툭툭 건드리며 다음 정면돌파 이야기를 기다린다.";
+        case "jin_seoyul":
+            return "진서율은 처마의 물방울 궤적을 보며 번개가 흐를 길을 계산하고 있다.";
+        case "seo_a":
+            return "신서아는 부채 끝으로 바람길을 그리며 모두가 설 자리를 살핀다.";
+        case "han_biyeon":
+            return "한비연은 밝은 곳과 어두운 곳의 경계를 재며 짧게 웃는다.";
+        default:
+            return "동료가 오늘의 문파 분위기를 살피고 있다.";
+        }
+    }
+
+    private static string CompanionVisitHook(string companionId)
+    {
+        switch (companionId)
+        {
+        case "baek_ryeon":
+            return "부상자 보호 루트";
+        case "do_arin":
+            return "돌파 전열 루트";
+        case "jin_seoyul":
+            return "감찰단 전기 단서";
+        case "seo_a":
+            return "지원 진형 루트";
+        case "han_biyeon":
+            return "독살 누명 단서";
+        default:
+            return "신뢰 루트";
+        }
+    }
+
+    private static string FavoriteGiftHint(string companionId)
+    {
+        foreach (GiftInfo gift in GiftCatalog.All)
+        {
+            if (gift.IsFavoriteOf(companionId))
+            {
+                return "최애: " + gift.displayName + " +" + gift.favoriteDelta;
+            }
+        }
+
+        return "범용 선물로 호감 상승";
+    }
+
+    private static string SupportPreview(string companionId, int approval)
+    {
+        string stage = approval >= 80 ? "동지" : approval >= 60 ? "신뢰" : approval >= 40 ? "동행" : "경계";
+        switch (companionId)
+        {
+        case "baek_ryeon":
+            return stage + " · 보호 대상 인접 시 창수 견제";
+        case "do_arin":
+            return stage + " · 돌파 시작 턴 기세 보조";
+        case "jin_seoyul":
+            return stage + " · 원거리 빈틈 표시";
+        case "seo_a":
+            return stage + " · 지원 위치 보정";
+        case "han_biyeon":
+            return stage + " · 암습 경로 탐지";
+        default:
+            return stage + " · 동행 보정";
+        }
+    }
+
+    private void SaveHubProgress()
+    {
+        if (root != null && root.Save != null && root.Session != null)
+        {
+            root.Save.Save(root.Session);
         }
     }
 
@@ -626,9 +1125,11 @@ public sealed class HubController : MonoBehaviour
         GUI.Label(new Rect(status.x + 14f * s, status.y + 6f * s, status.width * 0.4f, 24f * s),
                   $"연애도 {approval}/100 · {root.Approval.GetStageLabel(companionId)}", gaugeTitle);
         bool giftedToday = root.Gifts != null && root.Gifts.HasGiftedToday(companionId);
+        bool visitedToday = HasVisitedCompanionToday(companionId);
         GUIStyle stateStyle = new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleRight };
+        string stateText = giftedToday ? "오늘 선물 완료" : visitedToday ? "오늘 방문 행동 완료" : "오늘 선물 가능";
         GUI.Label(new Rect(status.x + status.width * 0.5f, status.y + 6f * s, status.width * 0.5f - 14f * s, 24f * s),
-                  giftedToday ? "오늘은 이미 선물을 건넸다" : "오늘 선물 가능", stateStyle);
+                  stateText, stateStyle);
         Rect barBg = new Rect(status.x + 14f * s, status.y + 34f * s, status.width - 28f * s, 10f * s);
         UiTheme.DrawFill(barBg, UiTheme.HanjiPanelAlt);
         UiTheme.DrawFill(new Rect(barBg.x, barBg.y, barBg.width * Mathf.Clamp01(approval / 100f), barBg.height), rose);
@@ -669,6 +1170,11 @@ public sealed class HubController : MonoBehaviour
             bool hover = row.Contains(Event.current.mousePosition);
             UiTheme.DrawFill(row, hover ? new Color(0.060f, 0.075f, 0.070f, 0.88f)
                                         : new Color(0.030f, 0.040f, 0.038f, 0.75f));
+            if (visitedToday)
+            {
+                UiTheme.DrawFill(row, new Color(0f, 0f, 0f, 0.28f));
+            }
+
             bool favorite = gift.IsFavoriteOf(companionId);
             UiTheme.DrawFill(new Rect(row.x, row.y, 4f * s, row.height),
                              favorite ? rose : HubInventoryGrid.AccentFor(InventoryItemType.Gift));
@@ -681,8 +1187,13 @@ public sealed class HubController : MonoBehaviour
             GUIStyle countStyle = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.MiddleRight };
             GUI.Label(new Rect(row.xMax - 196f * s, row.y + 6f * s, 40f * s, 24f * s), "x" + stack.count, countStyle);
 
-            string reason;
-            bool canGive = root.Gifts != null && root.Gifts.CanGift(companionId, gift.id, out reason);
+            string reason = string.Empty;
+            bool canGive = !visitedToday && root.Gifts != null && root.Gifts.CanGift(companionId, gift.id, out reason);
+            if (visitedToday)
+            {
+                reason = "오늘은 이미 이 동료와 시간을 보냈다.";
+            }
+
             GUI.enabled = canGive;
             if (GUI.Button(new Rect(row.xMax - 148f * s, row.y + 10f * s, 136f * s, 42f * s), "건네기",
                            UiTheme.ButtonPrimary))
@@ -692,6 +1203,8 @@ public sealed class HubController : MonoBehaviour
                 {
                     ShowToast(result.wasFavorite ? $"최애 선물! 연애도 +{result.delta}" : $"연애도 +{result.delta}");
                     AddLog(result.message.Replace("\n", " "));
+                    MarkCompanionVisited(companionId);
+                    SaveHubProgress();
                 }
                 else
                 {

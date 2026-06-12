@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b9addec112e47c439d3a5492da3a839, type: 3}
+  m_Name: baekdusan_gate_battle_visual_profile
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleVisualProfile
+  id: baekdusan_gate_v1
+  groundTiles:
+  - {fileID: 21300000, guid: 2610a29fab502e64aa1cfb287d966f88, type: 3}
+  - {fileID: 21300000, guid: 2c6e5f66e70cb5944bf0f769a6203d00, type: 3}
+  - {fileID: 21300000, guid: bcdc6dbc15c05374ba65463e7e6a23af, type: 3}
+  - {fileID: 21300000, guid: 50a4ccbc17a99fb479f2a1e9cdae05c1, type: 3}
+  - {fileID: 21300000, guid: dc252d7169111aa4c917a14cab52452d, type: 3}
+  - {fileID: 21300000, guid: fc5290fc0b675c3468179997e416a692, type: 3}
+  roadTiles:
+  - {fileID: 21300000, guid: 2610a29fab502e64aa1cfb287d966f88, type: 3}
+  - {fileID: 21300000, guid: fc5290fc0b675c3468179997e416a692, type: 3}
+  waterTiles:
+  - {fileID: 21300000, guid: 6e37b87db20ac6543a867992e3e487b7, type: 3}
+  - {fileID: 21300000, guid: 96a965110fbb504468fc37f4f857d731, type: 3}
+  cliffTiles:
+  - {fileID: 21300000, guid: ea8df0257e3fb054896955e3a14b79a6, type: 3}
+  - {fileID: 21300000, guid: 87cb4f9a08b9f3e458435fe1e7e4d299, type: 3}
+  decorTiles:
+  - {fileID: 21300000, guid: 086fb9f2bc1c4c24fb25b3161440a73a, type: 3}
+  - {fileID: 21300000, guid: 4c4d78d2aa32c88429e735d445adcd2d, type: 3}
+  propSprites:
+  - {fileID: 21300000, guid: 64cbd677930a614438ff36ba035c4399, type: 3}
+  - {fileID: 21300000, guid: 1e92be36f9fbdc545852045d8b919af5, type: 3}
+  - {fileID: 21300000, guid: c47f1616ed5b70548ba5d9237178ef33, type: 3}
+  - {fileID: 21300000, guid: 173df86cf07f6fc4db4dc6905254aa56, type: 3}
+  - {fileID: 21300000, guid: 5ace0e5bf30709549ba9dbd5c3926890, type: 3}
+  - {fileID: 21300000, guid: 5117f990f0a0c96448cdb649a92e6a44, type: 3}
+  - {fileID: 21300000, guid: 1f952c6a122e70b4eb55c70e1b651a29, type: 3}
+  - {fileID: 21300000, guid: 24f49077764ad8c43905ea774f6fb680, type: 3}
+  - {fileID: 21300000, guid: 663088a81547c364c8c76a324c6d84c6, type: 3}
+  - {fileID: 21300000, guid: 6fa230fa542ae1a43b58f73ea9a58652, type: 3}
+  - {fileID: 21300000, guid: 12993473e7c481c4ca13bc0efb52226a, type: 3}
+  - {fileID: 21300000, guid: 523b79c6a341e8049b61100d2f2b8e25, type: 3}
+  - {fileID: 21300000, guid: 6c76d41bd6a97df48a2c0c41faaebe69, type: 3}
+  - {fileID: 21300000, guid: fa7d0721207add343a1100465229917d, type: 3}
+  - {fileID: 21300000, guid: 575a0de49cc731f47ba17bc41188a485, type: 3}
+  - {fileID: 21300000, guid: d353d0a119b04c344b932864a0ad7a18, type: 3}
+  moveHighlightSprite: {fileID: 0}
+  attackHighlightSprite: {fileID: 0}
+  dangerHighlightSprite: {fileID: 0}
+  globalTint: {r: 0.78, g: 0.82, b: 0.9, a: 1}
+  useUrp2DLighting: 0
+  usePixelPerfect: 0

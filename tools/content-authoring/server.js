@@ -11,6 +11,7 @@ const mediaRoot = path.join(outputRoot, "Media");
 const manifestPath = path.join(outputRoot, "content_manifest.json");
 const backupRoot = path.join(outputRoot, "Backups");
 const mapAssetCatalogPath = path.join(resourcesRoot, "MapAssets", "map_asset_catalog.json");
+const defaultsJsPath = path.join(publicRoot, "defaults.js");
 const port = Number(process.env.PORT || 5178);
 
 const mediaFolders = {
@@ -98,6 +99,8 @@ function slug(value, fallback = "asset") {
 
 const seededSceneIds = new Set([
   "chapter1_prologue",
+  "chapter1_baek_ryeon_join_before_battle",
+  "chapter1_baek_ryeon_join_after_battle",
   "companion_baek_ryeon_talk",
   "companion_do_arin_talk",
   "companion_jin_seoyul_talk",
@@ -289,10 +292,24 @@ function companionScene(id, title, speakerId, entries) {
 
 function buildNodesForScene(scene, characters) {
   const nodeIds = scene.entries.map((_, index) => `${scene.id}_${String(index + 1).padStart(3, "0")}`);
+  const nodeIdForEntryId = (entryId, fallback) => {
+    if (!entryId) {
+      return fallback;
+    }
+
+    if (entryId === "__END__") {
+      return "";
+    }
+
+    const index = scene.entries.findIndex(entryItem => entryItem.id === entryId);
+    return index >= 0 ? nodeIds[index] : fallback;
+  };
+
   scene.startNodeId = nodeIds[0] || "";
   scene.nodes = scene.entries.map((line, index) => {
     const speaker = characters.find(item => item.id === line.speakerId);
     const nextNodeId = index + 1 < nodeIds.length ? nodeIds[index + 1] : "";
+    const authoredNextNodeId = nodeIdForEntryId(line.nextEntryId || "", nextNodeId);
     return {
       nodeId: nodeIds[index],
       speakerId: line.speakerId || "",
@@ -302,15 +319,15 @@ function buildNodesForScene(scene, characters) {
       backgroundId: line.backgroundId || scene.backgroundId || "",
       portraitId: speaker?.portraitId || "",
       portraitResource: speaker?.portraitResource || "",
-      nextNodeId,
+      nextNodeId: authoredNextNodeId,
       choices: (line.choices || []).filter(item => item.text && item.text.trim()).map(item => ({
         text: item.text.trim(),
         disposition: Number(item.disposition ?? -1),
         nextNodeId: item.targetEntryId === "__END__"
           ? ""
           : item.targetEntryId
-            ? nodeIds[scene.entries.findIndex(entryItem => entryItem.id === item.targetEntryId)] || nextNodeId
-            : nextNodeId,
+            ? nodeIdForEntryId(item.targetEntryId, authoredNextNodeId)
+            : authoredNextNodeId,
         requiredFlags: [],
         flagsAdded: item.flagAdded ? [item.flagAdded] : [],
         approvalChanges: item.approvalId ? [{ id: item.approvalId, delta: Number(item.approvalDelta || 0) }] : [],
@@ -351,6 +368,7 @@ function entriesFromNodes(scene) {
     line: node.line || "",
     mood: node.mood || "",
     backgroundId: node.backgroundId || "",
+    nextEntryId: node.nextNodeId ? nodeToEntryId.get(node.nextNodeId) || "" : "__END__",
     choices: (node.choices || []).map(choiceItem => ({
       id: slug(choiceItem.text, "choice"),
       text: choiceItem.text || "",
@@ -369,7 +387,31 @@ function entriesFromNodes(scene) {
   }));
 }
 
+function defaultManifestFromDefaultsJs() {
+  if (!fs.existsSync(defaultsJsPath)) {
+    return null;
+  }
+
+  try {
+    const text = fs.readFileSync(defaultsJsPath, "utf8");
+    const assignIndex = text.indexOf("=");
+    const semicolonIndex = text.lastIndexOf(";");
+    if (assignIndex < 0 || semicolonIndex <= assignIndex) {
+      return null;
+    }
+
+    return rebuildNodes(JSON.parse(text.slice(assignIndex + 1, semicolonIndex).trim()));
+  } catch {
+    return null;
+  }
+}
+
 function defaultManifest() {
+  const authoredDefaults = defaultManifestFromDefaultsJs();
+  if (authoredDefaults) {
+    return authoredDefaults;
+  }
+
   const manifest = {
     version: 1,
     updatedAt: new Date().toISOString(),

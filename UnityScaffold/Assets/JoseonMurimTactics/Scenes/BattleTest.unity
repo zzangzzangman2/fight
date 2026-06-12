@@ -221,6 +221,9 @@ GameObject:
   m_Component:
   - component: {fileID: 511905369}
   - component: {fileID: 511905368}
+  - component: {fileID: 511905372}
+  - component: {fileID: 511905371}
+  - component: {fileID: 511905370}
   m_Layer: 0
   m_Name: Battle Test Controller
   m_TagString: Untagged
@@ -518,6 +521,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &511905370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 511905367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a626c091998de545a83ecbf2ccb5465, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleImpactPresenter
+  cameraFx: {fileID: 0}
+  damagePopups: {fileID: 0}
+  hitFlashColor: {r: 1, g: 0.42, b: 0.22, a: 1}
+  counterFlashColor: {r: 0.82, g: 0.94, b: 1, a: 1}
+--- !u!114 &511905371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 511905367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b470ff56f2f733b40839d22d95cacd0b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.DamagePopupPresenter
+  font: {fileID: 0}
+  lifetime: 0.7
+--- !u!114 &511905372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 511905367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79a426a5581604845bfc7d47704b9b01, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleCameraFx
+  targetCamera: {fileID: 0}
+  focusLerpSeconds: 0.16
 --- !u!1 &1432410132
 GameObject:
   m_ObjectHideFlags: 0

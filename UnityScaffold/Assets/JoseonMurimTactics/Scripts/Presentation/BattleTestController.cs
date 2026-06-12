@@ -146,6 +146,7 @@ public sealed class BattleTestController : MonoBehaviour
     private Sprite mountainRidgeSprite;
     private Sprite pineSilhouetteSprite;
     private Sprite paintedMapBackdropSprite;
+    private static Sprite battleIntegrationOverlaySprite;
     private BattleTilemapBattlefield tilemapBattlefield;
     private Coroutine mapIntroCoroutine;
     private Coroutine cameraPanCoroutine;
@@ -177,6 +178,9 @@ public sealed class BattleTestController : MonoBehaviour
     private Button hudResetButton;
     private readonly List<Button> hudCommandButtons = new List<Button>();
     private BattleHUDController battleHud;
+    private BattleCameraFx battleCameraFx;
+    private DamagePopupPresenter damagePopupPresenter;
+    private BattleImpactPresenter battleImpactPresenter;
     private BattleTestUnit activeUnit;
     private BattleTestUnit hoveredUnit;
     private BattleTestTile hoveredTile;
@@ -1150,6 +1154,7 @@ public sealed class BattleTestController : MonoBehaviour
         units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
         CenterCamera();
         EnsureBattleHud();
+        EnsureBattlePresentationFx();
         AddLog("[전투] 아군을 선택한 뒤 파란 이동 가능 칸을 클릭하세요. 정찰/재배치는 S로 전환할 수 있습니다.");
         AddLog("[체계] 전투 준비 완료.");
         suppressCameraFocus = true;
@@ -1720,6 +1725,27 @@ public sealed class BattleTestController : MonoBehaviour
         battleHud.Initialize(this);
     }
 
+    private void EnsureBattlePresentationFx()
+    {
+        battleCameraFx = battleCameraFx != null ? battleCameraFx : GetComponent<BattleCameraFx>();
+        if (battleCameraFx == null)
+        {
+            battleCameraFx = gameObject.AddComponent<BattleCameraFx>();
+        }
+
+        damagePopupPresenter = damagePopupPresenter != null ? damagePopupPresenter : GetComponent<DamagePopupPresenter>();
+        if (damagePopupPresenter == null)
+        {
+            damagePopupPresenter = gameObject.AddComponent<DamagePopupPresenter>();
+        }
+
+        battleImpactPresenter = battleImpactPresenter != null ? battleImpactPresenter : GetComponent<BattleImpactPresenter>();
+        if (battleImpactPresenter == null)
+        {
+            battleImpactPresenter = gameObject.AddComponent<BattleImpactPresenter>();
+        }
+    }
+
     private void DestroyLegacyCanvasHud()
     {
         if (hudCanvas != null)
@@ -2243,8 +2269,7 @@ public sealed class BattleTestController : MonoBehaviour
         tileObject.transform.localScale = new Vector3(tileWidth, tileWidth, 1f);
 
         PolygonCollider2D collider = tileObject.AddComponent<PolygonCollider2D>();
-        collider.points = new[] { new Vector2(0f, 0.25f), new Vector2(0.5f, 0f), new Vector2(0f, -0.25f),
-                                  new Vector2(-0.5f, 0f) };
+        collider.points = BuildIsoCellColliderPoints();
 
         BattleTestTile tile = tileObject.AddComponent<BattleTestTile>();
         tile.cell = cell;
@@ -2303,6 +2328,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         CreateMapBackdrop(terrainRoot);
         CreateMapAtmosphere(terrainRoot);
+        CreateBattleIntegrationOverlay(terrainRoot);
 
         for (int y = 0; y < height; y++)
         {
@@ -2335,9 +2361,7 @@ public sealed class BattleTestController : MonoBehaviour
         tileObject.transform.localScale = new Vector3(tileWidth, tileWidth, 1f);
 
         PolygonCollider2D collider = tileObject.AddComponent<PolygonCollider2D>();
-        float halfHeight = tileHeight / Mathf.Max(0.01f, tileWidth * 2f);
-        collider.points = new[] { new Vector2(0f, halfHeight), new Vector2(0.5f, 0f), new Vector2(0f, -halfHeight),
-                                  new Vector2(-0.5f, 0f) };
+        collider.points = BuildIsoCellColliderPoints();
 
         BattleTestTile tile = tileObject.AddComponent<BattleTestTile>();
         tile.cell = cell;
@@ -2360,6 +2384,13 @@ public sealed class BattleTestController : MonoBehaviour
         tiles[cell.x, cell.y] = tile;
     }
 
+    private Vector2[] BuildIsoCellColliderPoints()
+    {
+        float halfHeight = tileHeight / Mathf.Max(0.01f, tileWidth * 2f);
+        return new[] { new Vector2(0f, halfHeight), new Vector2(0.5f, 0f), new Vector2(0f, -halfHeight),
+                       new Vector2(-0.5f, 0f) };
+    }
+
     private void CreateLegacyDebugTerrain()
     {
         tiles = new BattleTestTile[width, height];
@@ -2367,6 +2398,7 @@ public sealed class BattleTestController : MonoBehaviour
         terrainRoot.SetParent(transform, false);
         CreateMapBackdrop(terrainRoot);
         CreateMapAtmosphere(terrainRoot);
+        CreateBattleIntegrationOverlay(terrainRoot);
 
         for (int y = 0; y < height; y++)
         {
@@ -2387,8 +2419,7 @@ public sealed class BattleTestController : MonoBehaviour
                 renderer.sortingOrder = (x + y) * 8;
 
                 PolygonCollider2D collider = tileObject.AddComponent<PolygonCollider2D>();
-                collider.points = new[] { new Vector2(0f, 0.25f), new Vector2(0.5f, 0f), new Vector2(0f, -0.25f),
-                                          new Vector2(-0.5f, 0f) };
+                collider.points = BuildIsoCellColliderPoints();
 
                 CreateTileShadow(tileObject.transform, profile, cell, renderer.sortingOrder);
                 CreateHeightSkirt(tileObject.transform, profile, renderer.sortingOrder);
@@ -2971,6 +3002,44 @@ public sealed class BattleTestController : MonoBehaviour
                                new Color(0.07f, 0.18f, 0.12f, 0.48f), -68);
     }
 
+    private void CreateBattleIntegrationOverlay(Transform terrainRoot)
+    {
+        if (terrainRoot == null)
+        {
+            return;
+        }
+
+        Sprite overlaySprite = GetBattleIntegrationOverlaySprite();
+        if (overlaySprite == null)
+        {
+            return;
+        }
+
+        Vector3 min = GridToWorld(Vector2Int.zero);
+        Vector3 max = GridToWorld(new Vector2Int(width - 1, height - 1));
+        Vector3 left = GridToWorld(new Vector2Int(0, height - 1));
+        Vector3 right = GridToWorld(new Vector2Int(width - 1, 0));
+        Vector3 center = (min + max + left + right) * 0.25f;
+
+        float playableWidth = Mathf.Abs(right.x - left.x) + tileWidth * 6.0f;
+        float playableHeight = Mathf.Abs(max.y - min.y) + tileHeight * 8.0f;
+        Bounds spriteBounds = overlaySprite.bounds;
+
+        GameObject overlay = new GameObject("Battle Scene Integration Overlay");
+        overlay.transform.SetParent(terrainRoot, false);
+        overlay.transform.position = center + new Vector3(0f, 0.22f, -0.16f);
+        overlay.transform.localScale =
+            new Vector3(playableWidth / Mathf.Max(0.001f, spriteBounds.size.x),
+                        playableHeight / Mathf.Max(0.001f, spriteBounds.size.y),
+                        1f);
+
+        SpriteRenderer renderer = overlay.AddComponent<SpriteRenderer>();
+        renderer.sprite = overlaySprite;
+        renderer.color = BattleIntegrationOverlayTint();
+        renderer.sortingLayerName = "Default";
+        renderer.sortingOrder = 5200;
+    }
+
     private void CreateMapAtmosphere(Transform terrainRoot)
     {
         if (paintedMapBackdropSprite != null)
@@ -3029,6 +3098,120 @@ public sealed class BattleTestController : MonoBehaviour
                    1.12f, 1360);
         CreateGlow(atmosphereRoot, "Summit Marker Halo", new Vector2Int(13, 9), new Color(1f, 0.86f, 0.48f, 0.10f),
                    1.02f, 1361);
+    }
+
+    private Color BattleAmbientTint()
+    {
+        switch (mapVariant)
+        {
+        case BattleTestMapVariant.BaekduSnowGate:
+        case BattleTestMapVariant.BaekduMountainSnowfield:
+        case BattleTestMapVariant.SeorakPassRescue:
+            return new Color(0.78f, 0.82f, 0.90f, 1f);
+        case BattleTestMapVariant.BanditLair:
+            return new Color(0.78f, 0.74f, 0.68f, 1f);
+        case BattleTestMapVariant.WolfPass:
+            return new Color(0.82f, 0.83f, 0.76f, 1f);
+        default:
+            return new Color(0.84f, 0.80f, 0.74f, 1f);
+        }
+    }
+
+    private Color BattleGroundBlendTint()
+    {
+        switch (mapVariant)
+        {
+        case BattleTestMapVariant.BaekduSnowGate:
+        case BattleTestMapVariant.BaekduMountainSnowfield:
+        case BattleTestMapVariant.SeorakPassRescue:
+            return new Color(0.25f, 0.31f, 0.42f, 0.22f);
+        case BattleTestMapVariant.BanditLair:
+            return new Color(0.26f, 0.20f, 0.15f, 0.23f);
+        case BattleTestMapVariant.WolfPass:
+            return new Color(0.20f, 0.24f, 0.17f, 0.21f);
+        default:
+            return new Color(0.27f, 0.23f, 0.18f, 0.21f);
+        }
+    }
+
+    private Color BattleFootOcclusionTint()
+    {
+        switch (mapVariant)
+        {
+        case BattleTestMapVariant.BaekduSnowGate:
+        case BattleTestMapVariant.BaekduMountainSnowfield:
+        case BattleTestMapVariant.SeorakPassRescue:
+            return new Color(0.74f, 0.82f, 0.92f, 0.38f);
+        case BattleTestMapVariant.BanditLair:
+            return new Color(0.24f, 0.18f, 0.13f, 0.34f);
+        case BattleTestMapVariant.WolfPass:
+            return new Color(0.16f, 0.24f, 0.14f, 0.32f);
+        default:
+            return new Color(0.23f, 0.20f, 0.15f, 0.32f);
+        }
+    }
+
+    private Color BattleIntegrationOverlayTint()
+    {
+        switch (mapVariant)
+        {
+        case BattleTestMapVariant.BaekduSnowGate:
+        case BattleTestMapVariant.BaekduMountainSnowfield:
+        case BattleTestMapVariant.SeorakPassRescue:
+            return new Color(0.88f, 0.92f, 1f, 1f);
+        case BattleTestMapVariant.BanditLair:
+            return new Color(0.98f, 0.89f, 0.78f, 1f);
+        default:
+            return new Color(0.96f, 0.94f, 0.86f, 1f);
+        }
+    }
+
+    private void ApplyBattleSceneIntegration(CharacterVisualController visual)
+    {
+        if (visual == null)
+        {
+            return;
+        }
+
+        visual.SetSceneIntegration(BattleAmbientTint(), BattleGroundBlendTint(), 0.13f, BattleFootOcclusionTint());
+    }
+
+    private static Sprite GetBattleIntegrationOverlaySprite()
+    {
+        if (battleIntegrationOverlaySprite != null)
+        {
+            return battleIntegrationOverlaySprite;
+        }
+
+        Texture2D texture = new Texture2D(512, 512, TextureFormat.RGBA32, false);
+        texture.name = "GeneratedBattleSceneIntegrationOverlay";
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        for (int y = 0; y < texture.height; y++)
+        {
+            for (int x = 0; x < texture.width; x++)
+            {
+                float nx = ((x + 0.5f) / texture.width * 2f) - 1f;
+                float ny = ((y + 0.5f) / texture.height * 2f) - 1f;
+                float radius = Mathf.Sqrt((nx * nx * 0.86f) + (ny * ny * 1.18f));
+                float vignette = Mathf.SmoothStep(0.48f, 1.08f, radius) * 0.32f;
+                float grain = Mathf.PerlinNoise((x * 0.115f) + 13.7f, (y * 0.115f) + 31.4f);
+                float fiber = Mathf.PerlinNoise((x * 0.031f) + 5.2f, (y * 0.19f) + 9.6f);
+                float paperAlpha = Mathf.Clamp01(0.024f + (grain * 0.018f) + (fiber * 0.010f));
+                float alpha = Mathf.Clamp01(paperAlpha + vignette);
+                float vignetteWeight = Mathf.Clamp01(vignette / Mathf.Max(0.001f, alpha));
+                Color paper = new Color(0.78f, 0.70f, 0.56f, alpha);
+                Color ink = new Color(0.025f, 0.022f, 0.020f, alpha);
+                texture.SetPixel(x, y, Color.Lerp(paper, ink, vignetteWeight));
+            }
+        }
+
+        texture.Apply();
+        battleIntegrationOverlaySprite =
+            Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 128f);
+        battleIntegrationOverlaySprite.name = "GeneratedBattleSceneIntegrationOverlay";
+        return battleIntegrationOverlaySprite;
     }
 
     private void CreateZoneWash(Transform parent, string name, Vector2Int cell, Vector2 scale, float zRotation,
@@ -3379,10 +3562,11 @@ public sealed class BattleTestController : MonoBehaviour
             // Authored diorama floor rows occupy (rows - (x+y)) * 40 + [0..28]; base 1000 puts the
             // unit on slot 30 of its own row so nearer terrain blocks correctly occlude it.
             visual.baseSortingOrder = authoredMapBound ? 1000 : 3000;
+            ApplyBattleSceneIntegration(visual);
 
             CircleCollider2D collider = unitObject.AddComponent<CircleCollider2D>();
-            collider.radius = 0.26f;
-            collider.offset = new Vector2(0f, 0.28f);
+            collider.radius = 0.22f;
+            collider.offset = new Vector2(0f, 0.24f);
 
             BattleTestUnitView view = unitObject.AddComponent<BattleTestUnitView>();
             BattleTestUnit unit = new BattleTestUnit(definition, view);
@@ -4143,6 +4327,8 @@ public sealed class BattleTestController : MonoBehaviour
         CombatActionTimeline timeline = attacker.view.CreateTimeline(special);
         attacker.view.FaceToward(target.view.transform.position);
         target.view.FaceToward(attacker.view.transform.position);
+        EnsureBattlePresentationFx();
+        battleImpactPresenter.PlayAttackStartAsync(attacker, target);
         if (special)
         {
             attacker.view.PlaySkill();
@@ -4156,6 +4342,7 @@ public sealed class BattleTestController : MonoBehaviour
         yield return WaitActionSeconds(timeline.VfxTime);
         yield return WaitActionSeconds(Mathf.Max(0f, timeline.HitTime - timeline.VfxTime));
         ApplyAttackResultAtHitFrame(result);
+        PlayAttackImpactPresentation(result);
         onResolved?.Invoke(result);
 
         if (result.hit)
@@ -4251,6 +4438,29 @@ public sealed class BattleTestController : MonoBehaviour
             target.defeated = true;
             target.view.SetDefeated(true);
             AddLog($"[Defeat] {target.definition.displayName} is down.");
+        }
+    }
+
+    private void PlayAttackImpactPresentation(BattleTestAttackResult result)
+    {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        EnsureBattlePresentationFx();
+        if (battleImpactPresenter == null)
+        {
+            return;
+        }
+
+        if (result.hit)
+        {
+            battleImpactPresenter.PlayHitAsync(result.target, result.damage, result.critical);
+        }
+        else
+        {
+            battleImpactPresenter.PlayMissAsync(result.target);
         }
     }
 
@@ -4495,6 +4705,8 @@ public sealed class BattleTestController : MonoBehaviour
         {
             target.SpendReaction();
             AddLog($"[반격] {target.definition.displayName}: {counter.label}.");
+            EnsureBattlePresentationFx();
+            battleImpactPresenter.PlayCounterAsync(target);
             yield return WaitActionSeconds(0.22f);
             if (counter.special)
             {

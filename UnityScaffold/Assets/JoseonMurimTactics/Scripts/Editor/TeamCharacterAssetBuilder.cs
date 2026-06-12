@@ -21,12 +21,12 @@ public static class TeamCharacterAssetBuilder
     private const float PosePixelsPerUnit = 420f;
     private const float PortraitPixelsPerUnit = 420f;
     private const float IconPixelsPerUnit = 220f;
-    private const float EnemyPosePixelsPerUnit = 384f;
+    private const float EnemyPosePixelsPerUnit = PosePixelsPerUnit;
     private static readonly Vector2 BattlePosePivot = new Vector2(0.5f, 32f / 384f);
     private static readonly Vector2 EnemyPosePivot = new Vector2(0.5f, 0.03f);
 
     private static readonly Spec[] Team = {
-        new Spec("park_sungjun", "박성준", "백두 루멘오더", 18, "ENFJ", "빛", "검",
+        new Spec("park_sungjun", "박성준", "백두 루멘오더", 17, "ENFJ", "빛", "검",
                  "침착하고 다정한 주인공 말투", WeaponType.Sword, CombatElementType.Light,
                  new Color(1f, 0.82f, 0.30f, 1f), new Color(0.96f, 0.98f, 1f, 1f),
                  new Vector2Int(5, 8), 36, 5, 15, 16, 4, 1, 7, 15, 6, 10, "백두광검", 1, 1, 2,
