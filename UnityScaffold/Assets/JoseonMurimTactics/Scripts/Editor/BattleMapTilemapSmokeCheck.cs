@@ -269,6 +269,7 @@ public static class BattleMapTilemapSmokeCheck
         VerifyBanditLairTerrainRules(controller);
         InvokePrivate(controller, "SpawnUnits");
         List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        VerifyUnitAnchorsAndPropOverlap(controller, units);
         Require(FindUnit(units, "bandit_boss_gwakchil") != null, "Expected bandit boss unit for free-time lair.");
         Require(FindUnit(units, "iron_wolf_captain") == null, "Bandit lair should not spawn the main-story captain.");
         VerifyBanditLairBlockedCellsStayUnreachable(controller, units);
@@ -358,6 +359,7 @@ public static class BattleMapTilemapSmokeCheck
 
         InvokePrivate(controller, "SpawnUnits");
         List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        VerifyUnitAnchorsAndPropOverlap(controller, units);
         Require(FindUnit(units, bossId) != null, $"Expected {bossId} boss unit for {expectedVariant}.");
         Require(FindUnit(units, "iron_wolf_captain") == null,
                 $"{expectedVariant} should not spawn the main-story captain.");
@@ -482,24 +484,83 @@ public static class BattleMapTilemapSmokeCheck
     {
         List<BattleTestInteractable> interactables =
             GetPrivate<List<BattleTestInteractable>>(controller, "interactables");
+        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
         foreach (BattleTestUnit unit in units)
         {
-            if (unit == null || unit.definition == null || unit.definition.faction != Faction.Ally)
+            if (unit == null || unit.definition == null)
             {
                 continue;
             }
+
+            BattleTestTile tile = GetPrivate<BattleTestTile[,]>(controller, "tiles")[unit.cell.x, unit.cell.y];
+            Require(tile != null && tile.walkable,
+                    $"{unit.definition.displayName} should spawn on a walkable tactical cell, got {unit.cell}.");
+            Require(!occupied.Contains(unit.cell),
+                    $"{unit.definition.displayName} should not share initial cell {unit.cell} with another unit.");
+            occupied.Add(unit.cell);
 
             Vector3 unitWorld = (Vector3)InvokePrivate(controller, "UnitWorldPosition", unit.cell);
             Vector3 gridWorld = (Vector3)InvokePrivate(controller, "GridToWorld", unit.cell);
             Require(Vector3.Distance(unitWorld, gridWorld) <= 0.001f,
                     $"{unit.definition.displayName} should be grounded at the tactical cell center.");
+            Require(!(bool)InvokePrivate(controller, "IsCellUnsafeForInitialSpawn", unit.cell),
+                    $"{unit.definition.displayName} should not spawn on or beside a large map prop at {unit.cell}.");
 
             foreach (BattleTestInteractable interactable in interactables)
             {
                 Require(interactable == null || interactable.cell != unit.cell,
                         $"{unit.definition.displayName} should not spawn on interactable {interactable?.id}.");
             }
+
+            VerifyBattleVisualScale(unit);
         }
+    }
+
+    private static void VerifyBattleVisualScale(BattleTestUnit unit)
+    {
+        CharacterVisualData visual = unit.definition.visual;
+        Require(visual != null, $"{unit.definition.displayName} should have CharacterVisualData.");
+        Sprite sprite = visual == null ? null : visual.idlePoseSprite != null ? visual.idlePoseSprite : visual.fullBodySprite;
+        Require(sprite != null, $"{unit.definition.displayName} should have a battle sprite.");
+        Require(visual.heightInTiles >= 0.9f && visual.heightInTiles <= 1.35f,
+                $"{unit.definition.displayName} board height should stay close to one tile.");
+
+        if (unit.definition.faction != Faction.Enemy)
+        {
+            return;
+        }
+
+        float runtimeScale = visual.heightInTiles / Mathf.Max(0.01f, SpriteMeshHeight(sprite));
+        Require(runtimeScale >= 1.2f,
+                $"{unit.definition.displayName} enemy sprite appears to include oversized transparent padding; runtime scale {runtimeScale:0.00}.");
+    }
+
+    private static float SpriteMeshHeight(Sprite sprite)
+    {
+        if (sprite != null && sprite.vertices != null && sprite.vertices.Length > 0)
+        {
+            float minY = sprite.vertices[0].y;
+            float maxY = minY;
+            for (int i = 1; i < sprite.vertices.Length; i++)
+            {
+                float y = sprite.vertices[i].y;
+                if (y < minY)
+                {
+                    minY = y;
+                }
+                else if (y > maxY)
+                {
+                    maxY = y;
+                }
+            }
+
+            if (maxY > minY + 0.0001f)
+            {
+                return maxY - minY;
+            }
+        }
+
+        return sprite == null ? 0f : sprite.bounds.size.y;
     }
 
     private static BattleTestUnit FindUnit(List<BattleTestUnit> units, string id)

@@ -83,7 +83,7 @@ namespace JoseonMurimTactics
             }
 
             Vector3 localPosition = body.localPosition;
-            float scaledSpriteBottom = sprite.bounds.min.y * body.localScale.y;
+            float scaledSpriteBottom = bodyRenderer.localBounds.min.y * body.localScale.y;
             float currentFootY = localPosition.y + scaledSpriteBottom;
             float desiredCorrectionY = (targetFootLocalY - currentFootY) - additionalDownBias;
             desiredCorrectionY = Mathf.Clamp(desiredCorrectionY, -Mathf.Abs(maxDownCorrection), Mathf.Abs(maxUpCorrection));

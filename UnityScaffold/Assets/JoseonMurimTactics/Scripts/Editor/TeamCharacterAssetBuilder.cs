@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -188,6 +189,35 @@ public static class TeamCharacterAssetBuilder
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log("[TeamCharacterAssetBuilder] Six character combat team assets rebuilt.");
+    }
+
+    [MenuItem("Joseon Murim Tactics/Combat/Normalize Enemy Pose Sprite Importers")]
+    public static void NormalizeEnemyPoseSpriteImporters()
+    {
+        AssetDatabase.Refresh();
+        string absoluteRoot = Path.GetFullPath(EnemyCharacterRoot);
+        if (!Directory.Exists(absoluteRoot))
+        {
+            Debug.LogWarning("[TeamCharacterAssetBuilder] Enemy character root was not found: " + EnemyCharacterRoot);
+            return;
+        }
+
+        foreach (string absolutePath in Directory.GetFiles(absoluteRoot, "*.png", SearchOption.AllDirectories))
+        {
+            string projectPath = absolutePath.Replace("\\", "/");
+            int assetsIndex = projectPath.IndexOf("Assets/", System.StringComparison.OrdinalIgnoreCase);
+            if (assetsIndex < 0)
+            {
+                continue;
+            }
+
+            projectPath = projectPath.Substring(assetsIndex);
+            EnsureEnemySprite(projectPath, EnemyPosePixelsPerUnit, true, true);
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log("[TeamCharacterAssetBuilder] Enemy pose sprite importers normalized.");
     }
 
     public static BattleTestUnitDefinition[] BuildSceneUnitDefinitions()
@@ -531,6 +561,13 @@ public static class TeamCharacterAssetBuilder
             {
                 TextureImporterSettings settings = new TextureImporterSettings();
                 importer.ReadTextureSettings(settings);
+                if (settings.spriteMeshType != SpriteMeshType.Tight)
+                {
+                    settings.spriteMeshType = SpriteMeshType.Tight;
+                    importer.SetTextureSettings(settings);
+                    dirty = true;
+                }
+
                 if (settings.spriteAlignment != (int)SpriteAlignment.Custom)
                 {
                     settings.spriteAlignment = (int)SpriteAlignment.Custom;

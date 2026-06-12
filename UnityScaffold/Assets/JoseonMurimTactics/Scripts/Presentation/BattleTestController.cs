@@ -3262,12 +3262,54 @@ public sealed class BattleTestController : MonoBehaviour
     private bool IsValidInitialSpawnCell(Vector2Int cell, HashSet<Vector2Int> occupied, bool deploymentOnly)
     {
         BattleTestTile tile = TileAt(cell);
-        if (tile == null || !tile.walkable || IsCellBlockedByInteractable(cell) || occupied.Contains(cell))
+        if (tile == null || !tile.walkable || IsCellUnsafeForInitialSpawn(cell) || occupied.Contains(cell))
         {
             return false;
         }
 
         return !deploymentOnly || IsDeploymentCell(cell);
+    }
+
+    private bool IsCellUnsafeForInitialSpawn(Vector2Int cell)
+    {
+        foreach (BattleTestInteractable interactable in interactables)
+        {
+            if (interactable == null || interactable.used)
+            {
+                continue;
+            }
+
+            if (interactable.cell == cell)
+            {
+                return true;
+            }
+
+            if (IsLargeInitialSpawnAvoidanceProp(interactable) && GridDistance(interactable.cell, cell) <= 1)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsLargeInitialSpawnAvoidanceProp(BattleTestInteractable interactable)
+    {
+        if (interactable == null)
+        {
+            return false;
+        }
+
+        switch (interactable.kind)
+        {
+        case BattleTestInteractableKind.Cover:
+        case BattleTestInteractableKind.CollapseBridge:
+        case BattleTestInteractableKind.BambooFall:
+        case BattleTestInteractableKind.Rockfall:
+            return true;
+        default:
+            return false;
+        }
     }
 
     private void BeginPlayerPhase()

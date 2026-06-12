@@ -534,10 +534,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
 
         Sprite fitSprite = bodyRenderer.sprite != null ? bodyRenderer.sprite : visual.fullBodySprite;
         float scale = 1f;
-        bodyFootBoundsMinY = fitSprite != null ? fitSprite.bounds.min.y : 0f;
-        if (fitSprite != null && fitSprite.bounds.size.y > 0.01f)
+        bodyFootBoundsMinY = SpriteMeshMinY(fitSprite);
+        float fitHeight = SpriteMeshHeight(fitSprite);
+        if (fitHeight > 0.01f)
         {
-            scale = visual.heightInTiles / fitSprite.bounds.size.y;
+            scale = visual.heightInTiles / fitHeight;
         }
 
         bodyTransform = bodyRenderer.transform;
@@ -1383,6 +1384,53 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         localPosition.y += bodyFootBoundsMinY * (baseBodyScale.y - localScale.y);
+    }
+
+    private static float SpriteMeshHeight(Sprite sprite)
+    {
+        if (TryGetSpriteMeshVerticalBounds(sprite, out float minY, out float maxY))
+        {
+            return maxY - minY;
+        }
+
+        return sprite == null ? 0f : sprite.bounds.size.y;
+    }
+
+    private static float SpriteMeshMinY(Sprite sprite)
+    {
+        if (TryGetSpriteMeshVerticalBounds(sprite, out float minY, out _))
+        {
+            return minY;
+        }
+
+        return sprite == null ? 0f : sprite.bounds.min.y;
+    }
+
+    private static bool TryGetSpriteMeshVerticalBounds(Sprite sprite, out float minY, out float maxY)
+    {
+        minY = 0f;
+        maxY = 0f;
+        if (sprite == null || sprite.vertices == null || sprite.vertices.Length == 0)
+        {
+            return false;
+        }
+
+        minY = sprite.vertices[0].y;
+        maxY = minY;
+        for (int i = 1; i < sprite.vertices.Length; i++)
+        {
+            float y = sprite.vertices[i].y;
+            if (y < minY)
+            {
+                minY = y;
+            }
+            else if (y > maxY)
+            {
+                maxY = y;
+            }
+        }
+
+        return maxY > minY + 0.0001f;
     }
 
     private void UpdateShadowPose(Vector3 localPosition)
