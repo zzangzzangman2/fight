@@ -357,7 +357,6 @@ public static class Living2DVisualAssetMigrator
     {
         return path.Contains("/VisualData/") &&
                !path.Contains("/Enemies/") &&
-               !path.Contains("/TestSwordsman/") &&
                !path.Contains("/Common/");
     }
 
