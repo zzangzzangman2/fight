@@ -11,6 +11,9 @@ public sealed class WorldMapController : MonoBehaviour
     private const float MinZoom = 0.92f;
     private const float MaxZoom = 2.65f;
     private const float InitialZoom = 1.0f;
+    private const int TravelerFrameCount = 4;
+    private const float TravelerMinDuration = 0.70f;
+    private const float TravelerMaxDuration = 2.25f;
 
     private static readonly Vector2 InitialFocus = new Vector2(0.5f, 0.5f);
 
@@ -68,18 +71,33 @@ public sealed class WorldMapController : MonoBehaviour
 
     private GameRoot root;
     private Texture2D worldMap;
+    private Texture2D travelerWalkSheet;
+    private Texture2D travelerFxSheet;
     private int selectedNode;
     private SelectionMode selectionMode = SelectionMode.StoryNode;
     private string selectedFactionId;
     private WorldMapFactionGroup selectedGroup = WorldMapFactionGroup.Other;
     private float zoom = InitialZoom;
     private Vector2 centerUv = InitialFocus;
+    private Vector2 travelerUv;
+    private Vector2 travelerStartUv;
+    private Vector2 travelerTargetUv;
+    private Vector2 travelerCameraStartUv;
+    private float travelerStartTime;
+    private float travelerDuration = TravelerMinDuration;
+    private bool travelerMoving;
     private bool dragging;
 
     private void Awake()
     {
         root = GameRoot.EnsureExists();
         worldMap = LoadMapTexture("WorldMap/joseon_murim_game_map");
+        travelerWalkSheet = LoadMapTexture("WorldMap/Travel/worldmap_hero_walk_sheet");
+        travelerFxSheet = LoadMapTexture("WorldMap/Travel/worldmap_travel_fx_sheet");
+        travelerUv = Nodes[Mathf.Clamp(selectedNode, 0, Nodes.Length - 1)].uv;
+        travelerStartUv = travelerUv;
+        travelerTargetUv = travelerUv;
+        travelerCameraStartUv = centerUv;
     }
 
     private void OnGUI()
@@ -108,6 +126,7 @@ public sealed class WorldMapController : MonoBehaviour
 
     private void DrawMapPanel(Rect panel, float s)
     {
+        UpdateTravelerState();
         UiTheme.DrawPanel(panel);
 
         Rect toolbar = new Rect(panel.x + 18f * s, panel.y + 16f * s, panel.width - 36f * s, 48f * s);
@@ -139,11 +158,13 @@ public sealed class WorldMapController : MonoBehaviour
         GUI.color = Color.white;
         UiTheme.DrawFill(new Rect(0f, 0f, viewport.width, viewport.height),
                          new Color(UiTheme.Hanji.r, UiTheme.Hanji.g, UiTheme.Hanji.b, 0.04f));
+        DrawTravelerRoute(mapRect, s);
         DrawMonuments(mapRect, s);
         DrawRegionGroupLabels(mapRect, s);
         DrawLabels(mapRect, s);
         DrawFactionPins(mapRect, s);
         DrawNodes(mapRect, s);
+        DrawTraveler(mapRect, s);
         GUI.EndGroup();
 
         UiTheme.DrawFill(new Rect(viewport.x, viewport.y, viewport.width, 2f * s), UiTheme.Gold);
@@ -532,7 +553,7 @@ public sealed class WorldMapController : MonoBehaviour
             selectionMode = SelectionMode.FactionPin;
             selectedFactionId = pin.factionId;
             selectedGroup = pin.group;
-            centerUv = pin.uv;
+            BeginTravelerMove(pin.uv);
             zoom = Mathf.Max(zoom, 1.45f);
         }
     }
@@ -597,10 +618,158 @@ public sealed class WorldMapController : MonoBehaviour
                 selectionMode = SelectionMode.StoryNode;
                 selectedFactionId = null;
                 selectedGroup = WorldMapFactionGroup.Other;
-                centerUv = n.uv;
+                BeginTravelerMove(n.uv);
                 zoom = Mathf.Max(zoom, 1.28f);
             }
         }
+    }
+
+    private void BeginTravelerMove(Vector2 targetUv)
+    {
+        targetUv = new Vector2(Mathf.Clamp01(targetUv.x), Mathf.Clamp01(targetUv.y));
+        if (travelerUv == Vector2.zero)
+        {
+            travelerUv = Nodes[Mathf.Clamp(selectedNode, 0, Nodes.Length - 1)].uv;
+        }
+
+        travelerStartUv = travelerUv;
+        travelerTargetUv = targetUv;
+        travelerCameraStartUv = centerUv;
+        travelerStartTime = Time.realtimeSinceStartup;
+        travelerDuration = Mathf.Clamp(Vector2.Distance(travelerStartUv, travelerTargetUv) * 2.85f,
+                                       TravelerMinDuration, TravelerMaxDuration);
+        travelerMoving = Vector2.Distance(travelerStartUv, travelerTargetUv) > 0.004f;
+        if (!travelerMoving)
+        {
+            travelerUv = travelerTargetUv;
+            centerUv = travelerTargetUv;
+        }
+    }
+
+    private void UpdateTravelerState()
+    {
+        if (!travelerMoving)
+        {
+            return;
+        }
+
+        float rawT = Mathf.Clamp01((Time.realtimeSinceStartup - travelerStartTime) / Mathf.Max(0.01f, travelerDuration));
+        float easedT = Mathf.SmoothStep(0f, 1f, rawT);
+        travelerUv = Vector2.Lerp(travelerStartUv, travelerTargetUv, easedT);
+        if (!dragging)
+        {
+            centerUv = Vector2.Lerp(travelerCameraStartUv, travelerTargetUv, easedT);
+        }
+
+        if (rawT >= 1f)
+        {
+            travelerMoving = false;
+            travelerUv = travelerTargetUv;
+            centerUv = travelerTargetUv;
+        }
+    }
+
+    private void DrawTravelerRoute(Rect mapRect, float s)
+    {
+        if (!travelerMoving)
+        {
+            return;
+        }
+
+        Vector2 start = MapToLocal(mapRect, travelerStartUv);
+        Vector2 current = MapToLocal(mapRect, travelerUv);
+        Vector2 target = MapToLocal(mapRect, travelerTargetUv);
+        DrawLine(start, target, new Color(0.12f, 0.08f, 0.04f, 0.34f), 2.2f * s);
+        DrawLine(start, current, new Color(UiTheme.GoldBright.r, UiTheme.GoldBright.g, UiTheme.GoldBright.b, 0.74f), 3.0f * s);
+
+        int dots = Mathf.Clamp(Mathf.RoundToInt(Vector2.Distance(start, target) / (34f * s)), 3, 18);
+        for (int i = 1; i < dots; i++)
+        {
+            float p = i / (float)dots;
+            Vector2 dot = Vector2.Lerp(start, target, p);
+            float alpha = p <= Mathf.InverseLerp(0f, 1f, Mathf.Clamp01((Time.realtimeSinceStartup - travelerStartTime) / travelerDuration))
+                ? 0.76f
+                : 0.24f;
+            float r = 3.0f * s;
+            UiTheme.DrawFill(new Rect(dot.x - r, dot.y - r, r * 2f, r * 2f),
+                             new Color(UiTheme.GoldBright.r, UiTheme.GoldBright.g, UiTheme.GoldBright.b, alpha));
+        }
+    }
+
+    private void DrawTraveler(Rect mapRect, float s)
+    {
+        Vector2 pos = MapToLocal(mapRect, travelerUv);
+        Vector2 dirUv = travelerMoving ? travelerTargetUv - travelerStartUv : Vector2.right;
+        Vector2 dir = new Vector2(dirUv.x * mapRect.width, dirUv.y * mapRect.height);
+        if (dir.sqrMagnitude < 0.001f)
+        {
+            dir = Vector2.right;
+        }
+        dir.Normalize();
+
+        if (travelerMoving)
+        {
+            DrawTravelerEffects(pos, dir, s);
+        }
+
+        float bob = travelerMoving ? Mathf.Sin(Time.realtimeSinceStartup * 18.0f) * 3.0f * s : 0f;
+        float width = 66f * s;
+        float height = 86f * s;
+        Rect shadow = new Rect(pos.x - 21f * s, pos.y + 18f * s, 42f * s, 8f * s);
+        UiTheme.DrawFill(shadow, new Color(0f, 0f, 0f, travelerMoving ? 0.28f : 0.18f));
+
+        if (travelerWalkSheet == null)
+        {
+            UiTheme.DrawSeal(new Rect(pos.x - 17f * s, pos.y - 28f * s, 34f * s, 34f * s), "行", -5f);
+            return;
+        }
+
+        int frame = travelerMoving ? Mathf.FloorToInt(Time.realtimeSinceStartup * 9.5f) % TravelerFrameCount : 0;
+        Rect rect = new Rect(pos.x - width * 0.5f, pos.y - height + 24f * s + bob, width, height);
+        DrawSheetFrame(travelerWalkSheet, rect, frame, TravelerFrameCount, dir.x < -0.05f);
+    }
+
+    private void DrawTravelerEffects(Vector2 pos, Vector2 dir, float s)
+    {
+        if (travelerFxSheet == null)
+        {
+            return;
+        }
+
+        Vector2 back = -dir;
+        int frame = Mathf.FloorToInt(Time.realtimeSinceStartup * 10.5f) % TravelerFrameCount;
+        for (int i = 0; i < 3; i++)
+        {
+            float age = i / 3f;
+            Vector2 fxPos = pos + back * (18f + i * 18f) * s + new Vector2(0f, 20f * s);
+            float alpha = Mathf.Lerp(0.72f, 0.20f, age);
+            float width = Mathf.Lerp(86f, 132f, age) * s;
+            float height = Mathf.Lerp(38f, 56f, age) * s;
+            Color oldColor = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            DrawSheetFrame(travelerFxSheet, new Rect(fxPos.x - width * 0.5f, fxPos.y - height * 0.5f, width, height),
+                           (frame + i) % TravelerFrameCount, TravelerFrameCount, dir.x < -0.05f);
+            GUI.color = oldColor;
+        }
+    }
+
+    private static void DrawSheetFrame(Texture2D texture, Rect rect, int frame, int frameCount, bool flip)
+    {
+        if (texture == null || frameCount <= 0)
+        {
+            return;
+        }
+
+        int clampedFrame = Mathf.Clamp(frame, 0, frameCount - 1);
+        Rect uv = new Rect(clampedFrame / (float)frameCount, 0f, 1f / frameCount, 1f);
+        Matrix4x4 oldMatrix = GUI.matrix;
+        if (flip)
+        {
+            GUIUtility.ScaleAroundPivot(new Vector2(-1f, 1f), rect.center);
+        }
+
+        GUI.DrawTextureWithTexCoords(rect, texture, uv, true);
+        GUI.matrix = oldMatrix;
     }
 
     private void DrawLabels(Rect mapRect, float s)
