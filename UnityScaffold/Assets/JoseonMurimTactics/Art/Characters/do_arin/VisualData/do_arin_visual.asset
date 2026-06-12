@@ -64,11 +64,14 @@ MonoBehaviour:
   victoryClip: {fileID: 11400000, guid: 669547b842a4ce24dafe1b1dd2025226, type: 2}
   turnStartClip: {fileID: 11400000, guid: d634865a0bb2538489dfa41ff5ffb08f, type: 2}
   lowHpClip: {fileID: 11400000, guid: c1748119ace86da4d8c44206807bd93d, type: 2}
-  blinkFaceSprite: {fileID: 0}
-  happyFaceSprite: {fileID: 0}
-  angryFaceSprite: {fileID: 0}
-  painFaceSprite: {fileID: 0}
-  seriousFaceSprite: {fileID: 0}
+  blinkFaceSprite: {fileID: 21300000, guid: 6c814ddc366253f40b391c2ddfa5fd15, type: 3}
+  happyFaceSprite: {fileID: 21300000, guid: 115651ac0bafe814e91a7ec3c8e505de, type: 3}
+  angryFaceSprite: {fileID: 21300000, guid: b9d255f1502870549a7c997e0f0e50fe, type: 3}
+  painFaceSprite: {fileID: 21300000, guid: 2d8a388e914dcd94889179018bc6b90f, type: 3}
+  seriousFaceSprite: {fileID: 21300000, guid: 8ea3fa594613ebf4db25bd6d532f8b36, type: 3}
+  emotionFaceOffset: {x: 0, y: 0.5}
+  emotionFaceScale: {x: 0.74, y: 0.74}
+  emotionFaceSortingOffset: 8
   enableBlink: 1
   enableLayerSway: 1
   enableFootDust: 1
