@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace JoseonMurimTactics
 {
 [DisallowMultipleComponent]
-public sealed class BattleTestController : MonoBehaviour
+public sealed partial class BattleTestController : MonoBehaviour
 {
     public int width = 16;
     public int height = 12;
@@ -5733,141 +5733,8 @@ public sealed class BattleTestController : MonoBehaviour
         return best;
     }
 
-    // 적 AI 타겟 선택: 단순 최근접 대신 처치각 > 도달성 > 저HP > 근접 순으로 점수화한다.
-    private BattleTestUnit ChooseEnemyTarget(BattleTestUnit unit)
-    {
-        BattleTestUnit best = null;
-        int bestScore = int.MinValue;
-
-        foreach (BattleTestUnit other in units)
-        {
-            if (other == null || other.defeated || other.definition.faction == unit.definition.faction)
-            {
-                continue;
-            }
-
-            int distance = GridDistance(unit.cell, other.cell);
-            int score = -distance * 4;
-
-            bool reachable = CanReachToAttackThisTurn(unit, other);
-            if (reachable)
-            {
-                score += 40;
-            }
-
-            // 부상한 대상 우선(마무리 유도).
-            score += Mathf.Clamp(60 - other.hp, 0, 60);
-
-            // 이번 턴 공격으로 쓰러뜨릴 수 있으면 최우선.
-            if (reachable && EstimateAttackDamage(unit, other) >= other.hp)
-            {
-                score += 120;
-            }
-
-            // 반격 봉쇄(파훼)된 대상은 약간 선호.
-            if (other.marked)
-            {
-                score += 6;
-            }
-
-            if (score > bestScore)
-            {
-                bestScore = score;
-                best = other;
-            }
-        }
-
-        // 점수상 후보가 없으면(이론상) 최근접으로 폴백.
-        return best != null ? best : FindNearestEnemy(unit);
-    }
-
-    // 힐러 적이 지금(이동 없이) 치유할 가장 부상이 큰 아군. 없으면 null.
-    private BattleTestUnit FindEnemyHealTarget(BattleTestUnit healer)
-    {
-        if (healer == null || healer.definition.specialEffect != BattleSpecialEffect.Heal || !CanUseSpecial(healer))
-        {
-            return null;
-        }
-
-        int range = EffectiveSpecialRange(healer);
-        BattleTestUnit best = null;
-        int bestMissing = 0;
-        foreach (BattleTestUnit ally in units)
-        {
-            if (ally == null || ally.defeated || ally.definition.faction != healer.definition.faction)
-            {
-                continue;
-            }
-
-            int missing = ally.definition.maxHp - ally.hp;
-            if (missing <= 0 || GridDistance(healer.cell, ally.cell) > range)
-            {
-                continue;
-            }
-
-            if (missing > bestMissing)
-            {
-                bestMissing = missing;
-                best = ally;
-            }
-        }
-
-        return best;
-    }
-
-    // 이번 턴(현재 위치 또는 한 번 이동)에 target을 기본 공격으로 때릴 수 있는가.
-    private bool CanReachToAttackThisTurn(BattleTestUnit unit, BattleTestUnit target)
-    {
-        if (CanHitFrom(unit, unit.cell, target))
-        {
-            return true;
-        }
-
-        if (unit.moved)
-        {
-            return false;
-        }
-
-        foreach (Vector2Int cell in GetReachableCells(unit).Keys)
-        {
-            if (cell == unit.cell || UnitAt(cell) != null)
-            {
-                continue;
-            }
-
-            if (CanHitFrom(unit, cell, target))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private bool CanHitFrom(BattleTestUnit unit, Vector2Int from, BattleTestUnit target)
-    {
-        BattleTestTile fromTile = TileAt(from);
-        int range = EffectiveAttackRange(unit, fromTile);
-        int distance = GridDistance(from, target.cell);
-        return distance <= range && (range <= 1 || HasLineOfSight(from, target.cell));
-    }
-
-    // 1회 공격으로 줄 수 있는 대략적 최대 피해(치명·고저는 제외, 무공·방어는 반영) — 처치각 판단용.
-    private int EstimateAttackDamage(BattleTestUnit attacker, BattleTestUnit target)
-    {
-        int damage = attacker.definition.damageMax;
-        if (CanUseSpecial(attacker) && IsHostileAttackSpecial(attacker.definition.specialEffect))
-        {
-            damage += attacker.definition.specialPower;
-        }
-
-        if (target.guarded)
-        {
-            damage = Mathf.Max(1, Mathf.CeilToInt(damage * 0.55f));
-        }
-
-        return damage;
-    }
+    // 적 AI 타겟 선택/치유 헬퍼(ChooseEnemyTarget, FindEnemyHealTarget, CanReachToAttackThisTurn,
+    // CanHitFrom, EstimateAttackDamage)는 BattleTestController.EnemyAi.cs(partial)로 분리됨.
 
     private BattleTestUnit FindNearestEnemy(BattleTestUnit unit)
     {
@@ -7466,7 +7333,7 @@ public sealed class BattleTestController : MonoBehaviour
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
                     {
-                        tile.SetHighlight(new Color(1f, 0.25f, 0.20f, 0.42f));
+                        tile.SetHighlight(new Color(1f, 0.27f, 0.20f, 0.52f));
                     }
                 }
             }
@@ -7683,7 +7550,10 @@ public sealed class BattleTestController : MonoBehaviour
 
             if (!movementPreview && showThreatOverlay && IsInEnemyThreat(tile.cell))
             {
-                tile.SetHighlight(new Color(0.95f, 0.18f, 0.14f, 0.30f));
+                // 위험 구역: 내부는 반투명, 가장자리는 진한 림으로 칠해 설원 위에서도 경계가 보이게 한다(테두리 효과).
+                tile.SetHighlight(IsThreatEdge(tile.cell)
+                                      ? new Color(1f, 0.30f, 0.22f, 0.62f)
+                                      : new Color(0.95f, 0.20f, 0.16f, 0.34f));
             }
 
             if (!movementPreview && showElevationOverlay && tile.elevation > 0)
@@ -7709,7 +7579,7 @@ public sealed class BattleTestController : MonoBehaviour
 
             if (!movementPreview && showThreatOverlay && tile.danger)
             {
-                tile.SetHighlight(new Color(0.92f, 0.18f, 0.10f, 0.26f));
+                tile.SetHighlight(new Color(0.96f, 0.30f, 0.12f, 0.42f));
             }
         }
     }
@@ -7717,6 +7587,20 @@ public sealed class BattleTestController : MonoBehaviour
     private bool IsInEnemyThreat(Vector2Int cell)
     {
         return enemyThreatCells.Contains(cell);
+    }
+
+    // 위협 구역의 가장자리 칸(이웃 중 위협이 아닌 칸 또는 맵 밖이 있는 칸).
+    private bool IsThreatEdge(Vector2Int cell)
+    {
+        foreach (Vector2Int neighbor in Neighbors(cell))
+        {
+            if (!IsInside(neighbor) || !enemyThreatCells.Contains(neighbor))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // 적이 "한 번 이동 후 기본 공격"으로 닿는 칸까지 모두 위협으로 계산한다.
@@ -7849,12 +7733,36 @@ public sealed class BattleTestController : MonoBehaviour
         bool enemiesAlive = false;
         bool objectiveBreached = false;
         bool requiredHeroDefeated = false;
+        string requiredAllyId = RequiredAllyUnitId(mapVariant);
+        string victoryBossId = VictoryBossUnitId(mapVariant);
+        bool requiredAllyDefeated = false;
+        bool bossPresent = false;
+        bool bossAlive = false;
 
         foreach (BattleTestUnit unit in units)
         {
-            if (unit.definition != null && unit.definition.id == RequiredHeroUnitId && unit.defeated)
+            if (unit.definition == null)
+            {
+                continue;
+            }
+
+            if (unit.definition.id == RequiredHeroUnitId && unit.defeated)
             {
                 requiredHeroDefeated = true;
+            }
+
+            if (requiredAllyId != null && unit.definition.id == requiredAllyId && unit.defeated)
+            {
+                requiredAllyDefeated = true;
+            }
+
+            if (victoryBossId != null && unit.definition.id == victoryBossId)
+            {
+                bossPresent = true;
+                if (!unit.defeated)
+                {
+                    bossAlive = true;
+                }
             }
 
             if (unit.defeated)
@@ -7886,12 +7794,31 @@ public sealed class BattleTestController : MonoBehaviour
             return true;
         }
 
+        if (requiredAllyDefeated)
+        {
+            battleOver = true;
+            ClearHighlights();
+            PlayBattleOutcomeVisuals(false);
+            AddLog("[전투 종료] 패배. 백련을 지키지 못했다.");
+            return true;
+        }
+
         if (objectiveBreached)
         {
             battleOver = true;
             ClearHighlights();
             PlayBattleOutcomeVisuals(false);
             AddLog("[전투 종료] 패배. 철랑문이 백두천광 현판까지 돌파했다.");
+            return true;
+        }
+
+        // 보스 처치형 전투(설악 구조전): 두목만 제압하면 잔당이 남아도 승리한다.
+        if (victoryBossId != null && bossPresent && !bossAlive && alliesAlive)
+        {
+            battleOver = true;
+            ClearHighlights();
+            PlayBattleOutcomeVisuals(true);
+            AddLog("[전투 종료] 승리. 철비채 두목 유달근을 제압하고 약초 수레를 지켜냈다.");
             return true;
         }
 
@@ -7911,6 +7838,20 @@ public sealed class BattleTestController : MonoBehaviour
     {
         return variant == BattleTestMapVariant.BaekduSnowGate ||
                variant == BattleTestMapVariant.BaekduMountainSnowfield;
+    }
+
+    // 해당 전투에서 반드시 생존해야 하는 아군(쓰러지면 패배). 없으면 null.
+    private static string RequiredAllyUnitId(BattleTestMapVariant variant)
+    {
+        // 설악 구조전: 백련을 지켜야 한다(보조 목표).
+        return variant == BattleTestMapVariant.SeorakPassRescue ? "baek_ryeon" : null;
+    }
+
+    // 처치하면 즉시 승리하는 보스 유닛 id(잔당 무관). 없으면 null.
+    private static string VictoryBossUnitId(BattleTestMapVariant variant)
+    {
+        // 설악 구조전: 철비채 두목 유달근 격파가 승리 조건.
+        return variant == BattleTestMapVariant.SeorakPassRescue ? "seorak_bandit_boss_yudalgeun" : null;
     }
 
     private void PlayBattleOutcomeVisuals(bool alliesWon)
