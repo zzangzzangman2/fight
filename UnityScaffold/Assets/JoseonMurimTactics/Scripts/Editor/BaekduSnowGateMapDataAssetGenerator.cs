@@ -6,8 +6,7 @@ namespace JoseonMurimTactics.Editor
 {
     public static class BaekduSnowGateMapDataAssetGenerator
     {
-        private const string OutputFolder =
-            "Assets/JoseonMurimTactics/ScriptableObjects/BattleMaps";
+        private const string OutputFolder = "Assets/JoseonMurimTactics/Resources/BattleMaps";
         private const string OutputPath = OutputFolder + "/baekdu_snow_gate_data.asset";
 
         [MenuItem("Joseon Murim Tactics/Battle Maps/Generate Baekdu Snow Gate BattleMapData")]

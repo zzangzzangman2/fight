@@ -190,6 +190,31 @@ public static class BattleMapTilemapSmokeCheck
         return (int)InvokePrivate(controller, "StepMoveCost", from, to);
     }
 
+    private static Vector2 LastStepFacing(BattleTestController controller, IList<Vector2Int> path)
+    {
+        if (path == null || path.Count < 2)
+        {
+            return Vector2.down;
+        }
+
+        Vector3 from = (Vector3)InvokePrivate(controller, "UnitWorldPosition", path[path.Count - 2]);
+        Vector3 to = (Vector3)InvokePrivate(controller, "UnitWorldPosition", path[path.Count - 1]);
+        Vector2 facing = new Vector2(to.x - from.x, to.y - from.y);
+        return facing.sqrMagnitude <= 0.0001f ? Vector2.down : facing.normalized;
+    }
+
+    private static void RequireFacingClose(Vector2 actual, Vector2 expected, string label)
+    {
+        if (expected.sqrMagnitude <= 0.0001f)
+        {
+            return;
+        }
+
+        Vector2 actualNormalized = actual.sqrMagnitude <= 0.0001f ? Vector2.zero : actual.normalized;
+        float dot = Vector2.Dot(actualNormalized, expected.normalized);
+        Require(dot >= 0.92f, $"{label} Expected {expected}, got {actual}, dot {dot:0.00}.");
+    }
+
     private static void VerifyTacticalCellColliderShape(BattleTestController controller)
     {
         BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
@@ -261,6 +286,7 @@ public static class BattleMapTilemapSmokeCheck
         SetPrivate(controller, "activeUnit", null);
         SetPrivate(controller, "scoutMode", false);
         GetPrivate<PhaseTurnController>(controller, "phaseTurn").Reset();
+        InvokePrivate(controller, "PrepareBattleMapData");
         InvokePrivate(controller, "EnsureMapVisualSprites");
         InvokePrivate(controller, "CreateTerrain");
         InvokePrivate(controller, "SpawnUnits");
@@ -294,6 +320,10 @@ public static class BattleMapTilemapSmokeCheck
         Vector2Int originalCell = first.cell;
         int originalHp = first.hp;
         int originalMovement = first.actions.movementLeft;
+        Vector2 originalFacing = first.view == null ? Vector2.down : first.view.CurrentFacingDirection();
+        List<Vector2Int> movePath = (List<Vector2Int>)InvokePrivate(controller, "FindMovePath", first,
+                                                                    destination.cell);
+        Vector2 expectedMoveFacing = LastStepFacing(controller, movePath);
         Camera camera = Camera.main;
         Require(camera != null, "Battle camera should exist for click-based movement.");
         Vector3 destinationWorld = (Vector3)InvokePrivate(controller, "GridToWorld", destination.cell);
@@ -308,6 +338,8 @@ public static class BattleMapTilemapSmokeCheck
         Require(!first.moved, "Click movement undo should clear the moved flag.");
         Require(first.actions.movementLeft == originalMovement,
                 "Click movement undo should restore remaining movement.");
+        RequireFacingClose(first.view.CurrentFacingDirection(), originalFacing,
+                           "Click movement undo should restore the unit's original facing.");
         InvokePrivate(controller, "TryMove", first, destination);
         Require(first.moved, "Moved ally should be marked as moved.");
         Require((bool)InvokePrivate(controller, "TryUndoPendingMove", first),
@@ -318,9 +350,13 @@ public static class BattleMapTilemapSmokeCheck
         Require(first.actions.movementLeft == originalMovement, "Undo should restore remaining movement.");
         Require(GetPrivate<BattleCommandMode>(controller, "commandMode") == BattleCommandMode.Move,
                 "Undo should return to move command mode.");
+        RequireFacingClose(first.view.CurrentFacingDirection(), originalFacing,
+                           "Undo should restore the unit's original facing.");
 
         InvokePrivate(controller, "TryMove", first, destination);
         Require(first.moved, "Moved ally should be marked as moved after recommitting movement.");
+        RequireFacingClose(first.view.CurrentFacingDirection(), expectedMoveFacing,
+                           "Moved ally should keep the last movement-step facing.");
         Require(first.actions.movementLeft == 0, "Committed movement should spend all remaining movement.");
         Require(!first.CanMove, "Moved ally should not be able to move again.");
         Require(GetPrivate<BattleCommandMode>(controller, "commandMode") != BattleCommandMode.Move,
@@ -403,6 +439,7 @@ public static class BattleMapTilemapSmokeCheck
         Require(controller.mapVariant == BattleTestMapVariant.BaekduSnowGate,
                 "Default battle entry should select the BaekduSnowGate map variant.");
         ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduSnowGate);
+        VerifySnowGateMapDataSource(controller);
         VerifySnowGateWalkabilityAlignment(controller);
         VerifySnowGateRuntimeRules(controller);
         VerifyUnitsFaceOpposingSide(controller, "snow gate ascent spawn");
@@ -412,6 +449,30 @@ public static class BattleMapTilemapSmokeCheck
         VerifyUnitsFaceOpposingSide(controller, "snow gate ascent deployment");
         VerifyAscentDeployment(controller, "snow gate ascent deployment");
         VerifySnowGateEnemyApproachCells(controller, "snow gate ascent deployment");
+    }
+
+    private static void VerifySnowGateMapDataSource(BattleTestController controller)
+    {
+        Require(BattleMapRuntimeCatalog.SourceName(BattleTestMapVariant.BaekduSnowGate) == "BattleMapDataAsset",
+                "Snow gate should use the BattleMapData asset as runtime source-of-truth.");
+        Require(BattleMapRuntimeCatalog.CellCount(BattleTestMapVariant.BaekduSnowGate) == 192,
+                "Snow gate runtime source should expose 192 cells.");
+        Require(BattleMapRuntimeCatalog.TryGetDataAsset(BattleTestMapVariant.BaekduSnowGate, out BattleMapData mapData) &&
+                mapData != null && mapData.cells.Count == 192,
+                "Snow gate BattleMapData asset should be loaded from Resources with 192 cells.");
+
+        List<string> battleLog = GetPrivate<List<string>>(controller, "battleLog");
+        bool hasSourceLog = false;
+        foreach (string line in battleLog)
+        {
+            if (line != null && line.Contains("[MapData] baekdu_snow_gate source=BattleMapDataAsset cells=192"))
+            {
+                hasSourceLog = true;
+                break;
+            }
+        }
+
+        Require(hasSourceLog, "Battle start log should report BattleMapDataAsset source and 192 cells.");
     }
 
     private static void VerifyUnitsFaceOpposingSide(BattleTestController controller, string context)
@@ -570,6 +631,89 @@ public static class BattleMapTilemapSmokeCheck
                                                              cell.y >= 0 && cell.y < controller.height)
                                          .canTarget,
                 "Adjacent stair cells should be melee-reachable through the shared targeting service.");
+        VerifySnowGateTargetingCornerCases(controller, tiles);
+    }
+
+    private static void VerifySnowGateTargetingCornerCases(BattleTestController controller, BattleTestTile[,] tiles)
+    {
+        BattleTestTile sameHeightA = RequireTile(tiles, new Vector2Int(8, 3), "same-height melee source");
+        BattleTestTile sameHeightB = RequireTile(tiles, new Vector2Int(9, 3), "same-height melee target");
+        BattleTestTile losSource = RequireTile(tiles, new Vector2Int(7, 2), "ranged source");
+        BattleTestTile losMiddle = RequireTile(tiles, new Vector2Int(8, 2), "ranged line blocker sample");
+        BattleTestTile losTarget = RequireTile(tiles, new Vector2Int(9, 2), "ranged target");
+
+        Func<Vector2Int, BattleTestTile> tileAt = cell => tiles[cell.x, cell.y];
+        Func<Vector2Int, bool> inside = cell => cell.x >= 0 && cell.x < controller.width &&
+                                                cell.y >= 0 && cell.y < controller.height;
+
+        Require(BattleTargetingService.CanAttackFrom(sameHeightA.cell, sameHeightB.cell, 1, tileAt, inside).canTarget,
+                "Same-height adjacent melee should be allowed.");
+
+        int originalAHeight = sameHeightA.elevation;
+        int originalBHeight = sameHeightB.elevation;
+        EdgeType originalAEast = sameHeightA.eastEdge;
+        EdgeType originalBWest = sameHeightB.westEdge;
+        int originalMiddleSmoke = losMiddle.smokeTurns;
+        bool originalMiddleLos = losMiddle.blocksLineOfSight;
+        bool originalMiddleProjectiles = losMiddle.blocksProjectiles;
+        List<string> originalATags = new List<string>(sameHeightA.tags);
+        List<string> originalBTags = new List<string>(sameHeightB.tags);
+
+        try
+        {
+            sameHeightA.elevation = 0;
+            sameHeightB.elevation = 2;
+            sameHeightA.tags.Clear();
+            sameHeightB.tags.Clear();
+            Require(!BattleTargetingService.CanAttackFrom(sameHeightA.cell, sameHeightB.cell, 1, tileAt, inside)
+                                             .canTarget,
+                    "Height delta 2 without stairs should block adjacent melee.");
+
+            sameHeightA.tags.Add("stairs");
+            sameHeightB.tags.Add("ramp");
+            Require(BattleTargetingService.CanAttackFrom(sameHeightA.cell, sameHeightB.cell, 1, tileAt, inside)
+                                         .canTarget,
+                    "Height delta 2 through stairs/ramp should allow adjacent melee.");
+
+            sameHeightA.eastEdge = EdgeType.HighWall;
+            sameHeightB.westEdge = EdgeType.HighWall;
+            Require(!BattleTargetingService.CanAttackFrom(sameHeightA.cell, sameHeightB.cell, 1, tileAt, inside)
+                                             .canTarget,
+                    "HighWall edge should block melee.");
+
+            sameHeightA.eastEdge = EdgeType.CliffDrop;
+            sameHeightB.westEdge = EdgeType.CliffDrop;
+            Require(!BattleTargetingService.CanAttackFrom(sameHeightA.cell, sameHeightB.cell, 1, tileAt, inside)
+                                             .canTarget,
+                    "CliffDrop edge should block melee.");
+
+            sameHeightA.eastEdge = EdgeType.None;
+            sameHeightB.westEdge = EdgeType.None;
+            losMiddle.blocksLineOfSight = true;
+            losMiddle.blocksProjectiles = true;
+            Require(!BattleTargetingService.CanAttackFrom(losSource.cell, losTarget.cell, 3, tileAt, inside).canTarget,
+                    "Wall/projectile blocker should block ranged line of sight.");
+
+            losMiddle.blocksLineOfSight = false;
+            losMiddle.blocksProjectiles = false;
+            losMiddle.smokeTurns = 1;
+            Require(!BattleTargetingService.CanAttackFrom(losSource.cell, losTarget.cell, 3, tileAt, inside).canTarget,
+                    "Smoke should block ranged projectiles.");
+        }
+        finally
+        {
+            sameHeightA.elevation = originalAHeight;
+            sameHeightB.elevation = originalBHeight;
+            sameHeightA.eastEdge = originalAEast;
+            sameHeightB.westEdge = originalBWest;
+            losMiddle.smokeTurns = originalMiddleSmoke;
+            losMiddle.blocksLineOfSight = originalMiddleLos;
+            losMiddle.blocksProjectiles = originalMiddleProjectiles;
+            sameHeightA.tags.Clear();
+            sameHeightA.tags.AddRange(originalATags);
+            sameHeightB.tags.Clear();
+            sameHeightB.tags.AddRange(originalBTags);
+        }
     }
 
     private static void VerifySnowGateEnemyApproachCells(BattleTestController controller, string context)

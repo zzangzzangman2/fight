@@ -236,6 +236,9 @@ public sealed partial class BattleTestController : MonoBehaviour
     private Coroutine mapIntroCoroutine;
     private Coroutine cameraPanCoroutine;
     private bool mapAssetSpritesLoaded;
+    private BattleMapData activeBattleMapData;
+    private string activeBattleMapDataSource = string.Empty;
+    private int activeBattleMapDataCellCount;
     private bool suppressCameraFocus;
     private readonly Dictionary<TerrainType, Sprite> terrainAssetSprites = new Dictionary<TerrainType, Sprite>();
     private readonly Dictionary<string, Sprite> interactableAssetSprites = new Dictionary<string, Sprite>();
@@ -1247,6 +1250,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         cameraPanCoroutine = null;
         mapAssetSpritesLoaded = false;
 
+        PrepareBattleMapData();
         EnsureMapVisualSprites();
         CreateTerrain();
         EnsureMapDebugOverlay();
@@ -1269,6 +1273,27 @@ public sealed partial class BattleTestController : MonoBehaviour
         {
             FocusCameraOnDeploymentOverview(0f);
         }
+    }
+
+    private void PrepareBattleMapData()
+    {
+        activeBattleMapData = null;
+        activeBattleMapDataSource = BattleMapRuntimeCatalog.SourceName(mapVariant);
+        activeBattleMapDataCellCount = BattleMapRuntimeCatalog.CellCount(mapVariant);
+
+        if (BattleMapRuntimeCatalog.TryGetDataAsset(mapVariant, out BattleMapData mapData) && mapData != null)
+        {
+            activeBattleMapData = mapData;
+            width = Mathf.Max(width, mapData.size.x);
+            height = Mathf.Max(height, mapData.size.y);
+            tileWidth = mapData.tileWidth > 0f ? mapData.tileWidth : tileWidth;
+            tileHeight = mapData.tileHeight > 0f ? mapData.tileHeight : tileHeight;
+        }
+
+        string mapId = activeBattleMapData == null || string.IsNullOrEmpty(activeBattleMapData.mapId)
+                           ? mapVariant.ToString()
+                           : activeBattleMapData.mapId;
+        AddLog($"[MapData] {mapId} source={activeBattleMapDataSource} cells={activeBattleMapDataCellCount}");
     }
 
     private void EnsureMapDebugOverlay()
@@ -4755,6 +4780,10 @@ public sealed partial class BattleTestController : MonoBehaviour
         {
             unit.view.SetDefeated(unit.defeated);
             unit.view.transform.position = UnitWorldPosition(unit.cell);
+            if (state.hasFacingDirection)
+            {
+                unit.view.FaceDirection(state.facingDirection);
+            }
             if (!unit.defeated)
             {
                 unit.view.PlayIdle();
@@ -9122,12 +9151,24 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private static bool IsBaekduSnowGatePaintedStandCell(int x, int y)
     {
-        return BaekduSnowGateBattleMapData.IsWalkableCell(x, y);
+        if (BattleMapRuntimeCatalog.TryGetCell(BattleTestMapVariant.BaekduSnowGate, new Vector2Int(x, y),
+                                               out BattleMapRuntimeCell data))
+        {
+            return data.walkable && data.occupyAllowed && data.moveCost < 90;
+        }
+
+        return false;
     }
 
     private static bool IsBaekduSnowGateDeploymentStartCell(int x, int y)
     {
-        return BaekduSnowGateBattleMapData.IsDeploymentCell(x, y);
+        if (BattleMapRuntimeCatalog.TryGetCell(BattleTestMapVariant.BaekduSnowGate, new Vector2Int(x, y),
+                                               out BattleMapRuntimeCell data))
+        {
+            return data.deployZone > 0 && data.walkable && data.occupyAllowed;
+        }
+
+        return false;
     }
 
     private static TerrainProfile BaekduSnowGatePaintedBlockerProfile(int x, int y)
@@ -10019,6 +10060,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         public bool bonusAction;
         public bool reaction;
         public int movementLeft;
+        public bool hasFacingDirection;
+        public Vector2 facingDirection;
 
         public static MovementUndoState Capture(BattleTestUnit unit)
         {
@@ -10047,7 +10090,9 @@ public sealed partial class BattleTestController : MonoBehaviour
                 mainAction = unit.actions.mainAction,
                 bonusAction = unit.actions.bonusAction,
                 reaction = unit.actions.reaction,
-                movementLeft = unit.actions.movementLeft
+                movementLeft = unit.actions.movementLeft,
+                hasFacingDirection = unit.view != null,
+                facingDirection = unit.view == null ? Vector2.down : unit.view.CurrentFacingDirection()
             };
         }
     }
@@ -10474,6 +10519,11 @@ public sealed class BattleTestUnitView : MonoBehaviour
         {
             visualController.FaceDirection(direction);
         }
+    }
+
+    public Vector2 CurrentFacingDirection()
+    {
+        return visualController == null ? Vector2.down : visualController.CurrentFacingDirection();
     }
 
     public CombatActionTimeline CreateTimeline(bool special)

@@ -211,6 +211,11 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
     }
 
+    public Vector2 CurrentFacingDirection()
+    {
+        return FacingVectorOrDefault();
+    }
+
     public void SetOutfit(CharacterOutfitData outfit)
     {
         outfitOverride = outfit;

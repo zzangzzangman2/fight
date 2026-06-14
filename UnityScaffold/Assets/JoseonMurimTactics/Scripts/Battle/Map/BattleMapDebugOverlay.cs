@@ -148,7 +148,7 @@ namespace JoseonMurimTactics
             switch (mode)
             {
                 case BattleMapDebugOverlayMode.Walkable:
-                    return tile.walkable && tile.occupyAllowed
+                    return IsStandable(tile)
                         ? new Color(0.10f, 0.55f, 1f, 0.46f)
                         : new Color(1f, 0.12f, 0.08f, 0.50f);
                 case BattleMapDebugOverlayMode.Elevation:
@@ -192,7 +192,7 @@ namespace JoseonMurimTactics
             switch (mode)
             {
                 case BattleMapDebugOverlayMode.Walkable:
-                    return $"{tile.cell.x},{tile.cell.y} {(tile.walkable && tile.occupyAllowed ? "W" : "B")}";
+                    return $"{tile.cell.x},{tile.cell.y} {(IsStandable(tile) ? "W" : "B")}";
                 case BattleMapDebugOverlayMode.Elevation:
                     return $"{tile.cell.x},{tile.cell.y} E{tile.elevation}";
                 case BattleMapDebugOverlayMode.LineOfSight:
@@ -232,6 +232,11 @@ namespace JoseonMurimTactics
                 padding = new RectOffset(8, 8, 4, 4),
             };
             headerStyle.normal.background = MakeTexture(new Color(0f, 0f, 0f, 0.70f));
+        }
+
+        private static bool IsStandable(BattleTestTile tile)
+        {
+            return BattlePathService.CanStandOnTile(tile);
         }
 
         private static Texture2D MakeTexture(Color color)
