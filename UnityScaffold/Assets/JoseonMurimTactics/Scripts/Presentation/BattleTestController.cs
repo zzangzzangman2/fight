@@ -291,6 +291,10 @@ public sealed partial class BattleTestController : MonoBehaviour
     private float hudNoticeUntil;
     private BattleCommandMode commandMode = BattleCommandMode.Move;
     private MovementUndoState pendingMovementUndo;
+    private bool runtimeMapEditorForcedMap;
+    private BattleTestMapVariant runtimeMapEditorVariant = BattleTestMapVariant.BaekduSnowGate;
+    private readonly Dictionary<Vector2Int, BattleMapRuntimeCellEdit> runtimeMapEditOverrides =
+        new Dictionary<Vector2Int, BattleMapRuntimeCellEdit>();
 
     private void Start()
     {
@@ -306,6 +310,12 @@ public sealed partial class BattleTestController : MonoBehaviour
                 BuildBattle();
             }
 
+            return;
+        }
+
+        BattleMapRuntimeEditorOverlay mapEditor = GetComponent<BattleMapRuntimeEditorOverlay>();
+        if (mapEditor != null && mapEditor.IsEditing)
+        {
             return;
         }
 
@@ -1293,7 +1303,29 @@ public sealed partial class BattleTestController : MonoBehaviour
         string mapId = activeBattleMapData == null || string.IsNullOrEmpty(activeBattleMapData.mapId)
                            ? mapVariant.ToString()
                            : activeBattleMapData.mapId;
+        LoadRuntimeMapEditOverrides();
         AddLog($"[MapData] {mapId} source={activeBattleMapDataSource} cells={activeBattleMapDataCellCount}");
+    }
+
+    private void LoadRuntimeMapEditOverrides()
+    {
+        runtimeMapEditOverrides.Clear();
+        if (!BattleMapRuntimeEditStore.TryLoadBestOverride(mapVariant, out List<BattleMapRuntimeCellEdit> edits,
+                                                           out string path, out _))
+        {
+            return;
+        }
+
+        for (int i = 0; i < edits.Count; i++)
+        {
+            runtimeMapEditOverrides[edits[i].cell] = edits[i];
+        }
+
+        if (runtimeMapEditOverrides.Count > 0 &&
+            !activeBattleMapDataSource.Contains("RuntimeEditCsv"))
+        {
+            activeBattleMapDataSource += $"+RuntimeEditCsv({System.IO.Path.GetFileName(path)})";
+        }
     }
 
     private void EnsureMapDebugOverlay()
@@ -1310,6 +1342,14 @@ public sealed partial class BattleTestController : MonoBehaviour
         }
 
         overlay.Bind(this);
+
+        BattleMapRuntimeEditorOverlay editor = GetComponent<BattleMapRuntimeEditorOverlay>();
+        if (editor == null)
+        {
+            editor = gameObject.AddComponent<BattleMapRuntimeEditorOverlay>();
+        }
+
+        editor.Bind(this);
     }
 
     private void ClearGeneratedObjects()
@@ -1370,6 +1410,12 @@ public sealed partial class BattleTestController : MonoBehaviour
             baselineUnitDefinitions = CloneUnitDefinitions(unitDefinitions);
         }
 
+        if (runtimeMapEditorForcedMap)
+        {
+            ApplyRuntimeEditorMapConfiguration(runtimeMapEditorVariant);
+            return;
+        }
+
         string battleId = !string.IsNullOrEmpty(BattleEntryAdapter.PendingBattleId)
                               ? BattleEntryAdapter.PendingBattleId
                               : BattleResultBridge.CurrentBattleId;
@@ -1428,6 +1474,46 @@ public sealed partial class BattleTestController : MonoBehaviour
         width = 16;
         height = 12;
         unitDefinitions = BuildBaekduSnowGateUnitDefinitions(baselineUnitDefinitions);
+    }
+
+    public void LoadMapForRuntimeEditing(BattleTestMapVariant variant)
+    {
+        runtimeMapEditorForcedMap = true;
+        runtimeMapEditorVariant = variant;
+        BuildBattle();
+    }
+
+    private void ApplyRuntimeEditorMapConfiguration(BattleTestMapVariant variant)
+    {
+        mapVariant = variant;
+        useAuthoredSceneMap = false;
+        width = variant == BattleTestMapVariant.WolfPass ? 15 : 16;
+        height = 12;
+
+        switch (variant)
+        {
+        case BattleTestMapVariant.BanditLair:
+            unitDefinitions = BuildBanditLairUnitDefinitions(baselineUnitDefinitions);
+            break;
+        case BattleTestMapVariant.WolfPass:
+            unitDefinitions = BuildWolfPassUnitDefinitions(baselineUnitDefinitions);
+            break;
+        case BattleTestMapVariant.TigerRavine:
+            unitDefinitions = BuildTigerRavineUnitDefinitions(baselineUnitDefinitions);
+            break;
+        case BattleTestMapVariant.LeopardCliff:
+            unitDefinitions = BuildLeopardCliffUnitDefinitions(baselineUnitDefinitions);
+            break;
+        case BattleTestMapVariant.SeorakPassRescue:
+            unitDefinitions = BuildSeorakPassRescueUnitDefinitions(baselineUnitDefinitions);
+            break;
+        case BattleTestMapVariant.BaekduSnowGate:
+            unitDefinitions = BuildBaekduSnowGateUnitDefinitions(baselineUnitDefinitions);
+            break;
+        default:
+            unitDefinitions = CloneUnitDefinitions(baselineUnitDefinitions);
+            break;
+        }
     }
 
     /// <summary>
@@ -1560,8 +1646,8 @@ public sealed partial class BattleTestController : MonoBehaviour
     private static BattleTestUnitDefinition[] BuildBaekduSnowGateUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        Vector2Int[] allyCells = SnowGateAscentAllyStartCells;
-        Vector2Int[] enemyCells = SnowGateAscentEnemyStartCells;
+        Vector2Int[] allyCells = RuntimeBaekduDeploymentCellsOrDefault(SnowGateAscentAllyStartCells);
+        Vector2Int[] enemyCells = RuntimeBaekduEnemySpawnCellsOrDefault(SnowGateAscentEnemyStartCells);
 
         int allyIndex = 0;
         int enemyIndex = 0;
@@ -1587,8 +1673,46 @@ public sealed partial class BattleTestController : MonoBehaviour
             result.Add(unit);
         }
 
-        ApplyEnemyStartCells(result, SnowGateAscentEnemyStartCells);
+        ApplyEnemyStartCells(result, enemyCells);
         return result.ToArray();
+    }
+
+    private static Vector2Int[] RuntimeBaekduDeploymentCellsOrDefault(Vector2Int[] fallback)
+    {
+        return RuntimeBaekduCellsOrDefault(cell => cell.deployZone > 0 && cell.walkable && cell.occupyAllowed,
+                                          fallback);
+    }
+
+    private static Vector2Int[] RuntimeBaekduEnemySpawnCellsOrDefault(Vector2Int[] fallback)
+    {
+        return RuntimeBaekduCellsOrDefault(cell => cell.walkable && cell.occupyAllowed &&
+                                                   cell.HasTag(BattleMapRuntimeEditStore.EnemySpawnTag),
+                                          fallback);
+    }
+
+    private static Vector2Int[] RuntimeBaekduCellsOrDefault(Predicate<BattleMapRuntimeCell> predicate,
+                                                           Vector2Int[] fallback)
+    {
+        List<Vector2Int> cells = new List<Vector2Int>();
+        foreach (BattleMapRuntimeCell cell in BattleMapRuntimeCatalog.Cells(BattleTestMapVariant.BaekduSnowGate))
+        {
+            if (cell != null && predicate(cell))
+            {
+                cells.Add(cell.cell);
+            }
+        }
+
+        if (cells.Count == 0)
+        {
+            return fallback;
+        }
+
+        cells.Sort((left, right) =>
+        {
+            int yCompare = left.y.CompareTo(right.y);
+            return yCompare != 0 ? yCompare : left.x.CompareTo(right.x);
+        });
+        return cells.ToArray();
     }
 
     private static BattleTestUnitDefinition[] BuildBanditLairUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
@@ -2869,29 +2993,37 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private void ApplyRuntimeCellMetadata(BattleTestTile tile)
     {
-        if (tile == null || !BattleMapRuntimeCatalog.TryGetCell(mapVariant, tile.cell, out BattleMapRuntimeCell data))
+        if (tile == null)
         {
             return;
         }
 
-        tile.terrain = data.terrainType;
-        tile.elevation = data.elevation;
-        tile.walkable = data.walkable && data.occupyAllowed;
-        tile.moveCost = Mathf.Max(1, data.moveCost);
-        tile.coverBonus = data.coverBonus;
-        tile.baseCoverBonus = data.coverBonus;
-        tile.blocksLineOfSight = data.blocksLineOfSight;
-        tile.blocksProjectiles = data.blocksProjectiles;
-        tile.isChokePoint = data.isChokePoint;
-        tile.objective = data.objective;
-        tile.danger = data.danger;
-        tile.occupyAllowed = data.occupyAllowed;
-        tile.deployZone = data.deployZone;
-        tile.hazardType = data.hazardType;
-        tile.laneId = data.laneId;
-        tile.tacticalNote = data.tacticalNote;
-        tile.tags.Clear();
-        tile.tags.AddRange(data.tags);
+        if (BattleMapRuntimeCatalog.TryGetCell(mapVariant, tile.cell, out BattleMapRuntimeCell data))
+        {
+            tile.terrain = data.terrainType;
+            tile.elevation = data.elevation;
+            tile.walkable = data.walkable && data.occupyAllowed;
+            tile.moveCost = Mathf.Max(1, data.moveCost);
+            tile.coverBonus = data.coverBonus;
+            tile.baseCoverBonus = data.coverBonus;
+            tile.blocksLineOfSight = data.blocksLineOfSight;
+            tile.blocksProjectiles = data.blocksProjectiles;
+            tile.isChokePoint = data.isChokePoint;
+            tile.objective = data.objective;
+            tile.danger = data.danger;
+            tile.occupyAllowed = data.occupyAllowed;
+            tile.deployZone = data.deployZone;
+            tile.hazardType = data.hazardType;
+            tile.laneId = data.laneId;
+            tile.tacticalNote = data.tacticalNote;
+            tile.tags.Clear();
+            tile.tags.AddRange(data.tags);
+        }
+
+        if (runtimeMapEditOverrides.TryGetValue(tile.cell, out BattleMapRuntimeCellEdit edit))
+        {
+            edit.ApplyTo(tile);
+        }
     }
 
     private void CreateInteractables(Transform terrainRoot)

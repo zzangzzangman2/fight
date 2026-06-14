@@ -29,6 +29,15 @@ namespace JoseonMurimTactics
             controller = owner;
         }
 
+        public void ClearMode()
+        {
+            mode = BattleMapDebugOverlayMode.None;
+            if (controller != null)
+            {
+                controller.ClearPreviewHighlights();
+            }
+        }
+
         private void Update()
         {
             if (controller == null)

@@ -123,6 +123,11 @@ namespace JoseonMurimTactics
             return count;
         }
 
+        public static void ClearCache()
+        {
+            SnapshotCache.Clear();
+        }
+
         public static bool ValidateAssetAgainstFallback(
             BattleTestMapVariant variant,
             out string message
@@ -192,7 +197,23 @@ namespace JoseonMurimTactics
                 return null;
             }
 
-            return new BattleMapRuntimeSnapshot(mapData, "BattleMapDataAsset");
+            BattleMapRuntimeSnapshot snapshot = new BattleMapRuntimeSnapshot(
+                mapData,
+                "BattleMapDataAsset"
+            );
+            if (
+                BattleMapRuntimeEditStore.TryLoadBestOverride(
+                    variant,
+                    out List<BattleMapRuntimeCellEdit> edits,
+                    out string path,
+                    out _
+                )
+            )
+            {
+                snapshot.ApplyRuntimeEdits(edits, path);
+            }
+
+            return snapshot;
         }
 
         private static bool TryGetFallbackCell(
@@ -310,12 +331,36 @@ namespace JoseonMurimTactics
         }
 
         public BattleMapData MapData { get; }
-        public string SourceName { get; }
+        public string SourceName { get; private set; }
         public IReadOnlyCollection<BattleMapRuntimeCell> Cells => cellsByPosition.Values;
 
         public bool TryGetCell(Vector2Int cell, out BattleMapRuntimeCell data)
         {
             return cellsByPosition.TryGetValue(cell, out data);
+        }
+
+        public void ApplyRuntimeEdits(
+            IReadOnlyList<BattleMapRuntimeCellEdit> edits,
+            string sourcePath
+        )
+        {
+            if (edits == null || edits.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < edits.Count; i++)
+            {
+                BattleMapRuntimeCellEdit edit = edits[i];
+                if (cellsByPosition.TryGetValue(edit.cell, out BattleMapRuntimeCell cell))
+                {
+                    edit.ApplyTo(cell);
+                }
+            }
+
+            SourceName = string.IsNullOrEmpty(sourcePath)
+                ? "BattleMapDataAsset+RuntimeEditCsv"
+                : $"BattleMapDataAsset+RuntimeEditCsv({System.IO.Path.GetFileName(sourcePath)})";
         }
 
         private static BattleMapRuntimeCell FromBattleCellData(BattleCellData data)

@@ -453,7 +453,8 @@ public static class BattleMapTilemapSmokeCheck
 
     private static void VerifySnowGateMapDataSource(BattleTestController controller)
     {
-        Require(BattleMapRuntimeCatalog.SourceName(BattleTestMapVariant.BaekduSnowGate) == "BattleMapDataAsset",
+        Require(BattleMapRuntimeCatalog.SourceName(BattleTestMapVariant.BaekduSnowGate)
+                    .StartsWith("BattleMapDataAsset", StringComparison.Ordinal),
                 "Snow gate should use the BattleMapData asset as runtime source-of-truth.");
         Require(BattleMapRuntimeCatalog.CellCount(BattleTestMapVariant.BaekduSnowGate) == 192,
                 "Snow gate runtime source should expose 192 cells.");
@@ -465,7 +466,9 @@ public static class BattleMapTilemapSmokeCheck
         bool hasSourceLog = false;
         foreach (string line in battleLog)
         {
-            if (line != null && line.Contains("[MapData] baekdu_snow_gate source=BattleMapDataAsset cells=192"))
+            if (line != null &&
+                line.Contains("[MapData] baekdu_snow_gate source=BattleMapDataAsset") &&
+                line.Contains("cells=192"))
             {
                 hasSourceLog = true;
                 break;

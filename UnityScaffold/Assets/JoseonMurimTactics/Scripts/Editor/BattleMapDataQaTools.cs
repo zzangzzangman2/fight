@@ -66,6 +66,44 @@ namespace JoseonMurimTactics.Editor
             Debug.Log($"[BattleMapDataQaTools] BattleMapData validation passed. Report: {path}");
         }
 
+        [MenuItem("Joseon Murim Tactics/Battle Maps/Import Runtime Edit CSV")]
+        public static void ImportRuntimeEditCsv()
+        {
+            BattleMapData mapData = LoadCurrentBattleMapData();
+            string path = BattleMapRuntimeEditStore.RepoOverridePath;
+            if (
+                !BattleMapRuntimeEditStore.TryLoadOverridesFromPath(
+                    path,
+                    out List<BattleMapRuntimeCellEdit> edits,
+                    out string message
+                )
+            )
+            {
+                throw new InvalidOperationException($"{message} Path: {path}");
+            }
+
+            Dictionary<Vector2Int, BattleCellData> cells = CellsByPosition(mapData);
+            int applied = 0;
+            for (int i = 0; i < edits.Count; i++)
+            {
+                BattleMapRuntimeCellEdit edit = edits[i];
+                if (!cells.TryGetValue(edit.cell, out BattleCellData cell))
+                {
+                    continue;
+                }
+
+                ApplyRuntimeEdit(cell, edit);
+                applied++;
+            }
+
+            EditorUtility.SetDirty(mapData);
+            AssetDatabase.SaveAssets();
+            BattleMapRuntimeCatalog.ClearCache();
+            Debug.Log(
+                $"[BattleMapDataQaTools] Imported {applied} runtime edit cells into {mapData.name}. Source: {path}"
+            );
+        }
+
         private static BattleMapData LoadCurrentBattleMapData()
         {
             BattleMapData mapData = Resources.Load<BattleMapData>(
@@ -165,17 +203,25 @@ namespace JoseonMurimTactics.Editor
             ValidateSpawnCells(cells, AllySpawnCells, "ally", failures);
             ValidateSpawnCells(cells, EnemySpawnCells, "enemy", failures);
 
-            if (
-                !BattleMapRuntimeCatalog.ValidateAssetAgainstFallback(
-                    BattleTestMapVariant.BaekduSnowGate,
-                    out string fallbackMessage
-                )
-            )
-            {
-                failures.Add(fallbackMessage);
-            }
-
             return failures;
+        }
+
+        private static void ApplyRuntimeEdit(BattleCellData cell, BattleMapRuntimeCellEdit edit)
+        {
+            cell.terrainType = edit.terrainType;
+            cell.walkable = edit.walkable;
+            cell.occupyAllowed = edit.occupyAllowed;
+            cell.blocksMovement = !edit.walkable || !edit.occupyAllowed || edit.moveCost >= 90;
+            cell.moveCost = cell.blocksMovement ? 99 : Mathf.Max(1, edit.moveCost);
+            cell.elevation = edit.elevation;
+            cell.blocksLineOfSight = edit.blocksLineOfSight;
+            cell.blocksProjectiles = edit.blocksProjectiles;
+            cell.coverBonus = edit.coverBonus;
+            cell.coverType = CoverFromBonus(edit.coverBonus);
+            cell.deployZone = edit.deployZone;
+            cell.hazardType = edit.hazardType;
+            cell.laneId = edit.laneId;
+            cell.tags = new List<string>(edit.tags);
         }
 
         private static void ValidateCell(BattleCellData cell, List<string> failures)
@@ -316,7 +362,9 @@ namespace JoseonMurimTactics.Editor
             builder.AppendLine("- moveCost>=90 is rejected by BattlePathService.CanStandOnTile");
             builder.AppendLine("- stairs/ramp tags form a connected route");
             builder.AppendLine("- deploy and spawn cells are standable");
-            builder.AppendLine("- BattleMapData asset matches RuntimeCatalog fallback");
+            builder.AppendLine(
+                "- BattleMapData asset is allowed to diverge from generated fallback after authoring"
+            );
 
             if (failures.Count > 0)
             {
@@ -360,9 +408,22 @@ namespace JoseonMurimTactics.Editor
 
         private static string RepoRequestFolder()
         {
-            return Path.GetFullPath(
-                Path.Combine(Application.dataPath, "..", "..", "codex-requests")
-            );
+            return BattleMapRuntimeEditStore.RepoRequestFolder();
+        }
+
+        private static CoverType CoverFromBonus(int coverBonus)
+        {
+            if (coverBonus >= 4)
+            {
+                return CoverType.Full;
+            }
+
+            if (coverBonus >= 2)
+            {
+                return CoverType.Heavy;
+            }
+
+            return coverBonus > 0 ? CoverType.Light : CoverType.None;
         }
 
         private static string Escape(string value)
