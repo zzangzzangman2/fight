@@ -19,7 +19,11 @@ public sealed class BattleTestController : MonoBehaviour
     public bool useTilemapBattlefield = true;
     public bool useLegacyDiamondTerrain;
     public bool useCanvasHud = true;
-    public BattleTestMapVariant mapVariant = BattleTestMapVariant.BaekduMountainSnowfield;
+    public BattleTestMapVariant mapVariant = BattleTestMapVariant.BaekduSnowGate;
+    [Header("Visual Upgrade V1")]
+    public BattleVisualProfile battleVisualProfile;
+    public BattleVfxLibrary battleVfxLibrary;
+    public BattleUiSkinData battleUiSkin;
     public BattleTestUnitDefinition[] unitDefinitions = new BattleTestUnitDefinition[0];
     private BattleTestUnitDefinition[] baselineUnitDefinitions;
 
@@ -39,6 +43,10 @@ public sealed class BattleTestController : MonoBehaviour
     private const float EnemyBetweenUnitDelay = 0.15f;
     private const string SnowGatePaintedBattleMapResource = "MapAssets/Backgrounds/baekdu_snow_gate_srpg_ground";
     private const string SnowfieldPaintedBattleMapResource = "MapAssets/Backgrounds/baekdu_mountain_snowfield_srpg_ground";
+    private const string BanditLairPaintedBattleMapResource = "MapAssets/Backgrounds/sobaek_bandit_lair_srpg_ground";
+    private const string WolfPassPaintedBattleMapResource = "MapAssets/Backgrounds/sobaek_wolf_pass_srpg_ground";
+    private const string TigerRavinePaintedBattleMapResource = "MapAssets/Backgrounds/sobaek_tiger_ravine_srpg_ground";
+    private const string LeopardCliffPaintedBattleMapResource = "MapAssets/Backgrounds/sobaek_leopard_cliff_srpg_ground";
     private const string SnowGateMapDisplayName = "백두산 설문 관문전";
     private const string SnowfieldMapDisplayName = "백두산 천지 설산로";
     private const string BanditLairMapDisplayName = "소백촌 도적 소굴";
@@ -73,9 +81,13 @@ public sealed class BattleTestController : MonoBehaviour
             case BattleTestMapVariant.BaekduMountainSnowfield:
                 return SnowfieldPaintedBattleMapResource;
             case BattleTestMapVariant.BanditLair:
+                return BanditLairPaintedBattleMapResource;
             case BattleTestMapVariant.WolfPass:
+                return WolfPassPaintedBattleMapResource;
             case BattleTestMapVariant.TigerRavine:
+                return TigerRavinePaintedBattleMapResource;
             case BattleTestMapVariant.LeopardCliff:
+                return LeopardCliffPaintedBattleMapResource;
             case BattleTestMapVariant.SeorakPassRescue:
                 return string.Empty;
             default:
@@ -136,8 +148,9 @@ public sealed class BattleTestController : MonoBehaviour
     private readonly List<string> battleLog = new List<string>();
     private readonly List<BattleTestInteractable> interactables = new List<BattleTestInteractable>();
     private readonly PhaseTurnController phaseTurn = new PhaseTurnController();
+    private readonly HashSet<Vector2Int> enemyThreatCells = new HashSet<Vector2Int>();
     private bool authoredMapBound;
-    private readonly System.Random random = new System.Random(20260608);
+    private System.Random random = new System.Random(20260608);
     private BattleTestTile[,] tiles;
     private Sprite diamondSprite;
     private Sprite softDiamondSprite;
@@ -243,7 +256,7 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
 
-        if (phaseTurn.IsPlayerPhase && activeUnit != null && HandleCombatMotionDebugKeys())
+        if (!scoutMode && phaseTurn.IsPlayerPhase && activeUnit != null && HandleCombatMotionDebugKeys())
         {
             return;
         }
@@ -377,7 +390,10 @@ public sealed class BattleTestController : MonoBehaviour
             if (target != null)
             {
                 SetCommandMode(BattleCommandMode.Attack);
-                TryAttack(activeUnit, target, false);
+                if (!TryAttack(activeUnit, target, false))
+                {
+                    StartCoroutine(RunMotionDebugAttackSequence(activeUnit, target, false));
+                }
             }
             else
             {
@@ -393,7 +409,10 @@ public sealed class BattleTestController : MonoBehaviour
             if (target != null)
             {
                 SetCommandMode(BattleCommandMode.Skill);
-                TrySpecial(activeUnit, target);
+                if (!TrySpecial(activeUnit, target))
+                {
+                    StartCoroutine(RunMotionDebugAttackSequence(activeUnit, target, true));
+                }
             }
             else
             {
@@ -1125,6 +1144,8 @@ public sealed class BattleTestController : MonoBehaviour
         width = Mathf.Max(width, 16);
         height = Mathf.Max(height, 12);
 
+        // 전투마다 새 시드로 주사위를 재초기화 — 고정 시드라 게임 첫 전투의 명중/피해/선공이 매번 동일하던 문제 방지.
+        random = new System.Random();
         units.Clear();
         battleLog.Clear();
         interactables.Clear();
@@ -1155,18 +1176,19 @@ public sealed class BattleTestController : MonoBehaviour
         CenterCamera();
         EnsureBattleHud();
         EnsureBattlePresentationFx();
-        AddLog("[전투] 아군을 선택한 뒤 파란 이동 가능 칸을 클릭하세요. 정찰/재배치는 S로 전환할 수 있습니다.");
+        AddLog("[\uBC30\uCE58] \uC804\uD22C\uB294 \uCE90\uB9AD\uD130 \uBC30\uCE58\uBD80\uD130 \uC2DC\uC791\uD569\uB2C8\uB2E4. \uD30C\uB780 \uC2DC\uC791 \uCE78\uC5D0\uB9CC \uBC30\uCE58\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
         AddLog("[체계] 전투 준비 완료.");
         suppressCameraFocus = true;
         BeginPlayerPhase();
         suppressCameraFocus = false;
-        if (tilemapBattlefield != null)
+        EnterDeploymentMode(true);
+        if (tilemapBattlefield != null && Application.isPlaying)
         {
             mapIntroCoroutine = StartCoroutine(PlayMapIntro());
         }
         else
         {
-            FocusCameraOnUnit(activeUnit, 0f);
+            FocusCameraOnDeploymentOverview(0f);
         }
     }
 
@@ -1281,7 +1303,11 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
-        unitDefinitions = CloneUnitDefinitions(baselineUnitDefinitions);
+        mapVariant = BattleTestMapVariant.BaekduSnowGate;
+        useAuthoredSceneMap = false;
+        width = 16;
+        height = 12;
+        unitDefinitions = BuildBaekduSnowGateUnitDefinitions(baselineUnitDefinitions);
     }
 
     /// <summary>
@@ -1298,12 +1324,16 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         EquipmentService equipment = new EquipmentService(root.Session);
+        ProgressionService progression = new ProgressionService(root.Session);
         foreach (BattleTestUnitDefinition definition in unitDefinitions)
         {
             if (definition == null || definition.faction != Faction.Ally)
             {
                 continue;
             }
+
+            CharacterProgressState growth = progression.GetSnapshot(definition.id);
+            ApplyGrowthBonuses(definition, growth);
 
             EquipmentBonus bonus = equipment.BuildBonus(definition.id);
             if (bonus.IsEmpty)
@@ -1318,6 +1348,36 @@ public sealed class BattleTestController : MonoBehaviour
             definition.damageMin += bonus.atk;
             definition.damageMax += bonus.atk;
             definition.moveRange += bonus.move;
+        }
+    }
+
+    private static void ApplyGrowthBonuses(BattleTestUnitDefinition definition, CharacterProgressState growth)
+    {
+        if (definition == null || growth == null)
+        {
+            return;
+        }
+
+        SixStats bonus = growth.statBonuses;
+        definition.maxHp += growth.hpBonus + Mathf.Max(0, bonus.strength) * 2 + Mathf.Max(0, bonus.spirit);
+        definition.maxInner += growth.innerBonus + Mathf.Max(0, bonus.innerPower) / 3;
+        definition.attackBonus += Mathf.Max(0, bonus.insight + bonus.agility / 2) / 3;
+        definition.defense += Mathf.Max(0, bonus.spirit + bonus.strength / 2) / 3;
+        int power = Mathf.Max(0, bonus.strength + bonus.innerPower);
+        definition.damageMin += power / 4;
+        definition.damageMax += power / 4;
+        definition.specialPower += Mathf.Max(0, bonus.innerPower + bonus.insight / 2) / 4;
+        definition.specialAttackBonus += Mathf.Max(0, bonus.insight) / 4;
+        definition.initiative += Mathf.Max(0, bonus.agility * 2 + bonus.insight) / 3;
+        if (definition.agility < 0)
+        {
+            definition.agility = definition.initiative;
+        }
+
+        definition.agility += bonus.agility;
+        if (bonus.agility >= 4)
+        {
+            definition.moveRange += bonus.agility / 4;
         }
     }
 
@@ -1375,6 +1435,53 @@ public sealed class BattleTestController : MonoBehaviour
             specialAttackBonus = source.specialAttackBonus,
             specialEffect = source.specialEffect
         };
+    }
+
+    private static BattleTestUnitDefinition[] BuildBaekduSnowGateUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
+    {
+        List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
+        Vector2Int[] allyCells = {
+            new Vector2Int(4, 0),
+            new Vector2Int(5, 0),
+            new Vector2Int(6, 0),
+            new Vector2Int(7, 0),
+            new Vector2Int(4, 1),
+            new Vector2Int(5, 1)
+        };
+        Vector2Int[] enemyCells = {
+            new Vector2Int(9, 0),
+            new Vector2Int(10, 0),
+            new Vector2Int(11, 0),
+            new Vector2Int(9, 1),
+            new Vector2Int(10, 1),
+            new Vector2Int(11, 1),
+        };
+
+        int allyIndex = 0;
+        int enemyIndex = 0;
+        foreach (BattleTestUnitDefinition definition in baseDefinitions)
+        {
+            if (definition == null)
+            {
+                continue;
+            }
+
+            BattleTestUnitDefinition unit = CloneUnitDefinition(definition);
+            if (unit.faction == Faction.Ally)
+            {
+                unit.startCell = allyCells[Mathf.Min(allyIndex, allyCells.Length - 1)];
+                allyIndex++;
+            }
+            else if (unit.faction == Faction.Enemy)
+            {
+                unit.startCell = enemyCells[Mathf.Min(enemyIndex, enemyCells.Length - 1)];
+                enemyIndex++;
+            }
+
+            result.Add(unit);
+        }
+
+        return result.ToArray();
     }
 
     private static BattleTestUnitDefinition[] BuildBanditLairUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
@@ -1852,6 +1959,7 @@ public sealed class BattleTestController : MonoBehaviour
     public bool PreviewBattleOver => battleOver;
     public bool PreviewBusy => busy;
     public bool PreviewIsPlayerPhase => phaseTurn.IsPlayerPhase;
+    public bool PreviewDeploymentMode => scoutMode;
     public BattleCommandMode PreviewCommandMode => commandMode;
     public IEnumerable<BattleTestUnit> PreviewUnits => units;
     public IEnumerable<BattleTestTile> PreviewTiles
@@ -1922,7 +2030,9 @@ public sealed class BattleTestController : MonoBehaviour
     {
         if (scoutMode)
         {
-            return $"{MapDisplayName}\n정찰: 적 위치, 위험 지형, 시야 차단물, 지형지물을 확인하세요.\n아군 선택 후 남쪽 파란 배치 칸을 클릭하면 재배치. S/Space로 전투 시작.";
+            return MapDisplayName +
+                   "\n\uCE90\uB9AD\uD130 \uBC30\uCE58: \uC544\uAD70\uC744 \uC120\uD0DD\uD558\uACE0 \uD30C\uB780 \uC2DC\uC791 \uCE78\uC744 \uD074\uB9AD\uD558\uC138\uC694." +
+                   "\n\uD30C\uB780\uC0C9\uC740 \uBC30\uCE58 \uAC00\uB2A5, \uBE68\uAC04\uC0C9\uC740 \uBC30\uCE58 \uAD6C\uC5ED \uBC16 \uACBD\uACC4\uC785\uB2C8\uB2E4. Space/\uC2DC\uC791\uC73C\uB85C \uC804\uD22C \uC2DC\uC791.";
         }
 
         if (mapVariant == BattleTestMapVariant.BanditLair)
@@ -2112,15 +2222,7 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
-        scoutMode = true;
-        showThreatOverlay = false;
-        showElevationOverlay = false;
-        showCoverOverlay = false;
-        showSightOverlay = false;
-        showObjectiveOverlay = false;
-        commandMode = BattleCommandMode.Move;
-        AddLog("[정찰] 정찰 모드 재개.");
-        RefreshHighlights();
+        EnterDeploymentMode(false);
     }
 
     private void ExitScoutMode()
@@ -2132,9 +2234,47 @@ public sealed class BattleTestController : MonoBehaviour
 
         scoutMode = false;
         commandMode = BattleCommandMode.Move;
-        AddLog("[정찰] 정찰 종료. 아군 행동을 시작합니다.");
+        AddLog("[\uBC30\uCE58] \uBC30\uCE58 \uC885\uB8CC. \uC544\uAD70 \uD589\uB3D9\uC744 \uC2DC\uC791\uD569\uB2C8\uB2E4.");
         RefreshHighlights();
         RefreshUnits();
+    }
+
+    private void EnterDeploymentMode(bool initialEntry)
+    {
+        if (!phaseTurn.IsPlayerPhase || battleOver || busy)
+        {
+            return;
+        }
+
+        scoutMode = true;
+        showThreatOverlay = false;
+        showElevationOverlay = false;
+        showCoverOverlay = false;
+        showSightOverlay = false;
+        showObjectiveOverlay = false;
+        commandMode = BattleCommandMode.Move;
+        FaceUnitsForDeployment();
+        AddLog(initialEntry
+                   ? "[\uBC30\uCE58] \uC804\uD22C \uC2DC\uC791 \uC804, \uC544\uAD70\uC744 \uD30C\uB780 \uC2DC\uC791 \uCE78\uC5D0 \uBC30\uCE58\uD558\uC138\uC694."
+                   : "[\uBC30\uCE58] \uBC30\uCE58 \uBAA8\uB4DC \uC7AC\uAC1C.");
+        ShowHudNotice("\uD558\uB2E8 \uCE90\uB9AD\uD130\uB97C \uD30C\uB780 \uC2DC\uC791 \uCE78\uC73C\uB85C \uB4DC\uB798\uADF8");
+        RefreshHighlights();
+        RefreshUnits();
+        FocusCameraOnDeploymentOverview(initialEntry ? 0f : 0.18f);
+    }
+
+    private void FaceUnitsForDeployment()
+    {
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit == null || unit.defeated || unit.view == null)
+            {
+                continue;
+            }
+
+            unit.view.FaceDirection(Vector2.down);
+            unit.view.PlayIdle();
+        }
     }
 
     public void HudToggleThreat()
@@ -2173,10 +2313,55 @@ public sealed class BattleTestController : MonoBehaviour
         SelectPlayerUnit(unit);
     }
 
+    public void HudBeginDeploymentDrag(BattleTestUnit unit)
+    {
+        if (!scoutMode || unit == null || unit.defeated)
+        {
+            return;
+        }
+
+        activeUnit = unit;
+        if (unit.view != null)
+        {
+            unit.view.FaceDirection(Vector2.down);
+            unit.view.PlayIdle();
+        }
+
+        ShowHudNotice("\uD30C\uB780 \uC2DC\uC791 \uCE78\uC5D0 \uB193\uC73C\uBA74 \uBC30\uCE58\uB429\uB2C8\uB2E4");
+        RefreshHighlights();
+        RefreshUnits();
+    }
+
+    public void HudDropDeploymentUnit(BattleTestUnit unit, Vector2 screenPosition)
+    {
+        if (!scoutMode || unit == null || unit.defeated)
+        {
+            return;
+        }
+
+        activeUnit = unit;
+        BattleTestTile tile = ResolvePointerTile(screenPosition);
+        if (tile != null && TryScoutDeploy(tile))
+        {
+            ShowHudNotice(unit.definition.displayName + " \uBC30\uCE58 \uC644\uB8CC");
+            return;
+        }
+
+        ShowHudNotice("\uD30C\uB780 \uC2DC\uC791 \uCE78\uC5D0\uB9CC \uBC30\uCE58\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4");
+        RefreshHighlights();
+        RefreshUnits();
+    }
+
     private void ShowHudNotice(string message)
     {
         hudNotice = message;
         hudNoticeUntil = Time.time + 1.2f;
+    }
+
+    private void ClearHudNotice()
+    {
+        hudNotice = string.Empty;
+        hudNoticeUntil = 0f;
     }
 
     private void CreateTerrain()
@@ -2648,6 +2833,12 @@ public sealed class BattleTestController : MonoBehaviour
         propObject.transform.SetParent(parent, false);
         propObject.transform.position = GridToWorld(cell) + new Vector3(0f, -0.02f, -0.04f);
 
+        if (!ShouldShowRuntimeInteractableSprites())
+        {
+            AttachMapPropComponents(propObject, id, displayName, kind, cell);
+            return;
+        }
+
         SpriteRenderer renderer = propObject.AddComponent<SpriteRenderer>();
         Sprite propSprite = GetInteractableSprite(id, kind);
         bool hasPropAsset = propSprite != null;
@@ -2669,6 +2860,11 @@ public sealed class BattleTestController : MonoBehaviour
 
         AttachMapPropComponents(propObject, id, displayName, kind, cell);
         CreateInteractableAccent(propObject.transform, kind, renderer.sortingOrder + 1);
+    }
+
+    private bool ShouldShowRuntimeInteractableSprites()
+    {
+        return paintedMapBackdropSprite == null;
     }
 
     private void AttachMapPropComponents(GameObject propObject, string id, string displayName,
@@ -3559,9 +3755,9 @@ public sealed class BattleTestController : MonoBehaviour
             CharacterVisualController visual = unitObject.AddComponent<CharacterVisualController>();
             visual.visual = definition.visual;
             visual.sortingLayerName = "Default";
-            // Authored diorama floor rows occupy (rows - (x+y)) * 40 + [0..28]; base 1000 puts the
-            // unit on slot 30 of its own row so nearer terrain blocks correctly occlude it.
-            visual.baseSortingOrder = authoredMapBound ? 1000 : 3000;
+            // Authored painted maps are a flattened illustration. Terrain legality blocks wall/prop cells,
+            // so legal units must render above the foreground paint instead of hiding behind it.
+            visual.baseSortingOrder = authoredMapBound ? 2600 : 3000;
             ApplyBattleSceneIntegration(visual);
 
             CircleCollider2D collider = unitObject.AddComponent<CircleCollider2D>();
@@ -3573,6 +3769,8 @@ public sealed class BattleTestController : MonoBehaviour
             unit.cell = spawnCell;
             unit.initiative = definition.initiative + random.Next(0, 5);
             view.Bind(unit, visual);
+            view.FaceDirection(Vector2.down);
+            view.PlayIdle();
             units.Add(unit);
             occupiedSpawnCells.Add(spawnCell);
         }
@@ -3633,7 +3831,8 @@ public sealed class BattleTestController : MonoBehaviour
     private bool IsValidInitialSpawnCell(Vector2Int cell, HashSet<Vector2Int> occupied, bool deploymentOnly)
     {
         BattleTestTile tile = TileAt(cell);
-        if (tile == null || !tile.walkable || IsCellUnsafeForInitialSpawn(cell) || occupied.Contains(cell))
+        if (!CanStandOnTile(tile) || IsCellBlockedByInteractable(cell) || IsCellUnsafeForInitialSpawn(cell) ||
+            occupied.Contains(cell))
         {
             return false;
         }
@@ -3662,6 +3861,29 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         return false;
+    }
+
+    private bool CanStandOnCell(Vector2Int cell)
+    {
+        return CanStandOnTile(TileAt(cell));
+    }
+
+    private bool CanStandOnTile(BattleTestTile tile)
+    {
+        if (tile == null || !tile.walkable || tile.moveCost >= 90)
+        {
+            return false;
+        }
+
+        if (tile.terrain == TerrainType.DeepWater || tile.terrain == TerrainType.Cliff ||
+            tile.terrain == TerrainType.Wall || tile.hazardType == HazardType.DeepWater ||
+            tile.hazardType == HazardType.Fall)
+        {
+            return false;
+        }
+
+        return mapVariant != BattleTestMapVariant.BaekduSnowGate ||
+               !IsBaekduSnowGatePaintedNoStandCell(tile.cell);
     }
 
     private static bool IsLargeInitialSpawnAvoidanceProp(BattleTestInteractable interactable)
@@ -3852,6 +4074,8 @@ public sealed class BattleTestController : MonoBehaviour
             clickedTile = TileAt(WorldToGrid(point));
         }
 
+        clickedUnit = ResolveClickedUnit(clickedUnit, clickedTile);
+
         if (phaseTurn.IsPlayerPhase && clickedUnit != null && clickedUnit.definition.faction == Faction.Ally)
         {
             SelectPlayerUnit(clickedUnit);
@@ -3871,15 +4095,16 @@ public sealed class BattleTestController : MonoBehaviour
                 return;
             }
 
-            AddLog("[정찰] 아군을 선택한 뒤 남쪽 배치 칸을 클릭하세요.");
+            AddLog("[\uBC30\uCE58] \uC544\uAD70\uC744 \uC120\uD0DD\uD558\uACE0 \uD30C\uB780 \uC2DC\uC791 \uCE78\uC744 \uD074\uB9AD\uD558\uC138\uC694.");
             return;
         }
 
         if (commandMode == BattleCommandMode.Attack)
         {
-            if (clickedUnit != null && clickedUnit.definition.faction != activeUnit.definition.faction)
+            BattleTestUnit attackTarget = ResolveAttackClickTarget(activeUnit, clickedUnit, clickedTile);
+            if (attackTarget != null)
             {
-                TryAttack(activeUnit, clickedUnit, false);
+                TryAttack(activeUnit, attackTarget, false);
             }
             else
             {
@@ -3917,16 +4142,45 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (clickedUnit != null && clickedUnit.definition.faction != activeUnit.definition.faction)
+        {
+            SetCommandMode(BattleCommandMode.Attack);
+            if (CanBasicAttackTarget(activeUnit, clickedUnit))
+            {
+                TryAttack(activeUnit, clickedUnit, false);
+            }
+
+            return;
+        }
+
         if (commandMode == BattleCommandMode.Move && clickedTile != null)
         {
             TryMove(activeUnit, clickedTile);
             return;
         }
+    }
 
-        if (clickedUnit != null && clickedUnit.definition.faction != activeUnit.definition.faction)
+    private BattleTestTile ResolvePointerTile(Vector3 screenPosition)
+    {
+        if (Camera.main == null)
         {
-            SetCommandMode(BattleCommandMode.Attack);
+            return null;
         }
+
+        Vector3 world = Camera.main.ScreenToWorldPoint(screenPosition);
+        Vector2 point = new Vector2(world.x, world.y);
+        Collider2D[] hits = Physics2D.OverlapPointAll(point);
+
+        foreach (Collider2D hit in hits)
+        {
+            BattleTestTile tile = hit.GetComponent<BattleTestTile>();
+            if (tile != null)
+            {
+                return tile;
+            }
+        }
+
+        return TileAt(WorldToGrid(point));
     }
 
     private void SelectPlayerUnit(BattleTestUnit unit)
@@ -3948,7 +4202,14 @@ public sealed class BattleTestController : MonoBehaviour
         RefreshHighlights();
         RefreshUnits();
         unit.view.PlayClickReaction();
-        FocusCameraOnUnit(unit, 0.24f);
+        if (scoutMode)
+        {
+            FocusCameraOnDeploymentOverview(0.16f);
+        }
+        else
+        {
+            FocusCameraOnUnit(unit, 0.24f);
+        }
     }
 
     private bool TryScoutDeploy(BattleTestTile destination)
@@ -3960,14 +4221,15 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (!IsDeploymentCell(destination.cell))
         {
-            AddLog("[정찰] 남쪽 배치 구역에만 재배치할 수 있습니다.");
+            AddLog("[\uBC30\uCE58] \uD30C\uB780 \uC2DC\uC791 \uAD6C\uC5ED\uC5D0\uB9CC \uBC30\uCE58\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
             return false;
         }
 
-        if (!destination.walkable || IsCellBlockedByInteractable(destination.cell) ||
-            UnitAt(destination.cell) != null)
+        BattleTestUnit occupant = UnitAt(destination.cell);
+        if (!CanStandOnTile(destination) || IsCellBlockedByInteractable(destination.cell) ||
+            (occupant != null && occupant != activeUnit))
         {
-            AddLog("[정찰] 해당 배치칸은 사용할 수 없습니다.");
+            AddLog("[\uBC30\uCE58] \uD574\uB2F9 \uC2DC\uC791 \uCE78\uC740 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
             return false;
         }
 
@@ -3977,9 +4239,10 @@ public sealed class BattleTestController : MonoBehaviour
             activeUnit.view.transform.position = UnitWorldPosition(destination.cell);
         }
 
-        AddLog($"[정찰] {activeUnit.definition.displayName} 재배치 -> ({destination.cell.x},{destination.cell.y})");
+        AddLog($"[\uBC30\uCE58] {activeUnit.definition.displayName} \uBC30\uCE58 -> ({destination.cell.x},{destination.cell.y})");
         RefreshHighlights();
         RefreshUnits();
+        FocusCameraOnDeploymentOverview(0.12f);
         return true;
     }
 
@@ -3989,6 +4252,11 @@ public sealed class BattleTestController : MonoBehaviour
         if (tile == null)
         {
             return false;
+        }
+
+        if (mapVariant == BattleTestMapVariant.BaekduSnowGate)
+        {
+            return IsBaekduSnowGateDeploymentStartCell(cell.x, cell.y);
         }
 
         if (string.Equals(tile.laneId, "south_deployment", StringComparison.OrdinalIgnoreCase))
@@ -4007,7 +4275,7 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
-        if (!destination.walkable || IsCellBlockedByInteractable(destination.cell) ||
+        if (!CanStandOnTile(destination) || IsCellBlockedByInteractable(destination.cell) ||
             UnitAt(destination.cell) != null)
         {
             AddLog("[이동] 진입할 수 없는 칸입니다.");
@@ -4041,9 +4309,25 @@ public sealed class BattleTestController : MonoBehaviour
         unit.SpendMovement(reachable[destination.cell]);
         ApplyTileEntry(unit, destination);
         commandMode = DefaultCommandForUnit(unit);
-        if (unit.definition.faction == Faction.Ally)
+
+        if (unit.defeated)
         {
-            ShowHudNotice("이동 완료: 공격 또는 대기");
+            // 이동 중 지형 피해로 쓰러지면 걷기 연출/후속 행동 없이 위치만 정리하고 턴을 진행한다.
+            pendingMovementUndo = default;
+            if (unit.view != null)
+            {
+                unit.view.transform.position = UnitWorldPosition(destination.cell);
+            }
+
+            AddLog($"[이동] {unit.definition.displayName} 이동 중 지형 피해로 쓰러졌습니다.");
+            RefreshHighlights();
+            RefreshUnits();
+            if (!CheckBattleEnd())
+            {
+                AdvanceAfterAction(unit);
+            }
+
+            return;
         }
 
         if (Application.isPlaying)
@@ -4192,6 +4476,19 @@ public sealed class BattleTestController : MonoBehaviour
         return true;
     }
 
+    private bool CanBasicAttackTarget(BattleTestUnit attacker, BattleTestUnit target)
+    {
+        if (attacker == null || target == null || attacker.defeated || target.defeated ||
+            attacker.definition.faction == target.definition.faction || !attacker.CanUseMainAction)
+        {
+            return false;
+        }
+
+        int range = EffectiveAttackRange(attacker);
+        int distance = GridDistance(attacker.cell, target.cell);
+        return distance <= range && (range <= 1 || HasLineOfSight(attacker.cell, target.cell));
+    }
+
     private bool ResolveAttack(BattleTestUnit attacker, BattleTestUnit target, bool special)
     {
         attacker.view.FaceToward(target.view.transform.position);
@@ -4236,6 +4533,7 @@ public sealed class BattleTestController : MonoBehaviour
     private IEnumerator RunAttackCommand(BattleTestUnit attacker, BattleTestUnit target, bool special, bool endAfterAttack)
     {
         StopCameraPanRoutine();
+        ClearHudNotice();
         busy = true;
         if (special)
         {
@@ -4273,6 +4571,32 @@ public sealed class BattleTestController : MonoBehaviour
             }
         }
 
+        busy = false;
+    }
+
+    private IEnumerator RunMotionDebugAttackSequence(BattleTestUnit attacker, BattleTestUnit target, bool special)
+    {
+        if (attacker == null || target == null || attacker.defeated || target.defeated ||
+            attacker.view == null || target.view == null)
+        {
+            yield break;
+        }
+
+        StopCameraPanRoutine();
+        ClearHudNotice();
+        busy = true;
+        AddLog(special ? "[MotionTest] Forced skill presentation." : "[MotionTest] Forced attack presentation.");
+
+        BattleTestAttackResult result = default;
+        yield return ExecuteAttackSequence(attacker, target, special, resolved => result = resolved, true);
+        if (special)
+        {
+            ApplySpecialStatusAfterHit(result);
+        }
+
+        RefreshHighlights();
+        RefreshUnits();
+        CheckBattleEnd();
         busy = false;
     }
 
@@ -4322,13 +4646,14 @@ public sealed class BattleTestController : MonoBehaviour
     }
 
     private IEnumerator ExecuteAttackSequence(BattleTestUnit attacker, BattleTestUnit target, bool special,
-                                              Action<BattleTestAttackResult> onResolved)
+                                              Action<BattleTestAttackResult> onResolved, bool forceHit = false)
     {
+        ClearHudNotice();
         CombatActionTimeline timeline = attacker.view.CreateTimeline(special);
         attacker.view.FaceToward(target.view.transform.position);
         target.view.FaceToward(attacker.view.transform.position);
         EnsureBattlePresentationFx();
-        battleImpactPresenter.PlayAttackStartAsync(attacker, target);
+        battleImpactPresenter.PlayAttackStartAsync(attacker, target, special);
         if (special)
         {
             attacker.view.PlaySkill();
@@ -4339,6 +4664,16 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         BattleTestAttackResult result = RollAttackResult(attacker, target, special);
+        if (forceHit && !result.hit)
+        {
+            int debugDamage = Mathf.Max(1, attacker.definition.damageMax + (special ? attacker.definition.specialPower : 0));
+            if (target.hp > 1)
+            {
+                debugDamage = Mathf.Min(debugDamage, target.hp - 1);
+            }
+
+            result = new BattleTestAttackResult(attacker, target, special, result.moveName, true, false, debugDamage);
+        }
         yield return WaitActionSeconds(timeline.VfxTime);
         yield return WaitActionSeconds(Mathf.Max(0f, timeline.HitTime - timeline.VfxTime));
         ApplyAttackResultAtHitFrame(result);
@@ -4456,11 +4791,13 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (result.hit)
         {
-            battleImpactPresenter.PlayHitAsync(result.target, result.damage, result.critical);
+            damagePopupPresenter?.ShowDamage(result.target.view.transform.position, result.damage, result.critical);
+            battleImpactPresenter.PlayHitAsync(result.target, result.damage, result.critical, false);
         }
         else
         {
-            battleImpactPresenter.PlayMissAsync(result.target);
+            damagePopupPresenter?.ShowMiss(result.target.view.transform.position);
+            battleImpactPresenter.PlayMissAsync(result.target, false);
         }
     }
 
@@ -5137,7 +5474,7 @@ public sealed class BattleTestController : MonoBehaviour
                               : firstStep          ? t * t * (2f - t)
                               : lastStep           ? 1f - ((1f - t) * (1f - t) * (1f + t))
                                                    : t;
-                unit.view.SetMoveStridePhase(stepIndex + t);
+                unit.view.SetMoveStridePhase((stepIndex * 0.5f) + t);
                 unit.view.transform.position = Vector3.Lerp(start, target, eased);
                 if (camera != null)
                 {
@@ -5155,6 +5492,11 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         unit.view.PlayIdle();
+        if (unit.definition.faction == Faction.Ally && phaseTurn.IsPlayerPhase)
+        {
+            ShowHudNotice("이동 완료: 공격 또는 대기");
+        }
+
         float settleTime = unit.view.MoveSettleTime();
         if (settleTime > 0f)
         {
@@ -5190,7 +5532,22 @@ public sealed class BattleTestController : MonoBehaviour
             yield return PanCameraToUnit(activeUnit, EnemyFocusSeconds);
             yield return new WaitForSeconds(EnemyFocusSettleDelay);
 
-            BattleTestUnit target = FindNearestEnemy(activeUnit);
+            // 힐러 적: 사거리 안에 부상한 아군이 있으면 공격 대신 치유(무공은 제자리 시전이라 이동 전에만).
+            BattleTestUnit healTarget = FindEnemyHealTarget(activeUnit);
+            if (healTarget != null)
+            {
+                yield return RunEnemyActionCommand(activeUnit, healTarget, true);
+                if (battleOver)
+                {
+                    busy = false;
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(EnemyBetweenUnitDelay);
+                continue;
+            }
+
+            BattleTestUnit target = ChooseEnemyTarget(activeUnit);
             if (target == null)
             {
                 activeUnit.view.PlayWait();
@@ -5219,6 +5576,25 @@ public sealed class BattleTestController : MonoBehaviour
                     activeUnit.cell = best.cell;
                     activeUnit.SpendMovement(moveCost);
                     ApplyTileEntry(activeUnit, best);
+                    if (activeUnit.defeated)
+                    {
+                        // 이동 중 지형 피해(화염 등)로 전투불능 — 시체가 걷거나 공격하지 않도록 위치만 정리하고 다음 적으로.
+                        if (activeUnit.view != null)
+                        {
+                            activeUnit.view.transform.position = UnitWorldPosition(best.cell);
+                        }
+
+                        RefreshUnits();
+                        if (CheckBattleEnd())
+                        {
+                            busy = false;
+                            yield break;
+                        }
+
+                        yield return new WaitForSeconds(EnemyBetweenUnitDelay);
+                        continue;
+                    }
+
                     yield return AnimateMove(activeUnit, path);
                     yield return new WaitForSeconds(EnemyPostMoveDelay);
                 }
@@ -5229,7 +5605,23 @@ public sealed class BattleTestController : MonoBehaviour
                               (!IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
                                EffectiveSpecialRange(activeUnit) <= 1 ||
                                HasLineOfSight(activeUnit.cell, target.cell));
-            yield return RunEnemyActionCommand(activeUnit, target, useSpecial);
+
+            // 사거리/시야 밖이면 공격하지 않는다 — 플레이어 TryAttack과 동일한 규칙. 접근만 한 뒤 대기.
+            int actionRange = useSpecial ? EffectiveSpecialRange(activeUnit) : EffectiveAttackRange(activeUnit);
+            bool needsLineOfSight = actionRange > 1 &&
+                                    (!useSpecial || IsHostileAttackSpecial(activeUnit.definition.specialEffect));
+            bool canReachTarget = GridDistance(activeUnit.cell, target.cell) <= actionRange &&
+                                  (!needsLineOfSight || HasLineOfSight(activeUnit.cell, target.cell));
+            if (canReachTarget)
+            {
+                yield return RunEnemyActionCommand(activeUnit, target, useSpecial);
+            }
+            else
+            {
+                activeUnit.view.PlayWait();
+                activeUnit.SpendMainAction();
+                AddLog($"[적] {activeUnit.definition.displayName} 사거리 밖 — 대기.");
+            }
 
             if (battleOver)
             {
@@ -5260,12 +5652,31 @@ public sealed class BattleTestController : MonoBehaviour
             }
 
             BattleTestTile tile = TileAt(pair.Key);
-            if (tile == null || !tile.walkable)
+            if (!CanStandOnTile(tile))
             {
                 continue;
             }
 
-            int score = GridDistance(unit.cell, pair.Key) * 10 - pair.Value + tile.elevation;
+            int crowdPenalty = 0;
+            foreach (BattleTestUnit other in units)
+            {
+                if (other == null || other == unit || other.defeated)
+                {
+                    continue;
+                }
+
+                int distanceToOther = GridDistance(pair.Key, other.cell);
+                if (distanceToOther <= 1)
+                {
+                    crowdPenalty += 100;
+                }
+                else if (distanceToOther == 2)
+                {
+                    crowdPenalty += 24;
+                }
+            }
+
+            int score = GridDistance(unit.cell, pair.Key) * 10 - pair.Value + tile.elevation - crowdPenalty;
             if (score > bestScore)
             {
                 bestScore = score;
@@ -5320,6 +5731,142 @@ public sealed class BattleTestController : MonoBehaviour
         }
 
         return best;
+    }
+
+    // 적 AI 타겟 선택: 단순 최근접 대신 처치각 > 도달성 > 저HP > 근접 순으로 점수화한다.
+    private BattleTestUnit ChooseEnemyTarget(BattleTestUnit unit)
+    {
+        BattleTestUnit best = null;
+        int bestScore = int.MinValue;
+
+        foreach (BattleTestUnit other in units)
+        {
+            if (other == null || other.defeated || other.definition.faction == unit.definition.faction)
+            {
+                continue;
+            }
+
+            int distance = GridDistance(unit.cell, other.cell);
+            int score = -distance * 4;
+
+            bool reachable = CanReachToAttackThisTurn(unit, other);
+            if (reachable)
+            {
+                score += 40;
+            }
+
+            // 부상한 대상 우선(마무리 유도).
+            score += Mathf.Clamp(60 - other.hp, 0, 60);
+
+            // 이번 턴 공격으로 쓰러뜨릴 수 있으면 최우선.
+            if (reachable && EstimateAttackDamage(unit, other) >= other.hp)
+            {
+                score += 120;
+            }
+
+            // 반격 봉쇄(파훼)된 대상은 약간 선호.
+            if (other.marked)
+            {
+                score += 6;
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = other;
+            }
+        }
+
+        // 점수상 후보가 없으면(이론상) 최근접으로 폴백.
+        return best != null ? best : FindNearestEnemy(unit);
+    }
+
+    // 힐러 적이 지금(이동 없이) 치유할 가장 부상이 큰 아군. 없으면 null.
+    private BattleTestUnit FindEnemyHealTarget(BattleTestUnit healer)
+    {
+        if (healer == null || healer.definition.specialEffect != BattleSpecialEffect.Heal || !CanUseSpecial(healer))
+        {
+            return null;
+        }
+
+        int range = EffectiveSpecialRange(healer);
+        BattleTestUnit best = null;
+        int bestMissing = 0;
+        foreach (BattleTestUnit ally in units)
+        {
+            if (ally == null || ally.defeated || ally.definition.faction != healer.definition.faction)
+            {
+                continue;
+            }
+
+            int missing = ally.definition.maxHp - ally.hp;
+            if (missing <= 0 || GridDistance(healer.cell, ally.cell) > range)
+            {
+                continue;
+            }
+
+            if (missing > bestMissing)
+            {
+                bestMissing = missing;
+                best = ally;
+            }
+        }
+
+        return best;
+    }
+
+    // 이번 턴(현재 위치 또는 한 번 이동)에 target을 기본 공격으로 때릴 수 있는가.
+    private bool CanReachToAttackThisTurn(BattleTestUnit unit, BattleTestUnit target)
+    {
+        if (CanHitFrom(unit, unit.cell, target))
+        {
+            return true;
+        }
+
+        if (unit.moved)
+        {
+            return false;
+        }
+
+        foreach (Vector2Int cell in GetReachableCells(unit).Keys)
+        {
+            if (cell == unit.cell || UnitAt(cell) != null)
+            {
+                continue;
+            }
+
+            if (CanHitFrom(unit, cell, target))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CanHitFrom(BattleTestUnit unit, Vector2Int from, BattleTestUnit target)
+    {
+        BattleTestTile fromTile = TileAt(from);
+        int range = EffectiveAttackRange(unit, fromTile);
+        int distance = GridDistance(from, target.cell);
+        return distance <= range && (range <= 1 || HasLineOfSight(from, target.cell));
+    }
+
+    // 1회 공격으로 줄 수 있는 대략적 최대 피해(치명·고저는 제외, 무공·방어는 반영) — 처치각 판단용.
+    private int EstimateAttackDamage(BattleTestUnit attacker, BattleTestUnit target)
+    {
+        int damage = attacker.definition.damageMax;
+        if (CanUseSpecial(attacker) && IsHostileAttackSpecial(attacker.definition.specialEffect))
+        {
+            damage += attacker.definition.specialPower;
+        }
+
+        if (target.guarded)
+        {
+            damage = Mathf.Max(1, Mathf.CeilToInt(damage * 0.55f));
+        }
+
+        return damage;
     }
 
     private BattleTestUnit FindNearestEnemy(BattleTestUnit unit)
@@ -5863,7 +6410,7 @@ public sealed class BattleTestController : MonoBehaviour
                 return false;
             }
 
-            if (!nextTile.walkable)
+            if (!CanStandOnTile(nextTile))
             {
                 if (nextTile.hazardType == HazardType.DeepWater || nextTile.terrain == TerrainType.DeepWater)
                 {
@@ -6005,7 +6552,7 @@ public sealed class BattleTestController : MonoBehaviour
         foreach (Vector2Int cell in RadiusCells(center, 1))
         {
             BattleTestTile tile = TileAt(cell);
-            if (tile == null || !tile.walkable)
+            if (!CanStandOnTile(tile))
             {
                 continue;
             }
@@ -6105,7 +6652,7 @@ public sealed class BattleTestController : MonoBehaviour
         foreach (Vector2Int cell in cells)
         {
             BattleTestTile tile = TileAt(cell);
-            if (tile == null || !tile.walkable)
+            if (!CanStandOnTile(tile))
             {
                 continue;
             }
@@ -6129,7 +6676,7 @@ public sealed class BattleTestController : MonoBehaviour
         foreach (Vector2Int cell in Neighbors(center))
         {
             BattleTestTile tile = TileAt(cell);
-            if (tile == null || !tile.walkable)
+            if (!CanStandOnTile(tile))
             {
                 continue;
             }
@@ -6533,7 +7080,7 @@ public sealed class BattleTestController : MonoBehaviour
 
         if (scoutMode && mode != BattleCommandMode.Move)
         {
-            AddLog("[정찰] 정찰 중에는 공격/무공 대신 지형 확인과 배치 변경만 가능합니다.");
+            AddLog("[\uBC30\uCE58] \uBC30\uCE58 \uC911\uC5D0\uB294 \uACF5\uACA9/\uBB34\uACF5 \uB300\uC2E0 \uC544\uAD70 \uBC30\uCE58\uB9CC \uBC14\uAFC0 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
             return;
         }
 
@@ -6671,7 +7218,7 @@ public sealed class BattleTestController : MonoBehaviour
             foreach (Vector2Int next in Neighbors(current))
             {
                 BattleTestTile tile = TileAt(next);
-                if (tile == null || !tile.walkable)
+                if (!CanStandOnTile(tile))
                 {
                     continue;
                 }
@@ -6734,7 +7281,7 @@ public sealed class BattleTestController : MonoBehaviour
             foreach (Vector2Int next in Neighbors(current))
             {
                 BattleTestTile tile = TileAt(next);
-                if (tile == null || !tile.walkable)
+                if (!CanStandOnTile(tile))
                 {
                     continue;
                 }
@@ -6821,7 +7368,7 @@ public sealed class BattleTestController : MonoBehaviour
 
     private int StepMoveCost(BattleTestTile from, BattleTestTile to)
     {
-        if (to == null || !to.walkable)
+        if (!CanStandOnTile(to))
         {
             return int.MaxValue;
         }
@@ -6873,6 +7420,21 @@ public sealed class BattleTestController : MonoBehaviour
     {
         ClearHighlights();
 
+        if (scoutMode)
+        {
+            HighlightDeploymentCells();
+            if (activeUnit != null && !activeUnit.defeated)
+            {
+                BattleTestTile selectedTile = TileAt(activeUnit.cell);
+                if (selectedTile != null)
+                {
+                    selectedTile.SetHighlight(new Color(0.12f, 0.86f, 1f, 0.78f));
+                }
+            }
+
+            return;
+        }
+
         if (activeUnit == null || activeUnit.defeated)
         {
             return;
@@ -6882,17 +7444,6 @@ public sealed class BattleTestController : MonoBehaviour
         bool movementPreview = IsMovementPreviewActive();
 
         DrawMapOverlays(movementPreview);
-
-        if (scoutMode)
-        {
-            HighlightDeploymentCells();
-            if (activeTile != null)
-            {
-                activeTile.SetHighlight(new Color(0.26f, 0.78f, 1f, 0.34f));
-            }
-
-            return;
-        }
 
         if (movementPreview)
         {
@@ -7052,12 +7603,62 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        HashSet<Vector2Int> deploymentCells = new HashSet<Vector2Int>();
+        HashSet<Vector2Int> boundaryCells = new HashSet<Vector2Int>();
+
         foreach (BattleTestTile tile in tiles)
         {
-            if (tile != null && IsDeploymentCell(tile.cell) && tile.walkable && UnitAt(tile.cell) == null)
+            if (tile == null || !IsDeploymentCell(tile.cell) || !CanStandOnTile(tile) ||
+                IsCellBlockedByInteractable(tile.cell))
             {
-                tile.SetHighlight(new Color(0.30f, 0.60f, 1f, 0.32f));
+                continue;
             }
+
+            deploymentCells.Add(tile.cell);
+            foreach (Vector2Int neighbor in Neighbors(tile.cell))
+            {
+                if (!IsInside(neighbor) || deploymentCells.Contains(neighbor))
+                {
+                    continue;
+                }
+
+                BattleTestTile neighborTile = TileAt(neighbor);
+                if (neighborTile != null && !IsDeploymentCell(neighbor))
+                {
+                    boundaryCells.Add(neighbor);
+                }
+            }
+        }
+
+        foreach (Vector2Int cell in boundaryCells)
+        {
+            BattleTestTile tile = TileAt(cell);
+            if (tile != null)
+            {
+                tile.SetHighlight(new Color(1f, 0.12f, 0.10f, 0.54f));
+            }
+        }
+
+        foreach (Vector2Int cell in deploymentCells)
+        {
+            BattleTestTile tile = TileAt(cell);
+            if (tile == null)
+            {
+                continue;
+            }
+
+            BattleTestUnit occupant = UnitAt(cell);
+            Color highlight = new Color(0.06f, 0.48f, 1f, 0.58f);
+            if (occupant == activeUnit)
+            {
+                highlight = new Color(0.12f, 0.86f, 1f, 0.78f);
+            }
+            else if (occupant != null)
+            {
+                highlight = new Color(0.08f, 0.54f, 1f, 0.42f);
+            }
+
+            tile.SetHighlight(highlight);
         }
     }
 
@@ -7066,6 +7667,11 @@ public sealed class BattleTestController : MonoBehaviour
         if (tiles == null)
         {
             return;
+        }
+
+        if (!movementPreview && showThreatOverlay)
+        {
+            RebuildEnemyThreatCells();
         }
 
         foreach (BattleTestTile tile in tiles)
@@ -7110,22 +7716,62 @@ public sealed class BattleTestController : MonoBehaviour
 
     private bool IsInEnemyThreat(Vector2Int cell)
     {
+        return enemyThreatCells.Contains(cell);
+    }
+
+    // 적이 "한 번 이동 후 기본 공격"으로 닿는 칸까지 모두 위협으로 계산한다.
+    // 현재 위치에서는 무공/반격기 사거리도 포함(이동하면 무공 불가이므로 이동칸은 공격 사거리만).
+    private void RebuildEnemyThreatCells()
+    {
+        enemyThreatCells.Clear();
         foreach (BattleTestUnit unit in units)
         {
-            if (unit.defeated || unit.definition.faction != Faction.Enemy)
+            if (unit == null || unit.defeated || unit.definition.faction != Faction.Enemy)
             {
                 continue;
             }
 
-            int range = Mathf.Max(EffectiveAttackRange(unit),
-                                  CanUseCounterSpecial(unit) ? EffectiveSpecialRange(unit) : EffectiveAttackRange(unit));
-            if (GridDistance(unit.cell, cell) <= range && (range <= 1 || HasLineOfSight(unit.cell, cell)))
+            AddThreatFromStandCell(unit, unit.cell, true);
+            foreach (Vector2Int standCell in GetReachableCells(unit).Keys)
             {
-                return true;
+                if (standCell == unit.cell || UnitAt(standCell) != null)
+                {
+                    continue;
+                }
+
+                AddThreatFromStandCell(unit, standCell, false);
             }
         }
+    }
 
-        return false;
+    private void AddThreatFromStandCell(BattleTestUnit unit, Vector2Int standCell, bool fromCurrentCell)
+    {
+        BattleTestTile standTile = TileAt(standCell);
+        if (standTile == null)
+        {
+            return;
+        }
+
+        int range = EffectiveAttackRange(unit, standTile);
+        if (fromCurrentCell && CanUseCounterSpecial(unit))
+        {
+            range = Mathf.Max(range, EffectiveSpecialRange(unit, standTile));
+        }
+
+        foreach (Vector2Int targetCell in RadiusCells(standCell, range))
+        {
+            if (!IsInside(targetCell) || enemyThreatCells.Contains(targetCell))
+            {
+                continue;
+            }
+
+            if (range > 1 && !HasLineOfSight(standCell, targetCell))
+            {
+                continue;
+            }
+
+            enemyThreatCells.Add(targetCell);
+        }
     }
 
     private void ClearHighlights()
@@ -7301,9 +7947,62 @@ public sealed class BattleTestController : MonoBehaviour
         return null;
     }
 
+    private BattleTestUnit ResolveClickedUnit(BattleTestUnit clickedUnit, BattleTestTile clickedTile)
+    {
+        if (clickedUnit != null || clickedTile == null)
+        {
+            return clickedUnit;
+        }
+
+        return UnitAt(clickedTile.cell);
+    }
+
+    private BattleTestUnit ResolveAttackClickTarget(BattleTestUnit attacker, BattleTestUnit clickedUnit,
+                                                    BattleTestTile clickedTile)
+    {
+        if (attacker == null)
+        {
+            return null;
+        }
+
+        if (clickedUnit != null)
+        {
+            return clickedUnit.definition.faction == attacker.definition.faction ? null : clickedUnit;
+        }
+
+        if (clickedTile == null)
+        {
+            return null;
+        }
+
+        BattleTestUnit uniqueTarget = null;
+        foreach (BattleTestUnit unit in units)
+        {
+            if (!CanBasicAttackTarget(attacker, unit) || GridDistance(clickedTile.cell, unit.cell) > 1)
+            {
+                continue;
+            }
+
+            if (uniqueTarget != null)
+            {
+                return null;
+            }
+
+            uniqueTarget = unit;
+        }
+
+        return uniqueTarget;
+    }
+
     private BattleTestTile TileAt(Vector2Int cell)
     {
-        return IsInside(cell) ? tiles[cell.x, cell.y] : null;
+        if (tiles == null || cell.x < 0 || cell.y < 0 ||
+            cell.x >= tiles.GetLength(0) || cell.y >= tiles.GetLength(1))
+        {
+            return null;
+        }
+
+        return tiles[cell.x, cell.y];
     }
 
     private bool IsInside(Vector2Int cell)
@@ -7439,7 +8138,7 @@ public sealed class BattleTestController : MonoBehaviour
         CenterCamera();
         yield return new WaitForSeconds(0.38f);
 
-        yield return PanCamera(camera, GetFactionFocusWorld(Faction.Ally), CalculateTacticalCameraSize(camera), 0.72f);
+        yield return PanCamera(camera, GetDeploymentOverviewWorld(), CalculateDeploymentCameraSize(camera), 0.72f);
 
         busy = false;
         mapIntroCoroutine = null;
@@ -7493,6 +8192,12 @@ public sealed class BattleTestController : MonoBehaviour
             return;
         }
 
+        if (scoutMode)
+        {
+            FocusCameraOnDeploymentOverview(duration);
+            return;
+        }
+
         Camera camera = Camera.main;
         if (camera == null)
         {
@@ -7501,6 +8206,27 @@ public sealed class BattleTestController : MonoBehaviour
 
         float targetSize = CalculateTacticalCameraSize(camera);
         Vector3 targetWorld = FocusWorldForUnit(unit);
+        StopCameraPanRoutine();
+
+        if (!Application.isPlaying || duration <= 0f)
+        {
+            SetCameraFocusImmediate(camera, targetWorld, targetSize);
+            return;
+        }
+
+        cameraPanCoroutine = StartCoroutine(CameraPanRoutine(camera, targetWorld, targetSize, duration));
+    }
+
+    private void FocusCameraOnDeploymentOverview(float duration)
+    {
+        Camera camera = Camera.main;
+        if (camera == null)
+        {
+            return;
+        }
+
+        Vector3 targetWorld = GetDeploymentOverviewWorld();
+        float targetSize = CalculateDeploymentCameraSize(camera);
         StopCameraPanRoutine();
 
         if (!Application.isPlaying || duration <= 0f)
@@ -7587,9 +8313,37 @@ public sealed class BattleTestController : MonoBehaviour
         return count == 0 ? MapCenterWorld() : total / count;
     }
 
+    private Vector3 GetDeploymentOverviewWorld()
+    {
+        Bounds bounds = CalculateDeploymentUnitBounds();
+        if (bounds.size == Vector3.zero)
+        {
+            return MapCenterWorld();
+        }
+
+        Vector3 center = bounds.center;
+        center.y += 0.34f;
+        return center;
+    }
+
     private float CalculateTacticalCameraSize(Camera camera)
     {
         return Mathf.Clamp(CalculateFullMapCameraSize(camera) * 0.62f, TacticalCameraMinSize, TacticalCameraMaxSize);
+    }
+
+    private float CalculateDeploymentCameraSize(Camera camera)
+    {
+        Bounds bounds = CalculateDeploymentUnitBounds();
+        if (bounds.size == Vector3.zero)
+        {
+            return CalculateFullMapCameraSize(camera);
+        }
+
+        float aspect = Mathf.Max(0.1f, camera.aspect);
+        float sizeForHeight = bounds.extents.y + 1.55f;
+        float sizeForWidth = (bounds.extents.x + 1.60f) / aspect;
+        float desiredSize = Mathf.Max(sizeForHeight, sizeForWidth);
+        return Mathf.Clamp(desiredSize, TacticalCameraMaxSize + 0.72f, CalculateFullMapCameraSize(camera));
     }
 
     private float CalculateFullMapCameraSize(Camera camera)
@@ -7614,6 +8368,40 @@ public sealed class BattleTestController : MonoBehaviour
         bounds.Encapsulate(GridToWorld(new Vector2Int(0, height - 1)));
         bounds.Encapsulate(GridToWorld(new Vector2Int(width - 1, height - 1)));
         bounds.Expand(Mathf.Max(0f, padding) * 2f);
+        return bounds;
+    }
+
+    private Bounds CalculateDeploymentUnitBounds()
+    {
+        bool hasBounds = false;
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit == null || unit.defeated)
+            {
+                continue;
+            }
+
+            Vector3 position = UnitWorldPosition(unit.cell);
+            if (!hasBounds)
+            {
+                bounds = new Bounds(position, Vector3.zero);
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(position);
+            }
+
+            bounds.Encapsulate(position + new Vector3(0f, 1.10f, 0f));
+        }
+
+        if (!hasBounds)
+        {
+            return new Bounds(Vector3.zero, Vector3.zero);
+        }
+
+        bounds.Expand(new Vector3(1.15f, 0.70f, 0f));
         return bounds;
     }
 
@@ -8159,156 +8947,131 @@ public sealed class BattleTestController : MonoBehaviour
 
     private TerrainProfile ResolveBaekduSnowGateTerrain(int x, int y)
     {
-        if (IsDenseTreeBlocker(x, y))
+        if (!IsBaekduSnowGatePaintedStandCell(x, y))
         {
-            return new TerrainProfile(TerrainType.Forest, new Color(0.08f, 0.20f, 0.11f, 1f), y >= 8 ? 1 : 0, 0,
-                                      99, false, true, false, false, false, "dense_tree_blocker",
-                                      "Dense tree stand: blocks movement and line of sight. Use the visible path around it.");
+            return BaekduSnowGatePaintedBlockerProfile(x, y);
         }
 
-        if (IsSolidNaturalPropBlocker(x, y))
+        if (IsBaekduSnowGateDeploymentStartCell(x, y))
         {
-            return new TerrainProfile(TerrainType.Rubble, new Color(0.32f, 0.34f, 0.30f, 1f), y >= 8 ? 3 : 1, 4,
-                                      99, false, true, false, false, false, "solid_natural_blocker",
-                                      "Large tree or boulder: impassable cover. Move around it or use terrain actions nearby.");
+            return new TerrainProfile(TerrainType.Road, new Color(0.58f, 0.53f, 0.44f, 1f), 0, 0, 1, true,
+                                      false, x >= 7 && x <= 9, false, false, "south_deployment",
+                                      "Painted starting lane: clear stone-and-snow ground for player deployment.");
         }
 
-        if (x <= 3 && y >= 4 && y <= 10)
-        {
-            bool choke = (x == 2 && (y == 6 || y == 7)) || (x == 1 && y == 5);
-            int elevation = y >= 8 ? 1 : 0;
-            return new TerrainProfile(TerrainType.Bamboo, new Color(0.15f, 0.38f, 0.22f, 1f), elevation, 2, 2,
-                                      true, true, choke, false, false, "left_bamboo_flank",
-                                      "Left bamboo forest flank: slow, cover-rich, blocks line of sight.");
-        }
-
-        if (y == 5 && x >= 0 && x <= 15)
-        {
-            if (x >= 6 && x <= 8)
-            {
-                return new TerrainProfile(TerrainType.Bridge, new Color(0.46f, 0.29f, 0.14f, 1f), 1, 0, 1, true,
-                                          false, true, false, false, "central_bridge",
-                                          "Central bridge bottleneck over the frozen Snow Gate stream.");
-            }
-
-            if ((x >= 1 && x <= 3) || (x >= 12 && x <= 14))
-            {
-                return new TerrainProfile(TerrainType.ShallowWater, new Color(0.20f, 0.48f, 0.56f, 1f), 0, 0, 3,
-                                          true, false, false, false, true, "shallow_ford",
-                                          "Shallow ford: slow river crossing with exposure risk.");
-            }
-
-            return new TerrainProfile(TerrainType.DeepWater, new Color(0.08f, 0.22f, 0.31f, 1f), 0, 0, 99, false,
-                                      false, false, false, true, "yalu_river",
-                                      "Deep frozen channel: impassable water and fall hazard.");
-        }
-
-        if ((x == 5 || x == 9) && y >= 4 && y <= 7)
-        {
-            return new TerrainProfile(TerrainType.Cliff, new Color(0.24f, 0.23f, 0.20f, 1f), 2, 0, 99, false,
-                                      true, false, false, true, "bridge_cliff",
-                                      "Bridge-side cliff drop: blocks path and sight.");
-        }
-
-        if (x == 7 && y == 9)
-        {
-            return new TerrainProfile(TerrainType.Smoke, new Color(0.44f, 0.52f, 0.48f, 1f), 2, 2, 2, true, true,
-                                      false, false, true, "ruined_shrine_altar",
-                                      "Incense smoke hazard: blocks sight and grants temporary cover around the altar.");
-        }
-
-        if (x >= 11 && x <= 15 && y >= 6 && y <= 10)
-        {
-            bool fallEdge = (x == 11 && y >= 6 && y <= 8) || (x == 14 && y == 7);
-            bool beacon = x == 12 && y == 8;
-            return new TerrainProfile(beacon ? TerrainType.Gate : TerrainType.Hill,
-                                      beacon ? new Color(0.58f, 0.47f, 0.28f, 1f)
-                                             : new Color(0.42f, 0.42f, 0.30f, 1f),
-                                      3, 1, 2, true, false, fallEdge, beacon, fallEdge, "right_cliff_highground",
-                                      beacon
-                                          ? "Beacon high ground objective: long sightline and warm light pool."
-                                          : "Right cliff high ground: strong ranged angle with fall edges.");
-        }
-
-        if (x >= 6 && x <= 9 && y >= 8 && y <= 10)
-        {
-            bool objective = (x == 7 || x == 8) && y == 10;
-            return new TerrainProfile(TerrainType.ShrineFloor, new Color(0.64f, 0.58f, 0.46f, 1f), 2, 1, 1, true,
-                                      false, false, objective, false, "ruined_shrine_altar",
-                                      objective
-                                          ? "Ruined shrine altar objective behind the gate."
-                                          : "Ruined shrine flagstones: defensible raised ground.");
-        }
-
-        if (x >= 4 && x <= 10 && y == 4)
-        {
-            return new TerrainProfile(TerrainType.Road, new Color(0.54f, 0.48f, 0.36f, 1f), 0, 0, 1, true,
-                                      false, x >= 6 && x <= 8, false, false, "south_gate_road",
-                                      "Southern approach road feeding into the bridge choke.");
-        }
-
-        if (x == 6 && y == 2)
+        if ((x == 5 || x == 6) && y == 2)
         {
             return new TerrainProfile(TerrainType.Fire, new Color(0.84f, 0.28f, 0.12f, 1f), 0, 0, 2, true, false,
-                                      false, false, true, "enemy_approach",
-                                      "Lantern fire hazard: a controlled flame pocket near the southern approach.");
+                                      false, false, true, "south_approach",
+                                      "Brazier light on the lower approach. The prop blocks standing directly on it.");
         }
 
-        if (x >= 4 && x <= 10 && y >= 6 && y <= 8)
-        {
-            bool rubble = (x == 9 && y == 7) || (x == 10 && y == 7);
-            return new TerrainProfile(rubble ? TerrainType.Rubble : TerrainType.Stone,
-                                      rubble ? new Color(0.44f, 0.39f, 0.33f, 1f)
-                                             : new Color(0.50f, 0.46f, 0.36f, 1f),
-                                      rubble ? 1 : 2, rubble ? 4 : 0, rubble ? 2 : 1, true, rubble, rubble, false,
-                                      rubble, "gate_courtyard",
-                                      rubble
-                                          ? "Collapsed wall cover near the gate, blocks some sight."
-                                          : "Gate courtyard: raised stone lanes into the shrine.");
-        }
-
-        if (x >= 4 && x <= 10 && y <= 3)
+        if (y <= 3)
         {
             bool cartLane = (x == 4 || x == 5) && y == 3;
-            return new TerrainProfile(cartLane ? TerrainType.Mud : TerrainType.Plain,
-                                      cartLane ? new Color(0.34f, 0.27f, 0.18f, 1f)
-                                               : new Color(0.39f, 0.43f, 0.30f, 1f),
-                                      0, cartLane ? 1 : 0, cartLane ? 2 : 1, true, false, x == 7 && y == 3,
-                                      false, false, "enemy_approach",
-                                      "Enemy approach: open ground leading to carts, lanterns, and the bridge.");
+            return new TerrainProfile(cartLane ? TerrainType.Mud : TerrainType.Road,
+                                      cartLane ? new Color(0.40f, 0.33f, 0.25f, 1f)
+                                               : new Color(0.55f, 0.50f, 0.42f, 1f),
+                                      0, cartLane ? 1 : 0, cartLane ? 2 : 1, true, false, x == 8 && y == 3,
+                                      false, false, "south_approach",
+                                      "Lower painted approach: clear ground between banners and braziers.");
         }
 
-        if (x >= 13 && x <= 14 && y >= 1 && y <= 2)
+        if (y <= 7)
         {
-            return new TerrainProfile(TerrainType.Ice, new Color(0.62f, 0.78f, 0.86f, 1f), 0, 0, 2, true, false,
-                                      false, false, true, "right_shoal",
-                                      "Frozen shoal: slippery alternate crossing beneath the cliff.");
+            bool stair = (x >= 7 && x <= 11 && y >= 4) || (x >= 8 && x <= 12 && y >= 6);
+            bool rubble = (x == 9 && y == 7) || (x == 10 && y == 7) || (x == 11 && y == 6);
+            bool objective = x == 12 && y == 7;
+            int elevation = y >= 6 ? 2 : y >= 4 ? 1 : 0;
+            return new TerrainProfile(objective ? TerrainType.Gate : stair ? TerrainType.Road : rubble ? TerrainType.Rubble : TerrainType.Stone,
+                                      objective ? new Color(0.70f, 0.58f, 0.34f, 1f)
+                                                : stair ? new Color(0.60f, 0.55f, 0.48f, 1f)
+                                                        : rubble ? new Color(0.42f, 0.39f, 0.35f, 1f)
+                                                                 : new Color(0.52f, 0.48f, 0.42f, 1f),
+                                      elevation, rubble ? 3 : objective ? 1 : 0, rubble ? 2 : 1, true, rubble, stair,
+                                      objective, rubble, "gate_stair",
+                                      objective
+                                          ? "Visible gate threshold objective on walkable stone, below the wall line."
+                                          : rubble
+                                          ? "Painted fallen masonry beside the gate: slow cover, not a standing prop."
+                                          : "Central painted stairs and stone lanes aligned to the backdrop.");
         }
 
-        if (x >= 12 && y <= 4)
+        return BaekduSnowGatePaintedBlockerProfile(x, y);
+    }
+
+    private static bool IsBaekduSnowGatePaintedNoStandCell(Vector2Int cell)
+    {
+        return !IsBaekduSnowGatePaintedStandCell(cell.x, cell.y);
+    }
+
+    private static bool IsBaekduSnowGatePaintedStandCell(int x, int y)
+    {
+        if (x < 0 || x > 15 || y < 0 || y > 11)
         {
-            return new TerrainProfile(TerrainType.ShallowWater, new Color(0.18f, 0.42f, 0.50f, 1f), 0, 0, 3, true,
-                                      false, false, false, true, "right_shoal",
-                                      "Right shoal: slow alternate crossing beneath the cliff.");
+            return false;
         }
 
-        if (x <= 1 && y <= 3)
+        switch (y)
         {
-            return new TerrainProfile(TerrainType.Forest, new Color(0.18f, 0.34f, 0.20f, 1f), 0, 1, 2, true, true,
-                                      false, false, false, "riverbank_forest",
-                                      "Riverbank trees: light cover and sight disruption.");
+        case 0:
+        case 1:
+            return x >= 4 && x <= 11;
+        case 2:
+        case 3:
+            return x >= 4 && x <= 12;
+        case 4:
+            return x >= 5 && x <= 10;
+        case 5:
+            return x >= 6 && x <= 11;
+        case 6:
+            return x >= 7 && x <= 12;
+        case 7:
+            return x >= 8 && x <= 12;
+        default:
+            return false;
         }
+    }
 
-        if (y >= 10)
+    private static bool IsBaekduSnowGateDeploymentStartCell(int x, int y)
+    {
+        return (y == 0 && x >= 4 && x <= 7) ||
+               (y == 1 && (x == 4 || x == 5));
+    }
+
+    private static TerrainProfile BaekduSnowGatePaintedBlockerProfile(int x, int y)
+    {
+        if (x <= 3 && y >= 4)
         {
-            return new TerrainProfile(TerrainType.Wall, new Color(0.22f, 0.20f, 0.18f, 1f), 2, 0, 99, false, true,
-                                      false, false, true, "north_gate_wall",
-                                      "Northern gate wall and ruined palisade.");
+            return new TerrainProfile(TerrainType.DeepWater, new Color(0.08f, 0.22f, 0.31f, 1f), 0, 0, 99, false,
+                                      false, false, false, true, "painted_left_ice_water",
+                                      "Painted ice water and cliff edge: never valid for standing or deployment.");
         }
 
-        return new TerrainProfile(TerrainType.Stone, new Color(0.47f, 0.43f, 0.34f, 1f), 1, 0, 1, true, false,
-                                  false, false, false, "canyon_floor",
-                                  "Snow Gate courtyard floor: standard tactical ground around the Baekdu pass.");
+        if (x >= 13 && y <= 6)
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.08f, 0.17f, 0.14f, 1f), 1, 0, 99, false,
+                                      true, false, false, false, "painted_right_forest",
+                                      "Painted right-side pine and boulder mass: blocks movement and line of sight.");
+        }
+
+        if (y >= 8 && x <= 9)
+        {
+            return new TerrainProfile(TerrainType.Wall, new Color(0.24f, 0.23f, 0.22f, 1f), 2, 0, 99, false,
+                                      true, false, false, true, "painted_gate_wall",
+                                      "Painted gate wall, rocks, and palisade: impassable backdrop obstacle.");
+        }
+
+        if (y >= 10 || x <= 3 || x >= 15)
+        {
+            return new TerrainProfile(TerrainType.Cliff, new Color(0.18f, 0.20f, 0.23f, 1f), 2, 0, 99, false,
+                                      true, false, false, true, "painted_cliff_edge",
+                                      "Painted cliff or outer-map edge: not a legal standing tile.");
+        }
+
+        return new TerrainProfile(TerrainType.Rubble, new Color(0.34f, 0.34f, 0.32f, 1f), 1, 2, 99, false,
+                                  true, false, false, false, "painted_static_obstacle",
+                                  "Painted boulder, fence, or tree mass: blocked so units cannot stand on the art.");
     }
 
     private static bool IsSnowfieldDensePineBlocker(int x, int y)
@@ -8591,7 +9354,9 @@ public sealed class BattleTestController : MonoBehaviour
         terrainAssetSprites.Clear();
         interactableAssetSprites.Clear();
         string backdropResource = PaintedBattleMapResource;
-        paintedMapBackdropSprite = string.IsNullOrEmpty(backdropResource) ? null : Resources.Load<Sprite>(backdropResource);
+        paintedMapBackdropSprite = string.IsNullOrEmpty(backdropResource)
+                                       ? null
+                                       : Resources.Load<Sprite>(backdropResource);
         terrainAssetSprites[TerrainType.Plain] = LoadMapSprite("Tiles/plain_moss");
         terrainAssetSprites[TerrainType.Hill] = LoadMapSprite("Tiles/hill_moss");
         terrainAssetSprites[TerrainType.Stone] = LoadMapSprite("Tiles/stone_courtyard");
@@ -8636,6 +9401,11 @@ public sealed class BattleTestController : MonoBehaviour
         {
             ApplyBaekduSnowfieldSprites();
         }
+
+        if (paintedMapBackdropSprite == null)
+        {
+            ApplyBattleVisualProfileSprites();
+        }
     }
 
     private void ApplyBaekduSnowfieldSprites()
@@ -8667,6 +9437,101 @@ public sealed class BattleTestController : MonoBehaviour
         interactableAssetSprites["baekdu_frozen_stone_lantern"] = LoadMapSprite("Objects/baekdu_frozen_stone_lantern");
         interactableAssetSprites["baekdu_frozen_rope_posts"] = LoadMapSprite("Objects/baekdu_frozen_rope_posts");
         interactableAssetSprites["baekdu_broken_snow_gate"] = LoadMapSprite("Objects/baekdu_broken_snow_gate");
+    }
+
+    private bool UseBattleVisualProfileSprites()
+    {
+        return battleVisualProfile != null && mapVariant == BattleTestMapVariant.BaekduMountainSnowfield;
+    }
+
+    private void ApplyBattleVisualProfileSprites()
+    {
+        if (!UseBattleVisualProfileSprites())
+        {
+            return;
+        }
+
+        AssignTerrainProfileSprite(TerrainType.Plain, battleVisualProfile.groundTiles, "snow_ground_01");
+        AssignTerrainProfileSprite(TerrainType.Snow, battleVisualProfile.groundTiles, "snow_ground_02");
+        AssignTerrainProfileSprite(TerrainType.Hill, battleVisualProfile.groundTiles, "snow_ground_03");
+        AssignTerrainProfileSprite(TerrainType.Forest, battleVisualProfile.groundTiles, "snow_ground_03");
+        AssignTerrainProfileSprite(TerrainType.Bamboo, battleVisualProfile.groundTiles, "snow_ground_02");
+        AssignTerrainProfileSprite(TerrainType.Road, battleVisualProfile.roadTiles, "packed_snow_road_01");
+        AssignTerrainProfileSprite(TerrainType.Mud, battleVisualProfile.roadTiles, "packed_snow_road_01");
+        AssignTerrainProfileSprite(TerrainType.Gate, battleVisualProfile.roadTiles, "stone_stair_snow_01");
+        AssignTerrainProfileSprite(TerrainType.Stone, battleVisualProfile.roadTiles, "stone_stair_snow_01");
+        AssignTerrainProfileSprite(TerrainType.ShrineFloor, battleVisualProfile.groundTiles,
+                                   "shrine_floor_ruined_01");
+        AssignTerrainProfileSprite(TerrainType.ShallowWater, battleVisualProfile.waterTiles, "frozen_stream_01");
+        AssignTerrainProfileSprite(TerrainType.DeepWater, battleVisualProfile.waterTiles, "frozen_stream_01");
+        AssignTerrainProfileSprite(TerrainType.Water, battleVisualProfile.waterTiles, "frozen_stream_01");
+        AssignTerrainProfileSprite(TerrainType.Ice, battleVisualProfile.waterTiles, "ice_crack_01");
+        AssignTerrainProfileSprite(TerrainType.Trap, battleVisualProfile.waterTiles, "ice_crack_01");
+        AssignTerrainProfileSprite(TerrainType.Cliff, battleVisualProfile.cliffTiles, "cliff_top_snow_01");
+        AssignTerrainProfileSprite(TerrainType.Wall, battleVisualProfile.cliffTiles, "cliff_side_ice_01");
+        AssignTerrainProfileSprite(TerrainType.Rubble, battleVisualProfile.decorTiles, "burned_ground_01");
+        AssignTerrainProfileSprite(TerrainType.Fire, battleVisualProfile.decorTiles, "burned_ground_01");
+        AssignTerrainProfileSprite(TerrainType.Smoke, battleVisualProfile.decorTiles, "smoke_ground_01");
+
+        AssignInteractableProfileSprite("baekdu_broken_snow_gate", "broken_sect_gate");
+        AssignInteractableProfileSprite("baekdu_hot_spring_steam", "incense_burner_frozen");
+        AssignInteractableProfileSprite("baekdu_ice_crystal", "snow_rock_cover_02");
+        AssignInteractableProfileSprite("baekdu_snow_pine", "frozen_pine_large");
+        AssignInteractableProfileSprite("baekdu_snow_boulder", "snow_rock_cover_01");
+        AssignInteractableProfileSprite("baekdu_snowdrift_cover", "snow_rock_cover_02");
+        AssignInteractableProfileSprite("baekdu_frozen_stone_lantern", "stone_lantern_snow");
+        AssignInteractableProfileSprite("baekdu_frozen_rope_posts", "ice_bridge_rope");
+        AssignInteractableProfileSprite("signboard", "broken_signboard_haedongmun");
+        AssignInteractableProfileSprite("lantern", "torch_stand_lit");
+        AssignInteractableProfileSprite("fire", "torch_stand_lit");
+        AssignInteractableProfileSprite("stone_lantern", "stone_lantern_snow");
+        AssignInteractableProfileSprite("snow_pine", "frozen_pine_large");
+        AssignInteractableProfileSprite("frozen_boulder", "snow_rock_cover_01");
+    }
+
+    private void AssignTerrainProfileSprite(TerrainType terrain, Sprite[] candidates, params string[] nameHints)
+    {
+        Sprite sprite = FindVisualProfileSprite(candidates, nameHints);
+        if (sprite != null)
+        {
+            terrainAssetSprites[terrain] = sprite;
+        }
+    }
+
+    private void AssignInteractableProfileSprite(string id, params string[] nameHints)
+    {
+        Sprite sprite = FindVisualProfileSprite(battleVisualProfile.propSprites, nameHints);
+        if (sprite != null)
+        {
+            interactableAssetSprites[id] = sprite;
+        }
+    }
+
+    private static Sprite FindVisualProfileSprite(Sprite[] candidates, params string[] nameHints)
+    {
+        if (candidates == null || nameHints == null)
+        {
+            return null;
+        }
+
+        foreach (string hint in nameHints)
+        {
+            if (string.IsNullOrEmpty(hint))
+            {
+                continue;
+            }
+
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                Sprite sprite = candidates[i];
+                if (sprite != null && sprite.name.IndexOf(hint, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return sprite;
+                }
+            }
+        }
+
+        return null;
     }
 
     private Sprite LoadMapSprite(string relativePath)
@@ -9487,7 +10352,7 @@ public sealed class BattleTestUnitView : MonoBehaviour
 
     public float WalkSecondsPerTile()
     {
-        return visualController != null ? visualController.WalkSecondsPerTile() : 0.24f;
+        return visualController != null ? visualController.WalkSecondsPerTile() : 0.44f;
     }
 
     public float MoveSettleTime()
