@@ -28,5 +28,6 @@
 *.jpeg binary
 *.psd binary
 *.fbx binary
+*.unity3d binary
 *.wav binary
 *.mp3 binary
