@@ -1,0 +1,7 @@
+group,texture_count,avg_trim_width,avg_trim_height,max_width,max_height
+character,533,74.92,95.26,320,320
+character_head,545,49.04,55.34,64,64
+player_head,2,219.5,211.0,256,256
+card_small,138,119.33,114.44,176,136
+unit_piece,8,260.5,279.38,320,320
+unit_rank_material,32,104.75,104.0,128,128
