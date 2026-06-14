@@ -19,14 +19,32 @@ MonoBehaviour:
   faceIconSprite: {fileID: 21300000, guid: a0fd7ea6d0a252b4aa7a45a8a77904be, type: 3}
   animatorController: {fileID: 0}
   idlePoseSprite: {fileID: 21300000, guid: a0fd7ea6d0a252b4aa7a45a8a77904be, type: 3}
-  movePoseSprite: {fileID: 21300000, guid: 7a65f9da49fc9c2448bd68124902e550, type: 3}
+  movePoseSprite: {fileID: 21300000, guid: 7dbae2cd448c476db06bd4ba0fb6267b, type: 3}
   attackPoseSprite: {fileID: 21300000, guid: 625f96369c200fe4a8ea53d049780e29, type: 3}
   skillPoseSprite: {fileID: 21300000, guid: 9029eb187d165ed498cedf97b02caf6c, type: 3}
   hitPoseSprite: {fileID: 21300000, guid: 416265e566b4ac14bbef8bfcffb99651, type: 3}
   defeatedPoseSprite: {fileID: 21300000, guid: 3b7c2289dc7429341a61f87ea24eecd3, type: 3}
   actedPoseSprite: {fileID: 21300000, guid: 0212bc1c43999794cb7c4831538a4dc5, type: 3}
+  idleSidePoseSprite: {fileID: 21300000, guid: bc6d360ab7d84ceab34c651399bfac70, type: 3}
+  idleBackPoseSprite: {fileID: 21300000, guid: 300b5a8d82934cecbb596d528505166d, type: 3}
+  moveSidePoseSprite: {fileID: 21300000, guid: bc6d360ab7d84ceab34c651399bfac70, type: 3}
+  moveBackPoseSprite: {fileID: 21300000, guid: 300b5a8d82934cecbb596d528505166d, type: 3}
   idleFrames: []
-  moveFrames: []
+  moveFrames:
+  - {fileID: 21300000, guid: 7dbae2cd448c476db06bd4ba0fb6267b, type: 3}
+  - {fileID: 21300000, guid: aaa1ba46245146ad9b786fe990687317, type: 3}
+  - {fileID: 21300000, guid: 102bb12fdea04afeba7be675524d7124, type: 3}
+  - {fileID: 21300000, guid: c9407061b225439cad0c5866f8bd2d41, type: 3}
+  moveSideFrames:
+  - {fileID: 21300000, guid: bc6d360ab7d84ceab34c651399bfac70, type: 3}
+  - {fileID: 21300000, guid: 1c17e7acf8184e23aa47c105392a6630, type: 3}
+  - {fileID: 21300000, guid: 2d91777c087c429b816e7349aa12cac7, type: 3}
+  - {fileID: 21300000, guid: d9f4ed86659c4467ac0d3d97cff8ece2, type: 3}
+  moveBackFrames:
+  - {fileID: 21300000, guid: 300b5a8d82934cecbb596d528505166d, type: 3}
+  - {fileID: 21300000, guid: 11f16c5e06ca4635843ca7ba88cd6fc0, type: 3}
+  - {fileID: 21300000, guid: 884a68052c88495f9f14493150aea27e, type: 3}
+  - {fileID: 21300000, guid: 6add3a87f6b948c99d36c08361ebacfa, type: 3}
   attackFrames: []
   skillFrames: []
   hitFrames: []
@@ -46,10 +64,10 @@ MonoBehaviour:
   shadowHeight: 0.18
   normalTint: {r: 1, g: 1, b: 1, a: 1}
   selectedTint: {r: 0.9252, g: 0.7484, b: 0.7144, a: 1}
-  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 1}
   hitTint: {r: 0.9516, g: 0.4628, b: 0.3784, a: 1}
   guardTint: {r: 0.69200003, g: 0.685, b: 0.6815, a: 1}
-  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 1}
   moveSecondsPerTile: 0.24
   moveSettleTime: 0.08
   moveLeanDegrees: 4

@@ -18,6 +18,7 @@ public sealed class HubEquipmentPanel
     private readonly Action<string> showToast;
     private readonly Action<string> addLog;
     private readonly HubInventoryGrid grid = new HubInventoryGrid();
+    private static Texture2D equipmentBanner;
 
     private string selectedCharId = CharacterGrowthCatalog.ProtagonistId;
     private int invTab;
@@ -45,7 +46,7 @@ public sealed class HubEquipmentPanel
             return new Color(1f, 0.42f, 0.18f, 1f);
         case "jin_seoyul":
             return new Color(0.42f, 0.74f, 1f, 1f);
-        case "seo_a":
+        case "shin_seoa":
             return new Color(0.54f, 0.98f, 0.84f, 1f);
         case "han_biyeon":
             return new Color(0.66f, 0.42f, 0.96f, 1f);
@@ -73,8 +74,11 @@ public sealed class HubEquipmentPanel
         GUI.Label(new Rect(r.x + r.width * 0.5f, r.y, r.width * 0.5f, 36f * s),
                   $"보유 은냥  {root.Flags.GetInt("silver")}", silverStyle);
 
-        float topY = r.y + 42f * s;
-        float mainH = Mathf.Max(208f * s, (r.height - 50f * s) * 0.44f);
+        Rect banner = new Rect(r.x, r.y + 42f * s, r.width, Mathf.Clamp(r.height * 0.16f, 86f * s, 126f * s));
+        DrawEquipmentBanner(banner, s);
+
+        float topY = banner.yMax + 12f * s;
+        float mainH = Mathf.Clamp((r.yMax - topY) * 0.44f, 188f * s, 276f * s);
         float gap = 12f * s;
         float listW = Mathf.Max(150f * s, r.width * 0.20f);
         float cardW = r.width * 0.33f;
@@ -86,6 +90,53 @@ public sealed class HubEquipmentPanel
 
         float invY = topY + mainH + 10f * s;
         DrawInventory(new Rect(r.x, invY, r.width, r.yMax - invY), s);
+    }
+
+    private static void DrawEquipmentBanner(Rect rect, float s)
+    {
+        UiTheme.DrawFill(new Rect(rect.x + 3f * s, rect.y + 5f * s, rect.width, rect.height),
+                         new Color(0f, 0f, 0f, 0.32f));
+        Texture2D art = LoadEquipmentBanner();
+        if (art != null)
+        {
+            GUI.DrawTexture(rect, art, ScaleMode.ScaleAndCrop);
+        }
+        else
+        {
+            UiTheme.DrawFill(rect, new Color(0.030f, 0.040f, 0.038f, 0.94f));
+        }
+
+        UiTheme.DrawFill(new Rect(rect.x, rect.y, rect.width, rect.height),
+                         new Color(0.000f, 0.010f, 0.014f, 0.18f));
+        UiTheme.DrawFill(new Rect(rect.x, rect.yMax - 54f * s, rect.width, 54f * s),
+                         new Color(0.000f, 0.010f, 0.014f, 0.70f));
+        DrawFrame(rect, Mathf.Max(1f, 1.2f * s), new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.74f));
+
+        GUIStyle title = new GUIStyle(UiTheme.Heading)
+        {
+            fontSize = Mathf.RoundToInt(25f * s),
+            alignment = TextAnchor.MiddleLeft,
+            clipping = TextClipping.Clip
+        };
+        title.normal.textColor = UiTheme.GoldBright;
+        GUI.Label(new Rect(rect.x + 18f * s, rect.yMax - 52f * s, rect.width * 0.44f, 30f * s), "장비 공방", title);
+        GUI.Label(new Rect(rect.x + 20f * s, rect.yMax - 24f * s, rect.width * 0.58f, 18f * s),
+                  "무기 · 방어구 · 부적을 한눈에 정비", UiTheme.SmallMuted);
+
+        Rect silver = new Rect(rect.xMax - 178f * s, rect.y + 12f * s, 154f * s, 34f * s);
+        UiTheme.DrawFill(silver, new Color(0.020f, 0.026f, 0.024f, 0.76f));
+        DrawFrame(silver, Mathf.Max(1f, 1f * s), new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.58f));
+        GUI.Label(silver, "강화 / 장착", UiTheme.Small);
+    }
+
+    private static Texture2D LoadEquipmentBanner()
+    {
+        if (equipmentBanner == null)
+        {
+            equipmentBanner = Resources.Load<Texture2D>("UI/HubEquipment/equipment_loadout_banner");
+        }
+
+        return equipmentBanner;
     }
 
     private List<string> Roster()
@@ -142,7 +193,7 @@ public sealed class HubEquipmentPanel
                       CharacterGrowthCatalog.DisplayName(id), name);
 
             string subText = id == CharacterGrowthCatalog.ProtagonistId
-                                 ? "문주 · 18세"
+                                 ? "문주 · 17세"
                                  : $"{StageLabel(id)} {root.Approval.Get(id)}";
             GUIStyle sub = new GUIStyle(UiTheme.SmallMuted)
             {
@@ -205,7 +256,7 @@ public sealed class HubEquipmentPanel
         string title = isHero ? "백두천광검문 소문주" : info != null ? info.title : string.Empty;
         GUI.Label(new Rect(textX, inner.y + 30f * s, textW, 24f * s), title, UiTheme.SmallMuted);
 
-        string traits = isHero ? "18세 · ENFJ · 빛/검"
+        string traits = isHero ? "17세 · ENFJ · 빛/검"
                                : info != null ? $"{info.age}세 · {info.mbti} · {info.element}/{info.weapon}"
                                               : string.Empty;
         GUI.Label(new Rect(textX, inner.y + 52f * s, textW, 24f * s), traits, UiTheme.Small);
@@ -263,11 +314,48 @@ public sealed class HubEquipmentPanel
         GUIStyle bonusStyle = new GUIStyle(UiTheme.Small) { alignment = TextAnchor.UpperRight,
                                                             fontStyle = FontStyle.Bold };
         bonusStyle.normal.textColor = UiTheme.GoldBright;
+        string growth = BuildGrowthBonusSummary(selectedCharId);
+        GUI.Label(new Rect(inner.x, y + 28f * s, inner.width * 0.42f, 24f * s), "수련 보너스", UiTheme.SmallMuted);
+        GUI.Label(new Rect(inner.x + inner.width * 0.32f, y + 28f * s, inner.width * 0.68f, 24f * s), growth,
+                  bonusStyle);
         GUI.Label(new Rect(inner.x + inner.width * 0.32f, y, inner.width * 0.68f, 24f * s),
                   bonus.IsEmpty ? "없음" : bonus.ToString(), bonusStyle);
     }
 
     // ── 우측: 장비 슬롯 3칸 ──
+
+    private string BuildGrowthBonusSummary(string characterId)
+    {
+        if (root == null || root.Session == null)
+        {
+            return string.Empty;
+        }
+
+        CharacterProgressState state = new ProgressionService(root.Session).GetSnapshot(characterId);
+        if (state == null)
+        {
+            return string.Empty;
+        }
+
+        List<string> parts = new List<string>();
+        AddGrowthPart(parts, "기혈", state.hpBonus);
+        AddGrowthPart(parts, "내력", state.innerBonus);
+        AddGrowthPart(parts, "외공", state.statBonuses.strength);
+        AddGrowthPart(parts, "신법", state.statBonuses.agility);
+        AddGrowthPart(parts, "내공", state.statBonuses.innerPower);
+        AddGrowthPart(parts, "심법", state.statBonuses.spirit);
+        AddGrowthPart(parts, "안법", state.statBonuses.insight);
+        AddGrowthPart(parts, "풍류", state.statBonuses.charm);
+        return parts.Count == 0 ? "없음" : string.Join(" · ", parts.ToArray());
+    }
+
+    private static void AddGrowthPart(List<string> parts, string label, int value)
+    {
+        if (value > 0)
+        {
+            parts.Add(label + " +" + value);
+        }
+    }
 
     private void DrawSlots(Rect rect, float s)
     {
@@ -304,6 +392,11 @@ public sealed class HubEquipmentPanel
             if (info != null)
             {
                 int level = root.Equipment.GetUpgradeLevel(info.id);
+                float iconSize = Mathf.Min(48f * s, row.height - 42f * s);
+                Rect iconRect = new Rect(row.x + 12f * s, row.y + 30f * s, iconSize, iconSize);
+                HubInventoryGrid.DrawItemIcon(iconRect, info.id, InventoryItemType.Equipment, s);
+                float textX = iconRect.xMax + 10f * s;
+                float textW = Mathf.Max(40f * s, row.xMax - textX - 100f * s);
                 GUIStyle nameStyle = new GUIStyle(UiTheme.Body)
                 {
                     fontSize = Mathf.RoundToInt(18f * s),
@@ -311,14 +404,13 @@ public sealed class HubEquipmentPanel
                     alignment = TextAnchor.UpperLeft
                 };
                 string label = level > 0 ? $"{info.displayName} <color=#F5C75C>+{level}</color>" : info.displayName;
-                GUI.Label(new Rect(row.x + 12f * s, row.y + 26f * s, row.width - 110f * s, 26f * s), label,
-                          nameStyle);
+                GUI.Label(new Rect(textX, row.y + 28f * s, textW, 26f * s), label, nameStyle);
                 GUIStyle fx = new GUIStyle(UiTheme.SmallMuted)
                 {
                     fontSize = Mathf.RoundToInt(12f * s),
                     clipping = TextClipping.Clip
                 };
-                GUI.Label(new Rect(row.x + 12f * s, row.y + row.height - 24f * s, row.width - 110f * s, 20f * s),
+                GUI.Label(new Rect(textX, row.y + row.height - 24f * s, textW, 20f * s),
                           EquipmentCatalog.DescribeBonus(info, level), fx);
 
                 if (GUI.Button(new Rect(row.xMax - 86f * s, row.y + row.height * 0.5f - 17f * s, 74f * s, 34f * s),

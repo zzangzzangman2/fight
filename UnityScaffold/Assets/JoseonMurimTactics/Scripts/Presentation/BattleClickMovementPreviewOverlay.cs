@@ -143,7 +143,7 @@ namespace JoseonMurimTactics
             if (!visible)
             {
                 HideOverlay();
-                if (hideNativeHighlightsUntilClicked)
+                if (hideNativeHighlightsUntilClicked && !controller.PreviewDeploymentMode)
                 {
                     ClearNativeHighlightsOnce();
                 }

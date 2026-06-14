@@ -23,30 +23,32 @@ public sealed class CompanionApprovalService
 
     public int Get(string companionId)
     {
-        if (string.IsNullOrEmpty(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (string.IsNullOrEmpty(id))
         {
             return Default;
         }
 
-        return session.companionApproval.TryGetValue(companionId, out int value) ? value : Default;
+        return session.companionApproval.TryGetValue(id, out int value) ? value : Default;
     }
 
     /// <summary>승인도를 delta만큼 변경하고 변화 후 값을 반환.</summary>
     public int Add(string companionId, int delta)
     {
-        if (string.IsNullOrEmpty(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (string.IsNullOrEmpty(id))
         {
             return Default;
         }
 
-        int next = Mathf.Clamp(Get(companionId) + delta, Min, Max);
-        session.companionApproval[companionId] = next;
+        int next = Mathf.Clamp(Get(id) + delta, Min, Max);
+        session.companionApproval[id] = next;
         return next;
     }
 
     public bool CanApplyRomanticEffect(string companionId)
     {
-        CompanionInfo info = CompanionCatalog.Info(companionId);
+        CompanionInfo info = CompanionCatalog.Info(CharacterIdAliasResolver.Normalize(companionId));
         return info != null && info.CanReceiveRomanticEffects;
     }
 
@@ -62,33 +64,35 @@ public sealed class CompanionApprovalService
 
     public void QueuePendingFirstImpression(string companionId, int delta)
     {
-        if (string.IsNullOrEmpty(companionId) || delta == 0)
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (string.IsNullOrEmpty(id) || delta == 0)
         {
             return;
         }
 
-        session.intVars[PendingPrefix + companionId] =
-            session.intVars.TryGetValue(PendingPrefix + companionId, out int old) ? old + delta : delta;
+        session.intVars[PendingPrefix + id] =
+            session.intVars.TryGetValue(PendingPrefix + id, out int old) ? old + delta : delta;
     }
 
     public int ApplyPendingFirstImpressions(string companionId)
     {
-        if (string.IsNullOrEmpty(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (string.IsNullOrEmpty(id))
         {
-            return Get(companionId);
+            return Get(id);
         }
 
-        string pendingKey = PendingPrefix + companionId;
-        string appliedFlag = AppliedPrefix + companionId;
+        string pendingKey = PendingPrefix + id;
+        string appliedFlag = AppliedPrefix + id;
         if (session.storyFlags.Contains(appliedFlag) || !session.intVars.TryGetValue(pendingKey, out int delta) ||
             delta == 0)
         {
-            return Get(companionId);
+            return Get(id);
         }
 
         session.storyFlags.Add(appliedFlag);
         session.intVars.Remove(pendingKey);
-        return Add(companionId, delta);
+        return Add(id, delta);
     }
 
     public ApprovalStage GetStage(string companionId)

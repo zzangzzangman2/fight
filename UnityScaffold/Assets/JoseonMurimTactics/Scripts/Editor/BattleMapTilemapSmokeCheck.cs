@@ -77,7 +77,9 @@ public static class BattleMapTilemapSmokeCheck
         VerifyBlockedMapCells(controller);
         VerifyElevationMovementRules(controller);
         VerifyPlayerMoveFlow(controller);
+        VerifyDeploymentClickReposition(controller);
         VerifyBattleEndAndStatusRules(controller);
+        VerifySnowGateAscentMap(controller);
 
         CleanupGeneratedChildren(controller.transform);
         VerifyBanditLairFreeTimeMap(controller);
@@ -95,6 +97,34 @@ public static class BattleMapTilemapSmokeCheck
         Tilemap tilemap = GameObject.Find(name)?.GetComponent<Tilemap>();
         Require(tilemap != null, $"{name} was not created.");
         return tilemap;
+    }
+
+    private static void RequirePaintedBackdrop(string expectedSpriteNameFragment)
+    {
+        SpriteRenderer paintedBackdrop = GameObject.Find("Painted Map Backdrop")?.GetComponent<SpriteRenderer>();
+        Require(paintedBackdrop != null && paintedBackdrop.sprite != null,
+                $"Painted backdrop {expectedSpriteNameFragment} was not loaded.");
+        Require(paintedBackdrop.sprite.name.Contains(expectedSpriteNameFragment),
+                $"Expected painted backdrop sprite containing {expectedSpriteNameFragment}, got {paintedBackdrop.sprite.name}.");
+    }
+
+    private static void RequirePaintedTerrainTilemapsEmpty(string label)
+    {
+        Tilemap groundBase = RequireTilemap("Tilemap_Ground_Base");
+        Tilemap groundVariation = RequireTilemap("Tilemap_Ground_Variation");
+        Tilemap roadPath = RequireTilemap("Tilemap_Road_Path");
+        Tilemap roadEdge = RequireTilemap("Tilemap_Road_Edge");
+        Tilemap cliffTop = RequireTilemap("Tilemap_Cliff_Top");
+        Tilemap cliffFace = RequireTilemap("Tilemap_Cliff_Face");
+        Tilemap waterBase = RequireTilemap("Tilemap_Water_Base");
+        Tilemap waterSurface = RequireTilemap("Tilemap_Water_Surface");
+
+        int visibleTerrainTiles = groundBase.GetUsedTilesCount() + groundVariation.GetUsedTilesCount() +
+                                  roadPath.GetUsedTilesCount() + roadEdge.GetUsedTilesCount() +
+                                  cliffTop.GetUsedTilesCount() + cliffFace.GetUsedTilesCount() +
+                                  waterBase.GetUsedTilesCount() + waterSurface.GetUsedTilesCount();
+        Require(visibleTerrainTiles == 0,
+                $"{label} painted backdrop should keep terrain tilemaps empty; found {visibleTerrainTiles} terrain tiles.");
     }
 
     private static void VerifyBlockedMapCells(BattleTestController controller)
@@ -240,7 +270,11 @@ public static class BattleMapTilemapSmokeCheck
     private static void VerifyPlayerMoveFlow(BattleTestController controller)
     {
         InvokePrivate(controller, "SpawnUnits");
+        VerifyUnitsFaceOpposingSide(controller, "initial spawn");
+        VerifyFrontDescentDeployment(controller, "initial spawn");
         InvokePrivate(controller, "BeginPlayerPhase");
+        VerifyUnitsFaceOpposingSide(controller, "player phase start");
+        VerifyFrontDescentDeployment(controller, "player phase start");
 
         List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
         VerifyUnitAnchorsAndPropOverlap(controller, units);
@@ -260,6 +294,20 @@ public static class BattleMapTilemapSmokeCheck
         Vector2Int originalCell = first.cell;
         int originalHp = first.hp;
         int originalMovement = first.actions.movementLeft;
+        Camera camera = Camera.main;
+        Require(camera != null, "Battle camera should exist for click-based movement.");
+        Vector3 destinationWorld = (Vector3)InvokePrivate(controller, "GridToWorld", destination.cell);
+        Vector3 destinationScreen = camera.WorldToScreenPoint(destinationWorld);
+        InvokePrivate(controller, "HandlePointer", destinationScreen);
+        Require(first.cell == destination.cell, "Clicking a reachable blue movement tile should move the active ally.");
+        Require(first.moved, "Click movement should mark the ally as moved.");
+        Require((bool)InvokePrivate(controller, "TryUndoPendingMove", first),
+                "Click movement should leave a reversible pending movement.");
+        Require(first.cell == originalCell, "Click movement undo should restore the ally's original cell.");
+        Require(first.hp == originalHp, "Click movement undo should restore terrain-entry HP changes.");
+        Require(!first.moved, "Click movement undo should clear the moved flag.");
+        Require(first.actions.movementLeft == originalMovement,
+                "Click movement undo should restore remaining movement.");
         InvokePrivate(controller, "TryMove", first, destination);
         Require(first.moved, "Moved ally should be marked as moved.");
         Require((bool)InvokePrivate(controller, "TryUndoPendingMove", first),
@@ -313,6 +361,216 @@ public static class BattleMapTilemapSmokeCheck
         VerifyBlockedCellsStayUnreachable(controller, units);
     }
 
+    private static void VerifyDeploymentClickReposition(BattleTestController controller)
+    {
+        ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduMountainSnowfield);
+        InvokePrivate(controller, "EnterDeploymentMode", true);
+        VerifyUnitsFaceOpposingSide(controller, "deployment entry");
+        VerifyFrontDescentDeployment(controller, "deployment entry");
+
+        List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        BattleTestUnit shinSeoa = FindUnit(units, "shin_seoa") ?? FindUnit(units, "shin_seo_a");
+        Require(shinSeoa != null, "Expected Shin Seo-a to exist for deployment reposition smoke.");
+        InvokePrivate(controller, "SelectPlayerUnit", shinSeoa);
+
+        BattleTestTile destination = FindAdjacentDeploymentDestination(controller, shinSeoa, tiles);
+        Require(destination != null, "Expected an adjacent legal deployment destination for Shin Seo-a.");
+
+        BattleTestTile currentTile = tiles[shinSeoa.cell.x, shinSeoa.cell.y];
+        Vector3 destinationWorld = (Vector3)InvokePrivate(controller, "GridToWorld", destination.cell);
+        BattleTestTile resolved = (BattleTestTile)InvokePrivate(controller, "ResolveDeploymentPointerDestination",
+                                                               new Vector2(destinationWorld.x, destinationWorld.y),
+                                                               currentTile);
+        Require(resolved == destination,
+                "Deployment click should recover the intended blue tile even when the first hit is the selected unit tile.");
+
+        Camera camera = Camera.main;
+        Require(camera != null, "Battle camera should exist for deployment click reposition.");
+        InvokePrivate(controller, "HandlePointer", camera.WorldToScreenPoint(destinationWorld));
+        Require(shinSeoa.cell == destination.cell,
+                "Clicking a legal blue deployment tile should reposition Shin Seo-a.");
+        VerifyUnitsFaceOpposingSide(controller, "deployment reposition");
+        VerifyFrontDescentDeployment(controller, "deployment reposition");
+    }
+
+    private static void VerifySnowGateAscentMap(BattleTestController controller)
+    {
+        BattleEntryAdapter.Clear();
+        BattleResultBridge.Clear();
+        SetPrivate(controller, "mapAssetSpritesLoaded", false);
+        InvokePrivate(controller, "ApplyBattleEntryConfiguration");
+        Require(controller.mapVariant == BattleTestMapVariant.BaekduSnowGate,
+                "Default battle entry should select the BaekduSnowGate map variant.");
+        ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduSnowGate);
+        VerifySnowGateWalkabilityAlignment(controller);
+        VerifyUnitsFaceOpposingSide(controller, "snow gate ascent spawn");
+        VerifyAscentDeployment(controller, "snow gate ascent spawn");
+        VerifySnowGateEnemyApproachCells(controller, "snow gate ascent spawn");
+        InvokePrivate(controller, "EnterDeploymentMode", true);
+        VerifyUnitsFaceOpposingSide(controller, "snow gate ascent deployment");
+        VerifyAscentDeployment(controller, "snow gate ascent deployment");
+        VerifySnowGateEnemyApproachCells(controller, "snow gate ascent deployment");
+    }
+
+    private static void VerifyUnitsFaceOpposingSide(BattleTestController controller, string context)
+    {
+        List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit == null || unit.defeated || unit.definition == null || unit.definition.faction == Faction.Neutral)
+            {
+                continue;
+            }
+
+            Faction opposing = unit.definition.faction == Faction.Enemy ? Faction.Ally : Faction.Enemy;
+            if (!TryGetFactionCenterWorld(units, opposing, out Vector3 targetWorld))
+            {
+                continue;
+            }
+
+            CharacterVisualController visual = unit.view == null ? null : unit.view.GetComponent<CharacterVisualController>();
+            Require(visual != null, $"{context}: {unit.definition.displayName} should have a visual controller.");
+
+            Vector3 unitWorld = unit.view != null ? unit.view.transform.position :
+                                (Vector3)InvokePrivate(controller, "GridToWorld", unit.cell);
+            Vector2 expected = new Vector2(targetWorld.x - unitWorld.x, targetWorld.y - unitWorld.y);
+            if (expected.sqrMagnitude <= 0.0001f)
+            {
+                continue;
+            }
+
+            Vector2 facing = GetPrivateField<Vector2>(visual, "facingVector");
+            float dot = Vector2.Dot(facing.normalized, expected.normalized);
+            Require(dot > 0.55f,
+                    $"{context}: {unit.definition.displayName} should face the opposing deployment side, dot={dot:0.00}.");
+        }
+    }
+
+    private static void VerifyFrontDescentDeployment(BattleTestController controller, string context)
+    {
+        List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        if (!TryGetFactionCenterWorld(units, Faction.Ally, out Vector3 allyCenter) ||
+            !TryGetFactionCenterWorld(units, Faction.Enemy, out Vector3 enemyCenter))
+        {
+            return;
+        }
+
+        Require(allyCenter.y > enemyCenter.y + 0.18f,
+                $"{context}: allies should start screen-above enemies for the forward descent setup. Ally y={allyCenter.y:0.00}, enemy y={enemyCenter.y:0.00}.");
+    }
+
+    private static void VerifyAscentDeployment(BattleTestController controller, string context)
+    {
+        List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        if (!TryGetFactionCenterWorld(units, Faction.Ally, out Vector3 allyCenter) ||
+            !TryGetFactionCenterWorld(units, Faction.Enemy, out Vector3 enemyCenter))
+        {
+            return;
+        }
+
+        Require(allyCenter.y < enemyCenter.y - 0.18f,
+                $"{context}: allies should start screen-below enemies for the gate ascent setup. Ally y={allyCenter.y:0.00}, enemy y={enemyCenter.y:0.00}.");
+    }
+
+    private static void VerifySnowGateWalkabilityAlignment(BattleTestController controller)
+    {
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        Vector2Int[] paintedApproach =
+        {
+            new Vector2Int(4, 0),
+            new Vector2Int(7, 0),
+            new Vector2Int(4, 1),
+            new Vector2Int(8, 1),
+            new Vector2Int(7, 2),
+            new Vector2Int(9, 2),
+            new Vector2Int(6, 3),
+            new Vector2Int(9, 3),
+            new Vector2Int(7, 4),
+            new Vector2Int(8, 4)
+        };
+        foreach (Vector2Int cell in paintedApproach)
+        {
+            RequireStandable(controller, tiles, cell, "snow gate painted stone approach");
+        }
+
+        Vector2Int[] paintedBlockers =
+        {
+            new Vector2Int(8, 0),
+            new Vector2Int(9, 1),
+            new Vector2Int(10, 2),
+            new Vector2Int(10, 3),
+            new Vector2Int(9, 4),
+            new Vector2Int(8, 5),
+            new Vector2Int(10, 5),
+            new Vector2Int(7, 6),
+            new Vector2Int(12, 7),
+            new Vector2Int(13, 8),
+            new Vector2Int(1, 5),
+            new Vector2Int(7, 10)
+        };
+        foreach (Vector2Int cell in paintedBlockers)
+        {
+            RequireBlocked(tiles, cell, "snow gate painted wall/fence/backdrop");
+        }
+    }
+
+    private static void RequireStandable(BattleTestController controller, BattleTestTile[,] tiles, Vector2Int cell,
+                                         string label)
+    {
+        BattleTestTile tile = RequireTile(tiles, cell, label);
+        Require(tile.walkable, $"{label} at {cell} should be a painted standing cell.");
+        Require(tile.moveCost < 99, $"{label} at {cell} should not use impassable move cost.");
+        Require((bool)InvokePrivate(controller, "CanStandOnTile", tile),
+                $"{label} at {cell} should pass runtime standing checks.");
+        Require(!(bool)InvokePrivate(controller, "IsCellBlockedByInteractable", cell),
+                $"{label} at {cell} should not be blocked by an interactable prop.");
+    }
+
+    private static void VerifySnowGateEnemyApproachCells(BattleTestController controller, string context)
+    {
+        List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit == null || unit.definition == null || unit.definition.faction != Faction.Enemy)
+            {
+                continue;
+            }
+
+            BattleTestTile tile = tiles[unit.cell.x, unit.cell.y];
+            Require(tile != null && tile.walkable && !tile.blocksLineOfSight,
+                    $"{context}: {unit.definition.displayName} should stand on a visible walkable gate approach tile, got {unit.cell}.");
+            Require(unit.cell.y >= 2 && unit.cell.y <= 3 && unit.cell.x >= 7 && unit.cell.x <= 9,
+                    $"{context}: {unit.definition.displayName} should not spawn on the gate wall/backdrop, got {unit.cell}.");
+        }
+    }
+
+    private static bool TryGetFactionCenterWorld(List<BattleTestUnit> units, Faction faction, out Vector3 center)
+    {
+        center = Vector3.zero;
+        int count = 0;
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit == null || unit.defeated || unit.definition == null || unit.definition.faction != faction ||
+                unit.view == null)
+            {
+                continue;
+            }
+
+            center += unit.view.transform.position;
+            count++;
+        }
+
+        if (count == 0)
+        {
+            return false;
+        }
+
+        center /= count;
+        return true;
+    }
+
     private static void VerifyBlockedCellsStayUnreachable(BattleTestController controller, List<BattleTestUnit> units)
     {
         BattleTestUnit hanBiyeon = FindUnit(units, "han_biyeon");
@@ -355,6 +613,8 @@ public static class BattleMapTilemapSmokeCheck
         RequireTilemap("Tilemap_Cliff_Top");
         RequireTilemap("Tilemap_Water_Base");
         RequireTilemap("Tilemap_Highlight_Move");
+        RequirePaintedBackdrop("sobaek_bandit_lair_srpg_ground");
+        RequirePaintedTerrainTilemapsEmpty("Bandit lair");
         Require(GameObject.Find("PropsRoot") != null, "Bandit lair props root was not created.");
         Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
                 "Bandit lair should generate interactable prop metadata.");
@@ -363,6 +623,7 @@ public static class BattleMapTilemapSmokeCheck
         InvokePrivate(controller, "SpawnUnits");
         List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
         VerifyUnitAnchorsAndPropOverlap(controller, units);
+        VerifyFrontDescentDeployment(controller, "bandit lair spawn");
         Require(FindUnit(units, "bandit_boss_gwakchil") != null, "Expected bandit boss unit for free-time lair.");
         Require(FindUnit(units, "iron_wolf_captain") == null, "Bandit lair should not spawn the main-story captain.");
         VerifyBanditLairBlockedCellsStayUnreachable(controller, units);
@@ -433,6 +694,13 @@ public static class BattleMapTilemapSmokeCheck
         RequireTilemap("Tilemap_Cliff_Top");
         RequireTilemap("Tilemap_Water_Base");
         RequireTilemap("Tilemap_Highlight_Move");
+        string expectedBackdrop = expectedVariant == BattleTestMapVariant.WolfPass
+                                      ? "sobaek_wolf_pass_srpg_ground"
+                                      : expectedVariant == BattleTestMapVariant.TigerRavine
+                                          ? "sobaek_tiger_ravine_srpg_ground"
+                                          : "sobaek_leopard_cliff_srpg_ground";
+        RequirePaintedBackdrop(expectedBackdrop);
+        RequirePaintedTerrainTilemapsEmpty(expectedVariant.ToString());
         Require(GameObject.Find("PropsRoot") != null, $"{expectedVariant} props root was not created.");
         Require(UnityEngine.Object.FindObjectsByType<MapPropView>(FindObjectsSortMode.None).Length >= 6,
                 $"{expectedVariant} should generate interactable prop metadata.");
@@ -453,6 +721,7 @@ public static class BattleMapTilemapSmokeCheck
         InvokePrivate(controller, "SpawnUnits");
         List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
         VerifyUnitAnchorsAndPropOverlap(controller, units);
+        VerifyFrontDescentDeployment(controller, expectedVariant + " spawn");
         Require(FindUnit(units, bossId) != null, $"Expected {bossId} boss unit for {expectedVariant}.");
         Require(FindUnit(units, "iron_wolf_captain") == null,
                 $"{expectedVariant} should not spawn the main-story captain.");
@@ -689,6 +958,44 @@ public static class BattleMapTilemapSmokeCheck
         return null;
     }
 
+    private static BattleTestTile FindAdjacentDeploymentDestination(BattleTestController controller,
+                                                                    BattleTestUnit unit,
+                                                                    BattleTestTile[,] tiles)
+    {
+        Vector2Int[] candidates =
+        {
+            new Vector2Int(unit.cell.x + 1, unit.cell.y),
+            new Vector2Int(unit.cell.x, unit.cell.y + 1),
+            new Vector2Int(unit.cell.x - 1, unit.cell.y),
+            new Vector2Int(unit.cell.x, unit.cell.y - 1)
+        };
+
+        foreach (Vector2Int cell in candidates)
+        {
+            if (cell.x < 0 || cell.y < 0 || cell.x >= tiles.GetLength(0) || cell.y >= tiles.GetLength(1))
+            {
+                continue;
+            }
+
+            BattleTestTile tile = tiles[cell.x, cell.y];
+            if (tile != null && (bool)InvokePrivate(controller, "CanUseDeploymentDestination", tile))
+            {
+                return tile;
+            }
+        }
+
+        foreach (BattleTestTile tile in tiles)
+        {
+            if (tile != null && tile.cell != unit.cell &&
+                (bool)InvokePrivate(controller, "CanUseDeploymentDestination", tile))
+            {
+                return tile;
+            }
+        }
+
+        return null;
+    }
+
     private static bool IsOccupied(Vector2Int cell, List<BattleTestUnit> units)
     {
         foreach (BattleTestUnit unit in units)
@@ -722,6 +1029,22 @@ public static class BattleMapTilemapSmokeCheck
         }
 
         return (T)field.GetValue(controller);
+    }
+
+    private static T GetPrivateField<T>(object target, string fieldName)
+    {
+        if (target == null)
+        {
+            throw new ArgumentNullException(nameof(target));
+        }
+
+        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        if (field == null)
+        {
+            throw new MissingFieldException(target.GetType().Name, fieldName);
+        }
+
+        return (T)field.GetValue(target);
     }
 
     private static void SetPrivate(BattleTestController controller, string fieldName, object value)

@@ -21,24 +21,26 @@ public sealed class CompanionStateService
 
     public CompanionInjuryLevel InjuryOf(string companionId)
     {
-        if (session == null || string.IsNullOrEmpty(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (session == null || string.IsNullOrEmpty(id))
         {
             return CompanionInjuryLevel.Healthy;
         }
 
-        return session.companionInjury.TryGetValue(companionId, out int level)
+        return session.companionInjury.TryGetValue(id, out int level)
                    ? (CompanionInjuryLevel)Clamp(level, 0, (int)CompanionInjuryLevel.Unavailable)
                    : CompanionInjuryLevel.Healthy;
     }
 
     public int FatigueOf(string companionId)
     {
-        if (session == null || string.IsNullOrEmpty(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (session == null || string.IsNullOrEmpty(id))
         {
             return 0;
         }
 
-        return session.companionFatigue.TryGetValue(companionId, out int value) ? Clamp(value, 0, 100) : 0;
+        return session.companionFatigue.TryGetValue(id, out int value) ? Clamp(value, 0, 100) : 0;
     }
 
     public bool IsBattleReady(string companionId)
@@ -48,48 +50,51 @@ public sealed class CompanionStateService
 
     public void MarkWounded(string companionId)
     {
-        if (session == null || string.IsNullOrEmpty(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (session == null || string.IsNullOrEmpty(id))
         {
             return;
         }
 
-        CompanionInjuryLevel current = InjuryOf(companionId);
+        CompanionInjuryLevel current = InjuryOf(id);
         CompanionInjuryLevel next = current == CompanionInjuryLevel.Healthy ? CompanionInjuryLevel.Light
                                                                             : CompanionInjuryLevel.Heavy;
-        session.companionInjury[companionId] = (int)next;
+        session.companionInjury[id] = (int)next;
     }
 
     public void SetInjury(string companionId, CompanionInjuryLevel injury)
     {
-        if (session == null || string.IsNullOrEmpty(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (session == null || string.IsNullOrEmpty(id))
         {
             return;
         }
 
         if (injury <= CompanionInjuryLevel.Healthy)
         {
-            session.companionInjury.Remove(companionId);
+            session.companionInjury.Remove(id);
             return;
         }
 
-        session.companionInjury[companionId] = (int)injury;
+        session.companionInjury[id] = (int)injury;
     }
 
     public void AddFatigue(string companionId, int delta)
     {
-        if (session == null || string.IsNullOrEmpty(companionId) || delta == 0)
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (session == null || string.IsNullOrEmpty(id) || delta == 0)
         {
             return;
         }
 
-        int next = Clamp(FatigueOf(companionId) + delta, 0, 100);
+        int next = Clamp(FatigueOf(id) + delta, 0, 100);
         if (next <= 0)
         {
-            session.companionFatigue.Remove(companionId);
+            session.companionFatigue.Remove(id);
             return;
         }
 
-        session.companionFatigue[companionId] = next;
+        session.companionFatigue[id] = next;
     }
 
     public void Heal(string companionId)

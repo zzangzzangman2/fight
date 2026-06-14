@@ -42,12 +42,13 @@ public sealed class GiftService
 
     public bool HasGiftedToday(string companionId)
     {
-        if (session == null || string.IsNullOrEmpty(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (session == null || string.IsNullOrEmpty(id))
         {
             return false;
         }
 
-        return session.intVars.TryGetValue(LastGiftDayPrefix + companionId, out int lastDay) && lastDay >= DayIndex;
+        return session.intVars.TryGetValue(LastGiftDayPrefix + id, out int lastDay) && lastDay >= DayIndex;
     }
 
     public bool CanGift(string companionId, string giftId, out string reason)
@@ -60,13 +61,14 @@ public sealed class GiftService
             return false;
         }
 
-        if (CompanionCatalog.Info(companionId) == null)
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (CompanionCatalog.Info(id) == null)
         {
             reason = "선물을 받을 상대가 없다.";
             return false;
         }
 
-        if (HasGiftedToday(companionId))
+        if (HasGiftedToday(id))
         {
             reason = "오늘은 이미 이 동료에게 선물을 줬다.";
             return false;
@@ -98,15 +100,15 @@ public sealed class GiftService
             return result;
         }
 
-        int delta = gift.DeltaFor(companionId);
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        int delta = gift.DeltaFor(id);
         result.success = true;
         result.delta = delta;
-        result.wasFavorite = gift.IsFavoriteOf(companionId);
-        result.approvalAfter = approval != null ? approval.Add(companionId, delta) : 0;
-        session.intVars[LastGiftDayPrefix + companionId] = DayIndex;
+        result.wasFavorite = gift.IsFavoriteOf(id);
+        result.approvalAfter = approval != null ? approval.Add(id, delta) : 0;
+        session.intVars[LastGiftDayPrefix + id] = DayIndex;
 
-        string name = CompanionCatalog.Name(companionId);
-        // 기본 표기는 '연애도'(기획 확정).
+        string name = CompanionCatalog.Name(id);
         result.message = result.wasFavorite
                              ? $"{name}에게 {gift.displayName}을(를) 건넸다. 최애 선물! 연애도 +{delta}."
                              : $"{name}에게 {gift.displayName}을(를) 건넸다. 연애도 +{delta}.";

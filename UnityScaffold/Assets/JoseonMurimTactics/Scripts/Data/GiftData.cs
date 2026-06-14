@@ -34,13 +34,16 @@ public sealed class GiftInfo
 
     public int DeltaFor(string companionId)
     {
-        return !string.IsNullOrEmpty(favoriteCompanionId) && favoriteCompanionId == companionId ? favoriteDelta
-                                                                                                : baseDelta;
+        string favoriteId = CharacterIdAliasResolver.Normalize(favoriteCompanionId);
+        string targetId = CharacterIdAliasResolver.Normalize(companionId);
+        return !string.IsNullOrEmpty(favoriteId) && favoriteId == targetId ? favoriteDelta : baseDelta;
     }
 
     public bool IsFavoriteOf(string companionId)
     {
-        return !string.IsNullOrEmpty(favoriteCompanionId) && favoriteCompanionId == companionId;
+        string favoriteId = CharacterIdAliasResolver.Normalize(favoriteCompanionId);
+        string targetId = CharacterIdAliasResolver.Normalize(companionId);
+        return !string.IsNullOrEmpty(favoriteId) && favoriteId == targetId;
     }
 }
 
@@ -58,7 +61,7 @@ public static class GiftCatalog
         new GiftInfo("gift_lightning_charm", "번개무늬 부적", 28, "jin_seoyul", 3, 8,
                      "뇌문이 새겨진 장난스러운 부적. 진서율 공략 선물.",
                      "진서율의 눈이 번개처럼 반짝인다. \"문주님, 취향 저격인데요?\""),
-        new GiftInfo("gift_flower_ribbon", "꽃비단 매듭", 25, "seo_a", 3, 8,
+        new GiftInfo("gift_flower_ribbon", "꽃비단 매듭", 25, "shin_seoa", 3, 8,
                      "남원 비단으로 엮은 꽃 매듭. 신서아 응원 선물.",
                      "신서아가 매듭을 머리에 달고 빙글 돈다. \"어때요? 예쁘죠!\""),
         new GiftInfo("gift_black_lotus_thread", "흑련 손질실", 28, "han_biyeon", 3, 8,

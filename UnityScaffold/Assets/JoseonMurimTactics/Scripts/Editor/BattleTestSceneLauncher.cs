@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -8,6 +9,10 @@ namespace JoseonMurimTactics.Editor
 public static class BattleTestSceneLauncher
 {
     public const string ScenePath = "Assets/JoseonMurimTactics/Scenes/BattleTest.unity";
+    private const string VisualAssetRoot = "Assets/JoseonMurimTactics/ScriptableObjects/Visuals";
+    private const string BattleVisualProfilePath = VisualAssetRoot + "/baekdusan_gate_battle_visual_profile.asset";
+    private const string BattleVfxLibraryPath = VisualAssetRoot + "/battle_vfx_library_v1.asset";
+    private const string BattleUiSkinPath = VisualAssetRoot + "/battle_ui_skin_v1.asset";
 
     [MenuItem("Joseon Murim Tactics/Open Battle Test Scene")]
     public static void OpenBattleTestScene()
@@ -30,8 +35,26 @@ public static class BattleTestSceneLauncher
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);
+        NormalizeSceneYaml(ScenePath);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
+    }
+
+    private static void NormalizeSceneYaml(string scenePath)
+    {
+        string fullPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", scenePath));
+        if (!File.Exists(fullPath))
+        {
+            return;
+        }
+
+        string text = File.ReadAllText(fullPath);
+        string normalized = text.Replace("  m_Name: \r\n", "  m_Name:\r\n")
+                                .Replace("  m_Name: \n", "  m_Name:\n");
+        if (normalized != text)
+        {
+            File.WriteAllText(fullPath, normalized);
+        }
     }
 
     private static void CreateCamera()
@@ -66,6 +89,12 @@ public static class BattleTestSceneLauncher
         controller.tileWidth = 1.16f;
         controller.tileHeight = 0.62f;
         controller.unitDefinitions = TeamCharacterAssetBuilder.BuildSceneUnitDefinitions();
+        controller.battleVisualProfile = AssetDatabase.LoadAssetAtPath<BattleVisualProfile>(BattleVisualProfilePath);
+        controller.battleVfxLibrary = AssetDatabase.LoadAssetAtPath<BattleVfxLibrary>(BattleVfxLibraryPath);
+        controller.battleUiSkin = AssetDatabase.LoadAssetAtPath<BattleUiSkinData>(BattleUiSkinPath);
+        controllerObject.AddComponent<BattleCameraFx>();
+        controllerObject.AddComponent<DamagePopupPresenter>();
+        controllerObject.AddComponent<BattleImpactPresenter>();
     }
 
     private static BattleTestUnitDefinition Unit(string id, string displayName, Faction faction, string visualFile,

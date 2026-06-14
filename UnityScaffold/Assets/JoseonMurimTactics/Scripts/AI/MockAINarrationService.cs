@@ -54,7 +54,7 @@ public sealed class MockAINarrationService : IAINarrationService
 
     public string GenerateCompanionReaction(string companionId, string eventId)
     {
-        switch (companionId)
+        switch (CharacterIdAliasResolver.Normalize(companionId))
         {
         case "baek_ryeon":
             return "백련이 창대를 조용히 세우고 주변의 부상자를 먼저 살핀다.";
@@ -62,7 +62,7 @@ public sealed class MockAINarrationService : IAINarrationService
             return "도아린이 도집을 툭 치며 “먼저 치면 되지?”라고 웃는다.";
         case "jin_seoyul":
             return "진서율이 봉끝의 잔전기를 털며 “방금 길, 보였죠?”라고 빠르게 말한다.";
-        case "seo_a":
+        case "shin_seoa":
             return "신서아가 부채를 꼭 쥐고 “작아도 바람길은 만들 수 있어요!”라고 씩 웃는다.";
         case "han_biyeon":
             return "한비연이 구월산 그림자 쪽으로 한 걸음 물러나며 “제법인데?”라고 흘린다.";

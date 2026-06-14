@@ -1,9 +1,11 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace JoseonMurimTactics.Editor
 {
@@ -109,6 +111,7 @@ public static class VisualUpgradeV1Validator
         CheckVisualProfile(pass, fail);
         CheckVfxLibrary(pass, fail);
         CheckUiSkin(pass, fail);
+        CheckSeorakRecruitmentFlow(pass, fail);
 
         EditorSceneManager.OpenScene(BattleTestScenePath, OpenSceneMode.Single);
         BattleTestController controller = Object.FindAnyObjectByType<BattleTestController>();
@@ -122,6 +125,16 @@ public static class VisualUpgradeV1Validator
             CheckComponent<BattleCameraFx>(controller.gameObject, pass, fail);
             CheckComponent<DamagePopupPresenter>(controller.gameObject, pass, fail);
             CheckComponent<BattleImpactPresenter>(controller.gameObject, pass, fail);
+            CheckObject(controller.battleVisualProfile, "BattleTest visual profile reference", pass, fail);
+            CheckObject(controller.battleVfxLibrary, "BattleTest VFX library reference", pass, fail);
+            CheckObject(controller.battleUiSkin, "BattleTest UI skin reference", pass, fail);
+            CheckPaintedMapBackdropBinding(controller, pass, fail);
+            CheckBattleAdjacencyMath(controller, pass, fail);
+            CheckBattleTileClickTargetResolution(controller, pass, fail);
+            CheckBattleHudForecastPolicy(pass, fail);
+            CheckDeploymentDragAndFacingPolicy(pass, fail);
+            CheckDirectionalWalkAnimationPolicy(pass, fail);
+            CheckBattleTerrainPlacementPolicy(controller, pass, fail);
         }
 
         int generatedSpriteCount = AssetDatabase.FindAssets("t:Sprite", new[] { ArtRoot }).Length;
@@ -207,6 +220,19 @@ public static class VisualUpgradeV1Validator
         }
     }
 
+    private static void RequireTexture(string path, List<string> pass, List<string> fail)
+    {
+        Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        if (texture != null)
+        {
+            pass.Add("Texture exists: " + path);
+        }
+        else
+        {
+            fail.Add("Missing texture: " + path);
+        }
+    }
+
     private static void CheckVisualProfile(List<string> pass, List<string> fail)
     {
         BattleVisualProfile profile = AssetDatabase.LoadAssetAtPath<BattleVisualProfile>(
@@ -268,6 +294,73 @@ public static class VisualUpgradeV1Validator
         CheckObject(skin.counterIcon, "UI skin counterIcon", pass, fail);
     }
 
+    private static void CheckSeorakRecruitmentFlow(List<string> pass, List<string> fail)
+    {
+        MissionInfo mission = FindMission("MISSION_CH01_SEORAK_REQUEST");
+        CheckCondition(mission != null, "Seorak rescue mission exists in MissionCatalog.", "Missing Seorak rescue mission.", pass, fail);
+        if (mission != null)
+        {
+            CheckCondition(mission.battleId == HubController.SeorakPassRescueBattleId,
+                           "Seorak rescue mission points to the Seorak battle id.",
+                           "Seorak rescue mission battle id is not " + HubController.SeorakPassRescueBattleId + ".",
+                           pass, fail);
+            CheckCondition(mission.requiredFlag == StoryFlags.FirstBattleWon,
+                           "Seorak rescue unlocks after the first battle win flag.",
+                           "Seorak rescue mission should require " + StoryFlags.FirstBattleWon + ".",
+                           pass, fail);
+            CheckCondition(mission.completeFlag == StoryFlags.BaekRyeonRecruited,
+                           "Seorak rescue completes when Baek Ryeon is recruited.",
+                           "Seorak rescue mission should complete on " + StoryFlags.BaekRyeonRecruited + ".",
+                           pass, fail);
+            CheckCondition(ContainsFragment(mission.rewardPreview, "백련"),
+                           "Seorak rescue reward preview names Baek Ryeon's join.",
+                           "Seorak rescue reward preview does not mention Baek Ryeon's join.",
+                           pass, fail);
+        }
+
+        BattleDefinition battle = BattleCatalog.Get(HubController.SeorakPassRescueBattleId);
+        CheckCondition(battle != null, "Seorak rescue BattleDefinition exists.", "Missing Seorak rescue BattleDefinition.", pass, fail);
+        if (battle != null)
+        {
+            CheckCondition(battle.id == HubController.SeorakPassRescueBattleId,
+                           "Seorak battle definition keeps the expected id.",
+                           "Seorak battle definition id mismatch.",
+                           pass, fail);
+            CheckCondition(ContainsExact(battle.roster, "백련"),
+                           "Seorak battle roster includes Baek Ryeon as the guest ally.",
+                           "Seorak battle roster does not include Baek Ryeon.",
+                           pass, fail);
+            CheckCondition(ContainsObjective(battle.objectives, "OBJ_DEFEAT_YUDALGEUN") &&
+                           ContainsObjective(battle.objectives, "OBJ_PROTECT_HERB_CART"),
+                           "Seorak battle has boss defeat and rescue-protection objectives.",
+                           "Seorak battle is missing required rescue objectives.",
+                           pass, fail);
+            CheckCondition(ContainsDeltaAtLeast(battle.factionOnWin, FactionIds.SeorakSpear, 5),
+                           "Seorak battle rewards Seorak Spear faction support.",
+                           "Seorak battle does not reward Seorak Spear faction support.",
+                           pass, fail);
+            CheckCondition(ContainsDeltaAtLeast(battle.approvalOnWin, CompanionCatalog.BaekRyeon, 4),
+                           "Seorak battle rewards Baek Ryeon approval on victory.",
+                           "Seorak battle does not reward Baek Ryeon approval on victory.",
+                           pass, fail);
+        }
+
+        CompanionInfo baekRyeon = CompanionCatalog.Info(CompanionCatalog.BaekRyeon);
+        CheckCondition(baekRyeon != null, "Baek Ryeon exists in CompanionCatalog.", "Baek Ryeon missing from CompanionCatalog.", pass, fail);
+        CheckCondition(baekRyeon != null && baekRyeon.CanReceiveRomanticEffects,
+                       "Baek Ryeon allows romantic presentation effects.",
+                       "Baek Ryeon should allow romantic presentation effects.",
+                       pass, fail);
+
+        AuthoringContentManifest manifest = AuthoringContentManifest.LoadFromResources();
+        CheckDialogueScene(manifest, "chapter1_baek_ryeon_join_before_battle", true, pass, fail);
+        CheckDialogueScene(manifest, "chapter1_baek_ryeon_join_after_battle", false, pass, fail);
+
+        RequireTexture(Root + "/Resources/Backgrounds/Dialogue/bg_seorak_pass_rescue_meeting.png", pass, fail);
+        RequireTexture(Root + "/Resources/Backgrounds/Dialogue/bg_seorak_spear_gate_winter.png", pass, fail);
+        RequireTexture(Root + "/Resources/Backgrounds/Dialogue/bg_seorak_spear_council_hall.png", pass, fail);
+    }
+
     private static void CheckArray(Object[] values, int minimum, string label, List<string> pass, List<string> fail)
     {
         int count = 0;
@@ -289,6 +382,185 @@ public static class VisualUpgradeV1Validator
         else
         {
             fail.Add($"{label}: expected at least {minimum}, found {count}.");
+        }
+    }
+
+    private static void CheckDialogueScene(AuthoringContentManifest manifest, string sceneId, bool requireChoice,
+                                           List<string> pass, List<string> fail)
+    {
+        DialogueScript script = AuthoringDialogueAdapter.ToDialogueScript(manifest, sceneId);
+        CheckCondition(script.Nodes.Count > 0,
+                       "Dialogue scene exists: " + sceneId,
+                       "Missing or empty dialogue scene: " + sceneId,
+                       pass, fail);
+        if (script.Nodes.Count == 0)
+        {
+            return;
+        }
+
+        bool hasBaekRyeon = false;
+        bool hasBackground = false;
+        bool hasPortrait = false;
+        bool hasChoice = false;
+        bool hasApprovalChange = false;
+        for (int i = 0; i < script.Nodes.Count; i++)
+        {
+            DialogueNode node = script.Nodes[i];
+            if (node == null)
+            {
+                continue;
+            }
+
+            hasBaekRyeon |= node.speakerId == CompanionCatalog.BaekRyeon || node.speakerName == "백련";
+            hasBackground |= !string.IsNullOrEmpty(node.backgroundResource) ||
+                             (!string.IsNullOrEmpty(node.backgroundId) && node.backgroundId.Contains("seorak"));
+            hasPortrait |= !string.IsNullOrEmpty(node.portraitResource);
+            if (!node.HasChoices)
+            {
+                continue;
+            }
+
+            hasChoice = true;
+            for (int c = 0; c < node.choices.Count; c++)
+            {
+                DialogueChoice choice = node.choices[c];
+                if (choice == null)
+                {
+                    continue;
+                }
+
+                hasApprovalChange |= ContainsDeltaAny(choice.approvalChanges, CompanionCatalog.BaekRyeon);
+            }
+        }
+
+        CheckCondition(hasBaekRyeon, "Dialogue scene includes Baek Ryeon: " + sceneId,
+                       "Dialogue scene does not include Baek Ryeon: " + sceneId, pass, fail);
+        CheckCondition(hasBackground, "Dialogue scene has Seorak background binding: " + sceneId,
+                       "Dialogue scene lacks Seorak background binding: " + sceneId, pass, fail);
+        CheckCondition(hasPortrait, "Dialogue scene has standing/portrait binding: " + sceneId,
+                       "Dialogue scene lacks standing/portrait binding: " + sceneId, pass, fail);
+        if (requireChoice)
+        {
+            CheckCondition(hasChoice && hasApprovalChange,
+                           "Before-battle dialogue choices can adjust Baek Ryeon approval.",
+                           "Before-battle dialogue should include a Baek Ryeon approval choice.",
+                           pass, fail);
+        }
+    }
+
+    private static MissionInfo FindMission(string missionId)
+    {
+        foreach (MissionInfo mission in MissionCatalog.All)
+        {
+            if (mission != null && mission.id == missionId)
+            {
+                return mission;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool ContainsExact(List<string> values, string expected)
+    {
+        if (values == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            if (values[i] == expected)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsFragment(List<string> values, string fragment)
+    {
+        if (values == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            if (!string.IsNullOrEmpty(values[i]) && values[i].Contains(fragment))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsObjective(List<BattleObjective> objectives, string objectiveId)
+    {
+        if (objectives == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < objectives.Count; i++)
+        {
+            if (objectives[i] != null && objectives[i].id == objectiveId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsDeltaAtLeast(List<IdDelta> values, string id, int minimumDelta)
+    {
+        if (values == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            if (values[i].id == id && values[i].delta >= minimumDelta)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsDeltaAny(List<IdDelta> values, string id)
+    {
+        if (values == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            if (values[i].id == id && values[i].delta != 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void CheckCondition(bool condition, string passMessage, string failMessage, List<string> pass,
+                                       List<string> fail)
+    {
+        if (condition)
+        {
+            pass.Add(passMessage);
+        }
+        else
+        {
+            fail.Add(failMessage);
         }
     }
 
@@ -314,6 +586,645 @@ public static class VisualUpgradeV1Validator
         {
             fail.Add("Missing scene hook: " + typeof(T).Name);
         }
+    }
+
+    private static void CheckPaintedMapBackdropBinding(BattleTestController controller, List<string> pass,
+                                                       List<string> fail)
+    {
+        if (controller == null)
+        {
+            return;
+        }
+
+        MethodInfo ensureSprites = typeof(BattleTestController).GetMethod("EnsureMapVisualSprites",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        if (ensureSprites == null)
+        {
+            fail.Add("Could not inspect BattleTest painted map backdrop binding.");
+            return;
+        }
+
+        try
+        {
+            ensureSprites.Invoke(controller, null);
+        }
+        catch (System.Exception ex)
+        {
+            fail.Add("Painted map backdrop binding threw during validation: " + ex.GetType().Name);
+            return;
+        }
+
+        Sprite backdrop = GetPrivate<Sprite>(controller, "paintedMapBackdropSprite");
+        if (controller.mapVariant == BattleTestMapVariant.BaekduSnowGate && backdrop != null)
+        {
+            pass.Add("BattleTest keeps the painted Baekdu map backdrop: " + backdrop.name + ".");
+        }
+        else if (controller.mapVariant == BattleTestMapVariant.BaekduSnowGate)
+        {
+            fail.Add("BattleTest painted Baekdu map backdrop is missing.");
+        }
+    }
+
+    private static void CheckBattleAdjacencyMath(BattleTestController controller, List<string> pass, List<string> fail)
+    {
+        MethodInfo gridDistance = typeof(BattleTestController).GetMethod("GridDistance",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        if (gridDistance == null)
+        {
+            fail.Add("Could not inspect BattleTest attack distance math.");
+            return;
+        }
+
+        Vector2Int center = new Vector2Int(8, 5);
+        Vector2Int[] directNeighbors =
+        {
+            new Vector2Int(9, 5),
+            new Vector2Int(7, 5),
+            new Vector2Int(8, 6),
+            new Vector2Int(8, 4)
+        };
+
+        bool directNeighborsAreAdjacent = true;
+        for (int i = 0; i < directNeighbors.Length; i++)
+        {
+            int distance = (int)gridDistance.Invoke(controller, new object[] { center, directNeighbors[i] });
+            directNeighborsAreAdjacent &= distance == 1;
+        }
+
+        int diagonalDistance = (int)gridDistance.Invoke(controller, new object[] { center, new Vector2Int(9, 6) });
+        bool hasBasicMeleeRange = false;
+        if (controller.unitDefinitions != null)
+        {
+            for (int i = 0; i < controller.unitDefinitions.Length; i++)
+            {
+                BattleTestUnitDefinition definition = controller.unitDefinitions[i];
+                if (definition != null && definition.attackRange >= 1)
+                {
+                    hasBasicMeleeRange = true;
+                    break;
+                }
+            }
+        }
+
+        CheckCondition(directNeighborsAreAdjacent && diagonalDistance == 2,
+                       "BattleTest basic attack distance treats four direct neighbor tiles as range 1.",
+                       "BattleTest basic attack distance no longer treats direct neighbor tiles as range 1.",
+                       pass, fail);
+        CheckCondition(hasBasicMeleeRange,
+                       "BattleTest has units with basic attack range 1 or higher.",
+                       "BattleTest has no unit definition with basic attack range 1 or higher.",
+                       pass, fail);
+    }
+
+    private static void CheckBattleTileClickTargetResolution(BattleTestController controller, List<string> pass, List<string> fail)
+    {
+        MethodInfo resolveClickedUnit = typeof(BattleTestController).GetMethod("ResolveClickedUnit",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo resolveAttackClickTarget = typeof(BattleTestController).GetMethod("ResolveAttackClickTarget",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo canBasicAttackTarget = typeof(BattleTestController).GetMethod("CanBasicAttackTarget",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo gridDistance = typeof(BattleTestController).GetMethod("GridDistance",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
+        if (resolveClickedUnit == null || resolveAttackClickTarget == null || canBasicAttackTarget == null ||
+            gridDistance == null)
+        {
+            fail.Add("Could not inspect BattleTest tile click target resolution.");
+            return;
+        }
+
+        BattleTestUnitDefinition attackerDefinition = null;
+        BattleTestUnitDefinition enemyDefinition = null;
+        if (controller.unitDefinitions != null)
+        {
+            for (int i = 0; i < controller.unitDefinitions.Length; i++)
+            {
+                BattleTestUnitDefinition definition = controller.unitDefinitions[i];
+                if (definition == null)
+                {
+                    continue;
+                }
+
+                if (attackerDefinition == null &&
+                    definition.faction == Faction.Ally &&
+                    definition.attackRange >= 1)
+                {
+                    attackerDefinition = definition;
+                }
+
+                if (enemyDefinition == null && definition.faction == Faction.Enemy)
+                {
+                    enemyDefinition = definition;
+                }
+            }
+        }
+
+        if (attackerDefinition == null || enemyDefinition == null)
+        {
+            fail.Add("BattleTest tile click targeting validation could not find an adjacent-capable ally and enemy definition.");
+            return;
+        }
+
+        List<BattleTestUnit> runtimeUnits = GetPrivate<List<BattleTestUnit>>(controller, "units");
+        if (runtimeUnits == null)
+        {
+            fail.Add("BattleTest tile click targeting validation could not inspect runtime units.");
+            return;
+        }
+
+        List<BattleTestUnit> originalUnits = new List<BattleTestUnit>(runtimeUnits);
+        GameObject tileObject = new GameObject("VisualUpgradeValidator_TileClickTarget");
+        tileObject.hideFlags = HideFlags.HideAndDontSave;
+
+        try
+        {
+            BattleTestUnit attacker = new BattleTestUnit(attackerDefinition, null);
+            attacker.cell = new Vector2Int(8, 5);
+
+            BattleTestUnit enemy = new BattleTestUnit(enemyDefinition, null);
+            enemy.cell = new Vector2Int(9, 5);
+
+            BattleTestTile enemyTile = tileObject.AddComponent<BattleTestTile>();
+            enemyTile.cell = enemy.cell;
+
+            BattleTestTile nearbyTile = tileObject.AddComponent<BattleTestTile>();
+            nearbyTile.cell = new Vector2Int(9, 4);
+
+            runtimeUnits.Clear();
+            runtimeUnits.Add(attacker);
+            runtimeUnits.Add(enemy);
+
+            object resolved = resolveClickedUnit.Invoke(controller, new object[] { null, enemyTile });
+            object resolvedNearby = resolveAttackClickTarget.Invoke(controller, new object[] { attacker, null, nearbyTile });
+            bool canAttackAdjacent = (bool)canBasicAttackTarget.Invoke(controller, new object[] { attacker, enemy });
+            int distance = (int)gridDistance.Invoke(controller, new object[] { attacker.cell, enemy.cell });
+
+            CheckCondition(ReferenceEquals(resolved, enemy) && distance == 1 && distance <= attacker.definition.attackRange,
+                           "BattleTest tile click targeting resolves an adjacent enemy-occupied tile to that enemy.",
+                           "BattleTest tile click targeting did not resolve an adjacent enemy-occupied tile to that enemy.",
+                           pass, fail);
+            CheckCondition(canAttackAdjacent,
+                           "BattleTest basic attack permits a valid enemy on the direct front tile.",
+                           "BattleTest basic attack rejected a valid enemy on the direct front tile.",
+                           pass, fail);
+            CheckCondition(ReferenceEquals(resolvedNearby, enemy),
+                           "BattleTest attack mode tolerates a one-tile visual click offset around a unique adjacent enemy.",
+                           "BattleTest attack mode did not tolerate a one-tile visual click offset around a unique adjacent enemy.",
+                           pass, fail);
+        }
+        catch (System.Exception ex)
+        {
+            fail.Add("BattleTest tile click targeting validation threw: " + ex.GetType().Name);
+        }
+        finally
+        {
+            runtimeUnits.Clear();
+            runtimeUnits.AddRange(originalUnits);
+
+            if (tileObject != null)
+            {
+                Object.DestroyImmediate(tileObject);
+            }
+        }
+    }
+
+    private static void CheckBattleHudForecastPolicy(List<string> pass, List<string> fail)
+    {
+        MethodInfo shouldShowForecast = typeof(BattleHUDController).GetMethod("ShouldShowForecast",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        if (shouldShowForecast == null)
+        {
+            fail.Add("Could not inspect Battle HUD forecast display policy.");
+            return;
+        }
+
+        BattleHudSnapshot moveModeEnemyHover = new BattleHudSnapshot
+        {
+            commandMode = BattleCommandMode.Move,
+            canAttack = true,
+            hasForecast = true,
+            forecastLeft = "Jin Seoyul\nBasic Attack",
+            forecastRight = "Enemy\nHP 30 -> 22",
+            battleOver = false
+        };
+
+        BattleHudSnapshot emptyMoveHover = new BattleHudSnapshot
+        {
+            commandMode = BattleCommandMode.Move,
+            canAttack = true,
+            hasForecast = true,
+            forecastLeft = string.Empty,
+            forecastRight = string.Empty,
+            battleOver = false
+        };
+
+        BattleHudSnapshot attackModeEnemyHover = new BattleHudSnapshot
+        {
+            commandMode = BattleCommandMode.Attack,
+            canAttack = false,
+            hasForecast = true,
+            forecastLeft = "Jin Seoyul\nBasic Attack",
+            forecastRight = "Enemy\nHP 30 -> 22",
+            battleOver = false
+        };
+
+        bool moveModeShows = (bool)shouldShowForecast.Invoke(null, new object[] { moveModeEnemyHover });
+        bool emptyMoveHides = !(bool)shouldShowForecast.Invoke(null, new object[] { emptyMoveHover });
+        bool attackModeShows = (bool)shouldShowForecast.Invoke(null, new object[] { attackModeEnemyHover });
+
+        CheckCondition(moveModeShows,
+                       "Battle HUD shows combat forecast while hovering an enemy in move mode.",
+                       "Battle HUD hides combat forecast while hovering an enemy in move mode.",
+                       pass, fail);
+        CheckCondition(emptyMoveHides,
+                       "Battle HUD keeps forecast hidden for move mode without target context.",
+                       "Battle HUD shows an empty forecast panel in move mode.",
+                       pass, fail);
+        CheckCondition(attackModeShows,
+                       "Battle HUD keeps forecast visible in explicit attack mode.",
+                       "Battle HUD no longer shows forecast in explicit attack mode.",
+                       pass, fail);
+    }
+
+    private static void CheckDeploymentDragAndFacingPolicy(List<string> pass, List<string> fail)
+    {
+        MethodInfo beginDrag = typeof(BattleTestController).GetMethod("HudBeginDeploymentDrag",
+            BindingFlags.Instance | BindingFlags.Public);
+        MethodInfo dropDrag = typeof(BattleTestController).GetMethod("HudDropDeploymentUnit",
+            BindingFlags.Instance | BindingFlags.Public);
+        MethodInfo faceDeployment = typeof(BattleTestController).GetMethod("FaceUnitsForDeployment",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo deploymentCamera = typeof(BattleTestController).GetMethod("FocusCameraOnDeploymentOverview",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo deploymentCameraSize = typeof(BattleTestController).GetMethod("CalculateDeploymentCameraSize",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
+        CheckCondition(beginDrag != null && dropDrag != null && faceDeployment != null,
+                       "Battle deployment supports dragging roster characters onto starting cells.",
+                       "Battle deployment drag/drop API is missing.",
+                       pass, fail);
+        CheckCondition(deploymentCamera != null && deploymentCameraSize != null,
+                       "Battle deployment uses an overview camera that keeps allies and enemies in frame.",
+                       "Battle deployment can still zoom to one ally and push enemies out of frame.",
+                       pass, fail);
+
+        System.Type dragHandler = typeof(BattleHUDController).GetNestedType("DeploymentDragHandler",
+            BindingFlags.NonPublic);
+        bool hasDragHandler = dragHandler != null &&
+                              typeof(IBeginDragHandler).IsAssignableFrom(dragHandler) &&
+                              typeof(IDragHandler).IsAssignableFrom(dragHandler) &&
+                              typeof(IEndDragHandler).IsAssignableFrom(dragHandler);
+        CheckCondition(hasDragHandler,
+                       "Battle deployment roster slots have begin/drag/end handlers.",
+                       "Battle deployment roster slots are missing drag handlers.",
+                       pass, fail);
+
+        FieldInfo facingField = typeof(CharacterVisualController).GetField("facingVector",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        if (facingField == null)
+        {
+            fail.Add("Could not inspect CharacterVisualController default facing.");
+            return;
+        }
+
+        GameObject visualObject = new GameObject("VisualUpgradeValidator_DefaultFacing");
+        visualObject.hideFlags = HideFlags.HideAndDontSave;
+        try
+        {
+            CharacterVisualController visual = visualObject.AddComponent<CharacterVisualController>();
+            Vector2 facing = (Vector2)facingField.GetValue(visual);
+            CheckCondition(Vector2.Dot(facing.normalized, Vector2.down) > 0.99f,
+                           "Battle characters default to front-facing idle before movement.",
+                           "Battle characters still default to side-facing idle before movement.",
+                           pass, fail);
+        }
+        finally
+        {
+            Object.DestroyImmediate(visualObject);
+        }
+    }
+
+    private static void CheckDirectionalWalkAnimationPolicy(List<string> pass, List<string> fail)
+    {
+        string[] heroIds =
+        {
+            "jin_seoyul",
+            "han_biyeon",
+            "park_sungjun",
+            "do_arin",
+            "shin_seoa",
+            "baek_ryeon"
+        };
+
+        bool allHeroesHaveDirectionalWalkFrames = true;
+        bool allHeroesUseReadableWalkTiming = true;
+        foreach (string heroId in heroIds)
+        {
+            string path = Root + "/Art/Characters/" + heroId + "/VisualData/" + heroId + "_visual.asset";
+            CharacterVisualData visual = AssetDatabase.LoadAssetAtPath<CharacterVisualData>(path);
+            if (visual == null)
+            {
+                allHeroesHaveDirectionalWalkFrames = false;
+                allHeroesUseReadableWalkTiming = false;
+                continue;
+            }
+
+            int frontFrames = visual.moveFrames == null ? 0 : visual.moveFrames.Length;
+            int sideFrames = visual.moveSideFrames == null ? 0 : visual.moveSideFrames.Length;
+            int backFrames = visual.moveBackFrames == null ? 0 : visual.moveBackFrames.Length;
+            if (frontFrames < 4 || sideFrames < 4 || backFrames < 4)
+            {
+                allHeroesHaveDirectionalWalkFrames = false;
+            }
+
+            GameObject visualObject = new GameObject("VisualUpgradeValidator_Walk_" + heroId);
+            visualObject.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                CharacterVisualController controller = visualObject.AddComponent<CharacterVisualController>();
+                controller.visual = visual;
+                if (controller.WalkSecondsPerTile() < 0.44f)
+                {
+                    allHeroesUseReadableWalkTiming = false;
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(visualObject);
+            }
+        }
+
+        FieldInfo leftFoot = typeof(CharacterVisualController).GetField("leftFootRenderer",
+            BindingFlags.Instance | BindingFlags.Public);
+        FieldInfo rightFoot = typeof(CharacterVisualController).GetField("rightFootRenderer",
+            BindingFlags.Instance | BindingFlags.Public);
+        MethodInfo setStridePhase = typeof(CharacterVisualController).GetMethod("SetMoveStridePhase",
+            BindingFlags.Instance | BindingFlags.Public);
+        bool hasFootContactRig = leftFoot != null && rightFoot != null && setStridePhase != null;
+        bool isoDiagonalFacingIsNotSide = false;
+        MethodInfo faceDirection = typeof(CharacterVisualController).GetMethod("FaceDirection",
+            BindingFlags.Instance | BindingFlags.Public);
+        MethodInfo sideAmount = typeof(CharacterVisualController).GetMethod("FacingSideAmount",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo backAmount = typeof(CharacterVisualController).GetMethod("FacingBackAmount",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo frontAmount = typeof(CharacterVisualController).GetMethod("FacingFrontAmount",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        if (faceDirection != null && sideAmount != null && backAmount != null && frontAmount != null)
+        {
+            GameObject visualObject = new GameObject("VisualUpgradeValidator_IsoFacing");
+            visualObject.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                CharacterVisualController controller = visualObject.AddComponent<CharacterVisualController>();
+                faceDirection.Invoke(controller, new object[] { new Vector2(0.58f, 0.31f) });
+                float backDiagonalSide = (float)sideAmount.Invoke(controller, null);
+                float backDiagonalBack = (float)backAmount.Invoke(controller, null);
+                faceDirection.Invoke(controller, new object[] { new Vector2(-0.58f, -0.31f) });
+                float frontDiagonalSide = (float)sideAmount.Invoke(controller, null);
+                float frontDiagonalFront = (float)frontAmount.Invoke(controller, null);
+                faceDirection.Invoke(controller, new object[] { Vector2.right });
+                float pureSide = (float)sideAmount.Invoke(controller, null);
+                isoDiagonalFacingIsNotSide = backDiagonalSide <= 0.05f && frontDiagonalSide <= 0.05f &&
+                                             backDiagonalBack >= 0.40f && frontDiagonalFront >= 0.40f &&
+                                             pureSide >= 0.90f;
+            }
+            finally
+            {
+                Object.DestroyImmediate(visualObject);
+            }
+        }
+
+        CheckCondition(allHeroesHaveDirectionalWalkFrames,
+                       "All six BattleTest heroes have 4-frame front/side/back walk cycles.",
+                       "BattleTest hero walk cycles are missing front/side/back 4-frame coverage.",
+                       pass, fail);
+        CheckCondition(allHeroesUseReadableWalkTiming,
+                       "BattleTest hero walk timing is clamped to readable two-foot movement.",
+                       "BattleTest hero walk timing can still look like sliding or one-foot movement.",
+                       pass, fail);
+        CheckCondition(hasFootContactRig,
+                       "CharacterVisualController exposes left/right foot contact renderers and stride phase control.",
+                       "CharacterVisualController is missing the two-foot contact rig or stride phase control.",
+                       pass, fail);
+        CheckCondition(isoDiagonalFacingIsNotSide,
+                       "Isometric diagonal movement selects front/back facing instead of side-walk leakage.",
+                       "Isometric diagonal movement can still leak into side-walk facing.",
+                       pass, fail);
+    }
+
+    private static void CheckBattleTerrainPlacementPolicy(BattleTestController controller, List<string> pass,
+                                                          List<string> fail)
+    {
+        MethodInfo buildBattle = typeof(BattleTestController).GetMethod("BuildBattle",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo canStandOnTile = typeof(BattleTestController).GetMethod("CanStandOnTile",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo isDeploymentCell = typeof(BattleTestController).GetMethod("IsDeploymentCell",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo isBlockedByInteractable = typeof(BattleTestController).GetMethod("IsCellBlockedByInteractable",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo noStandMask = typeof(BattleTestController).GetMethod("IsBaekduSnowGatePaintedNoStandCell",
+            BindingFlags.Static | BindingFlags.NonPublic);
+
+        if (buildBattle == null || canStandOnTile == null || isDeploymentCell == null ||
+            isBlockedByInteractable == null || noStandMask == null)
+        {
+            fail.Add("Could not inspect BattleTest terrain placement safety policy.");
+            return;
+        }
+
+        try
+        {
+            bool masksLeftWater = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(1, 5) });
+            bool masksGateWall = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(7, 10) });
+            bool masksUpperFence = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(13, 8) });
+            bool blocksGateFacade = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(10, 5) });
+            bool blocksOldGateThreshold = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(12, 7) });
+            bool allowsCentralApproach = !(bool)noStandMask.Invoke(null, new object[] { new Vector2Int(8, 3) });
+            CheckCondition(masksLeftWater && masksGateWall && masksUpperFence && blocksGateFacade &&
+                           blocksOldGateThreshold && allowsCentralApproach,
+                           "Baekdu painted-map mask blocks water/wall/fence art while keeping the lower stone approach usable.",
+                           "Baekdu painted-map mask still allows backdrop obstacles or blocks the lower stone approach.",
+                           pass, fail);
+
+            buildBattle.Invoke(controller, null);
+            BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+            List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
+            bool battleOver = GetPrivate<bool>(controller, "battleOver");
+            if (tiles == null || units == null)
+            {
+                fail.Add("BattleTest terrain placement validation could not inspect runtime tiles or units.");
+                return;
+            }
+
+            bool approachLaneSafe = false;
+            BattleTestTile centralApproach = tiles[8, 3];
+            if (centralApproach != null)
+            {
+                approachLaneSafe = centralApproach.terrain != TerrainType.DeepWater &&
+                                   (bool)canStandOnTile.Invoke(controller, new object[] { centralApproach });
+            }
+
+            bool wallLineBlocked = true;
+            for (int x = 8; x < tiles.GetLength(0); x++)
+            {
+                for (int y = 8; y < tiles.GetLength(1); y++)
+                {
+                    BattleTestTile tile = tiles[x, y];
+                    if (tile != null && (bool)canStandOnTile.Invoke(controller, new object[] { tile }))
+                    {
+                        wallLineBlocked = false;
+                        break;
+                    }
+                }
+            }
+
+            Vector2Int[] gateFacadeCells =
+            {
+                new Vector2Int(9, 4),
+                new Vector2Int(8, 5),
+                new Vector2Int(10, 5),
+                new Vector2Int(7, 6),
+                new Vector2Int(12, 7)
+            };
+            foreach (Vector2Int cell in gateFacadeCells)
+            {
+                BattleTestTile tile = tiles[cell.x, cell.y];
+                if (tile != null && (bool)canStandOnTile.Invoke(controller, new object[] { tile }))
+                {
+                    wallLineBlocked = false;
+                    break;
+                }
+            }
+
+            bool allUnitsSafe = true;
+            bool allUnitsKeptPreferredStart = true;
+            bool enemiesAvoidStartObjective = true;
+            bool allEnemyBodiesRenderable = true;
+            bool enemiesStartOnVisibleApproach = true;
+            foreach (BattleTestUnit unit in units)
+            {
+                if (unit == null || unit.defeated || unit.cell.x < 0 || unit.cell.y < 0 ||
+                    unit.cell.x >= tiles.GetLength(0) || unit.cell.y >= tiles.GetLength(1))
+                {
+                    allUnitsSafe = false;
+                    continue;
+                }
+
+                BattleTestTile tile = tiles[unit.cell.x, unit.cell.y];
+                bool canStand = tile != null && (bool)canStandOnTile.Invoke(controller, new object[] { tile });
+                bool blocked = (bool)isBlockedByInteractable.Invoke(controller, new object[] { unit.cell });
+                if (!canStand || blocked)
+                {
+                    allUnitsSafe = false;
+                    break;
+                }
+
+                if (unit.definition == null || unit.cell != unit.definition.startCell)
+                {
+                    allUnitsKeptPreferredStart = false;
+                    break;
+                }
+
+                if (unit.definition.faction == Faction.Enemy && tile != null && tile.objective)
+                {
+                    enemiesAvoidStartObjective = false;
+                    break;
+                }
+
+                if (unit.definition.faction == Faction.Enemy)
+                {
+                    if (unit.cell.x < 7 || unit.cell.x > 9 || unit.cell.y < 2 || unit.cell.y > 3)
+                    {
+                        enemiesStartOnVisibleApproach = false;
+                        break;
+                    }
+
+                    CharacterVisualController visual = unit.view == null
+                                                           ? null
+                                                           : unit.view.GetComponent<CharacterVisualController>();
+                    SpriteRenderer body = visual == null ? null : visual.bodyRenderer;
+                    if (visual == null || body == null || !body.enabled || body.sprite == null ||
+                        body.sortingOrder < 2300)
+                    {
+                        allEnemyBodiesRenderable = false;
+                        break;
+                    }
+                }
+            }
+
+            bool allDeploymentCellsSafe = true;
+            for (int y = 0; y < tiles.GetLength(1); y++)
+            {
+                for (int x = 0; x < tiles.GetLength(0); x++)
+                {
+                    BattleTestTile tile = tiles[x, y];
+                    if (tile == null)
+                    {
+                        continue;
+                    }
+
+                    bool deployment = (bool)isDeploymentCell.Invoke(controller, new object[] { tile.cell });
+                    if (!deployment)
+                    {
+                        continue;
+                    }
+
+                    bool canStand = (bool)canStandOnTile.Invoke(controller, new object[] { tile });
+                    bool blocked = (bool)isBlockedByInteractable.Invoke(controller, new object[] { tile.cell });
+                    if (!canStand || blocked)
+                    {
+                        allDeploymentCellsSafe = false;
+                        break;
+                    }
+                }
+            }
+
+            CheckCondition(approachLaneSafe,
+                           "Baekdu tile (8,3) is lower painted stone approach, not deep water.",
+                           "Baekdu tile (8,3) is still treated as water or non-standing terrain.",
+                           pass, fail);
+            CheckCondition(wallLineBlocked,
+                           "Baekdu upper wall/fence/facade line is blocked; units cannot stand on backdrop obstacles.",
+                           "Baekdu upper wall/fence/facade line still has standable cells.",
+                           pass, fail);
+            CheckCondition(allUnitsSafe,
+                           "BattleTest runtime units spawn only on standable painted-map cells.",
+                           "BattleTest runtime units can spawn on blocked painted-map cells.",
+                           pass, fail);
+            CheckCondition(allUnitsKeptPreferredStart,
+                           "BattleTest runtime units keep authored safe start cells without fallback correction.",
+                           "BattleTest runtime units still need fallback correction from unsafe start cells.",
+                           pass, fail);
+            CheckCondition(!battleOver && enemiesAvoidStartObjective,
+                           "BattleTest starts active; enemies do not spawn on breach objectives.",
+                           "BattleTest can end immediately because an enemy starts on an objective.",
+                           pass, fail);
+            CheckCondition(enemiesStartOnVisibleApproach,
+                           "BattleTest enemies start on the lower-right visible approach, away from ally silhouettes and gate UI.",
+                           "BattleTest enemies still start where ally silhouettes, gate foreground, or UI can hide their bodies.",
+                           pass, fail);
+            CheckCondition(allEnemyBodiesRenderable,
+                           "BattleTest enemies render full bodies above the painted foreground, not just HP bars.",
+                           "BattleTest enemies can hide behind the painted map while only HP bars remain visible.",
+                           pass, fail);
+            CheckCondition(allDeploymentCellsSafe,
+                           "Battle deployment cells are restricted to standable, unblocked starting cells.",
+                           "Battle deployment cells still include blocked backdrop or prop cells.",
+                           pass, fail);
+        }
+        catch (System.Exception ex)
+        {
+            fail.Add("BattleTest terrain placement validation threw: " + ex.GetType().Name);
+        }
+    }
+
+    private static T GetPrivate<T>(object target, string fieldName)
+    {
+        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        return field == null ? default(T) : (T)field.GetValue(target);
     }
 }
 }

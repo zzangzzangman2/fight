@@ -54,7 +54,7 @@ public static class CompanionCatalog
     public static readonly string HanBiyeon = "han_biyeon";
     public static readonly string DoArin = "do_arin";
     public static readonly string JinSeoyul = "jin_seoyul";
-    public static readonly string SeoA = "seo_a";
+    public static readonly string SeoA = CharacterIdAliasResolver.ShinSeoaId;
     public static readonly string KangChohui = SeoA; // legacy alias
 
     private static readonly Dictionary<string, CompanionInfo> Map = Build();
@@ -64,7 +64,7 @@ public static class CompanionCatalog
         Dictionary<string, CompanionInfo> map = new Dictionary<string, CompanionInfo>();
         void Add(CompanionInfo c) => map[c.id] = c;
 
-        // 동료 전원 15세, 박성준 18세. 나이는 추후 조정 예정 — 연애 공략 가능 여부는 나이와 무관(항상 허용).
+        // 동료 전원 15세, 박성준 17세. 연애 공략 가능 여부는 나이와 무관(항상 허용).
         Add(new CompanionInfo("baek_ryeon", "백련", "강원 설악창문의 장녀", "서리·창·제어",
                               "설악산 자락에서 이름난 창문 출신. 차분하고 신중하지만, 약한 이를 건드리는 순간 말수가 " +
                                   "줄고 창끝이 매서워진다.",
@@ -80,7 +80,7 @@ public static class CompanionCatalog
                                   "피뢰침처럼 빈틈을 잡아낸다.",
                               "PQ_JIN_SEOYUL_LIGHTNING_STAFF", "경성", "천뢰봉문", 15, "ENTP", "전기", "봉",
                               "빠르고 장난기 있는 말투. 농담과 추리를 번개처럼 이어 간다.", true));
-        Add(new CompanionInfo("seo_a", "신서아", "전라 남원 화접풍류문의 막내", "바람·꽃·부채·지원",
+        Add(new CompanionInfo(SeoA, "신서아", "전라 남원 화접풍류문의 막내", "바람·꽃·부채·지원",
                               "작은 키와 밝은 웃음으로 방심을 부르지만, 꽃바람과 부채술로 아군의 길을 열고 적의 " +
                                   "균형을 흩뜨리는 막내 동료.",
                               "PQ_SHIN_SEOA_FLOWER_WIND_FAN", "전라도 남원", "화접풍류문", 15, "ENFP", "바람/꽃",
@@ -95,7 +95,8 @@ public static class CompanionCatalog
 
     public static CompanionInfo Info(string id)
     {
-        if (!string.IsNullOrEmpty(id) && Map.TryGetValue(id, out CompanionInfo info))
+        string normalized = CharacterIdAliasResolver.Normalize(id);
+        if (!string.IsNullOrEmpty(normalized) && Map.TryGetValue(normalized, out CompanionInfo info))
         {
             return info;
         }

@@ -19,23 +19,35 @@ MonoBehaviour:
   faceIconSprite: {fileID: 21300000, guid: cddc76f3207d29f47802fab31037ee5b, type: 3}
   animatorController: {fileID: 0}
   idlePoseSprite: {fileID: 21300000, guid: 69a422c41eac58845ab53494c5cecaa7, type: 3}
-  movePoseSprite: {fileID: 21300000, guid: 3826b56b9549a67439638698cd675ae6, type: 3}
+  movePoseSprite: {fileID: 21300000, guid: c7859275e9cf41058a4d083d36501ce2, type: 3}
   attackPoseSprite: {fileID: 21300000, guid: d1e35896a4a39ea47b909d6648ac6db1, type: 3}
   skillPoseSprite: {fileID: 21300000, guid: d365338f4c6c2b34abb7cc77ad8b5f2f, type: 3}
   hitPoseSprite: {fileID: 21300000, guid: 439f4253349dfe2428f7e69dc5d46925, type: 3}
   defeatedPoseSprite: {fileID: 21300000, guid: adf92ebcd1a41d64da03d28fe5ef7240, type: 3}
   actedPoseSprite: {fileID: 21300000, guid: 878bac23531c42e4095460cdb687e3ad, type: 3}
+  idleSidePoseSprite: {fileID: 21300000, guid: ba3791ae9ac24d90833774e45c0a28f9, type: 3}
+  idleBackPoseSprite: {fileID: 21300000, guid: 6f1fa06328eb486db5f94e59922edc0e, type: 3}
+  moveSidePoseSprite: {fileID: 21300000, guid: ba3791ae9ac24d90833774e45c0a28f9, type: 3}
+  moveBackPoseSprite: {fileID: 21300000, guid: 6f1fa06328eb486db5f94e59922edc0e, type: 3}
   idleFrames:
   - {fileID: 21300000, guid: 69a422c41eac58845ab53494c5cecaa7, type: 3}
   - {fileID: 21300000, guid: 540bb751e41a1034e910a4e8d1c38385, type: 3}
   - {fileID: 21300000, guid: f66aa7c9a1e98c5488886967fbdd3ee1, type: 3}
   moveFrames:
-  - {fileID: 21300000, guid: 3826b56b9549a67439638698cd675ae6, type: 3}
-  - {fileID: 21300000, guid: a46ca13f80cf5bc46ae835197979caa2, type: 3}
-  - {fileID: 21300000, guid: a333e76b33ff8164fa5da84eb04be240, type: 3}
-  - {fileID: 21300000, guid: f87eae3d5becf6d49ba72b18e0c925cb, type: 3}
-  - {fileID: 21300000, guid: 3e82f359ddcd0cc4396b6b8a0d1c7687, type: 3}
-  - {fileID: 21300000, guid: 457b48887830ce44cbb785981aa770a3, type: 3}
+  - {fileID: 21300000, guid: c7859275e9cf41058a4d083d36501ce2, type: 3}
+  - {fileID: 21300000, guid: a8b4fe83ac924d60a80b6872abf8322c, type: 3}
+  - {fileID: 21300000, guid: f82a8605165d498db04a3b0cb1dff60e, type: 3}
+  - {fileID: 21300000, guid: 968cc4300c4e4ff08c8156c42677da7c, type: 3}
+  moveSideFrames:
+  - {fileID: 21300000, guid: ba3791ae9ac24d90833774e45c0a28f9, type: 3}
+  - {fileID: 21300000, guid: bc52403fdb55412fb71250b5f465ad78, type: 3}
+  - {fileID: 21300000, guid: abdc688c70b547cbae4341db09b32aab, type: 3}
+  - {fileID: 21300000, guid: 5e89806651a64f4997cee1c79b13f8b1, type: 3}
+  moveBackFrames:
+  - {fileID: 21300000, guid: 6f1fa06328eb486db5f94e59922edc0e, type: 3}
+  - {fileID: 21300000, guid: b7bd9be181d44fbb8a4d501a14fd5db8, type: 3}
+  - {fileID: 21300000, guid: 6e3aa4ba3a624f1eaa8663793cf86c6e, type: 3}
+  - {fileID: 21300000, guid: 40c2520e6aa4471a9fc79c3aa963845a, type: 3}
   attackFrames:
   - {fileID: 21300000, guid: d1e35896a4a39ea47b909d6648ac6db1, type: 3}
   - {fileID: 21300000, guid: 26b8648a0af442e479192670effd010e, type: 3}
@@ -92,10 +104,10 @@ MonoBehaviour:
   shadowHeight: 0.19
   normalTint: {r: 1, g: 1, b: 1, a: 1}
   selectedTint: {r: 0.8712, g: 0.9944, b: 0.9552, a: 1}
-  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 0.82}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 1}
   hitTint: {r: 1, g: 0.6128, b: 0.6124, a: 1}
   guardTint: {r: 0.839, g: 0.99300003, b: 0.944, a: 1}
-  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 0.68}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 1}
   moveSecondsPerTile: 0.2
   moveSettleTime: 0.08
   moveLeanDegrees: 5

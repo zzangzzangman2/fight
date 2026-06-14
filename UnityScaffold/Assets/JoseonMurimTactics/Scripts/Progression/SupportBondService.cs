@@ -36,26 +36,28 @@ namespace JoseonMurimTactics
 
         public int AddBond(string companionId, int delta)
         {
-            if (session == null || session.companionApproval == null || string.IsNullOrEmpty(companionId) || delta == 0)
+            string id = CharacterIdAliasResolver.Normalize(companionId);
+            if (session == null || session.companionApproval == null || string.IsNullOrEmpty(id) || delta == 0)
             {
-                return GetBond(companionId);
+                return GetBond(id);
             }
 
-            int current = GetBond(companionId);
+            int current = GetBond(id);
             int next = ProgressionKeys.Clamp(current + delta, -100, 100);
-            session.companionApproval[companionId] = next;
+            session.companionApproval[id] = next;
             return next;
         }
 
         public int GetBond(string companionId)
         {
-            if (session == null || session.companionApproval == null || string.IsNullOrEmpty(companionId))
+            string id = CharacterIdAliasResolver.Normalize(companionId);
+            if (session == null || session.companionApproval == null || string.IsNullOrEmpty(id))
             {
                 return 0;
             }
 
             int value;
-            return session.companionApproval.TryGetValue(companionId, out value) ? value : 0;
+            return session.companionApproval.TryGetValue(id, out value) ? value : 0;
         }
 
         public string GetRank(string companionId)

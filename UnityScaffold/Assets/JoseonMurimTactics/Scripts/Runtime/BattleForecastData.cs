@@ -4,6 +4,17 @@ using UnityEngine;
 namespace JoseonMurimTactics
 {
 [Serializable]
+public enum RollMode
+{
+    None = 0,
+    Normal = 1,
+    Advantage = 2,
+    Disadvantage = 3,
+    AutoHit = 4,
+    AutoMiss = 5
+}
+
+[Serializable]
 public sealed class BattleForecastData
 {
     public bool canUseSkill;

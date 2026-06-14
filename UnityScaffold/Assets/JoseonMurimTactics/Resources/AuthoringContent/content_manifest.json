@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "updatedAt":  "2026-06-12T00:00:00Z",
+    "updatedAt":  "2026-06-14T00:00:00Z",
     "project":  {
                     "title":  "조선 무협 SRPG",
                     "note":  "콘텐츠 편집기에서 저장하면 Unity Resources의 게임 대사에 즉시 반영됩니다."
@@ -12,8 +12,8 @@
                            "role":  "백두천광검문 소문주 · 빛/검",
                            "portraitId":  "",
                            "portraitResource":  "",
-                           "notes":  "20세. 주인공.",
-                           "age":  20,
+                           "notes":  "17세. 주인공.",
+                           "age":  17,
                            "sectId":  "baekdu_light_sword",
                            "sectName":  "백두천광검문"
                        },
@@ -54,8 +54,8 @@
                            "id":  "baek_ryeon",
                            "displayName":  "백련",
                            "role":  "설악창문 · 서리/창",
-                           "portraitId":  "",
-                           "portraitResource":  "",
+                           "portraitId":  "baek_ryeon_fullbody",
+                           "portraitResource":  "Portraits/Companions/baek_ryeon/baek_ryeon_fullbody",
                            "notes":  "강원 설악창문.",
                            "age":  17,
                            "sectId":  "seorak_spear",
@@ -68,7 +68,7 @@
                            "portraitId":  "",
                            "portraitResource":  "",
                            "notes":  "경상 화왕도문.",
-                           "age":  18,
+                           "age":  15,
                            "sectId":  "hwawang_blade",
                            "sectName":  "화왕도문"
                        },
@@ -79,18 +79,18 @@
                            "portraitId":  "",
                            "portraitResource":  "",
                            "notes":  "경성 천뢰봉문.",
-                           "age":  16,
+                           "age":  15,
                            "sectId":  "cheonroe_staff",
                            "sectName":  "천뢰봉문"
                        },
                        {
-                           "id":  "seo_a",
+                           "id":  "shin_seoa",
                            "displayName":  "신서아",
                            "role":  "화접풍류문 · 바람/꽃/부채",
                            "portraitId":  "",
                            "portraitResource":  "",
-                           "notes":  "13세. 전라 화접풍류문.",
-                           "age":  13,
+                           "notes":  "전라 화접풍류문.",
+                           "age":  15,
                            "sectId":  "hwajeop_fan",
                            "sectName":  "화접풍류문"
                        },
@@ -4889,15 +4889,15 @@
                                          ]
                            },
                            {
-                               "id":  "companion_seo_a_talk",
+                               "id":  "companion_shin_seoa_talk",
                                "title":  "신서아 첫 대화",
                                "location":  "백두산 검각",
                                "backgroundId":  "bg_hwajeop_flower_fan_courtyard",
-                               "startNodeId":  "companion_seo_a_talk_001",
+                               "startNodeId":  "companion_shin_seoa_talk_001",
                                "entries":  [
                                                {
                                                    "id":  "t0",
-                                                   "speakerId":  "seo_a",
+                                                  "speakerId":  "shin_seoa",
                                                    "line":  "“나도 할 수 있어요! 작다고 얕보면 안 돼요. 꽃바람은 원래 빈틈으로 쏙 들어가는 법이라구요!”",
                                                    "mood":  "밝음",
                                                    "backgroundId":  "bg_hwajeop_flower_fan_courtyard",
@@ -4908,8 +4908,8 @@
                                            ],
                                "nodes":  [
                                              {
-                                                 "nodeId":  "companion_seo_a_talk_001",
-                                                 "speakerId":  "seo_a",
+                                                "nodeId":  "companion_shin_seoa_talk_001",
+                                                "speakerId":  "shin_seoa",
                                                  "speakerName":  "신서아",
                                                  "line":  "“나도 할 수 있어요! 작다고 얕보면 안 돼요. 꽃바람은 원래 빈틈으로 쏙 들어가는 법이라구요!”",
                                                  "mood":  "밝음",

@@ -49,14 +49,16 @@ public sealed class GameSession
 
     public bool HasCompanion(string companionId)
     {
-        return recruitedCompanionIds.Contains(companionId);
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        return !string.IsNullOrEmpty(id) && recruitedCompanionIds.Contains(id);
     }
 
     public void RecruitCompanion(string companionId)
     {
-        if (!string.IsNullOrEmpty(companionId) && !recruitedCompanionIds.Contains(companionId))
+        string id = CharacterIdAliasResolver.Normalize(companionId);
+        if (!string.IsNullOrEmpty(id) && !recruitedCompanionIds.Contains(id))
         {
-            recruitedCompanionIds.Add(companionId);
+            recruitedCompanionIds.Add(id);
         }
     }
 
@@ -64,6 +66,7 @@ public sealed class GameSession
 
     public string ToJson()
     {
+        NormalizeCharacterIdsForCompatibility();
         SaveDto dto = new SaveDto { sectName = sectName,
                                     heroDisposition = (int)heroDisposition,
                                     difficulty = (int)difficulty,
@@ -140,6 +143,7 @@ public sealed class GameSession
 
         FillSet(session.completedMissionIds, dto.completedMissionIds);
         FillSet(session.unlockedCodexEntryIds, dto.unlockedCodexEntryIds);
+        session.NormalizeCharacterIdsForCompatibility();
 
         return session;
     }
@@ -218,6 +222,170 @@ public sealed class GameSession
                 target.Add(value);
             }
         }
+    }
+
+    private void NormalizeCharacterIdsForCompatibility()
+    {
+        NormalizeIdList(recruitedCompanionIds);
+        NormalizeIdDictionary(companionApproval);
+        NormalizeIdDictionary(companionInjury);
+        NormalizeIdDictionary(companionFatigue);
+        NormalizeCharacterScopedIntVars();
+        NormalizeCharacterScopedStringVars();
+        NormalizeCharacterScopedFlags();
+    }
+
+    private static void NormalizeIdList(List<string> values)
+    {
+        if (values == null)
+        {
+            return;
+        }
+
+        HashSet<string> seen = new HashSet<string>();
+        for (int i = values.Count - 1; i >= 0; i--)
+        {
+            string id = CharacterIdAliasResolver.Normalize(values[i]);
+            if (string.IsNullOrEmpty(id) || seen.Contains(id))
+            {
+                values.RemoveAt(i);
+                continue;
+            }
+
+            values[i] = id;
+            seen.Add(id);
+        }
+    }
+
+    private static void NormalizeIdDictionary(Dictionary<string, int> values)
+    {
+        if (values == null)
+        {
+            return;
+        }
+
+        List<KeyValuePair<string, int>> pairs = new List<KeyValuePair<string, int>>(values);
+        values.Clear();
+        foreach (KeyValuePair<string, int> pair in pairs)
+        {
+            string id = CharacterIdAliasResolver.Normalize(pair.Key);
+            if (string.IsNullOrEmpty(id))
+            {
+                continue;
+            }
+
+            if (values.TryGetValue(id, out int existing))
+            {
+                values[id] = Math.Max(existing, pair.Value);
+            }
+            else
+            {
+                values[id] = pair.Value;
+            }
+        }
+    }
+
+    private void NormalizeCharacterScopedIntVars()
+    {
+        List<KeyValuePair<string, int>> pairs = new List<KeyValuePair<string, int>>(intVars);
+        intVars.Clear();
+        foreach (KeyValuePair<string, int> pair in pairs)
+        {
+            string key = NormalizeCharacterScopedKey(pair.Key);
+            if (string.IsNullOrEmpty(key))
+            {
+                continue;
+            }
+
+            if (intVars.TryGetValue(key, out int existing))
+            {
+                intVars[key] = Math.Max(existing, pair.Value);
+            }
+            else
+            {
+                intVars[key] = pair.Value;
+            }
+        }
+    }
+
+    private void NormalizeCharacterScopedStringVars()
+    {
+        List<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>(stringVars);
+        stringVars.Clear();
+        foreach (KeyValuePair<string, string> pair in pairs)
+        {
+            string key = NormalizeCharacterScopedKey(pair.Key);
+            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(pair.Value))
+            {
+                continue;
+            }
+
+            if (!stringVars.ContainsKey(key))
+            {
+                stringVars[key] = pair.Value;
+            }
+        }
+    }
+
+    private void NormalizeCharacterScopedFlags()
+    {
+        List<string> flags = new List<string>(storyFlags);
+        storyFlags.Clear();
+        foreach (string flag in flags)
+        {
+            string normalized = NormalizeCharacterScopedKey(flag);
+            if (!string.IsNullOrEmpty(normalized))
+            {
+                storyFlags.Add(normalized);
+            }
+        }
+    }
+
+    private static string NormalizeCharacterScopedKey(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            return key;
+        }
+
+        string normalized = NormalizeSimpleSuffix(key, "gift:last_day:");
+        normalized = NormalizeSimpleSuffix(normalized, "companion:visit:last_day:");
+        normalized = NormalizeSimpleSuffix(normalized, "companion:visit:count:");
+        normalized = NormalizeSimpleSuffix(normalized, "pending_first_impression:");
+        normalized = NormalizeSimpleSuffix(normalized, "applied_first_impression:");
+        normalized = NormalizeSimpleSuffix(normalized, "deployment:active:member:");
+        normalized = NormalizeColonScoped(normalized, "growth:");
+        normalized = NormalizeColonScoped(normalized, "equip:");
+        return normalized;
+    }
+
+    private static string NormalizeSimpleSuffix(string key, string prefix)
+    {
+        if (string.IsNullOrEmpty(key) || !key.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return key;
+        }
+
+        string id = CharacterIdAliasResolver.Normalize(key.Substring(prefix.Length));
+        return string.IsNullOrEmpty(id) ? key : prefix + id;
+    }
+
+    private static string NormalizeColonScoped(string key, string prefix)
+    {
+        if (string.IsNullOrEmpty(key) || !key.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return key;
+        }
+
+        int start = prefix.Length;
+        int end = key.IndexOf(':', start);
+        if (end < 0)
+        {
+            return key;
+        }
+
+        string id = CharacterIdAliasResolver.Normalize(key.Substring(start, end - start));
+        return string.IsNullOrEmpty(id) ? key : prefix + id + key.Substring(end);
     }
 
     [Serializable]

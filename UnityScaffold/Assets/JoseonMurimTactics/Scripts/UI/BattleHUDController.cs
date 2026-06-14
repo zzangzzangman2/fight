@@ -24,14 +24,21 @@ public sealed class BattleHUDController : MonoBehaviour
     private static readonly Color GaugeBg = new Color(0.012f, 0.014f, 0.013f, 0.94f);
 
     private const int MaxRosterSlots = 6;
-    private const float ReferenceWidth = 1920f;
-    private const float ReferenceHeight = 1080f;
+    private const float ReferenceWidth = 1600f;
+    private const float ReferenceHeight = 900f;
     private const int CommandMoveIndex = 0;
     private const int CommandAttackIndex = 1;
     private const int CommandSkillIndex = 2;
     private const int CommandGuardIndex = 3;
     private const int CommandTerrainIndex = 4;
     private const int CommandWaitIndex = 5;
+    private const float DeploymentPanelWidth = 1520f;
+    private const float DeploymentSlotWidth = 146f;
+    private const float DeploymentSlotHeight = 188f;
+    private const float DeploymentSlotGap = 16f;
+    private const float DeploymentSlotTop = -52f;
+    private const float DeploymentLeftReserve = 330f;
+    private const float DeploymentRightReserve = 220f;
 
     private BattleTestController owner;
     private Canvas canvas;
@@ -61,6 +68,14 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private RectTransform rosterPanel;
     private readonly List<RosterSlot> rosterSlots = new List<RosterSlot>();
+
+    private RectTransform deploymentPanel;
+    private Text deploymentTitleText;
+    private Text deploymentHintText;
+    private Text deploymentCountText;
+    private Text deploymentStartText;
+    private readonly List<DeploymentSlot> deploymentSlots = new List<DeploymentSlot>();
+    private Image deploymentDragGhost;
 
     private RectTransform forecastPanel;
     private Text forecastTitle;
@@ -127,7 +142,7 @@ public sealed class BattleHUDController : MonoBehaviour
             return;
         }
 
-        phaseTitle.text = PhaseText(snapshot.phase, snapshot.battleOver) + "  |  " +
+        phaseTitle.text = (snapshot.scoutMode ? "\uCE90\uB9AD\uD130 \uBC30\uCE58" : PhaseText(snapshot.phase, snapshot.battleOver)) + "  |  " +
                           "\uB77C\uC6B4\uB4DC " + snapshot.round.ToString() + "/" +
                           Mathf.Max(1, snapshot.turnLimit).ToString();
         phaseInstruction.text = CompactInstruction(snapshot);
@@ -138,6 +153,7 @@ public sealed class BattleHUDController : MonoBehaviour
         objectiveText.text = CompactObjective(snapshot.objectiveText);
 
         UpdateSelectedUnit(snapshot);
+        UpdateDeployment(snapshot);
         UpdateCommands(snapshot);
         UpdateForecast(snapshot);
         UpdateRoster(snapshot);
@@ -208,6 +224,7 @@ public sealed class BattleHUDController : MonoBehaviour
         canvas = canvasObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 10000;
+        canvas.pixelPerfect = true;
 
         CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -216,40 +233,40 @@ public sealed class BattleHUDController : MonoBehaviour
         canvasObject.AddComponent<GraphicRaycaster>();
         RectTransform root = canvasObject.GetComponent<RectTransform>();
 
-        RectTransform phasePanel = PanelRect("TopPhaseRibbon", root, TopCenter(), new Vector2(620f, 64f),
-                                             new Vector2(0f, -18f), PanelStrong, true,
-                                             "ui_battle_panel_phase_ribbon_9slice");
+        RectTransform phasePanel = PanelRect("TopPhaseRibbon", root, TopCenter(), new Vector2(820f, 74f),
+                                             new Vector2(0f, -14f), Color.white, false,
+                                             "ui_phase_banner_imagegen");
         AddAccentLine("PhaseAccent", phasePanel, BottomLeft(), BottomRight(), new Vector2(16f, 6f),
-                      new Vector2(-16f, 10f), LineGold);
+                      new Vector2(-16f, 9f), new Color(LineGold.r, LineGold.g, LineGold.b, 0.55f));
         phaseTitle = MakeText("PhaseTitleText", phasePanel, StretchMin(), StretchMax(),
-                              new Vector2(24f, 25f), new Vector2(-24f, -6f), 24, FontStyle.Bold,
+                              new Vector2(38f, 27f), new Vector2(-38f, -8f), 28, FontStyle.Bold,
                               TextAnchor.MiddleCenter, TextMain);
         phaseInstruction = MakeText("PhaseInstructionText", phasePanel, StretchMin(), StretchMax(),
-                                    new Vector2(24f, 5f), new Vector2(-24f, -36f), 14, FontStyle.Normal,
+                                    new Vector2(44f, 7f), new Vector2(-44f, -42f), 16, FontStyle.Normal,
                                     TextAnchor.MiddleCenter, TextSub);
 
         RectTransform objectiveButton = MakeButton("ObjectiveMiniButton", root, TopLeft(), new Vector2(112f, 38f),
                                                    new Vector2(24f, -24f), () => owner.HudToggleObjective(),
                                                    out objectiveMiniLabel);
-        objectiveMiniLabel.fontSize = 13;
+        objectiveMiniLabel.fontSize = 15;
         objectiveMiniLabel.text = "\uBAA9\uD45C O";
 
-        objectivePanel = PanelRect("ObjectiveExpandedPanel", root, TopLeft(), new Vector2(370f, 172f),
-                                   new Vector2(24f, -72f), PanelStrong, true, "ui_scroll_frame");
+        objectivePanel = PanelRect("ObjectiveExpandedPanel", root, TopLeft(), new Vector2(390f, 178f),
+                                   new Vector2(24f, -72f), Color.white, false, "ui_info_panel_imagegen");
         objectiveText = MakeText("ObjectiveText", objectivePanel, StretchMin(), StretchMax(),
-                                 new Vector2(18f, 14f), new Vector2(-18f, -14f), 15, FontStyle.Normal,
+                                 new Vector2(18f, 14f), new Vector2(-18f, -14f), 17, FontStyle.Normal,
                                  TextAnchor.UpperLeft, TextMain);
 
         RectTransform helpButton = MakeButton("HelpMiniButton", root, TopRight(), new Vector2(108f, 38f),
                                               new Vector2(-24f, -24f), () => helpVisible = !helpVisible,
                                               out Text helpMiniLabel);
-        helpMiniLabel.fontSize = 13;
+        helpMiniLabel.fontSize = 15;
         helpMiniLabel.text = "F1 \uB3C4\uC6C0";
 
-        helpPanel = PanelRect("HelpOverlayPanel", root, TopRight(), new Vector2(350f, 248f),
-                              new Vector2(-24f, -72f), PanelStrong, true, "ui_tooltip_frame");
+        helpPanel = PanelRect("HelpOverlayPanel", root, TopRight(), new Vector2(372f, 258f),
+                              new Vector2(-24f, -72f), Color.white, false, "ui_info_panel_imagegen");
         helpText = MakeText("HelpText", helpPanel, StretchMin(), StretchMax(), new Vector2(16f, 14f),
-                            new Vector2(-16f, -14f), 14, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
+                            new Vector2(-16f, -14f), 16, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
         helpText.text =
             "\uC804\uD22C \uB3C4\uC6C0\uB9D0\n" +
             "1 \uC774\uB3D9   2 \uACF5\uACA9   3 \uBB34\uACF5\n" +
@@ -258,94 +275,97 @@ public sealed class BattleHUDController : MonoBehaviour
             "O \uBAA9\uD45C   L \uAE30\uB85D   Esc \uCDE8\uC18C";
         helpPanel.gameObject.SetActive(false);
 
-        selectedPromptCard = PanelRect("SelectedPromptCard", root, TopRight(), new Vector2(332f, 54f),
-                                       new Vector2(-24f, -72f), Panel, true, "ui_unit_status_card");
+        selectedPromptCard = PanelRect("SelectedPromptCard", root, TopRight(), new Vector2(410f, 64f),
+                                       new Vector2(-24f, -82f), Color.white, false, "ui_info_panel_imagegen");
         MakeText("SelectedPromptText", selectedPromptCard, StretchMin(), StretchMax(),
-                 new Vector2(14f, 0f), new Vector2(-14f, 0f), 14, FontStyle.Bold,
+                 new Vector2(22f, 0f), new Vector2(-22f, 0f), 17, FontStyle.Bold,
                  TextAnchor.MiddleCenter, TextSub).text = "\uD589\uB3D9\uD560 \uC544\uAD70 \uC120\uD0DD";
 
-        selectedUnitCard = PanelRect("SelectedUnitCard", root, TopRight(), new Vector2(420f, 128f),
-                                     new Vector2(-24f, -72f), PanelStrong, true, "ui_unit_status_card");
+        selectedUnitCard = PanelRect("SelectedUnitCard", root, TopRight(), new Vector2(480f, 158f),
+                                     new Vector2(-24f, -82f), Color.white, false, "ui_info_panel_imagegen");
         AddAccentLine("SelectedUnitAccent", selectedUnitCard, TopLeft(), TopRight(),
-                      new Vector2(14f, -10f), new Vector2(-14f, -7f), LineGold);
-        RectTransform portrait = PanelRect("PortraitFrame", selectedUnitCard, TopLeft(), new Vector2(72f, 72f),
-                                           new Vector2(18f, -22f), PanelSoft, true, "ui_panel_gold_frame");
+                      new Vector2(22f, -11f), new Vector2(-22f, -8f),
+                      new Color(LineGold.r, LineGold.g, LineGold.b, 0.45f));
+        RectTransform portrait = PanelRect("PortraitFrame", selectedUnitCard, TopLeft(), new Vector2(64f, 64f),
+                                           new Vector2(22f, -42f), PanelSoft, true, "ui_panel_gold_frame");
         selectedPortraitText = MakeText("PortraitGlyph", portrait, StretchMin(), StretchMax(),
                                         Vector2.zero, Vector2.zero, 26, FontStyle.Bold, TextAnchor.MiddleCenter,
                                         LineGold);
         selectedNameText = MakeText("SelectedNameText", selectedUnitCard, TopLeft(), TopRight(),
-                                    new Vector2(106f, -40f), new Vector2(-18f, -10f), 20, FontStyle.Bold,
+                                    new Vector2(106f, -36f), new Vector2(-28f, -8f), 22, FontStyle.Bold,
                                     TextAnchor.MiddleLeft, TextMain);
         selectedSectText = MakeText("SelectedSectText", selectedUnitCard, TopLeft(), TopRight(),
-                                    new Vector2(106f, -64f), new Vector2(-18f, -40f), 14, FontStyle.Normal,
+                                    new Vector2(106f, -62f), new Vector2(-28f, -40f), 15, FontStyle.Normal,
                                     TextAnchor.MiddleLeft, TextSub);
         selectedHpFill = Gauge("SelectedHpGauge", selectedUnitCard, new Vector2(106f, -78f),
-                               new Vector2(252f, 12f), HpFill, "ui_hp_bar_bg", "ui_hp_bar_fill");
-        selectedInnerFill = Gauge("SelectedInnerGauge", selectedUnitCard, new Vector2(106f, -98f),
-                                  new Vector2(252f, 11f), InnerFill, "ui_inner_bar_bg", "ui_inner_bar_fill");
+                               new Vector2(310f, 12f), HpFill, "ui_hp_bar_bg", "ui_hp_bar_fill");
+        selectedInnerFill = Gauge("SelectedInnerGauge", selectedUnitCard, new Vector2(106f, -100f),
+                                  new Vector2(310f, 11f), InnerFill, "ui_inner_bar_bg", "ui_inner_bar_fill");
         selectedMoveText = MakeText("SelectedMoveText", selectedUnitCard, TopLeft(), TopRight(),
-                                    new Vector2(106f, -124f), new Vector2(-18f, -104f), 14, FontStyle.Normal,
+                                    new Vector2(106f, -130f), new Vector2(-28f, -108f), 15, FontStyle.Normal,
                                     TextAnchor.MiddleLeft, TextSub);
         selectedStatusText = MakeText("SelectedStatusText", selectedUnitCard, BottomLeft(), BottomRight(),
-                                      new Vector2(18f, 7f), new Vector2(-18f, 26f), 12, FontStyle.Normal,
+                                      new Vector2(24f, 9f), new Vector2(-24f, 30f), 12, FontStyle.Normal,
                                       TextAnchor.MiddleLeft, TextDim);
 
-        rosterPanel = PanelRect("RosterStrip", root, TopRight(), new Vector2(420f, 76f), new Vector2(-24f, -208f),
+        rosterPanel = PanelRect("RosterStrip", root, TopRight(), new Vector2(520f, 88f), new Vector2(-24f, -260f),
                                 Panel, true, "ui_turn_order_card");
         AddAccentLine("RosterAccent", rosterPanel, TopLeft(), TopRight(),
                       new Vector2(16f, -9f), new Vector2(-16f, -6f), new Color(LineGold.r, LineGold.g, LineGold.b, 0.62f));
 
-        commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(410f, 144f),
+        commandPanel = PanelRect("CommandRibbon", root, BottomRight(), new Vector2(526f, 144f),
                                  new Vector2(-34f, 30f), Color.clear,
                                  false);
         BuildCommandButtons();
+
+        BuildDeploymentPanel(root);
 
         forecastPanel = PanelRect("ForecastCard", root, BottomCenter(), new Vector2(720f, 144f),
                                   new Vector2(0f, 112f), PanelStrong, true, "ui_battle_forecast_panel");
         AddAccentLine("ForecastAccent", forecastPanel, TopLeft(), TopRight(),
                       new Vector2(18f, -10f), new Vector2(-18f, -7f), LineGold);
         forecastTitle = MakeText("ForecastTitle", forecastPanel, TopLeft(), TopRight(),
-                                 new Vector2(18f, -30f), new Vector2(-18f, -8f), 15, FontStyle.Bold,
+                                 new Vector2(18f, -30f), new Vector2(-18f, -8f), 17, FontStyle.Bold,
                                  TextAnchor.MiddleCenter, LineGold);
         forecastLeft = MakeText("ForecastAttacker", forecastPanel, new Vector2(0f, 0f), new Vector2(0.32f, 1f),
-                                new Vector2(18f, 12f), new Vector2(-8f, -38f), 13, FontStyle.Bold,
+                                new Vector2(18f, 12f), new Vector2(-8f, -38f), 15, FontStyle.Bold,
                                 TextAnchor.UpperLeft, TextMain);
         forecastCenter = MakeText("ForecastResult", forecastPanel, new Vector2(0.32f, 0f), new Vector2(0.68f, 1f),
-                                  new Vector2(12f, 12f), new Vector2(-12f, -38f), 17, FontStyle.Bold,
+                                  new Vector2(12f, 12f), new Vector2(-12f, -38f), 19, FontStyle.Bold,
                                   TextAnchor.UpperCenter, LineGold);
         forecastRight = MakeText("ForecastTarget", forecastPanel, new Vector2(0.68f, 0f), new Vector2(1f, 1f),
-                                 new Vector2(8f, 12f), new Vector2(-18f, -38f), 13, FontStyle.Bold,
+                                 new Vector2(8f, 12f), new Vector2(-18f, -38f), 15, FontStyle.Bold,
                                  TextAnchor.UpperRight, TextMain);
 
-        hoverPanel = PanelRect("HoverTooltip", root, BottomLeft(), new Vector2(300f, 96f), Vector2.zero,
-                               PanelStrong, true, "ui_tooltip_frame");
+        hoverPanel = PanelRect("HoverTooltip", root, BottomLeft(), new Vector2(320f, 104f), Vector2.zero,
+                               Color.white, false, "ui_info_panel_imagegen");
         hoverPanel.pivot = new Vector2(0f, 1f);
         hoverTitle = MakeText("HoverTitle", hoverPanel, TopLeft(), TopRight(),
-                              new Vector2(14f, -30f), new Vector2(-14f, -8f), 14, FontStyle.Bold,
+                              new Vector2(14f, -32f), new Vector2(-14f, -6f), 17, FontStyle.Bold,
                               TextAnchor.MiddleLeft, LineGold);
         hoverBody = MakeText("HoverBody", hoverPanel, StretchMin(), StretchMax(), new Vector2(14f, 10f),
-                             new Vector2(-14f, -34f), 12, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
+                             new Vector2(-14f, -36f), 14, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
 
         MakeButton("LogMiniButton", root, BottomRight(), new Vector2(92f, 32f), new Vector2(-28f, 304f),
                    () => owner.HudToggleLog(), out logMiniLabel).gameObject.SetActive(true);
-        logMiniLabel.fontSize = 12;
+        logMiniLabel.fontSize = 14;
         logMiniLabel.text = "\uAE30\uB85D L";
 
-        logToastPanel = PanelRect("LogToast", root, BottomRight(), new Vector2(372f, 44f), new Vector2(-28f, 248f),
-                                  PanelStrong, true, "ui_toast_frame");
+        logToastPanel = PanelRect("LogToast", root, BottomRight(), new Vector2(392f, 54f), new Vector2(-28f, 248f),
+                                  Color.white, false, "ui_phase_banner_imagegen");
         logToastText = MakeText("LogToastText", logToastPanel, StretchMin(), StretchMax(),
-                                new Vector2(14f, 0f), new Vector2(-14f, 0f), 13, FontStyle.Normal,
+                                new Vector2(14f, 0f), new Vector2(-14f, 0f), 15, FontStyle.Normal,
                                 TextAnchor.MiddleLeft, TextMain);
 
-        logPanel = PanelRect("ExpandedLogPanel", root, RightCenter(), new Vector2(380f, 350f), new Vector2(-24f, 0f),
-                             PanelStrong, true, "ui_scroll_frame");
+        logPanel = PanelRect("ExpandedLogPanel", root, RightCenter(), new Vector2(392f, 360f), new Vector2(-24f, 0f),
+                             Color.white, false, "ui_info_panel_imagegen");
         logText = MakeText("LogText", logPanel, StretchMin(), StretchMax(), new Vector2(16f, 16f),
-                           new Vector2(-16f, -16f), 13, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
+                           new Vector2(-16f, -16f), 15, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
 
-        noticePanel = PanelRect("BattleNoticeToast", root, Center(), new Vector2(430f, 92f), new Vector2(0f, 120f),
-                                PanelStrong, true, "ui_toast_frame");
+        noticePanel = PanelRect("BattleNoticeToast", root, Center(), new Vector2(460f, 92f), new Vector2(0f, 120f),
+                                Color.white, false, "ui_phase_banner_imagegen");
         noticeText = MakeText("BattleNoticeText", noticePanel, StretchMin(), StretchMax(),
-                              new Vector2(16f, 8f), new Vector2(-16f, -8f), 22, FontStyle.Bold,
+                              new Vector2(16f, 8f), new Vector2(-16f, -8f), 26, FontStyle.Bold,
                               TextAnchor.MiddleCenter, LineGold);
 
         selectedUnitCard.gameObject.SetActive(false);
@@ -354,6 +374,53 @@ public sealed class BattleHUDController : MonoBehaviour
         logToastPanel.gameObject.SetActive(false);
         logPanel.gameObject.SetActive(false);
         noticePanel.gameObject.SetActive(false);
+    }
+
+    private void BuildDeploymentPanel(RectTransform root)
+    {
+        deploymentPanel = PanelRect("DeploymentStrip", root, BottomCenter(), new Vector2(DeploymentPanelWidth, 250f),
+                                    new Vector2(0f, 8f), Color.white, false,
+                                    "ui_deployment_strip_imagegen");
+        deploymentTitleText = MakeText("DeploymentTitle", deploymentPanel, TopLeft(), TopLeft(),
+                                       new Vector2(120f, -80f), new Vector2(388f, -46f), 20, FontStyle.Bold,
+                                       TextAnchor.MiddleLeft, LineGold);
+        deploymentHintText = MakeText("DeploymentHint", deploymentPanel, TopLeft(), TopLeft(),
+                                      new Vector2(120f, -134f), new Vector2(420f, -88f), 13, FontStyle.Normal,
+                                      TextAnchor.MiddleLeft, TextSub);
+        deploymentCountText = MakeText("DeploymentCount", deploymentPanel, TopRight(), TopRight(),
+                                       new Vector2(-260f, -52f), new Vector2(-132f, -16f), 20, FontStyle.Bold,
+                                       TextAnchor.MiddleCenter, TextMain);
+        RectTransform startButton = MakeButton("DeploymentStartButton", deploymentPanel, TopRight(),
+                                               new Vector2(128f, 154f), new Vector2(-38f, -72f),
+                                               () => owner.HudWait(), out deploymentStartText);
+        Image startBackground = startButton.GetComponent<Image>();
+        if (startBackground != null)
+        {
+            ApplySpriteOrColor(startBackground, "ui_deployment_slot_imagegen", Color.white, true);
+        }
+
+        foreach (Outline outline in startButton.GetComponents<Outline>())
+        {
+            Destroy(outline);
+        }
+
+        Button startSelectable = startButton.GetComponent<Button>();
+        if (startSelectable != null)
+        {
+            startSelectable.transition = Selectable.Transition.ColorTint;
+            ColorBlock colors = startSelectable.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1f, 0.92f, 0.62f, 1f);
+            colors.pressedColor = new Color(0.92f, 0.74f, 0.36f, 1f);
+            colors.selectedColor = new Color(1f, 0.86f, 0.48f, 1f);
+            colors.disabledColor = new Color(1f, 1f, 1f, 0.48f);
+            colors.colorMultiplier = 1f;
+            startSelectable.colors = colors;
+        }
+
+        deploymentStartText.fontSize = 24;
+        deploymentStartText.lineSpacing = 0.90f;
+        deploymentPanel.gameObject.SetActive(false);
     }
 
     private void BuildCommandButtons()
@@ -433,7 +500,7 @@ public sealed class BattleHUDController : MonoBehaviour
         commandViews.Add(new CommandButtonView(buttonRect, button,
                                                background, icon, badge, hint,
                                                activeFrame, disabledOverlay, text));
-        if (index == CommandMoveIndex || index == CommandGuardIndex || index == CommandTerrainIndex)
+        if (index == CommandGuardIndex || index == CommandTerrainIndex)
         {
             buttonRect.gameObject.SetActive(false);
         }
@@ -453,18 +520,18 @@ public sealed class BattleHUDController : MonoBehaviour
     {
         switch (index)
         {
-        case CommandAttackIndex:
-            return new Vector2(0f, -8f);
-        case CommandSkillIndex:
-            return new Vector2(136f, -8f);
         case CommandMoveIndex:
-            return new Vector2(-1000f, -1000f);
+            return new Vector2(0f, -8f);
+        case CommandAttackIndex:
+            return new Vector2(106f, -8f);
+        case CommandSkillIndex:
+            return new Vector2(242f, -8f);
         case CommandGuardIndex:
             return new Vector2(-1000f, -1000f);
         case CommandTerrainIndex:
             return new Vector2(-1000f, -1000f);
         case CommandWaitIndex:
-            return new Vector2(272f, -8f);
+            return new Vector2(378f, -8f);
         default:
             return Vector2.zero;
         }
@@ -512,21 +579,16 @@ public sealed class BattleHUDController : MonoBehaviour
     {
         bool playerUnitReady = snapshot.phase == BattlePhase.PlayerPhase && snapshot.activeUnit != null &&
                                !snapshot.battleOver;
-        bool show = snapshot.scoutMode || playerUnitReady;
-        commandPanel.gameObject.SetActive(show);
-        if (!show)
+        if (snapshot.scoutMode)
         {
+            commandPanel.gameObject.SetActive(false);
             return;
         }
 
-        if (snapshot.scoutMode)
+        bool show = playerUnitReady;
+        commandPanel.gameObject.SetActive(show);
+        if (!show)
         {
-            SetCommand(CommandMoveIndex, "\uBC30\uCE58", false, false);
-            SetCommand(CommandAttackIndex, "\uC815\uCC30", false, false);
-            SetCommand(CommandSkillIndex, "\uD655\uC778", false, false);
-            SetCommand(CommandGuardIndex, "\uBC29\uC5B4", false, false);
-            SetCommand(CommandTerrainIndex, "\uC9C0\uD615", false, false);
-            SetCommand(CommandWaitIndex, "\uC2DC\uC791", snapshot.canWait, true);
             return;
         }
 
@@ -576,11 +638,7 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private void UpdateForecast(BattleHudSnapshot snapshot)
     {
-        bool attackMode = snapshot.commandMode == BattleCommandMode.Attack ||
-                          snapshot.commandMode == BattleCommandMode.Skill;
-        bool hasTargetContext = !string.IsNullOrWhiteSpace(snapshot.forecastLeft) ||
-                                !string.IsNullOrWhiteSpace(snapshot.forecastRight);
-        bool show = snapshot.hasForecast && attackMode && hasTargetContext && !snapshot.battleOver;
+        bool show = ShouldShowForecast(snapshot);
         forecastPanel.gameObject.SetActive(show);
         if (!show)
         {
@@ -595,8 +653,120 @@ public sealed class BattleHUDController : MonoBehaviour
         forecastRight.text = snapshot.forecastRight;
     }
 
+    private static bool ShouldShowForecast(BattleHudSnapshot snapshot)
+    {
+        if (snapshot == null || snapshot.battleOver || !snapshot.hasForecast)
+        {
+            return false;
+        }
+
+        bool attackMode = snapshot.commandMode == BattleCommandMode.Attack ||
+                          snapshot.commandMode == BattleCommandMode.Skill;
+        bool hasTargetContext = !string.IsNullOrWhiteSpace(snapshot.forecastLeft) ||
+                                !string.IsNullOrWhiteSpace(snapshot.forecastRight);
+        return hasTargetContext && (attackMode || snapshot.canAttack);
+    }
+
+    private void UpdateDeployment(BattleHudSnapshot snapshot)
+    {
+        bool show = snapshot.scoutMode && !snapshot.battleOver;
+        deploymentPanel.gameObject.SetActive(show);
+        if (!show)
+        {
+            return;
+        }
+
+        int visibleCount = Mathf.Min(MaxRosterSlots, snapshot.allies.Count);
+        while (deploymentSlots.Count < visibleCount)
+        {
+            deploymentSlots.Add(CreateDeploymentSlot(deploymentSlots.Count));
+        }
+
+        int readyCount = 0;
+        for (int i = 0; i < snapshot.allies.Count; i++)
+        {
+            BattleTestUnit unit = snapshot.allies[i];
+            if (unit != null && !unit.defeated)
+            {
+                readyCount++;
+            }
+        }
+
+        deploymentTitleText.text = "\uCE90\uB9AD\uD130 \uBC30\uCE58";
+        deploymentHintText.text = "\uD558\uB2E8 \uC804\uC2E0 \uCE90\uB9AD\uD130 \uB4DC\uB798\uADF8 -> \uD30C\uB780 \uC2DC\uC791 \uCE78";
+        deploymentCountText.text = "\uCD9C\uC804 " + readyCount + "/" + Mathf.Max(1, snapshot.allies.Count);
+        deploymentStartText.text = "\uC2DC\uC791\n" + readyCount + "/" + Mathf.Max(1, snapshot.allies.Count);
+
+        for (int i = 0; i < deploymentSlots.Count; i++)
+        {
+            DeploymentSlot slot = deploymentSlots[i];
+            bool active = i < visibleCount;
+            slot.root.gameObject.SetActive(active);
+            if (!active)
+            {
+                slot.boundUnit = null;
+                continue;
+            }
+
+            BattleTestUnit unit = snapshot.allies[i];
+            LayoutDeploymentSlot(slot.root, i, visibleCount);
+            bool isActiveUnit = unit == snapshot.activeUnit;
+            bool selectable = snapshot.selectableUnits.Contains(unit);
+            slot.boundUnit = unit;
+            Sprite unitSprite = DeploymentPreviewSpriteForUnit(unit);
+            slot.art.sprite = unitSprite;
+            slot.art.enabled = unitSprite != null;
+            slot.art.color = unit.defeated
+                                 ? new Color(0.46f, 0.46f, 0.46f, 0.68f)
+                                 : isActiveUnit ? Color.white : new Color(0.94f, 0.94f, 0.90f, 0.96f);
+            slot.artShadow.enabled = unitSprite != null;
+            slot.artShadow.color = unit.defeated
+                                       ? new Color(0f, 0f, 0f, 0.18f)
+                                       : new Color(0f, 0f, 0f, isActiveUnit ? 0.42f : 0.30f);
+            slot.fallbackFrame.gameObject.SetActive(unitSprite == null);
+            slot.glyph.text = string.IsNullOrEmpty(unit.definition.displayName)
+                                  ? "?"
+                                  : unit.definition.displayName.Substring(0, 1);
+            slot.name.text = SlotName(unit.definition.displayName);
+            slot.state.text = unit.defeated ? "\uBD88\uB2A5" : isActiveUnit ? "\uC120\uD0DD" : "\uCD9C\uC804";
+            slot.button.interactable = selectable;
+            slot.background.color = unit.defeated
+                                        ? new Color(0.020f, 0.021f, 0.019f, 0.62f)
+                                        : isActiveUnit ? new Color(0.210f, 0.150f, 0.052f, 0.98f)
+                                                       : new Color(0.030f, 0.034f, 0.029f, 0.96f);
+            slot.glyph.color = unit.defeated ? TextDim : isActiveUnit ? Color.white : LineGold;
+            slot.name.color = unit.defeated ? TextDim : isActiveUnit ? Color.white : TextMain;
+            slot.state.color = unit.defeated ? TextDim : isActiveUnit ? LineGold : TextSub;
+            slot.activeFrame.gameObject.SetActive(isActiveUnit);
+            slot.disabledOverlay.gameObject.SetActive(unit.defeated);
+            SetGauge(slot.hpFill, unit.hp, unit.definition.maxHp);
+        }
+    }
+
+    private void LayoutDeploymentSlot(RectTransform slot, int index, int visibleCount)
+    {
+        if (slot == null)
+        {
+            return;
+        }
+
+        float totalWidth = (visibleCount * DeploymentSlotWidth) + (Mathf.Max(0, visibleCount - 1) * DeploymentSlotGap);
+        float panelWidth = deploymentPanel != null ? deploymentPanel.sizeDelta.x : DeploymentPanelWidth;
+        float trackWidth = Mathf.Max(totalWidth, panelWidth - DeploymentLeftReserve - DeploymentRightReserve);
+        float startX = DeploymentLeftReserve + Mathf.Max(0f, (trackWidth - totalWidth) * 0.5f);
+        slot.anchoredPosition = new Vector2(startX + index * (DeploymentSlotWidth + DeploymentSlotGap),
+                                            DeploymentSlotTop);
+    }
+
     private void UpdateRoster(BattleHudSnapshot snapshot)
     {
+        if (snapshot.scoutMode)
+        {
+            rosterPanel.gameObject.SetActive(false);
+            return;
+        }
+
+        rosterPanel.gameObject.SetActive(true);
         int visibleCount = Mathf.Min(MaxRosterSlots, snapshot.allies.Count);
         while (rosterSlots.Count < visibleCount)
         {
@@ -617,7 +787,7 @@ public sealed class BattleHUDController : MonoBehaviour
             BattleTestUnit unit = snapshot.allies[i];
             bool isActiveUnit = unit == snapshot.activeUnit;
             slot.boundUnit = unit;
-            slot.name.text = ShortName(unit.definition.displayName);
+            slot.name.text = SlotName(unit.definition.displayName);
             slot.detail.text = unit.acted ? "\uC644\uB8CC" :
                                unit.defeated ? "\uBD88\uB2A5" :
                                snapshot.selectableUnits.Contains(unit) ? "\uC900\uBE44" : "-";
@@ -636,9 +806,9 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private RosterSlot CreateRosterSlot(int index)
     {
-        float x = 14f + index * 67f;
-        RectTransform buttonRect = MakeButton("RosterSlot_" + index, rosterPanel, TopLeft(), new Vector2(58f, 52f),
-                                              new Vector2(x, -10f), null, out Text label);
+        float x = 16f + index * 82f;
+        RectTransform buttonRect = MakeButton("RosterSlot_" + index, rosterPanel, TopLeft(), new Vector2(76f, 64f),
+                                              new Vector2(x, -12f), null, out Text label);
         label.gameObject.SetActive(false);
         Button button = buttonRect.GetComponent<Button>();
         Image background = buttonRect.GetComponent<Image>();
@@ -652,14 +822,14 @@ public sealed class BattleHUDController : MonoBehaviour
         disabledOverlay.gameObject.SetActive(false);
 
         Text name = MakeText("RosterName_" + index, buttonRect, TopLeft(), TopRight(),
-                             new Vector2(5f, -21f), new Vector2(-5f, -3f), 13, FontStyle.Bold,
+                             new Vector2(4f, -25f), new Vector2(-4f, -3f), 15, FontStyle.Bold,
                              TextAnchor.MiddleCenter, TextMain);
         Text detail = MakeText("RosterDetail_" + index, buttonRect, TopLeft(), TopRight(),
-                               new Vector2(5f, -35f), new Vector2(-5f, -19f), 10, FontStyle.Bold,
+                               new Vector2(4f, -45f), new Vector2(-4f, -25f), 12, FontStyle.Bold,
                                TextAnchor.MiddleCenter, TextSub);
-        Image hpFill = Gauge("RosterHp_" + index, buttonRect, new Vector2(7f, -38f), new Vector2(44f, 5f),
+        Image hpFill = Gauge("RosterHp_" + index, buttonRect, new Vector2(9f, -50f), new Vector2(58f, 5f),
                              HpFill, "ui_hp_bar_bg", "ui_hp_bar_fill");
-        Image innerFill = Gauge("RosterInner_" + index, buttonRect, new Vector2(7f, -47f), new Vector2(44f, 4f),
+        Image innerFill = Gauge("RosterInner_" + index, buttonRect, new Vector2(9f, -58f), new Vector2(58f, 4f),
                                 InnerFill, "ui_inner_bar_bg", "ui_inner_bar_fill");
         Text badge = MakeText("RosterBadge_" + index, buttonRect, StretchMin(), StretchMax(), Vector2.zero, Vector2.zero,
                               18, FontStyle.Bold, TextAnchor.MiddleCenter, LineGold);
@@ -675,6 +845,128 @@ public sealed class BattleHUDController : MonoBehaviour
             }
         });
         return slot;
+    }
+
+    private DeploymentSlot CreateDeploymentSlot(int index)
+    {
+        float x = DeploymentLeftReserve + index * (DeploymentSlotWidth + DeploymentSlotGap);
+        RectTransform buttonRect = MakeButton("DeploymentSlot_" + index, deploymentPanel, TopLeft(),
+                                              new Vector2(DeploymentSlotWidth, DeploymentSlotHeight),
+                                              new Vector2(x, DeploymentSlotTop), null, out Text label);
+        label.gameObject.SetActive(false);
+        Button button = buttonRect.GetComponent<Button>();
+        Image background = buttonRect.GetComponent<Image>();
+        background.sprite = null;
+        background.type = Image.Type.Simple;
+        background.color = new Color(0.030f, 0.031f, 0.027f, 0.96f);
+        button.transition = Selectable.Transition.None;
+        Image activeFrame = SolidImage("DeploymentActiveFrame_" + index, buttonRect, StretchMin(), StretchMax(),
+                                        Vector2.zero, Vector2.zero,
+                                        new Color(LineGold.r, LineGold.g, LineGold.b, 0.045f));
+        AddBorder(activeFrame.gameObject, LineGold, new Vector2(2f, -2f));
+        activeFrame.transform.SetAsFirstSibling();
+        activeFrame.gameObject.SetActive(false);
+        Image disabledOverlay = SolidImage("DeploymentDisabledOverlay_" + index, buttonRect, StretchMin(), StretchMax(),
+                                            Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.40f));
+        disabledOverlay.gameObject.SetActive(false);
+
+        RectTransform artClip = EmptyRect("DeploymentArtClip_" + index, buttonRect, TopCenter(), TopCenter(),
+                                          new Vector2(-68f, -132f), new Vector2(68f, -6f));
+        artClip.gameObject.AddComponent<RectMask2D>();
+
+        Image artShadow = SolidImage("DeploymentArtShadow_" + index, artClip, BottomCenter(), BottomCenter(),
+                                     new Vector2(-50f, 6f), new Vector2(50f, 18f),
+                                     new Color(0f, 0f, 0f, 0.42f));
+        Image art = SolidImage("DeploymentFullBody_" + index, artClip, TopCenter(), TopCenter(),
+                               new Vector2(-66f, -126f), new Vector2(66f, 0f), Color.white);
+        art.preserveAspect = true;
+        art.rectTransform.localScale = Vector3.one;
+        Image fallbackFrame = SolidImage("DeploymentFallbackFrame_" + index, artClip, TopCenter(), TopCenter(),
+                                         new Vector2(-38f, -98f), new Vector2(38f, -18f),
+                                         new Color(0.090f, 0.078f, 0.050f, 0.82f));
+        AddBorder(fallbackFrame.gameObject, new Color(LineGold.r, LineGold.g, LineGold.b, 0.42f), new Vector2(1f, -1f));
+        Text glyph = MakeText("DeploymentGlyph_" + index, fallbackFrame.rectTransform, StretchMin(), StretchMax(),
+                              Vector2.zero, Vector2.zero, 24, FontStyle.Bold, TextAnchor.MiddleCenter, LineGold);
+        Text name = MakeText("DeploymentName_" + index, buttonRect, BottomLeft(), BottomRight(),
+                             new Vector2(8f, 30f), new Vector2(-8f, 54f), 18, FontStyle.Bold,
+                             TextAnchor.MiddleCenter, TextMain);
+        Text state = MakeText("DeploymentState_" + index, buttonRect, BottomLeft(), BottomRight(),
+                              new Vector2(8f, 10f), new Vector2(-8f, 30f), 14, FontStyle.Bold,
+                              TextAnchor.MiddleCenter, TextSub);
+        Image hpFill = Gauge("DeploymentHp_" + index, buttonRect, new Vector2(16f, -180f), new Vector2(114f, 7f),
+                             HpFill, "ui_hp_bar_bg", "ui_hp_bar_fill");
+        activeFrame.transform.SetAsLastSibling();
+        disabledOverlay.transform.SetAsLastSibling();
+
+        DeploymentSlot slot = new DeploymentSlot(buttonRect, button, background, activeFrame, disabledOverlay,
+                                                  art, artShadow, fallbackFrame, glyph, name, state, hpFill);
+        DeploymentDragHandler dragHandler = buttonRect.gameObject.AddComponent<DeploymentDragHandler>();
+        dragHandler.Initialize(this, slot);
+        button.onClick.AddListener(() =>
+        {
+            if (slot.boundUnit != null)
+            {
+                owner.HudSelectUnit(slot.boundUnit);
+            }
+        });
+        return slot;
+    }
+
+    private void BeginDeploymentDrag(DeploymentSlot slot, PointerEventData eventData)
+    {
+        if (slot == null || slot.boundUnit == null || slot.boundUnit.defeated || !slot.button.interactable)
+        {
+            return;
+        }
+
+        owner.HudBeginDeploymentDrag(slot.boundUnit);
+        EnsureDeploymentDragGhost();
+        deploymentDragGhost.sprite = slot.art.sprite;
+        deploymentDragGhost.enabled = deploymentDragGhost.sprite != null;
+        deploymentDragGhost.color = new Color(1f, 1f, 1f, 0.86f);
+        deploymentDragGhost.transform.SetAsLastSibling();
+        MoveDeploymentDragGhost(eventData);
+    }
+
+    private void MoveDeploymentDragGhost(PointerEventData eventData)
+    {
+        if (deploymentDragGhost == null || eventData == null)
+        {
+            return;
+        }
+
+        deploymentDragGhost.rectTransform.position = eventData.position;
+    }
+
+    private void EndDeploymentDrag(DeploymentSlot slot, PointerEventData eventData)
+    {
+        if (deploymentDragGhost != null)
+        {
+            deploymentDragGhost.enabled = false;
+        }
+
+        if (slot == null || slot.boundUnit == null || eventData == null)
+        {
+            return;
+        }
+
+        owner.HudDropDeploymentUnit(slot.boundUnit, eventData.position);
+    }
+
+    private void EnsureDeploymentDragGhost()
+    {
+        if (deploymentDragGhost != null)
+        {
+            return;
+        }
+
+        GameObject ghostObject = new GameObject("DeploymentDragGhost", typeof(RectTransform));
+        ghostObject.transform.SetParent(canvas.transform, false);
+        deploymentDragGhost = ghostObject.AddComponent<Image>();
+        deploymentDragGhost.raycastTarget = false;
+        deploymentDragGhost.preserveAspect = true;
+        deploymentDragGhost.enabled = false;
+        deploymentDragGhost.rectTransform.sizeDelta = new Vector2(132f, 172f);
     }
 
     private void UpdateLog(BattleHudSnapshot snapshot)
@@ -715,7 +1007,10 @@ public sealed class BattleHUDController : MonoBehaviour
         hoverBody.text = ShortTooltipBody(snapshot.hoverBody);
         Vector2 size = new Vector2(310f, string.IsNullOrWhiteSpace(snapshot.hoverBody) ? 58f : 96f);
         hoverPanel.sizeDelta = size;
-        hoverPanel.anchoredPosition = ClampTooltipPosition(Input.mousePosition, size);
+        Vector3 anchorPosition = snapshot.hoverScreenPosition == Vector3.zero
+                                     ? Input.mousePosition
+                                     : snapshot.hoverScreenPosition;
+        hoverPanel.anchoredPosition = ClampTooltipPosition(anchorPosition, size);
     }
 
     private void UpdateNotice(BattleHudSnapshot snapshot)
@@ -792,6 +1087,10 @@ public sealed class BattleHUDController : MonoBehaviour
         text.color = color;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
         text.verticalOverflow = VerticalWrapMode.Truncate;
+        text.resizeTextForBestFit = false;
+        text.resizeTextMinSize = Mathf.Max(9, size - 5);
+        text.resizeTextMaxSize = size;
+        text.lineSpacing = 0.92f;
         text.raycastTarget = false;
         text.supportRichText = true;
 
@@ -918,6 +1217,19 @@ public sealed class BattleHUDController : MonoBehaviour
         return image;
     }
 
+    private static RectTransform EmptyRect(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax,
+                                           Vector2 offsetMin, Vector2 offsetMax)
+    {
+        GameObject rectObject = new GameObject(name);
+        rectObject.transform.SetParent(parent, false);
+        RectTransform rect = rectObject.AddComponent<RectTransform>();
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.offsetMin = offsetMin;
+        rect.offsetMax = offsetMax;
+        return rect;
+    }
+
     private static void ApplySpriteOrColor(Image image, string spriteId, Color fallbackColor, bool allowSliced)
     {
         if (image == null)
@@ -1022,7 +1334,7 @@ public sealed class BattleHUDController : MonoBehaviour
 
         if (snapshot.scoutMode)
         {
-            return "\uBC30\uCE58\uC640 \uC9C0\uD615\uC744 \uD655\uC778\uD558\uC138\uC694.";
+            return "\uC544\uAD70 \uC120\uD0DD -> \uD30C\uB780 \uC2DC\uC791 \uCE78 \uD074\uB9AD. Space/\uC2DC\uC791\uC73C\uB85C \uC804\uD22C \uC2DC\uC791.";
         }
 
         if (snapshot.activeUnit == null)
@@ -1097,6 +1409,17 @@ public sealed class BattleHUDController : MonoBehaviour
         return trimmed.Length <= 2 ? trimmed : trimmed.Substring(0, 2);
     }
 
+    private static string SlotName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return "?";
+        }
+
+        string trimmed = name.Replace(" ", string.Empty);
+        return trimmed.Length <= 4 ? trimmed : trimmed.Substring(0, 4);
+    }
+
     private static string SkillLabelForUnit(BattleTestUnit unit)
     {
         if (unit == null || unit.definition == null || string.IsNullOrEmpty(unit.definition.specialName))
@@ -1135,6 +1458,57 @@ public sealed class BattleHUDController : MonoBehaviour
         }
     }
 
+    private static Sprite DeploymentSpriteForUnit(BattleTestUnit unit)
+    {
+        CharacterVisualData visual = unit == null || unit.definition == null ? null : unit.definition.visual;
+        if (visual == null)
+        {
+            return null;
+        }
+
+        if (visual.fullBodySprite != null)
+        {
+            return visual.fullBodySprite;
+        }
+
+        if (visual.idlePoseSprite != null)
+        {
+            return visual.idlePoseSprite;
+        }
+
+        if (visual.defaultOutfit != null && visual.defaultOutfit.fullBodySprite != null)
+        {
+            return visual.defaultOutfit.fullBodySprite;
+        }
+
+        if (visual.bustSprite != null)
+        {
+            return visual.bustSprite;
+        }
+
+        return visual.portraitSprite != null ? visual.portraitSprite : visual.faceIconSprite;
+    }
+
+    private static Sprite DeploymentPreviewSpriteForUnit(BattleTestUnit unit)
+    {
+        string unitId = unit == null || unit.definition == null ? string.Empty : unit.definition.id;
+        if (string.Equals(unitId, "seo_a", StringComparison.OrdinalIgnoreCase))
+        {
+            unitId = "shin_seoa";
+        }
+
+        if (!string.IsNullOrEmpty(unitId))
+        {
+            Sprite preview = BattleHudAssetRegistry.LoadSprite("DeploymentSprites/deployment_" + unitId);
+            if (preview != null)
+            {
+                return preview;
+            }
+        }
+
+        return DeploymentSpriteForUnit(unit);
+    }
+
     private static string FirstGlyph(string name)
     {
         return string.IsNullOrEmpty(name) ? "?" : name.Substring(0, 1);
@@ -1142,6 +1516,32 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private static Font CreateHudFont(bool bold)
     {
+        string[] crispFonts =
+        {
+            "Malgun Gothic",
+            "\uB9D1\uC740 \uACE0\uB515",
+            "Noto Sans KR",
+            "Noto Sans CJK KR",
+            "Pretendard",
+            "NEXON Lv1 Gothic OTF",
+            "NEXON Lv1 Gothic"
+        };
+        foreach (string crispFont in crispFonts)
+        {
+            try
+            {
+                Font font = Font.CreateDynamicFontFromOSFont(crispFont, bold ? 24 : 20);
+                if (font != null)
+                {
+                    return font;
+                }
+            }
+            catch
+            {
+                // Missing OS font candidates are expected on clean machines.
+            }
+        }
+
         string primary = bold ? "Fonts/MaplestoryOTFBold" : "Fonts/MaplestoryOTFLight";
         Font primaryFont = Resources.Load<Font>(primary);
         if (primaryFont != null)
@@ -1349,6 +1749,68 @@ public sealed class BattleHUDController : MonoBehaviour
             this.innerFill = innerFill;
         }
     }
+
+    private sealed class DeploymentSlot
+    {
+        public readonly RectTransform root;
+        public readonly Button button;
+        public readonly Image background;
+        public readonly Image activeFrame;
+        public readonly Image disabledOverlay;
+        public readonly Image art;
+        public readonly Image artShadow;
+        public readonly Image fallbackFrame;
+        public readonly Text glyph;
+        public readonly Text name;
+        public readonly Text state;
+        public readonly Image hpFill;
+        public BattleTestUnit boundUnit;
+
+        public DeploymentSlot(RectTransform root, Button button, Image background, Image activeFrame,
+                              Image disabledOverlay, Image art, Image artShadow, Image fallbackFrame,
+                              Text glyph, Text name, Text state, Image hpFill)
+        {
+            this.root = root;
+            this.button = button;
+            this.background = background;
+            this.activeFrame = activeFrame;
+            this.disabledOverlay = disabledOverlay;
+            this.art = art;
+            this.artShadow = artShadow;
+            this.fallbackFrame = fallbackFrame;
+            this.glyph = glyph;
+            this.name = name;
+            this.state = state;
+            this.hpFill = hpFill;
+        }
+    }
+
+    private sealed class DeploymentDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    {
+        private BattleHUDController hud;
+        private DeploymentSlot slot;
+
+        public void Initialize(BattleHUDController owner, DeploymentSlot deploymentSlot)
+        {
+            hud = owner;
+            slot = deploymentSlot;
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            hud?.BeginDeploymentDrag(slot, eventData);
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            hud?.MoveDeploymentDragGhost(eventData);
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            hud?.EndDeploymentDrag(slot, eventData);
+        }
+    }
 }
 
 public sealed class BattleHudSnapshot
@@ -1363,6 +1825,7 @@ public sealed class BattleHudSnapshot
     public string unitInfoText;
     public string hoverTitle;
     public string hoverBody;
+    public Vector3 hoverScreenPosition;
     public string forecastTitle;
     public string forecastLeft;
     public string forecastCenter;

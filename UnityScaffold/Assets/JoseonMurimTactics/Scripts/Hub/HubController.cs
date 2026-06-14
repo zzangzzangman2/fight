@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -36,8 +37,48 @@ public sealed class HubController : MonoBehaviour
         Settings
     }
 
+    private enum HubMapAction
+    {
+        None,
+        OpenMissionBoard,
+        OpenBattlePrep,
+        OpenMenu
+    }
+
+    private sealed class HubMapInfo
+    {
+        public string id;
+        public string title;
+        public string subtitle;
+        public string category;
+        public string status;
+        public string description;
+        public string rewardSummary;
+        public string dangerSummary;
+        public string artResource;
+        public string actionLabel;
+        public string battleId;
+        public HubMenu targetMenu;
+        public HubMapAction action;
+    }
+
     private GameRoot root;
     private HubMenu menu = HubMenu.Overview;
+    private string pinnedHubMapInfoId = "mission_gate";
+    private string hoveredHubMapInfoId;
+    private static readonly Dictionary<string, Texture2D> HubMapInfoArtCache =
+        new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+    private static readonly string[] FocusTrainingKeys =
+    {
+        MurimStatFormula.HpKey,
+        MurimStatFormula.InnerKey,
+        MurimStatFormula.StrengthKey,
+        MurimStatFormula.AgilityKey,
+        MurimStatFormula.InnerPowerKey,
+        MurimStatFormula.SpiritKey,
+        MurimStatFormula.InsightKey,
+        MurimStatFormula.CharmKey
+    };
     private DialogueController talk;
     private readonly List<string> log = new List<string>();
     private string toast;
@@ -266,7 +307,7 @@ public sealed class HubController : MonoBehaviour
     {
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "소백촌 자유시간 지도", UiTheme.Heading);
         GUI.Label(new Rect(r.x, r.y + 38f * s, r.width, 34f * s),
-                  "장소 표지판을 눌러 오늘의 자유시간 행동, 마을 의뢰, 정비 메뉴로 이동한다.", UiTheme.Body);
+                  "장소 표지판에 마우스를 올리면 오른쪽에 상세 정보가 뜨고, 클릭하면 그 정보를 고정한다.", UiTheme.Body);
 
         Rect status = new Rect(r.x, r.y + 78f * s, r.width, 38f * s);
         UiTheme.DrawFill(status, new Color(0.010f, 0.014f, 0.014f, 0.62f));
@@ -283,8 +324,26 @@ public sealed class HubController : MonoBehaviour
 
         Rect frame = new Rect(r.x, r.y + 128f * s, r.width, Mathf.Max(320f * s, r.height - 132f * s));
         UiTheme.DrawPanel(frame, true);
-        Rect map = FitAspect(new Rect(frame.x + 10f * s, frame.y + 10f * s, frame.width - 20f * s,
-                                      frame.height - 20f * s), 16f / 9f);
+        bool sideBySide = frame.width >= 820f * s;
+        Rect mapBounds;
+        Rect infoRect;
+        if (sideBySide)
+        {
+            float infoW = Mathf.Clamp(frame.width * 0.31f, 280f * s, 390f * s);
+            infoRect = new Rect(frame.xMax - 10f * s - infoW, frame.y + 10f * s, infoW, frame.height - 20f * s);
+            mapBounds = new Rect(frame.x + 10f * s, frame.y + 10f * s, infoRect.x - frame.x - 24f * s,
+                                 frame.height - 20f * s);
+        }
+        else
+        {
+            float infoH = Mathf.Min(184f * s, frame.height * 0.38f);
+            infoRect = new Rect(frame.x + 10f * s, frame.yMax - 10f * s - infoH, frame.width - 20f * s, infoH);
+            mapBounds = new Rect(frame.x + 10f * s, frame.y + 10f * s, frame.width - 20f * s,
+                                 infoRect.y - frame.y - 18f * s);
+        }
+
+        Rect map = FitAspect(mapBounds, 16f / 9f);
+        hoveredHubMapInfoId = null;
 
         if (hubMapTexture != null)
         {
@@ -299,73 +358,79 @@ public sealed class HubController : MonoBehaviour
         DrawMapCornerFrame(map, s);
 
         if (MapHotspot(map, 0.045f, 0.200f, 0.185f, 0.092f, s, "출정문", "임무 게시판", "!",
-                       HubMenu.Sortie))
+                       "mission_gate", HubMenu.Sortie))
         {
-            root.Flow.GoToMissionBoard();
+            pinnedHubMapInfoId = "mission_gate";
         }
 
         if (MapHotspot(map, 0.055f, 0.060f, 0.225f, 0.092f, s, "뒷산 도적 소굴", "기력 1 · 반복 의뢰",
-                       ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
+                       ActionsRemaining > 0 ? "!" : "0", "bandit_lair", HubMenu.Sortie))
         {
-            OpenFreeTimeBattlePrep(BanditLairBattleId, "도적 소굴 의뢰");
+            pinnedHubMapInfoId = "bandit_lair";
         }
 
         if (MapHotspot(map, 0.735f, 0.060f, 0.190f, 0.092f, s, "늑대 고개", "기력 1 · 방목길 방어",
-                       ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
+                       ActionsRemaining > 0 ? "!" : "0", "wolf_pass", HubMenu.Sortie))
         {
-            OpenFreeTimeBattlePrep(WolfPassBattleId, "늑대 고개 방어");
+            pinnedHubMapInfoId = "wolf_pass";
         }
 
         if (MapHotspot(map, 0.730f, 0.330f, 0.195f, 0.092f, s, "호랑이 바위골", "기력 1 · 주민 구조",
-                       ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
+                       ActionsRemaining > 0 ? "!" : "0", "tiger_ravine", HubMenu.Sortie))
         {
-            OpenFreeTimeBattlePrep(TigerRavineBattleId, "호랑이 바위골 구조");
+            pinnedHubMapInfoId = "tiger_ravine";
         }
 
         if (MapHotspot(map, 0.755f, 0.690f, 0.180f, 0.092f, s, "표범 절벽길", "기력 1 · 약초길 호송",
-                       ActionsRemaining > 0 ? "!" : "0", HubMenu.Sortie))
+                       ActionsRemaining > 0 ? "!" : "0", "leopard_cliff", HubMenu.Sortie))
         {
-            OpenFreeTimeBattlePrep(LeopardCliffBattleId, "표범 절벽길 호송");
+            pinnedHubMapInfoId = "leopard_cliff";
         }
 
         if (MapHotspot(map, 0.505f, 0.382f, 0.175f, 0.092f, s, "연무장", "수련 · 기력 1",
-                       ActionsRemaining > 0 ? "" : "0", HubMenu.Training))
+                       ActionsRemaining > 0 ? "" : "0", "training_yard", HubMenu.Training))
         {
-            menu = HubMenu.Training;
+            pinnedHubMapInfoId = "training_yard";
         }
 
-        if (MapHotspot(map, 0.365f, 0.165f, 0.190f, 0.092f, s, "검각 본당", "문파 재건", "!", HubMenu.Sect))
+        if (MapHotspot(map, 0.365f, 0.165f, 0.190f, 0.092f, s, "검각 본당", "문파 재건", "!", "sect_hall",
+                       HubMenu.Sect))
         {
-            menu = HubMenu.Sect;
+            pinnedHubMapInfoId = "sect_hall";
         }
 
         if (MapHotspot(map, 0.690f, 0.165f, 0.170f, 0.092f, s, "후산 정자", "동료 대화", CompanionBadge(),
-                       HubMenu.Companions))
+                       "companion_deck", HubMenu.Companions))
         {
-            menu = HubMenu.Companions;
+            pinnedHubMapInfoId = "companion_deck";
         }
 
-        if (MapHotspot(map, 0.090f, 0.535f, 0.160f, 0.092f, s, "객잔", "소문 · 일감", "!", HubMenu.Tavern))
+        if (MapHotspot(map, 0.090f, 0.535f, 0.160f, 0.092f, s, "객잔", "소문 · 일감", "!", "tavern",
+                       HubMenu.Tavern))
         {
-            menu = HubMenu.Tavern;
+            pinnedHubMapInfoId = "tavern";
         }
 
-        if (MapHotspot(map, 0.300f, 0.705f, 0.165f, 0.092f, s, "장터", "보급 · 선물 · 장비", "", HubMenu.Market))
+        if (MapHotspot(map, 0.300f, 0.705f, 0.165f, 0.092f, s, "장터", "보급 · 선물 · 장비", "", "market",
+                       HubMenu.Market))
         {
-            menu = HubMenu.Market;
+            pinnedHubMapInfoId = "market";
         }
 
         if (MapHotspot(map, 0.560f, 0.735f, 0.170f, 0.092f, s, "서고", "무공 연구", root.Flags.HasFlag(StoryFlags.FirstBattleWon) ? "!" : "",
-                       HubMenu.Library))
+                       "library", HubMenu.Library))
         {
-            menu = HubMenu.Library;
+            pinnedHubMapInfoId = "library";
         }
 
         if (MapHotspot(map, 0.755f, 0.520f, 0.165f, 0.092f, s, "의원", "치료 · 약초", InjuredCount() > 0 ? "!" : "",
-                       HubMenu.Infirmary))
+                       "infirmary", HubMenu.Infirmary))
         {
-            menu = HubMenu.Infirmary;
+            pinnedHubMapInfoId = "infirmary";
         }
+
+        string activeInfoId = !string.IsNullOrEmpty(hoveredHubMapInfoId) ? hoveredHubMapInfoId : pinnedHubMapInfoId;
+        DrawHubMapInfoPanel(infoRect, HubMapInfoFor(activeInfoId), s);
     }
 
     private void OpenFreeTimeBattlePrep(string battleId, string label)
@@ -380,8 +445,367 @@ public sealed class HubController : MonoBehaviour
         root.Flow.GoToBattlePrep(battleId);
     }
 
+    private HubMapInfo HubMapInfoFor(string id)
+    {
+        switch (id)
+        {
+        case "bandit_lair":
+            return FreeTimeBattleMapInfo(id, BanditLairBattleId, "뒷산 도적 소굴");
+        case "wolf_pass":
+            return FreeTimeBattleMapInfo(id, WolfPassBattleId, "늑대 고개");
+        case "tiger_ravine":
+            return FreeTimeBattleMapInfo(id, TigerRavineBattleId, "호랑이 바위골");
+        case "leopard_cliff":
+            return FreeTimeBattleMapInfo(id, LeopardCliffBattleId, "표범 절벽길");
+        case "training_yard":
+            return new HubMapInfo
+            {
+                id = id,
+                artResource = "UI/HubLocationCards/hub_location_training_yard",
+                title = "연무장",
+                subtitle = "무공 수련 · 조작 감각 회복",
+                category = "자유시간 행동",
+                status = ActionsRemaining > 0 ? $"기력 1 소모 가능 · 남은 기력 {ActionsRemaining}" : "기력 부족 · 하루 보내기 필요",
+                description = "천광심법 호흡, 백야검결 검로, 동료 합련을 진행한다. 전투 전 성장치를 쌓고 조작 순서를 익히는 장소다.",
+                rewardSummary = "천광심법 / 백야검결 / 합련 숙련 상승",
+                dangerSummary = "기력을 쓰는 행동이므로 출정 의뢰와 같은 날 우선순위를 정해야 한다.",
+                action = HubMapAction.OpenMenu,
+                targetMenu = HubMenu.Training,
+                actionLabel = "연무장 열기"
+            };
+        case "sect_hall":
+            return new HubMapInfo
+            {
+                id = id,
+                artResource = "UI/HubLocationCards/hub_location_sect_hall",
+                title = "검각 본당",
+                subtitle = "문파 재건 · 기조 정리",
+                category = "거점 정비",
+                status = $"문파 복구 {root.Flags.GetInt("sect:repair")} · 위명 {root.Reputation.Get(FactionIds.JoseonSects)}",
+                description = "낡은 검각을 손보고 문파 기조, 평판, 장기 목표를 확인한다. 백두천광검문을 다시 세우는 중심 공간이다.",
+                rewardSummary = "문파 복구, 조선문파연합 위명, 장기 정책 확인",
+                dangerSummary = "재건 선택은 향후 평판과 세력 반응에 이어질 수 있다.",
+                action = HubMapAction.OpenMenu,
+                targetMenu = HubMenu.Sect,
+                actionLabel = "문파 메뉴 열기"
+            };
+        case "companion_deck":
+            return new HubMapInfo
+            {
+                id = id,
+                artResource = "UI/HubLocationCards/hub_location_companion_deck",
+                title = "후산 정자",
+                subtitle = "동료 대화 · 선물 · 방문",
+                category = "동료",
+                status = CompanionBadge() == "!" ? "오늘 방문 가능한 동료 있음" : "동료 상태 확인",
+                description = "동료와 시간을 보내고 선물을 건네며 현재 고민과 전투 지원 효과를 확인한다.",
+                rewardSummary = "연애도, 유대 단계, 지원 효과 단서",
+                dangerSummary = "동료 방문은 하루 단위 제한이 있으므로 필요한 대화를 먼저 챙기자.",
+                action = HubMapAction.OpenMenu,
+                targetMenu = HubMenu.Companions,
+                actionLabel = "동료 메뉴 열기"
+            };
+        case "tavern":
+            return new HubMapInfo
+            {
+                id = id,
+                artResource = "UI/HubLocationCards/hub_location_tavern",
+                title = "객잔",
+                subtitle = "소문 · 일감 · 마을 정보",
+                category = "자유시간 행동",
+                status = ActionsRemaining > 0 ? $"기력 행동 가능 · 남은 기력 {ActionsRemaining}" : "기력 부족 · 하루 보내기 필요",
+                description = "상인과 무인에게서 임무 단서와 세력 소문을 듣고, 품팔이로 은냥과 마을 신뢰를 챙긴다.",
+                rewardSummary = "소문 단서, 은냥, 마을 신뢰",
+                dangerSummary = "소문과 품팔이는 기력을 쓰므로 출정 전에 남은 행동을 확인하자.",
+                action = HubMapAction.OpenMenu,
+                targetMenu = HubMenu.Tavern,
+                actionLabel = "객잔 열기"
+            };
+        case "market":
+            return new HubMapInfo
+            {
+                id = id,
+                artResource = "UI/HubLocationCards/hub_location_market",
+                title = "장터",
+                subtitle = "보급 · 선물 · 장비",
+                category = "정비",
+                status = $"은냥 {root.Flags.GetInt("silver")}",
+                description = "회복 소모품, 선물, 수리 재료를 구입한다. 출정 전에 장비와 물자를 보강하는 장소다.",
+                rewardSummary = "소모품 구매, 선물 확보, 인벤토리 정비",
+                dangerSummary = "은냥을 과하게 쓰면 문파 복구와 장비 구매가 늦어진다.",
+                action = HubMapAction.OpenMenu,
+                targetMenu = HubMenu.Market,
+                actionLabel = "장터 열기"
+            };
+        case "library":
+            return new HubMapInfo
+            {
+                id = id,
+                artResource = "UI/HubLocationCards/hub_location_library",
+                title = "서고",
+                subtitle = "무공 연구 · 도감 · 단서",
+                category = "자유시간 행동",
+                status = $"연구 {root.Flags.GetInt("growth:research_xp")} · {(root.Flags.HasFlag(StoryFlags.FirstBattleWon) ? "새 단서 있음" : "기록 열람")}",
+                description = "백두산 영맥, 천광검문 계보, 검은 표식의 단서를 정리한다. 연구 행동으로 무공과 세계 정보를 연다.",
+                rewardSummary = "무공 연구, 도감 항목, 세력 단서",
+                dangerSummary = "연구는 즉시 전투력보다 장기 성장과 해금에 무게가 있다.",
+                action = HubMapAction.OpenMenu,
+                targetMenu = HubMenu.Library,
+                actionLabel = "서고 열기"
+            };
+        case "infirmary":
+            return new HubMapInfo
+            {
+                id = id,
+                artResource = "UI/HubLocationCards/hub_location_infirmary",
+                title = "의원",
+                subtitle = "치료 · 약초 · 부상 관리",
+                category = "정비",
+                status = InjuredCount() > 0 ? $"부상자 {InjuredCount()}명 확인 필요" : "부상자 없음",
+                description = "부상 동료를 치료하고 초희의 약방에서 약재를 관리한다. 다음 출정을 가볍게 만드는 안전망이다.",
+                rewardSummary = "부상 치료, 약재 보급, 다음 전투 위험 감소",
+                dangerSummary = "부상을 방치하면 다음 출정 준비와 전투 안정성이 떨어진다.",
+                action = HubMapAction.OpenMenu,
+                targetMenu = HubMenu.Infirmary,
+                actionLabel = "의원 열기"
+            };
+        case "mission_gate":
+        default:
+            return new HubMapInfo
+            {
+                id = "mission_gate",
+                artResource = "UI/HubLocationCards/hub_location_mission_gate",
+                title = "출정문",
+                subtitle = "임무 게시판 · 자유시간 의뢰",
+                category = "출정",
+                status = $"기력 {ActionsRemaining}/{MaxDailyActions} · 전투 준비 확인",
+                description = "메인 전투와 반복 의뢰를 고른다. 마을 주변 의뢰는 기력 1을 쓰며, 각 전장 지형과 보상을 확인한 뒤 출격 준비로 넘어간다.",
+                rewardSummary = "임무 보상 미리보기, 전장 정보, 출격 준비",
+                dangerSummary = "권장 레벨과 위험 지형을 확인하지 않으면 전투 손실이 커질 수 있다.",
+                action = HubMapAction.OpenMissionBoard,
+                targetMenu = HubMenu.Sortie,
+                actionLabel = "임무 게시판 열기"
+            };
+        }
+    }
+
+    private HubMapInfo FreeTimeBattleMapInfo(string id, string battleId, string fallbackTitle)
+    {
+        MissionInfo mission = MissionForBattle(battleId);
+        string title = mission != null ? mission.title : fallbackTitle;
+        string subtitle = mission != null ? mission.location : "소백촌 자유시간 의뢰";
+        string description = mission != null ? mission.summary : "자유시간에 처리할 수 있는 반복 의뢰다.";
+        string reward = RewardPreview(mission);
+        string danger = mission != null && !string.IsNullOrEmpty(mission.dangerNotes)
+                            ? mission.dangerNotes
+                            : "기력 1을 소모하는 반복 의뢰.";
+        string level = mission != null ? $"Lv.{mission.recommendedLevel} · {mission.difficulty}" : "권장 레벨 확인";
+        string enemy = mission != null ? mission.enemyFaction : "마을 위협";
+
+        return new HubMapInfo
+        {
+            id = id,
+            artResource = HubMapMissionArtResource(battleId),
+            title = title,
+            subtitle = subtitle,
+            category = "반복 의뢰",
+            status = $"{level} · {enemy} · {(ActionsRemaining > 0 ? "출격 가능" : "기력 부족")}",
+            description = description,
+            rewardSummary = reward,
+            dangerSummary = danger,
+            action = HubMapAction.OpenBattlePrep,
+            battleId = battleId,
+            targetMenu = HubMenu.Sortie,
+            actionLabel = ActionsRemaining > 0 ? "출격 준비로" : "기력 부족"
+        };
+    }
+
+    private static string HubMapMissionArtResource(string battleId)
+    {
+        switch (battleId)
+        {
+        case BanditLairBattleId:
+            return "MapAssets/Backgrounds/sobaek_bandit_lair_srpg_ground";
+        case WolfPassBattleId:
+            return "MapAssets/Backgrounds/sobaek_wolf_pass_srpg_ground";
+        case TigerRavineBattleId:
+            return "MapAssets/Backgrounds/sobaek_tiger_ravine_srpg_ground";
+        case LeopardCliffBattleId:
+            return "MapAssets/Backgrounds/sobaek_leopard_cliff_srpg_ground";
+        default:
+            return "MapAssets/Backgrounds/baekdu_snow_gate_srpg_ground";
+        }
+    }
+
+    private static MissionInfo MissionForBattle(string battleId)
+    {
+        foreach (MissionInfo mission in MissionCatalog.All)
+        {
+            if (mission.battleId == battleId)
+            {
+                return mission;
+            }
+        }
+
+        return null;
+    }
+
+    private static string RewardPreview(MissionInfo mission)
+    {
+        if (mission == null || mission.rewardPreview == null || mission.rewardPreview.Count == 0)
+        {
+            return "보상 정보 없음";
+        }
+
+        return string.Join(" / ", mission.rewardPreview.ToArray());
+    }
+
+    private void DrawHubMapInfoPanel(Rect rect, HubMapInfo info, float s)
+    {
+        if (info == null)
+        {
+            return;
+        }
+
+        UiTheme.DrawPanel(rect, true);
+        float x = rect.x + 16f * s;
+        float y = rect.y + 14f * s;
+        float w = rect.width - 32f * s;
+
+        Rect artRect = new Rect(x, y, w, Mathf.Clamp(rect.height * 0.28f, 112f * s, 168f * s));
+        DrawHubMapInfoArt(artRect, info, s);
+        y += artRect.height + 12f * s;
+
+        GUI.Label(new Rect(x, y, w, 30f * s), info.title, UiTheme.Heading);
+        y += 34f * s;
+        GUI.Label(new Rect(x, y, w, 22f * s), $"{info.category} · {info.subtitle}", UiTheme.SmallMuted);
+        y += 30f * s;
+
+        DrawHubMapInfoBlock(x, ref y, w, s, "상태", info.status, 32f);
+        DrawHubMapInfoBlock(x, ref y, w, s, "설명", info.description, 58f);
+        DrawHubMapInfoBlock(x, ref y, w, s, "보상 / 효과", info.rewardSummary, 40f);
+
+        if (!string.IsNullOrEmpty(info.dangerSummary))
+        {
+            GUIStyle warningStyle = new GUIStyle(UiTheme.Small)
+            {
+                wordWrap = true,
+                clipping = TextClipping.Clip
+            };
+            warningStyle.normal.textColor = UiTheme.Ink;
+            float warningH = Mathf.Clamp(warningStyle.CalcHeight(new GUIContent(info.dangerSummary), w - 18f * s) + 16f * s,
+                                         42f * s, 64f * s);
+            Rect warn = new Rect(x, y, w, warningH);
+            UiTheme.DrawFill(warn, new Color(0.706f, 0.220f, 0.169f, 0.16f));
+            GUI.Label(new Rect(warn.x + 9f * s, warn.y + 7f * s, warn.width - 18f * s, warn.height - 14f * s),
+                      info.dangerSummary, warningStyle);
+        }
+
+        if (info.action != HubMapAction.None)
+        {
+            bool enabled = HubMapActionEnabled(info);
+            Rect button = new Rect(x, rect.yMax - 52f * s, w, 40f * s);
+            GUI.enabled = enabled;
+            if (GUI.Button(button, enabled ? info.actionLabel : "기력 부족", enabled ? UiTheme.ButtonPrimary : UiTheme.Button))
+            {
+                ExecuteHubMapInfoAction(info);
+            }
+            GUI.enabled = true;
+        }
+    }
+
+    private static void DrawHubMapInfoArt(Rect rect, HubMapInfo info, float s)
+    {
+        UiTheme.DrawFill(rect, new Color(0.010f, 0.014f, 0.014f, 0.88f));
+        Texture2D art = LoadHubMapInfoArt(info != null ? info.artResource : null);
+        if (art != null)
+        {
+            GUI.DrawTexture(rect, art, ScaleMode.ScaleAndCrop);
+        }
+        else
+        {
+            GUIStyle placeholder = new GUIStyle(UiTheme.SmallMuted)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold,
+                clipping = TextClipping.Clip
+            };
+            GUI.Label(rect, "ART", placeholder);
+        }
+
+        float shadeH = Mathf.Min(46f * s, rect.height * 0.38f);
+        UiTheme.DrawFill(new Rect(rect.x, rect.yMax - shadeH, rect.width, shadeH),
+                         new Color(0.000f, 0.010f, 0.014f, 0.62f));
+        GUIStyle caption = new GUIStyle(UiTheme.Small)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            fontStyle = FontStyle.Bold,
+            clipping = TextClipping.Clip
+        };
+        caption.normal.textColor = UiTheme.GoldBright;
+        GUI.Label(new Rect(rect.x + 10f * s, rect.yMax - shadeH, rect.width - 20f * s, shadeH),
+                  info != null ? info.title : string.Empty, caption);
+        DrawSimpleFrame(rect, Mathf.Max(1f, 1.25f * s), new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.70f));
+    }
+
+    private static Texture2D LoadHubMapInfoArt(string resource)
+    {
+        if (string.IsNullOrEmpty(resource))
+        {
+            return null;
+        }
+
+        Texture2D art;
+        if (!HubMapInfoArtCache.TryGetValue(resource, out art))
+        {
+            art = Resources.Load<Texture2D>(resource);
+            HubMapInfoArtCache[resource] = art;
+        }
+
+        return art;
+    }
+
+    private static void DrawHubMapInfoBlock(float x, ref float y, float w, float s, string label, string body,
+                                            float maxHeightBase)
+    {
+        GUI.Label(new Rect(x, y, w, 20f * s), label, UiTheme.SmallMuted);
+        y += 22f * s;
+
+        GUIStyle bodyStyle = new GUIStyle(UiTheme.Small)
+        {
+            wordWrap = true,
+            clipping = TextClipping.Clip
+        };
+        bodyStyle.normal.textColor = UiTheme.Ink;
+        float bodyH = Mathf.Clamp(bodyStyle.CalcHeight(new GUIContent(body ?? string.Empty), w), 24f * s,
+                                  maxHeightBase * s);
+        GUI.Label(new Rect(x, y, w, bodyH), body ?? string.Empty, bodyStyle);
+        y += bodyH + 10f * s;
+    }
+
+    private bool HubMapActionEnabled(HubMapInfo info)
+    {
+        return info.action != HubMapAction.OpenBattlePrep || ActionsRemaining > 0;
+    }
+
+    private void ExecuteHubMapInfoAction(HubMapInfo info)
+    {
+        switch (info.action)
+        {
+        case HubMapAction.OpenMissionBoard:
+            root.Flow.GoToMissionBoard();
+            break;
+        case HubMapAction.OpenBattlePrep:
+            OpenFreeTimeBattlePrep(info.battleId, info.title);
+            break;
+        case HubMapAction.OpenMenu:
+            menu = info.targetMenu;
+            break;
+        }
+    }
+
     private bool MapHotspot(Rect parent, float px, float py, float pw, float ph, float s, string title, string subtitle,
-                            string badge, HubMenu target)
+                            string badge, string infoId, HubMenu target)
     {
         Rect rect = new Rect(parent.x + parent.width * px, parent.y + parent.height * py, parent.width * pw,
                              parent.height * ph);
@@ -389,7 +813,12 @@ public sealed class HubController : MonoBehaviour
         rect.height = Mathf.Max(rect.height, 44f * s);
 
         bool hover = rect.Contains(Event.current.mousePosition);
-        bool selected = menu == target;
+        if (hover)
+        {
+            hoveredHubMapInfoId = infoId;
+        }
+
+        bool selected = string.Equals(pinnedHubMapInfoId, infoId, StringComparison.OrdinalIgnoreCase);
         Color fill = selected
                          ? new Color(0.090f, 0.165f, 0.140f, 0.86f)
                          : hover ? new Color(0.070f, 0.082f, 0.074f, 0.86f)
@@ -497,30 +926,287 @@ public sealed class HubController : MonoBehaviour
     private void DrawTraining(Rect r, float s)
     {
         GUI.Label(new Rect(r.x, r.y, r.width, 36f * s), "연무장", UiTheme.Heading);
-        GUI.Label(new Rect(r.x, r.y + 44f * s, r.width, 50f * s),
-                  "기력을 써서 무공 숙련을 올린다. 일정 수치가 쌓이면 초식과 심법 단서가 열린다.", UiTheme.Small);
-        float y = r.y + 100f * s;
-        string[] drills = { "박성준 — 천광심법 호흡", "박성준 — 백야검결 검로", "동료 합련 — 속성 연계 대련" };
-        for (int i = 0; i < drills.Length; i++)
+        GUI.Label(new Rect(r.x, r.y + 42f * s, r.width, 28f * s),
+                  "오늘의 기력을 어디에 태울지 고르는 수련 보드다. 카드를 누르면 즉시 기력 1을 쓰고 숙련이 오른다.",
+                  UiTheme.Small);
+
+        float topY = r.y + 82f * s;
+        float gap = 12f * s;
+        float summaryW = Mathf.Clamp(r.width * 0.26f, 250f * s, 340f * s);
+        Rect cardArea = new Rect(r.x, topY, r.width - summaryW - gap,
+                                 Mathf.Clamp(r.height - 176f * s, 198f * s, 292f * s));
+        Rect summary = new Rect(cardArea.xMax + gap, topY, summaryW, cardArea.height);
+        float cardW = (cardArea.width - gap * 2f) / 3f;
+
+        DrawTrainingCard(new Rect(cardArea.x, cardArea.y, cardW, cardArea.height), s, 0,
+                         "천광심법 호흡", "내공 호흡", "빛의 내공을 몸 안에 맞춰 명중과 상태 저항의 씨앗을 만든다.",
+                         "UI/HubTrainingCards/training_breath", "growth:inner_art_xp", 16, UiTheme.GoldBright);
+        DrawTrainingCard(new Rect(cardArea.x + (cardW + gap), cardArea.y, cardW, cardArea.height), s, 1,
+                         "백야검결 검로", "검법 숙련", "첫 검로를 반복해 이동 후 공격 감각과 검기 운용을 다듬는다.",
+                         "UI/HubTrainingCards/training_sword", "growth:sword_xp", 24, new Color(0.62f, 0.84f, 1f, 1f));
+        DrawTrainingCard(new Rect(cardArea.x + (cardW + gap) * 2f, cardArea.y, cardW, cardArea.height), s, 2,
+                         "속성 연계 합련", "동료 전술", "동료와 속성 타이밍을 맞춰 후속타와 보조 운용을 익힌다.",
+                         "UI/HubTrainingCards/training_sparring", "growth:teamwork_xp", 24, UiTheme.Teal);
+
+        DrawTrainingSummary(summary, s);
+
+        float lowerY = topY + cardArea.height + 14f * s;
+        Rect statBoard = new Rect(r.x, lowerY, r.width, Mathf.Max(250f * s, r.yMax - lowerY - 6f * s));
+        DrawFocusedTrainingBoard(statBoard, s);
+    }
+
+    private void DrawTrainingCard(Rect rect, float s, int drillIndex, string title, string subtitle, string body,
+                                  string artResource, string statKey, int nextGoal, Color accent)
+    {
+        int value = root.Flags.GetInt(statKey);
+        bool canTrain = ActionsRemaining > 0;
+        bool hover = rect.Contains(Event.current.mousePosition);
+        UiTheme.DrawFill(new Rect(rect.x + 3f * s, rect.y + 5f * s, rect.width, rect.height),
+                         new Color(0f, 0f, 0f, 0.32f));
+        UiTheme.DrawFill(rect, hover ? new Color(0.060f, 0.075f, 0.070f, 0.96f)
+                                     : new Color(0.030f, 0.040f, 0.038f, 0.94f));
+        DrawSimpleFrame(rect, Mathf.Max(1f, 1.2f * s),
+                        hover ? UiTheme.GoldBright : new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.58f));
+
+        Rect art = new Rect(rect.x + 8f * s, rect.y + 8f * s, rect.width - 16f * s, rect.height * 0.54f);
+        Texture2D texture = LoadHubMapInfoArt(artResource);
+        if (texture != null)
         {
-            string d = drills[i];
-            if (GUI.Button(new Rect(r.x, r.y + (y - r.y), r.width * 0.78f, 46f * s), d, UiTheme.Button))
-            {
-                if (TrySpendAction("연무장 수련"))
-                {
-                    ApplyTraining(i);
-                }
-            }
-            y += 54f * s;
+            GUI.DrawTexture(art, texture, ScaleMode.ScaleAndCrop);
         }
-        GUI.Label(new Rect(r.x, y, r.width, 30f * s),
-                  $"천광심법 {root.Flags.GetInt("growth:inner_art_xp")}   백야검결 {root.Flags.GetInt("growth:sword_xp")}   합련 {root.Flags.GetInt("growth:teamwork_xp")}",
-                  UiTheme.SmallMuted);
+        UiTheme.DrawFill(new Rect(art.x, art.yMax - 54f * s, art.width, 54f * s), new Color(0f, 0.010f, 0.014f, 0.66f));
+        DrawSimpleFrame(art, Mathf.Max(1f, 1f * s), new Color(accent.r, accent.g, accent.b, 0.72f));
+
+        GUIStyle titleStyle = new GUIStyle(UiTheme.Body)
+        {
+            fontStyle = FontStyle.Bold,
+            fontSize = Mathf.RoundToInt(17f * s),
+            alignment = TextAnchor.MiddleLeft,
+            clipping = TextClipping.Clip
+        };
+        titleStyle.normal.textColor = UiTheme.GoldBright;
+        GUI.Label(new Rect(art.x + 10f * s, art.yMax - 48f * s, art.width - 20f * s, 24f * s), title, titleStyle);
+        GUI.Label(new Rect(art.x + 10f * s, art.yMax - 24f * s, art.width - 20f * s, 18f * s), subtitle, UiTheme.SmallMuted);
+
+        float y = art.yMax + 10f * s;
+        GUIStyle bodyStyle = new GUIStyle(UiTheme.Small)
+        {
+            wordWrap = true,
+            clipping = TextClipping.Clip
+        };
+        bodyStyle.normal.textColor = UiTheme.Ink;
+        GUI.Label(new Rect(rect.x + 12f * s, y, rect.width - 24f * s, 42f * s), body, bodyStyle);
+        y += 48f * s;
+
+        DrawTrainingProgress(new Rect(rect.x + 12f * s, y, rect.width - 24f * s, 30f * s), s, value, nextGoal, accent);
+
+        Rect cost = new Rect(rect.x + 12f * s, rect.yMax - 42f * s, 72f * s, 30f * s);
+        UiTheme.DrawFill(cost, new Color(accent.r * 0.20f, accent.g * 0.20f, accent.b * 0.20f, 0.90f));
+        DrawSimpleFrame(cost, Mathf.Max(1f, 1f * s), new Color(accent.r, accent.g, accent.b, 0.80f));
+        GUI.Label(cost, "기력 1", UiTheme.Small);
+
+        Rect button = new Rect(rect.xMax - 116f * s, rect.yMax - 42f * s, 104f * s, 30f * s);
+        GUI.enabled = canTrain;
+        if (GUI.Button(button, canTrain ? "수련" : "기력 부족", canTrain ? UiTheme.ButtonPrimary : UiTheme.Button))
+        {
+            if (TrySpendAction("연무장 수련"))
+            {
+                ApplyTraining(drillIndex);
+            }
+        }
+        GUI.enabled = true;
+    }
+
+    private void DrawTrainingSummary(Rect rect, float s)
+    {
+        UiTheme.DrawPanel(rect, true);
+        float x = rect.x + 14f * s;
+        float y = rect.y + 12f * s;
+        float w = rect.width - 28f * s;
+
+        GUI.Label(new Rect(x, y, w, 26f * s), "오늘의 수련 상태", UiTheme.Body);
         y += 34f * s;
-        GUI.Label(new Rect(r.x, y + 6f * s, r.width, 120f * s),
-                  "전투 조작 순서: ①유닛 선택 ②파란 칸 이동 ③적 사거리 확인 ④공격/무공 ⑤예측 확인 ⑥주사위 ⑦반격 확인 " +
-                      "⑧대기 ⑨페이즈 종료.",
+
+        GUIStyle apStyle = new GUIStyle(UiTheme.Title)
+        {
+            fontSize = Mathf.RoundToInt(34f * s),
+            alignment = TextAnchor.MiddleLeft
+        };
+        apStyle.normal.textColor = ActionsRemaining > 0 ? UiTheme.GoldBright : new Color(0.72f, 0.72f, 0.68f, 1f);
+        GUI.Label(new Rect(x, y, w, 42f * s), $"기력 {ActionsRemaining}/{MaxDailyActions}", apStyle);
+        y += 54f * s;
+
+        DrawTrainingMiniStat(new Rect(x, y, w, 34f * s), s, "심법", root.Flags.GetInt("growth:inner_art_xp"), 16,
+                             UiTheme.GoldBright);
+        y += 42f * s;
+        DrawTrainingMiniStat(new Rect(x, y, w, 34f * s), s, "검결", root.Flags.GetInt("growth:sword_xp"), 24,
+                             new Color(0.62f, 0.84f, 1f, 1f));
+        y += 42f * s;
+        DrawTrainingMiniStat(new Rect(x, y, w, 34f * s), s, "합련", root.Flags.GetInt("growth:teamwork_xp"), 24,
+                             UiTheme.Teal);
+        y += 48f * s;
+
+        UiTheme.DrawFill(new Rect(x, y, w, Mathf.Max(44f * s, rect.yMax - y - 12f * s)),
+                         new Color(0.010f, 0.018f, 0.018f, 0.54f));
+        GUI.Label(new Rect(x + 10f * s, y + 8f * s, w - 20f * s, 46f * s),
+                  "심법 16부터 초식 단서가 열리고, 검결과 합련은 전투 선택지의 안정도를 끌어올린다.",
                   UiTheme.SmallMuted);
+    }
+
+    private static void DrawTrainingMiniStat(Rect rect, float s, string label, int value, int goal, Color accent)
+    {
+        GUI.Label(new Rect(rect.x, rect.y, 52f * s, rect.height), label, UiTheme.Small);
+        DrawTrainingProgress(new Rect(rect.x + 58f * s, rect.y + 4f * s, rect.width - 58f * s, rect.height - 8f * s),
+                             s, value, goal, accent);
+    }
+
+    private static void DrawTrainingProgress(Rect rect, float s, int value, int goal, Color accent)
+    {
+        int clampedGoal = Mathf.Max(1, goal);
+        float frac = Mathf.Clamp01(value / (float)clampedGoal);
+        Rect bar = new Rect(rect.x, rect.y + rect.height - 12f * s, rect.width, 10f * s);
+        UiTheme.DrawFill(bar, new Color(0.020f, 0.026f, 0.024f, 0.90f));
+        UiTheme.DrawFill(new Rect(bar.x, bar.y, bar.width * frac, bar.height), new Color(accent.r, accent.g, accent.b, 0.92f));
+        DrawSimpleFrame(bar, Mathf.Max(1f, 1f * s), new Color(accent.r, accent.g, accent.b, 0.52f));
+        GUIStyle valueStyle = new GUIStyle(UiTheme.SmallMuted)
+        {
+            alignment = TextAnchor.UpperRight,
+            fontStyle = FontStyle.Bold,
+            clipping = TextClipping.Clip
+        };
+        GUI.Label(new Rect(rect.x, rect.y, rect.width, 18f * s), $"{value}/{clampedGoal}", valueStyle);
+    }
+
+    private void DrawFocusedTrainingBoard(Rect rect, float s)
+    {
+        UiTheme.DrawPanel(rect, true);
+        float pad = 14f * s;
+        Rect header = new Rect(rect.x + pad, rect.y + 10f * s, rect.width - pad * 2f, 42f * s);
+        GUI.Label(new Rect(header.x, header.y, header.width * 0.5f, header.height), "능력 집중 수련", UiTheme.Body);
+        GUI.Label(new Rect(header.x + header.width * 0.48f, header.y + 4f * s, header.width * 0.52f, 24f * s),
+                  "대상: 박성준 · 원하는 능력을 직접 올립니다.", UiTheme.SmallMuted);
+
+        CharacterProgressState progress = GetTrainingTargetProgress();
+        int columns = rect.width < 760f * s ? 2 : 4;
+        int rows = Mathf.CeilToInt(FocusTrainingKeys.Length / (float)columns);
+        float gap = 10f * s;
+        float startY = rect.y + 58f * s;
+        float cellW = (rect.width - pad * 2f - gap * (columns - 1)) / columns;
+        float cellH = Mathf.Max(82f * s, (rect.yMax - startY - pad - gap * (rows - 1)) / rows);
+
+        for (int i = 0; i < FocusTrainingKeys.Length; i++)
+        {
+            int col = i % columns;
+            int row = i / columns;
+            Rect cell = new Rect(rect.x + pad + (cellW + gap) * col, startY + (cellH + gap) * row, cellW, cellH);
+            DrawFocusedTrainingCard(cell, s, FocusTrainingKeys[i], progress, i);
+        }
+    }
+
+    private void DrawFocusedTrainingCard(Rect rect, float s, string key, CharacterProgressState progress, int index)
+    {
+        bool hover = rect.Contains(Event.current.mousePosition);
+        Color accent = FocusTrainingAccent(index);
+        UiTheme.DrawFill(rect, hover ? new Color(0.055f, 0.075f, 0.068f, 0.96f)
+                                     : new Color(0.018f, 0.028f, 0.026f, 0.92f));
+        DrawSimpleFrame(rect, Mathf.Max(1f, 1f * s),
+                        hover ? accent : new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.42f));
+
+        string label = MurimStatFormula.TrainingLabel(key);
+        int bonus = MurimStatFormula.ProgressBonus(progress, key);
+        int repeat = root.Flags.GetInt("growth:focus:" + key);
+        float x = rect.x + 10f * s;
+        float y = rect.y + 8f * s;
+        float w = rect.width - 20f * s;
+
+        GUIStyle labelStyle = new GUIStyle(UiTheme.Body)
+        {
+            fontStyle = FontStyle.Bold,
+            fontSize = Mathf.RoundToInt(17f * s),
+            clipping = TextClipping.Clip
+        };
+        labelStyle.normal.textColor = accent;
+        GUI.Label(new Rect(x, y, w * 0.58f, 24f * s), label, labelStyle);
+        GUI.Label(new Rect(x + w * 0.58f, y + 2f * s, w * 0.42f, 22f * s),
+                  key == MurimStatFormula.HpKey || key == MurimStatFormula.InnerKey ? $"+{bonus}" : $"보너스 +{bonus}",
+                  UiTheme.SmallMuted);
+        y += 28f * s;
+
+        GUIStyle desc = new GUIStyle(UiTheme.SmallMuted)
+        {
+            wordWrap = true,
+            clipping = TextClipping.Clip
+        };
+        GUI.Label(new Rect(x, y, w, 34f * s), MurimStatFormula.TrainingDescription(key), desc);
+
+        DrawTrainingProgress(new Rect(x, rect.yMax - 43f * s, Mathf.Max(90f * s, w - 106f * s), 30f * s), s,
+                             repeat, 5, accent);
+
+        Rect button = new Rect(rect.xMax - 96f * s, rect.yMax - 38f * s, 84f * s, 28f * s);
+        GUI.enabled = ActionsRemaining > 0;
+        if (GUI.Button(button, ActionsRemaining > 0 ? "수련" : "기력 0",
+                       ActionsRemaining > 0 ? UiTheme.ButtonPrimary : UiTheme.Button))
+        {
+            if (TrySpendAction(label + " 수련"))
+            {
+                ApplyFocusedTraining(key);
+            }
+        }
+        GUI.enabled = true;
+    }
+
+    private CharacterProgressState GetTrainingTargetProgress()
+    {
+        if (root == null || root.Session == null)
+        {
+            return null;
+        }
+
+        ProgressionService progression = new ProgressionService(root.Session);
+        return progression.GetSnapshot(CharacterGrowthCatalog.ProtagonistId);
+    }
+
+    private static Color FocusTrainingAccent(int index)
+    {
+        switch (index % 8)
+        {
+            case 0: return new Color(0.94f, 0.34f, 0.25f, 1f);
+            case 1: return new Color(0.38f, 0.78f, 1f, 1f);
+            case 2: return UiTheme.GoldBright;
+            case 3: return new Color(0.58f, 0.92f, 0.68f, 1f);
+            case 4: return new Color(0.68f, 0.70f, 1f, 1f);
+            case 5: return new Color(0.84f, 0.74f, 0.52f, 1f);
+            case 6: return UiTheme.Teal;
+            default: return new Color(1f, 0.66f, 0.86f, 1f);
+        }
+    }
+
+    private static void DrawTrainingFlow(Rect rect, float s)
+    {
+        UiTheme.DrawFill(rect, new Color(0.010f, 0.016f, 0.016f, 0.58f));
+        DrawSimpleFrame(rect, Mathf.Max(1f, 1f * s), new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.35f));
+
+        GUI.Label(new Rect(rect.x + 14f * s, rect.y + 10f * s, 180f * s, 26f * s), "전투 감각 루틴", UiTheme.Small);
+        string[] steps = { "선택", "이동", "사거리", "무공", "예측", "주사위", "반격", "대기", "종료" };
+        float startX = rect.x + 14f * s;
+        float y = rect.y + 48f * s;
+        float available = rect.width - 28f * s;
+        float stepW = available / steps.Length;
+        for (int i = 0; i < steps.Length; i++)
+        {
+            Vector2 center = new Vector2(startX + stepW * i + stepW * 0.5f, y + 16f * s);
+            Color accent = i < 5 ? UiTheme.GoldBright : UiTheme.Teal;
+            UiTheme.DrawFill(new Rect(center.x - 13f * s, center.y - 13f * s, 26f * s, 26f * s),
+                             new Color(accent.r * 0.18f, accent.g * 0.18f, accent.b * 0.18f, 0.92f));
+            DrawSimpleFrame(new Rect(center.x - 13f * s, center.y - 13f * s, 26f * s, 26f * s),
+                            Mathf.Max(1f, 1f * s), new Color(accent.r, accent.g, accent.b, 0.72f));
+            GUI.Label(new Rect(center.x - 22f * s, center.y + 18f * s, 44f * s, 20f * s), steps[i], UiTheme.SmallMuted);
+            if (i < steps.Length - 1)
+            {
+                UiTheme.DrawFill(new Rect(center.x + 15f * s, center.y - 1f * s, stepW - 30f * s, 2f * s),
+                                 new Color(UiTheme.Gold.r, UiTheme.Gold.g, UiTheme.Gold.b, 0.34f));
+            }
+        }
     }
 
     private void DrawCompanions(Rect r, float s)
@@ -673,7 +1359,7 @@ public sealed class HubController : MonoBehaviour
         UiTheme.DrawFill(new Rect(gaugeBg.x, gaugeBg.y, gaugeBg.width * Mathf.Clamp01(approval / 100f), gaugeBg.height),
                          UiTheme.Teal);
         GUI.Label(new Rect(profile.x + 16f * s, profile.y + 136f * s, profile.width * 0.46f, 22f * s),
-                  $"호감도 {approval}/100 · {root.Approval.GetStageLabel(companionId)}", UiTheme.SmallMuted);
+                  $"연애도 {approval}/100 · {root.Approval.GetStageLabel(companionId)}", UiTheme.SmallMuted);
         GUI.Label(new Rect(profile.x + profile.width * 0.52f, profile.y + 136f * s, profile.width * 0.44f, 22f * s),
                   VisitTodayText(companionId), new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleRight });
 
@@ -706,7 +1392,7 @@ public sealed class HubController : MonoBehaviour
         }
 
         if (VisitActionButton(new Rect(x + colW + gap, y, colW, actionH), s, "자유 대화",
-                              "근황과 속마음 · 호감 선택", false, !visitedToday))
+                              "근황과 속마음 · 연애 선택", false, !visitedToday))
         {
             StartGeneratedCompanionTalk(companionId);
         }
@@ -988,7 +1674,7 @@ public sealed class HubController : MonoBehaviour
 
     private static string CompanionVisitPlace(string companionId)
     {
-        switch (companionId)
+        switch (CharacterIdAliasResolver.Normalize(companionId))
         {
         case "baek_ryeon":
             return "후산 약재 정자";
@@ -996,7 +1682,7 @@ public sealed class HubController : MonoBehaviour
             return "연무장 화로 옆";
         case "jin_seoyul":
             return "검각 처마 밑";
-        case "seo_a":
+        case "shin_seoa":
             return "소백촌 꽃길";
         case "han_biyeon":
             return "서고 뒤 그림자길";
@@ -1007,7 +1693,7 @@ public sealed class HubController : MonoBehaviour
 
     private static string CompanionVisitBackground(string companionId)
     {
-        switch (companionId)
+        switch (CharacterIdAliasResolver.Normalize(companionId))
         {
         case "baek_ryeon":
             return "bg_seorak_spear_council_hall";
@@ -1015,7 +1701,7 @@ public sealed class HubController : MonoBehaviour
             return "bg_hwawang_blade_training_ground";
         case "jin_seoyul":
             return "bg_cheonroe_staff_dojo_gyeongseong";
-        case "seo_a":
+        case "shin_seoa":
             return "bg_hwajeop_flower_fan_courtyard";
         case "han_biyeon":
             return "bg_heukryeon_shadow_cliff_temple";
@@ -1026,7 +1712,7 @@ public sealed class HubController : MonoBehaviour
 
     private static string VisitMoodLine(string companionId)
     {
-        switch (companionId)
+        switch (CharacterIdAliasResolver.Normalize(companionId))
         {
         case "baek_ryeon":
             return "약재 향이 남은 창대가 벽에 기대어 있다. 백련은 다친 사람의 이름을 먼저 확인한다.";
@@ -1034,7 +1720,7 @@ public sealed class HubController : MonoBehaviour
             return "도아린은 불씨를 툭툭 건드리며 다음 정면돌파 이야기를 기다린다.";
         case "jin_seoyul":
             return "진서율은 처마의 물방울 궤적을 보며 번개가 흐를 길을 계산하고 있다.";
-        case "seo_a":
+        case "shin_seoa":
             return "신서아는 부채 끝으로 바람길을 그리며 모두가 설 자리를 살핀다.";
         case "han_biyeon":
             return "한비연은 밝은 곳과 어두운 곳의 경계를 재며 짧게 웃는다.";
@@ -1045,7 +1731,7 @@ public sealed class HubController : MonoBehaviour
 
     private static string CompanionVisitHook(string companionId)
     {
-        switch (companionId)
+        switch (CharacterIdAliasResolver.Normalize(companionId))
         {
         case "baek_ryeon":
             return "부상자 보호 루트";
@@ -1053,7 +1739,7 @@ public sealed class HubController : MonoBehaviour
             return "돌파 전열 루트";
         case "jin_seoyul":
             return "감찰단 전기 단서";
-        case "seo_a":
+        case "shin_seoa":
             return "지원 진형 루트";
         case "han_biyeon":
             return "독살 누명 단서";
@@ -1078,7 +1764,7 @@ public sealed class HubController : MonoBehaviour
     private static string SupportPreview(string companionId, int approval)
     {
         string stage = approval >= 80 ? "동지" : approval >= 60 ? "신뢰" : approval >= 40 ? "동행" : "경계";
-        switch (companionId)
+        switch (CharacterIdAliasResolver.Normalize(companionId))
         {
         case "baek_ryeon":
             return stage + " · 보호 대상 인접 시 창수 견제";
@@ -1086,7 +1772,7 @@ public sealed class HubController : MonoBehaviour
             return stage + " · 돌파 시작 턴 기세 보조";
         case "jin_seoyul":
             return stage + " · 원거리 빈틈 표시";
-        case "seo_a":
+        case "shin_seoa":
             return stage + " · 지원 위치 보정";
         case "han_biyeon":
             return stage + " · 암습 경로 탐지";
@@ -1919,6 +2605,33 @@ public sealed class HubController : MonoBehaviour
         }
     }
 
+    private void ApplyFocusedTraining(string key)
+    {
+        string characterId = CharacterGrowthCatalog.ProtagonistId;
+        string label = MurimStatFormula.TrainingLabel(key);
+        int amount = 1;
+        root.Session.actionsTaken++;
+        root.Flags.AddInt("growth:martial_xp", 4);
+        root.Flags.AddInt("growth:focus:" + key, 1);
+
+        if (key == MurimStatFormula.HpKey)
+        {
+            amount = 2;
+            ProgressionKeys.AddInt(root.Session, ProgressionKeys.HpBonus(characterId), amount);
+        }
+        else if (key == MurimStatFormula.InnerKey)
+        {
+            ProgressionKeys.AddInt(root.Session, ProgressionKeys.InnerBonus(characterId), amount);
+        }
+        else
+        {
+            ProgressionKeys.AddInt(root.Session, ProgressionKeys.StatBonus(characterId, key), amount);
+        }
+
+        ShowToast(label + " +" + amount);
+        AddLog("박성준이 " + label + " 집중 수련을 마쳤다. " + label + " +" + amount + ".");
+    }
+
     private string CompanionBadge()
     {
         return root.Session.recruitedCompanionIds.Count > 0 ? "!" : string.Empty;
@@ -1950,7 +2663,7 @@ public sealed class HubController : MonoBehaviour
 
     private static string CompanionConcern(string companionId)
     {
-        switch (companionId)
+        switch (CharacterIdAliasResolver.Normalize(companionId))
         {
         case "baek_ryeon":
             return "부상자와 약재 부족";
@@ -1958,7 +2671,7 @@ public sealed class HubController : MonoBehaviour
             return "정면승부로 문파 명예 회복";
         case "jin_seoyul":
             return "천뢰봉문 감전 사건의 진상";
-        case "seo_a":
+        case "shin_seoa":
             return "작은 자신도 문파를 지킬 수 있다는 증명";
         case "han_biyeon":
             return "흑련암문 독살 누명 단서";
@@ -2031,6 +2744,7 @@ public sealed class HubController : MonoBehaviour
 
     private static DialogueScript BuildCompanionTalk(string id)
     {
+        id = CharacterIdAliasResolver.Normalize(id);
         DialogueScript authored = TryBuildAuthoredCompanionTalk(id);
         if (authored != null)
         {
@@ -2108,6 +2822,7 @@ public sealed class HubController : MonoBehaviour
 
     private static string AuthoredCompanionSceneId(string companionId)
     {
+        companionId = CharacterIdAliasResolver.Normalize(companionId);
         if (companionId == CompanionCatalog.BaekRyeon)
             return "companion_baek_ryeon_talk";
         if (companionId == CompanionCatalog.DoArin)
@@ -2115,7 +2830,7 @@ public sealed class HubController : MonoBehaviour
         if (companionId == CompanionCatalog.JinSeoyul)
             return "companion_jin_seoyul_talk";
         if (companionId == CompanionCatalog.SeoA)
-            return "companion_seo_a_talk";
+            return "companion_shin_seoa_talk";
         if (companionId == CompanionCatalog.HanBiyeon)
             return "companion_han_biyeon_talk";
 

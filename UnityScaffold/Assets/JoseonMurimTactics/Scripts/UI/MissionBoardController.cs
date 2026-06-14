@@ -22,6 +22,8 @@ public sealed class MissionBoardController : MonoBehaviour
     private IReadOnlyList<MissionInfo> missions;
     private int selected;
     private MissionFilter filter = MissionFilter.All;
+    private Vector2 listScroll;
+    private Vector2 detailScroll;
 
     private void Awake()
     {
@@ -74,10 +76,18 @@ public sealed class MissionBoardController : MonoBehaviour
     private void DrawList(Rect rect, float s)
     {
         UiTheme.DrawPanel(rect);
-        float x = rect.x + 16f * s;
-        float y = rect.y + 16f * s;
-        float cw = rect.width - 32f * s;
+        float inset = 8f * s;
+        Rect scrollRect = new Rect(rect.x + inset, rect.y + inset, rect.width - inset * 2f, rect.height - inset * 2f);
         float ch = 92f * s;
+        float gap = 12f * s;
+        int visibleCount = VisibleMissionCount();
+        float contentH = Mathf.Max(scrollRect.height + 1f, 16f * s + visibleCount * (ch + gap));
+        Rect viewRect = new Rect(0f, 0f, scrollRect.width - 18f * s, contentH);
+
+        listScroll = GUI.BeginScrollView(scrollRect, listScroll, viewRect);
+        float x = 8f * s;
+        float y = 8f * s;
+        float cw = viewRect.width - 16f * s;
 
         for (int i = 0; i < missions.Count; i++)
         {
@@ -112,8 +122,10 @@ public sealed class MissionBoardController : MonoBehaviour
             GUI.Label(new Rect(card.x + 14f * s, card.y + 64f * s, card.width - 28f * s, 24f * s),
                       $"추천 Lv.{m.recommendedLevel} · 난이도 {m.difficulty}", UiTheme.SmallMuted);
 
-            y += ch + 12f * s;
+            y += ch + gap;
         }
+
+        GUI.EndScrollView();
     }
 
     private void DrawDetail(Rect rect, float s)
@@ -125,9 +137,15 @@ public sealed class MissionBoardController : MonoBehaviour
             return;
         }
 
-        float x = rect.x + 22f * s;
-        float wdt = rect.width - 44f * s;
-        float y = rect.y + 18f * s;
+        Rect scrollRect = new Rect(rect.x + 12f * s, rect.y + 12f * s, rect.width - 24f * s, rect.height - 24f * s);
+        float contentH = Mathf.Max(scrollRect.height + 1f, DetailContentHeight(m, s));
+        Rect viewRect = new Rect(0f, 0f, scrollRect.width - 18f * s, contentH);
+
+        detailScroll = GUI.BeginScrollView(scrollRect, detailScroll, viewRect);
+
+        float x = 10f * s;
+        float wdt = viewRect.width - 20f * s;
+        float y = 6f * s;
 
         GUI.Label(new Rect(x, y, wdt, 34f * s), m.title, UiTheme.Heading);
         y += 42f * s;
@@ -184,24 +202,65 @@ public sealed class MissionBoardController : MonoBehaviour
 
         if (!m.IsUnlocked(root.Flags))
         {
-            GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), LockedReason(m),
+            GUI.Label(new Rect(x, y, wdt, 28f * s), LockedReason(m),
                       new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         }
         else if (!m.IsPlayable)
         {
-            GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "이 임무의 전투는 다음 버전에서 구현됩니다.",
+            GUI.Label(new Rect(x, y, wdt, 28f * s), "이 임무의 전투는 다음 버전에서 구현됩니다.",
                       new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         }
         else if (IsMissionCompleted(m))
         {
-            GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "재전투 시 첫 클리어 보상과 평판 변화는 반복 지급되지 않습니다.",
+            GUI.Label(new Rect(x, y, wdt, 28f * s), "재전투 시 첫 클리어 보상과 평판 변화는 반복 지급되지 않습니다.",
                       new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         }
         else if (m.repeatable)
         {
-            GUI.Label(new Rect(x, rect.yMax - 40f * s, wdt, 28f * s), "반복 의뢰입니다. 출격 확정 시 자유시간/기력 1을 소모합니다.",
+            GUI.Label(new Rect(x, y, wdt, 28f * s), "반복 의뢰입니다. 출격 확정 시 자유시간/기력 1을 소모합니다.",
                       new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         }
+
+        GUI.EndScrollView();
+    }
+
+    private int VisibleMissionCount()
+    {
+        if (missions == null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+        for (int i = 0; i < missions.Count; i++)
+        {
+            if (ShouldShow(missions[i]))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private float DetailContentHeight(MissionInfo mission, float s)
+    {
+        if (mission == null)
+        {
+            return 0f;
+        }
+
+        float lineCount = mission.consumesFreeTime ? 8f : 7f;
+        float height = 18f * s + 42f * s + 32f * s * lineCount + 8f * s + 28f * s + 92f * s;
+        height += 28f * s + Mathf.Max(1, mission.rewardPreview.Count) * 26f * s + 8f * s;
+        height += 28f * s + 26f * s * 3f + 34f * s;
+        if (!string.IsNullOrEmpty(mission.dangerNotes))
+        {
+            height += 72f * s;
+        }
+
+        height += 44f * s;
+        return height;
     }
 
     private MissionInfo Current()

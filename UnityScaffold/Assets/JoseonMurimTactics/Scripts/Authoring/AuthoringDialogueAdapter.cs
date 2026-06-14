@@ -29,12 +29,13 @@ public static class AuthoringDialogueAdapter
             DialogueNode node = new DialogueNode(source.nodeId, ResolveSpeakerName(character, source), source.line,
                                                  source.nextNodeId, source.speakerId);
             node.speakerTitle = ResolveSpeakerTitle(character);
-            node.portraitResource = PortraitRegistry.ResolvePortraitResource(
+            string portraitResource = PortraitRegistry.ResolvePortraitResource(
                 source.speakerId,
                 !string.IsNullOrEmpty(source.portraitId) ? source.portraitId : character != null ? character.portraitId : null,
                 !string.IsNullOrEmpty(source.portraitResource)
                     ? source.portraitResource
                     : character != null ? character.portraitResource : null);
+            node.portraitResource = PortraitRegistry.ResolveMoodPortraitResource(source.speakerId, source.mood, portraitResource);
             node.backgroundId = DialogueBackgroundRegistry.ResolveBackgroundId(source.backgroundId, scene.backgroundId);
             AuthoringMediaItem background = manifest != null ? manifest.FindBackground(node.backgroundId) : null;
             node.backgroundResource = background != null && !string.IsNullOrEmpty(background.resourcePath)

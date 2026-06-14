@@ -1,18 +1,20 @@
-# 조선 무협 SRPG v1.6 Pipeline Hardening
+# 조선 무협 SRPG v1.7 Stabilization Notes
 
-> 현재 통합 기준: `main` = `map-quality-v1.2` /
-> 기준 흐름: `story-start-v0.8` → `noncombat-ui-v1.1` → `map-quality-v1.2` → `main` /
-> 현재 게임 루프 버전: `v1.6 pipeline hardening` /
-> 다음 목표: 대표 수작업 맵, 맵 검증, 콘텐츠 제작 파이프라인 안정화
+> Current stable branch: `stabilize-vertical-slice-v1.7` /
+> Source branch: `map-quality-v1.2` /
+> main status: pending merge after QA /
+> 현재 게임 루프 버전: `v1.7 stabilization` /
+> 다음 목표: 첫 10분 세로 슬라이스 안정화, 캐릭터/ID 기준 통일, 비전투 저장 호환 점검
 
-`main` 브랜치는 새 채팅과 기본 QA가 참고하는 최신 통합 기준입니다. 최신 맵 파이프라인, 콘텐츠 편집기, Unity Resources 연동, BattleTest Tilemap 전장은 `main`과 `map-quality-v1.2`에 함께 유지합니다.
+2026-06-14 피드백 기준으로 최신 작업 판단은 `main` 단독이 아니라 `map-quality-v1.2`와 안정화 브랜치 기준으로 한다. `main`은 QA 후 병합 예정 상태로 취급한다.
 
 브랜치별 목적:
 
-- `main`: 최신 전투/맵 통합 기준. 새 채팅, 기본 테스트, QA 기준으로 우선 확인합니다.
+- `stabilize-vertical-slice-v1.7`: `map-quality-v1.2` 이후 QA와 기준 정리를 모으는 안정화 대상.
+- `map-quality-v1.2`: 최신 맵/허브/콘텐츠 파이프라인 source branch.
+- `main`: QA 후 병합 대상. 새 세션에서 main만 보고 최신이라고 단정하지 않는다.
 - `story-start-v0.8`: Boot부터 프롤로그까지의 시작 루프.
 - `noncombat-ui-v1.1`: 타이틀, 새 게임, 허브, 저장/설정 등 비전투 UI 흐름.
-- `map-quality-v1.2`: Tilemap 전장, 맵 에셋, 콘텐츠 편집기, 오프라인 기본값, palette refine을 검증하는 맵 QA 브랜치. `main`과 같은 최신 기준으로 유지합니다.
 
 조선 문파들이 중원무림맹의 흡수와 동화 압박에 맞서 해동문을 중심으로 연합하는 Unity 기반 SRPG 게임 루프 프로토타입입니다.
 
@@ -79,7 +81,7 @@ Boot
 
 ## 허브 경제 / 선물 / 장비 (MVP)
 
-설정: 박성준 18세, 동료 5인(백련·도아린·진서율·신서아·한비연)은 15세. 나이 데이터는 추후 계속 조정 예정. 선물은 연애도(승인도와 동일 게이지)를 올리며, UI 표기는 "연애도"로 확정(후속 지시서 §2의 유대 표기 권고는 기획 결정으로 미적용). 연애 가능 여부는 나이와 무관하게 항상 허용(`CanReceiveRomanticEffects` 상시 true).
+설정: 박성준은 17세로 고정하고, 현재 동료 5인(백련·도아린·진서율·신서아·한비연)은 15세 표시로 통일한다. 핵심 캐릭터 ID는 `park_sungjun`, `baek_ryeon`, `do_arin`, `jin_seoyul`, `shin_seoa`, `han_biyeon`, `yudalgeun`을 canonical로 쓴다. 구 `seo_a`는 세이브/에셋 호환 alias로만 허용한다. 선물은 연애도(승인도와 동일 게이지)를 올리며, UI 표기는 "연애도"로 유지한다. 연애 가능 여부는 나이와 무관하게 항상 허용한다(`CanReceiveRomanticEffects` 상시 true).
 
 - 통화 표시는 "은냥", 내부 저장 키는 `silver` 유지.
 - 선물: 동료 1명당 하루 1회(`intVars["gift:last_day:<id>"]`). 범용 +5, 일반 +3, 최애 선물 +8. 가격 18~28은냥.
@@ -118,7 +120,7 @@ Boot
 - 서버 실행 모드는 저장 시 `UnityScaffold/Assets/JoseonMurimTactics/Resources/AuthoringContent/content_manifest.json`에 바로 반영합니다.
 - `tools/content-authoring/index.html`을 file://로 직접 열면 `defaults.js` 기반 오프라인 미리보기를 사용하고, 저장 서버가 없을 때는 `content_manifest.json` 다운로드로 fallback합니다.
 - Prologue는 `AuthoringContentManifest.LoadFromResources()`로 `chapter1_prologue`를 우선 로드하고, manifest가 없거나 비어 있으면 C# fallback 대사를 사용합니다.
-- 나이는 표시용 메타데이터로만 사용합니다. `romanticIntent` 선택지 저장과 런타임 적용은 `romanceEligible=false` 캐릭터만 차단합니다.
+- 나이는 표시용 메타데이터로만 사용하되 박성준은 17세 기준을 유지합니다. `romanticIntent` 선택지 저장과 런타임 연애 연출은 기존 로맨스 기획 기준을 유지합니다.
 
 ## 전투 방향
 

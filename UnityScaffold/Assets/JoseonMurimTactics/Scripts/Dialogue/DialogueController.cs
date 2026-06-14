@@ -12,6 +12,10 @@ public sealed class DialogueController
     private const float AutoAdvanceDelay = 1.05f;
     private const float SkipAdvanceDelay = 0.08f;
     private const int MaxHistoryLines = 48;
+    private const float DialogueShadeHeightRatio = 0.32f;
+    private const float ChoiceShadeHeightRatio = 0.42f;
+    private const float DialogueShadeBackdropScale = 1.30f;
+    private const float ChoiceShadeBackdropScale = 1.18f;
 
     private readonly DialogueScript script;
     private readonly GameRoot root;
@@ -72,11 +76,12 @@ public sealed class DialogueController
 
         // 모바일 미연시식 레이아웃: 전신 일러 위로 하단 투명 그라데이션이 깔리고,
         // 그 위에 이름+소속 태그, 빛나는 구분선, 본문이 프레임 없이 얹힌다.
-        float shadeH = screenH * (hasChoices ? 0.46f : 0.40f);
+        float shadeH = screenH * (hasChoices ? ChoiceShadeHeightRatio : DialogueShadeHeightRatio);
+        float shadeScale = hasChoices ? ChoiceShadeBackdropScale : DialogueShadeBackdropScale;
 
         DrawBackground(screenW, screenH);
         DrawStanding(screenW, screenH);
-        UiTheme.DrawBottomShade(new Rect(0f, screenH - shadeH * 1.3f, screenW, shadeH * 1.3f));
+        UiTheme.DrawBottomShade(new Rect(0f, screenH - shadeH * shadeScale, screenW, shadeH * shadeScale));
 
         float textX = screenW * 0.055f;
         float textW = screenW * 0.84f;
@@ -279,20 +284,20 @@ public sealed class DialogueController
                    : null;
     }
 
-    /// <summary>좌측 하단 정렬 전신/스탠딩 일러. portraitResource가 비어 있으면 아무것도 그리지 않는다.</summary>
+    /// <summary>대화창 뒤에 한 명짜리 전신/스탠딩 일러를 중앙 정렬로 그린다.</summary>
     private void DrawStanding(float screenW, float screenH)
     {
-        string resource = current.portraitResource;
+        string sourceResource = current.portraitResource;
+        string resource = PortraitRegistry.ResolveStandingPortraitResource(sourceResource);
         if (string.IsNullOrEmpty(resource))
         {
             return;
         }
 
-        if (!StandingCache.TryGetValue(resource, out Texture2D tex))
+        Texture2D tex = LoadStandingTexture(resource);
+        if (tex == null && !string.Equals(resource, sourceResource, System.StringComparison.OrdinalIgnoreCase))
         {
-            tex = PortraitRegistry.LoadPortraitTexture(resource);
-
-            StandingCache[resource] = tex; // 실패도 캐시해 매 프레임 재시도를 막는다.
+            tex = LoadStandingTexture(sourceResource);
         }
 
         if (tex == null)
@@ -300,9 +305,34 @@ public sealed class DialogueController
             return;
         }
 
-        float h = screenH * 0.94f;
+        float h = screenH * 0.96f;
         float w = h * (tex.width / (float)Mathf.Max(1, tex.height));
-        GUI.DrawTexture(new Rect(screenW * 0.04f, screenH - h, w, h), tex, ScaleMode.ScaleToFit);
+        float maxW = screenW * 0.72f;
+        if (w > maxW)
+        {
+            float scale = maxW / w;
+            w *= scale;
+            h *= scale;
+        }
+
+        float x = (screenW - w) * 0.5f;
+        GUI.DrawTexture(new Rect(x, screenH - h, w, h), tex, ScaleMode.ScaleToFit);
+    }
+
+    private static Texture2D LoadStandingTexture(string resource)
+    {
+        if (string.IsNullOrEmpty(resource))
+        {
+            return null;
+        }
+
+        if (!StandingCache.TryGetValue(resource, out Texture2D tex))
+        {
+            tex = PortraitRegistry.LoadPortraitTexture(resource);
+            StandingCache[resource] = tex; // 실패도 캐시해 매 프레임 재시도를 막는다.
+        }
+
+        return tex;
     }
 
     /// <summary>이름(흰색 대형) + 소속 태그(하늘색) + 빛나는 구분선. 본문 시작 y를 돌려준다.</summary>

@@ -255,7 +255,11 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
 
         if (highlightCellSprite == null)
         {
-            highlightCellSprite = CreateHighlightDiamondSprite();
+            highlightCellSprite = LoadHighlightOutlineSprite();
+            if (highlightCellSprite == null)
+            {
+                highlightCellSprite = CreateHighlightDiamondSprite();
+            }
         }
 
         GameObject cellObject = new GameObject($"Highlight_{cell.x}_{cell.y}");
@@ -657,6 +661,11 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         tile.flags = TileFlags.None;
         tile.colliderType = Tile.ColliderType.None;
         return tile;
+    }
+
+    private static Sprite LoadHighlightOutlineSprite()
+    {
+        return Resources.Load<Sprite>("MapAssets/Overlays/iso_highlight_outline");
     }
 
     private static Sprite CreateHighlightDiamondSprite()

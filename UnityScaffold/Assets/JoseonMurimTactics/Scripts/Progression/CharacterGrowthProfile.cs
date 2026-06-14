@@ -43,7 +43,7 @@ namespace JoseonMurimTactics
         public const string HanBiyeonId = "han_biyeon";
         public const string DoArinId = "do_arin";
         public const string JinSeoyulId = "jin_seoyul";
-        public const string SeoAId = "seo_a";
+        public const string SeoAId = CharacterIdAliasResolver.ShinSeoaId;
 
         public static readonly string[] CorePartyIds =
         {
@@ -97,38 +97,8 @@ namespace JoseonMurimTactics
                 return ProtagonistId;
             }
 
-            string id = raw.Trim();
-            switch (id)
-            {
-                case "박성준":
-                case "성준":
-                case "protagonist":
-                case "hero":
-                    return ProtagonistId;
-                case "백련":
-                case "baekryeon":
-                case "baek_ryeon":
-                    return BaekRyeonId;
-                case "한비연":
-                case "hanbiyeon":
-                case "han_biyeon":
-                    return HanBiyeonId;
-                case "도아린":
-                case "doarin":
-                case "do_arin":
-                    return DoArinId;
-                case "진서율":
-                case "jinseoyul":
-                case "jin_seoyul":
-                    return JinSeoyulId;
-                case "신서아":
-                case "서아":
-                case "seo_a":
-                case "shin_seoa":
-                    return SeoAId;
-                default:
-                    return ProgressionKeys.SafeId(id);
-            }
+            string id = CharacterIdAliasResolver.Normalize(raw);
+            return string.IsNullOrEmpty(id) ? ProtagonistId : id;
         }
 
         public static string DisplayName(string characterId)

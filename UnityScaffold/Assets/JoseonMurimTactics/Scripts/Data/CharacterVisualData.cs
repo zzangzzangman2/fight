@@ -21,9 +21,17 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite defeatedPoseSprite;
     public Sprite actedPoseSprite;
 
+    [Header("Directional Pose Overrides")]
+    public Sprite idleSidePoseSprite;
+    public Sprite idleBackPoseSprite;
+    public Sprite moveSidePoseSprite;
+    public Sprite moveBackPoseSprite;
+
     [Header("Battle Pose Frames (2장 이상이면 프레임 애니메이션, 비우면 단일 포즈)")]
     public Sprite[] idleFrames;
     public Sprite[] moveFrames;
+    public Sprite[] moveSideFrames;
+    public Sprite[] moveBackFrames;
     public Sprite[] attackFrames;
     public Sprite[] skillFrames;
     public Sprite[] hitFrames;
@@ -85,10 +93,10 @@ public sealed class CharacterVisualData : ScriptableObject
     [Header("State Colors")]
     public Color normalTint = Color.white;
     public Color selectedTint = new Color(1f, 0.92f, 0.62f, 1f);
-    public Color actedTint = new Color(0.72f, 0.78f, 0.86f, 0.82f);
+    public Color actedTint = new Color(0.72f, 0.78f, 0.86f, 1f);
     public Color hitTint = new Color(1f, 0.62f, 0.58f, 1f);
     public Color guardTint = new Color(0.72f, 0.96f, 1f, 1f);
-    public Color defeatedTint = new Color(0.55f, 0.55f, 0.55f, 0.68f);
+    public Color defeatedTint = new Color(0.55f, 0.55f, 0.55f, 1f);
 
     [Header("State Motion")]
     public float moveSecondsPerTile = 0.24f;

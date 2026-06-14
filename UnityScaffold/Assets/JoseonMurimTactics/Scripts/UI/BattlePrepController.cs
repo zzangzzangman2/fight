@@ -10,6 +10,13 @@ namespace JoseonMurimTactics
 [DisallowMultipleComponent]
 public sealed class BattlePrepController : MonoBehaviour
 {
+    private const string BanditLairMapPreviewResource = "MapAssets/Backgrounds/sobaek_bandit_lair_srpg_ground";
+    private const string WolfPassMapPreviewResource = "MapAssets/Backgrounds/sobaek_wolf_pass_srpg_ground";
+    private const string TigerRavineMapPreviewResource = "MapAssets/Backgrounds/sobaek_tiger_ravine_srpg_ground";
+    private const string LeopardCliffMapPreviewResource = "MapAssets/Backgrounds/sobaek_leopard_cliff_srpg_ground";
+    private static readonly Dictionary<string, Texture2D> MapPreviewTextureCache =
+        new Dictionary<string, Texture2D>();
+
     private GameRoot root;
     private BattleDefinition def;
     private MissionInfo mission;
@@ -40,6 +47,31 @@ public sealed class BattlePrepController : MonoBehaviour
         }
 
         return null;
+    }
+
+    private static string FreeTimeMapPreviewResourceForBattle(string battleId)
+    {
+        if (battleId == HubController.BanditLairBattleId)
+        {
+            return BanditLairMapPreviewResource;
+        }
+
+        if (battleId == HubController.WolfPassBattleId)
+        {
+            return WolfPassMapPreviewResource;
+        }
+
+        if (battleId == HubController.TigerRavineBattleId)
+        {
+            return TigerRavineMapPreviewResource;
+        }
+
+        if (battleId == HubController.LeopardCliffBattleId)
+        {
+            return LeopardCliffMapPreviewResource;
+        }
+
+        return string.Empty;
     }
 
     private void OnGUI()
@@ -223,11 +255,17 @@ public sealed class BattlePrepController : MonoBehaviour
         }
         else if (def != null && def.id == HubController.BanditLairBattleId)
         {
-            DrawBanditLairMapPreview(previewRect, s);
+            if (!DrawPaintedMapPreview(previewRect, BanditLairMapPreviewResource, s))
+            {
+                DrawBanditLairMapPreview(previewRect, s);
+            }
         }
         else if (def != null && IsWildlifeBattle(def.id))
         {
-            DrawWildlifeMapPreview(previewRect, s, def.id);
+            if (!DrawPaintedMapPreview(previewRect, FreeTimeMapPreviewResourceForBattle(def.id), s))
+            {
+                DrawWildlifeMapPreview(previewRect, s, def.id);
+            }
         }
         else
         {
@@ -382,6 +420,43 @@ public sealed class BattlePrepController : MonoBehaviour
                   new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
         GUI.Label(new Rect(rect.x, rect.yMax - 20f * s, rect.width, 18f * s), "적 진입",
                   new GUIStyle(UiTheme.SmallMuted) { alignment = TextAnchor.MiddleCenter });
+    }
+
+    private static bool DrawPaintedMapPreview(Rect rect, string resourcePath, float s)
+    {
+        Texture2D texture = LoadMapPreviewTexture(resourcePath);
+        if (texture == null)
+        {
+            return false;
+        }
+
+        GUI.DrawTexture(rect, texture, ScaleMode.ScaleAndCrop);
+        Color edge = new Color(0.87f, 0.67f, 0.32f, 0.82f);
+        float thick = Mathf.Max(1f, s);
+        UiTheme.DrawFill(new Rect(rect.x, rect.y, rect.width, thick), edge);
+        UiTheme.DrawFill(new Rect(rect.x, rect.yMax - thick, rect.width, thick), edge);
+        UiTheme.DrawFill(new Rect(rect.x, rect.y, thick, rect.height), edge);
+        UiTheme.DrawFill(new Rect(rect.xMax - thick, rect.y, thick, rect.height), edge);
+        return true;
+    }
+
+    private static Texture2D LoadMapPreviewTexture(string resourcePath)
+    {
+        if (string.IsNullOrEmpty(resourcePath))
+        {
+            return null;
+        }
+
+        Texture2D cached;
+        if (MapPreviewTextureCache.TryGetValue(resourcePath, out cached))
+        {
+            return cached;
+        }
+
+        Sprite sprite = Resources.Load<Sprite>(resourcePath);
+        Texture2D texture = sprite != null ? sprite.texture : Resources.Load<Texture2D>(resourcePath);
+        MapPreviewTextureCache[resourcePath] = texture;
+        return texture;
     }
 
     private static void DrawBanditLairMapPreview(Rect rect, float s)

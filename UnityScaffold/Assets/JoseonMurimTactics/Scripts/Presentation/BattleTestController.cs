@@ -69,6 +69,78 @@ public sealed partial class BattleTestController : MonoBehaviour
     private const string SeorakPassRescueMapConcept =
         "설운령 산길, 약초 수레, 피난민, 밧줄다리 병목과 대나무 덤불을 활용하는 백련 첫 합류 호위전";
     private static readonly bool UseLegacyOnGui = false;
+    private static readonly Vector2Int[] FrontDescentAllyStartCells =
+    {
+        new Vector2Int(6, 8),
+        new Vector2Int(7, 8),
+        new Vector2Int(6, 7),
+        new Vector2Int(7, 7),
+        new Vector2Int(8, 7),
+        new Vector2Int(9, 7)
+    };
+    private static readonly Vector2Int[] BanditFrontDescentAllyStartCells =
+    {
+        new Vector2Int(8, 7),
+        new Vector2Int(10, 7),
+        new Vector2Int(11, 7),
+        new Vector2Int(12, 7),
+        new Vector2Int(8, 8),
+        new Vector2Int(8, 9)
+    };
+    private static readonly Vector2Int[] WolfFrontDescentAllyStartCells =
+    {
+        new Vector2Int(5, 8),
+        new Vector2Int(6, 8),
+        new Vector2Int(7, 8),
+        new Vector2Int(8, 8),
+        new Vector2Int(7, 7),
+        new Vector2Int(8, 7)
+    };
+    private static readonly Vector2Int[] TigerFrontDescentAllyStartCells =
+    {
+        new Vector2Int(8, 8),
+        new Vector2Int(9, 8),
+        new Vector2Int(10, 8),
+        new Vector2Int(8, 7),
+        new Vector2Int(9, 7),
+        new Vector2Int(10, 7)
+    };
+    private static readonly Vector2Int[] LeopardFrontDescentAllyStartCells =
+    {
+        new Vector2Int(8, 8),
+        new Vector2Int(9, 8),
+        new Vector2Int(10, 8),
+        new Vector2Int(8, 7),
+        new Vector2Int(8, 9),
+        new Vector2Int(9, 9)
+    };
+    private static readonly Vector2Int[] FrontDescentEnemyStartCells =
+    {
+        new Vector2Int(5, 1),
+        new Vector2Int(6, 1),
+        new Vector2Int(7, 1),
+        new Vector2Int(8, 1),
+        new Vector2Int(9, 1),
+        new Vector2Int(10, 1)
+    };
+    private static readonly Vector2Int[] SnowGateAscentAllyStartCells =
+    {
+        new Vector2Int(4, 0),
+        new Vector2Int(5, 0),
+        new Vector2Int(6, 0),
+        new Vector2Int(7, 0),
+        new Vector2Int(4, 1),
+        new Vector2Int(5, 1)
+    };
+    private static readonly Vector2Int[] SnowGateAscentEnemyStartCells =
+    {
+        new Vector2Int(7, 2),
+        new Vector2Int(8, 2),
+        new Vector2Int(9, 2),
+        new Vector2Int(7, 3),
+        new Vector2Int(8, 3),
+        new Vector2Int(9, 3)
+    };
     private const float TacticalCameraMinSize = 3.05f;
     private const float TacticalCameraMaxSize = 3.45f;
     private const float CameraFocusYOffset = 0.22f;
@@ -197,6 +269,9 @@ public sealed partial class BattleTestController : MonoBehaviour
     private BattleTestUnit activeUnit;
     private BattleTestUnit hoveredUnit;
     private BattleTestTile hoveredTile;
+    private BattleTestUnit inspectedUnit;
+    private BattleTestTile inspectedTile;
+    private Vector3 inspectedScreenPosition;
     private int round = 1;
     private bool busy;
     private bool aiQueued;
@@ -997,37 +1072,37 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private string BuildInspectText()
     {
-        if (hoveredUnit != null)
+        if (inspectedUnit != null)
         {
-            return $"{hoveredUnit.definition.displayName} ({FactionLabel(hoveredUnit.definition.faction)})\n{hoveredUnit.definition.age}세 · {hoveredUnit.definition.mbti} · {hoveredUnit.definition.sectName}\n{hoveredUnit.definition.elementName}/{hoveredUnit.definition.weaponName} · {hoveredUnit.definition.speechTone}\n체력 {hoveredUnit.hp}/{hoveredUnit.definition.maxHp}   방어 {DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell))}\n상태: {UnitStatusText(hoveredUnit)}\n무공: {hoveredUnit.definition.specialName}";
+            return $"{inspectedUnit.definition.displayName} ({FactionLabel(inspectedUnit.definition.faction)})\n{inspectedUnit.definition.age}세 · {inspectedUnit.definition.mbti} · {inspectedUnit.definition.sectName}\n{inspectedUnit.definition.elementName}/{inspectedUnit.definition.weaponName} · {inspectedUnit.definition.speechTone}\n체력 {inspectedUnit.hp}/{inspectedUnit.definition.maxHp}   방어 {DefenseValue(inspectedUnit, TileAt(inspectedUnit.cell))}\n상태: {UnitStatusText(inspectedUnit)}\n무공: {inspectedUnit.definition.specialName}";
         }
 
-        if (hoveredTile != null)
+        if (inspectedTile != null)
         {
-            BattleTestInteractable prop = GetInteractableAt(hoveredTile.cell);
+            BattleTestInteractable prop = GetInteractableAt(inspectedTile.cell);
             StringBuilder builder = new StringBuilder();
-            builder.Append(TerrainLabel(hoveredTile.terrain))
+            builder.Append(TerrainLabel(inspectedTile.terrain))
                 .Append("  (")
-                .Append(hoveredTile.cell.x)
+                .Append(inspectedTile.cell.x)
                 .Append(",")
-                .Append(hoveredTile.cell.y)
+                .Append(inspectedTile.cell.y)
                 .AppendLine(")");
             builder.Append("이동 비용 ")
-                .Append(hoveredTile.moveCost)
+                .Append(inspectedTile.moveCost)
                 .Append("   엄폐 +")
-                .AppendLine(hoveredTile.coverBonus.ToString());
+                .AppendLine(inspectedTile.coverBonus.ToString());
             builder.Append("고저 ")
-                .Append(hoveredTile.elevation)
+                .Append(inspectedTile.elevation)
                 .Append("   진입 ")
-                .AppendLine(YesNo(hoveredTile.walkable));
+                .AppendLine(YesNo(inspectedTile.walkable));
             builder.Append("시야 ")
-                .Append(hoveredTile.blocksLineOfSight ? "차단" : "개방")
+                .Append(inspectedTile.blocksLineOfSight ? "차단" : "개방")
                 .Append("   병목 ")
-                .AppendLine(YesNo(hoveredTile.isChokePoint));
-            if (hoveredTile.elevation > 0)
+                .AppendLine(YesNo(inspectedTile.isChokePoint));
+            if (inspectedTile.elevation > 0)
             {
                 builder.Append("고지 효과: 위에서 공격 시 명중 +2");
-                if (hoveredTile.elevation >= 2)
+                if (inspectedTile.elevation >= 2)
                 {
                     builder.Append(" / 원거리 유리");
                 }
@@ -1047,18 +1122,18 @@ public sealed partial class BattleTestController : MonoBehaviour
             }
             else
             {
-                builder.Append("위험: ").Append(TileHazardText(hoveredTile));
+                builder.Append("위험: ").Append(TileHazardText(inspectedTile));
             }
 
-            if (!string.IsNullOrEmpty(hoveredTile.tacticalNote))
+            if (!string.IsNullOrEmpty(inspectedTile.tacticalNote))
             {
-                builder.AppendLine().Append("전술: ").Append(hoveredTile.tacticalNote);
+                builder.AppendLine().Append("전술: ").Append(inspectedTile.tacticalNote);
             }
 
             return builder.ToString();
         }
 
-        return "가리킨 대상 없음";
+        return string.Empty;
     }
 
     private string BuildHudForecastText()
@@ -1165,6 +1240,9 @@ public sealed partial class BattleTestController : MonoBehaviour
         phaseTurn.Reset();
         hoveredTile = null;
         hoveredUnit = null;
+        inspectedTile = null;
+        inspectedUnit = null;
+        inspectedScreenPosition = Vector3.zero;
         suppressCameraFocus = false;
         cameraPanCoroutine = null;
         mapAssetSpritesLoaded = false;
@@ -1440,22 +1518,8 @@ public sealed partial class BattleTestController : MonoBehaviour
     private static BattleTestUnitDefinition[] BuildBaekduSnowGateUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        Vector2Int[] allyCells = {
-            new Vector2Int(4, 0),
-            new Vector2Int(5, 0),
-            new Vector2Int(6, 0),
-            new Vector2Int(7, 0),
-            new Vector2Int(4, 1),
-            new Vector2Int(5, 1)
-        };
-        Vector2Int[] enemyCells = {
-            new Vector2Int(9, 0),
-            new Vector2Int(10, 0),
-            new Vector2Int(11, 0),
-            new Vector2Int(9, 1),
-            new Vector2Int(10, 1),
-            new Vector2Int(11, 1),
-        };
+        Vector2Int[] allyCells = SnowGateAscentAllyStartCells;
+        Vector2Int[] enemyCells = SnowGateAscentEnemyStartCells;
 
         int allyIndex = 0;
         int enemyIndex = 0;
@@ -1481,20 +1545,14 @@ public sealed partial class BattleTestController : MonoBehaviour
             result.Add(unit);
         }
 
+        ApplyEnemyStartCells(result, SnowGateAscentEnemyStartCells);
         return result.ToArray();
     }
 
     private static BattleTestUnitDefinition[] BuildBanditLairUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        Vector2Int[] allyCells = {
-            new Vector2Int(7, 1),
-            new Vector2Int(6, 1),
-            new Vector2Int(8, 1),
-            new Vector2Int(9, 1),
-            new Vector2Int(5, 2),
-            new Vector2Int(4, 2)
-        };
+        Vector2Int[] allyCells = BanditFrontDescentAllyStartCells;
 
         int allyIndex = 0;
         foreach (BattleTestUnitDefinition definition in baseDefinitions)
@@ -1533,20 +1591,14 @@ public sealed partial class BattleTestController : MonoBehaviour
                               "흑립방", "압박", "대도", 40, 4, 11, 12, 4, 1, 7, 15, 6, 11, "목책 내려찍기", 1,
                               1, 2, 5, 2, BattleSpecialEffect.BreakGuard));
 
+        ApplyEnemyStartCells(result, FrontDescentEnemyStartCells);
         return result.ToArray();
     }
 
     private static BattleTestUnitDefinition[] BuildWolfPassUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        AddFreeTimeAllies(result, baseDefinitions, new[] {
-            new Vector2Int(7, 1),
-            new Vector2Int(6, 1),
-            new Vector2Int(8, 1),
-            new Vector2Int(9, 1),
-            new Vector2Int(5, 2),
-            new Vector2Int(10, 2)
-        });
+        AddFreeTimeAllies(result, baseDefinitions, WolfFrontDescentAllyStartCells);
 
         BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
                                         FindFirstDefinition(baseDefinitions, Faction.Enemy);
@@ -1566,20 +1618,14 @@ public sealed partial class BattleTestController : MonoBehaviour
                              "백두산 야수", "야성", "우두머리 이빨", 34, 2, 14, 17, 5, 1, 7, 14, 6, 11,
                              "무리 돌진", 1, 1, 2, 4, 2, BattleSpecialEffect.BreakGuard));
 
+        ApplyEnemyStartCells(result, FrontDescentEnemyStartCells);
         return result.ToArray();
     }
 
     private static BattleTestUnitDefinition[] BuildTigerRavineUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        AddFreeTimeAllies(result, baseDefinitions, new[] {
-            new Vector2Int(7, 1),
-            new Vector2Int(6, 1),
-            new Vector2Int(8, 1),
-            new Vector2Int(9, 1),
-            new Vector2Int(5, 2),
-            new Vector2Int(10, 2)
-        });
+        AddFreeTimeAllies(result, baseDefinitions, TigerFrontDescentAllyStartCells);
 
         BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
                                         FindFirstDefinition(baseDefinitions, Faction.Enemy);
@@ -1599,20 +1645,14 @@ public sealed partial class BattleTestController : MonoBehaviour
                              "백두산 야수", "산군", "대호의 발톱", 54, 3, 14, 16, 5, 1, 8, 16, 8, 14,
                              "산군 포효", 1, 1, 2, 5, 2, BattleSpecialEffect.BreakGuard));
 
+        ApplyEnemyStartCells(result, FrontDescentEnemyStartCells);
         return result.ToArray();
     }
 
     private static BattleTestUnitDefinition[] BuildLeopardCliffUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        AddFreeTimeAllies(result, baseDefinitions, new[] {
-            new Vector2Int(6, 1),
-            new Vector2Int(7, 1),
-            new Vector2Int(8, 1),
-            new Vector2Int(5, 2),
-            new Vector2Int(9, 2),
-            new Vector2Int(4, 3)
-        });
+        AddFreeTimeAllies(result, baseDefinitions, LeopardFrontDescentAllyStartCells);
 
         BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
                                         FindFirstDefinition(baseDefinitions, Faction.Enemy);
@@ -1632,14 +1672,15 @@ public sealed partial class BattleTestController : MonoBehaviour
                              "백두산 야수", "그림자", "검은 발톱", 40, 3, 17, 19, 6, 1, 7, 15, 7, 12,
                              "무음 도약", 1, 1, 2, 5, 2, BattleSpecialEffect.Mark));
 
+        ApplyEnemyStartCells(result, FrontDescentEnemyStartCells);
         return result.ToArray();
     }
 
     private static BattleTestUnitDefinition[] BuildSeorakPassRescueUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        AddNamedAlly(result, baseDefinitions, "park_sungjun", new Vector2Int(6, 1));
-        AddNamedAlly(result, baseDefinitions, "baek_ryeon", new Vector2Int(7, 2));
+        AddNamedAlly(result, baseDefinitions, "park_sungjun", LeopardFrontDescentAllyStartCells[0]);
+        AddNamedAlly(result, baseDefinitions, "baek_ryeon", LeopardFrontDescentAllyStartCells[1]);
 
         BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "bandit_guard_1") ??
                                         FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
@@ -1661,7 +1702,28 @@ public sealed partial class BattleTestController : MonoBehaviour
                               new Vector2Int(13, 8), "철비채", "협박", "대도", 34, 3, 12, 13, 4, 1, 7,
                               15, 6, 10, "목숨값 흥정", 1, 1, 2, 4, 2, BattleSpecialEffect.BreakGuard));
 
+        ApplyEnemyStartCells(result, FrontDescentEnemyStartCells);
         return result.ToArray();
+    }
+
+    private static void ApplyEnemyStartCells(List<BattleTestUnitDefinition> result, Vector2Int[] enemyCells)
+    {
+        if (result == null || enemyCells == null || enemyCells.Length == 0)
+        {
+            return;
+        }
+
+        int enemyIndex = 0;
+        foreach (BattleTestUnitDefinition unit in result)
+        {
+            if (unit == null || unit.faction != Faction.Enemy)
+            {
+                continue;
+            }
+
+            unit.startCell = enemyCells[Mathf.Min(enemyIndex, enemyCells.Length - 1)];
+            enemyIndex++;
+        }
     }
 
     private static void AddFreeTimeAllies(List<BattleTestUnitDefinition> result, BattleTestUnitDefinition[] baseDefinitions,
@@ -1914,6 +1976,7 @@ public sealed partial class BattleTestController : MonoBehaviour
             unitInfoText = BuildHudUnitInfo(),
             hoverTitle = BuildHudHoverTitle(),
             hoverBody = BuildHudHoverBody(),
+            hoverScreenPosition = inspectedScreenPosition,
             showLog = showHudLog,
             showThreatRange = showThreatOverlay,
             showElevationOverlay = showElevationOverlay,
@@ -1983,7 +2046,7 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     public Dictionary<Vector2Int, int> GetPreviewReachableCells(BattleTestUnit unit)
     {
-        return unit == null ? new Dictionary<Vector2Int, int>() : GetReachableCells(unit);
+        return unit == null ? new Dictionary<Vector2Int, int>() : GetLegalMovePreviewCells(unit);
     }
 
     public int GetPreviewMoveRange(BattleTestUnit unit)
@@ -2113,46 +2176,46 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private string BuildHudHoverTitle()
     {
-        if (hoveredUnit != null)
+        if (inspectedUnit != null)
         {
-            return hoveredUnit.definition.displayName + " / " + FactionLabel(hoveredUnit.definition.faction);
+            return inspectedUnit.definition.displayName + " / " + FactionLabel(inspectedUnit.definition.faction);
         }
 
-        if (hoveredTile != null)
+        if (inspectedTile != null)
         {
-            return TerrainLabel(hoveredTile.terrain) + "  (" + hoveredTile.cell.x + "," + hoveredTile.cell.y + ")";
+            return TerrainLabel(inspectedTile.terrain) + "  (" + inspectedTile.cell.x + "," + inspectedTile.cell.y + ")";
         }
 
-        return "전술 정보";
+        return string.Empty;
     }
 
     private string BuildHudHoverBody()
     {
-        if (hoveredUnit != null)
+        if (inspectedUnit != null)
         {
-            return "HP " + hoveredUnit.hp + "/" + hoveredUnit.definition.maxHp +
-                   "   방어 " + DefenseValue(hoveredUnit, TileAt(hoveredUnit.cell)) +
-                   "\n" + hoveredUnit.definition.elementName + "/" + hoveredUnit.definition.weaponName +
-                   "   " + hoveredUnit.definition.mbti +
-                   "\n무공: " + hoveredUnit.definition.specialName +
-                   "\n상태: " + UnitStatusText(hoveredUnit);
+            return "HP " + inspectedUnit.hp + "/" + inspectedUnit.definition.maxHp +
+                   "   방어 " + DefenseValue(inspectedUnit, TileAt(inspectedUnit.cell)) +
+                   "\n" + inspectedUnit.definition.elementName + "/" + inspectedUnit.definition.weaponName +
+                   "   " + inspectedUnit.definition.mbti +
+                   "\n무공: " + inspectedUnit.definition.specialName +
+                   "\n상태: " + UnitStatusText(inspectedUnit);
         }
 
-        if (hoveredTile != null)
+        if (inspectedTile != null)
         {
-            BattleTestInteractable prop = GetInteractableAt(hoveredTile.cell);
+            BattleTestInteractable prop = GetInteractableAt(inspectedTile.cell);
             string propLine = prop == null
-                                  ? "위험: " + TileHazardText(hoveredTile)
+                                  ? "위험: " + TileHazardText(inspectedTile)
                                   : "지형 오브젝트: " + prop.displayName + " / " + InteractableEffectText(prop.kind);
-            return "이동 비용 " + hoveredTile.moveCost +
-                   "   엄폐 +" + hoveredTile.coverBonus +
-                   "\n고저차 " + hoveredTile.elevation +
-                   "   시야 " + (hoveredTile.blocksLineOfSight ? "차단" : "개방") +
+            return "이동 비용 " + inspectedTile.moveCost +
+                   "   엄폐 +" + inspectedTile.coverBonus +
+                   "\n고저차 " + inspectedTile.elevation +
+                   "   시야 " + (inspectedTile.blocksLineOfSight ? "차단" : "개방") +
                    "\n" + propLine +
-                   (string.IsNullOrEmpty(hoveredTile.tacticalNote) ? string.Empty : "\n" + hoveredTile.tacticalNote);
+                   (string.IsNullOrEmpty(inspectedTile.tacticalNote) ? string.Empty : "\n" + inspectedTile.tacticalNote);
         }
 
-        return "유닛이나 지형에 마우스를 올리면 이동 비용, 엄폐, 고저차, 위험도를 보여줍니다.";
+        return string.Empty;
     }
 
     private void BuildHudForecast(BattleHudSnapshot snapshot)
@@ -2267,14 +2330,78 @@ public sealed partial class BattleTestController : MonoBehaviour
     {
         foreach (BattleTestUnit unit in units)
         {
-            if (unit == null || unit.defeated || unit.view == null)
+            FaceUnitTowardOpposingSide(unit, true);
+        }
+    }
+
+    private void FaceUnitTowardOpposingSide(BattleTestUnit unit, bool playIdle)
+    {
+        if (unit == null || unit.defeated || unit.view == null)
+        {
+            return;
+        }
+
+        Vector2 direction = DirectionToOpposingSide(unit);
+        unit.view.FaceDirection(direction);
+        if (playIdle)
+        {
+            unit.view.PlayIdle();
+        }
+    }
+
+    private Vector2 DirectionToOpposingSide(BattleTestUnit unit)
+    {
+        if (unit == null || unit.definition == null)
+        {
+            return Vector2.down;
+        }
+
+        Faction opposingFaction = OpposingFaction(unit.definition.faction);
+        if (TryGetFactionCenterWorld(opposingFaction, out Vector3 targetWorld))
+        {
+            Vector3 unitWorld = unit.view != null ? unit.view.transform.position : UnitWorldPosition(unit.cell);
+            Vector2 direction = new Vector2(targetWorld.x - unitWorld.x, targetWorld.y - unitWorld.y);
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                return direction;
+            }
+        }
+
+        return DefaultFacingForFaction(unit.definition.faction);
+    }
+
+    private bool TryGetFactionCenterWorld(Faction faction, out Vector3 center)
+    {
+        center = Vector3.zero;
+        int count = 0;
+        foreach (BattleTestUnit unit in units)
+        {
+            if (unit == null || unit.defeated || unit.definition == null || unit.definition.faction != faction)
             {
                 continue;
             }
 
-            unit.view.FaceDirection(Vector2.down);
-            unit.view.PlayIdle();
+            center += unit.view != null ? unit.view.transform.position : UnitWorldPosition(unit.cell);
+            count++;
         }
+
+        if (count == 0)
+        {
+            return false;
+        }
+
+        center /= count;
+        return true;
+    }
+
+    private static Faction OpposingFaction(Faction faction)
+    {
+        return faction == Faction.Enemy ? Faction.Ally : Faction.Enemy;
+    }
+
+    private static Vector2 DefaultFacingForFaction(Faction faction)
+    {
+        return faction == Faction.Enemy ? Vector2.up : Vector2.down;
     }
 
     public void HudToggleThreat()
@@ -2323,8 +2450,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         activeUnit = unit;
         if (unit.view != null)
         {
-            unit.view.FaceDirection(Vector2.down);
-            unit.view.PlayIdle();
+            FaceUnitTowardOpposingSide(unit, true);
         }
 
         ShowHudNotice("\uD30C\uB780 \uC2DC\uC791 \uCE78\uC5D0 \uB193\uC73C\uBA74 \uBC30\uCE58\uB429\uB2C8\uB2E4");
@@ -3769,11 +3895,13 @@ public sealed partial class BattleTestController : MonoBehaviour
             unit.cell = spawnCell;
             unit.initiative = definition.initiative + random.Next(0, 5);
             view.Bind(unit, visual);
-            view.FaceDirection(Vector2.down);
+            view.FaceDirection(DefaultFacingForFaction(definition.faction));
             view.PlayIdle();
             units.Add(unit);
             occupiedSpawnCells.Add(spawnCell);
         }
+
+        FaceUnitsForDeployment();
     }
 
     private bool TryResolveInitialSpawnCell(BattleTestUnitDefinition definition, HashSet<Vector2Int> occupied,
@@ -4059,22 +4187,39 @@ public sealed partial class BattleTestController : MonoBehaviour
             }
         }
 
-        foreach (Collider2D hit in hits)
+        clickedTile = ResolveTileFromPointer(point, hits);
+
+        // 유닛 위를 클릭하면 배치/이동 스냅이 클릭을 가로채지 않고 '선택'으로 처리한다.
+        // 배치 단계: 맵 캐릭터 클릭 = 배치 변경 대상 선택, 빈 파란칸 클릭 = 그 유닛 재배치.
+        // 액션 단계: 유닛 클릭 = 선택/공격, 빈 칸 클릭 = 이동.
+        BattleTestUnit unitAtClick = clickedUnit != null
+                                         ? clickedUnit
+                                         : (clickedTile != null ? UnitAt(clickedTile.cell) : null);
+        bool clickedOnUnit = unitAtClick != null && !unitAtClick.defeated;
+
+        if (scoutMode && activeUnit != null && !clickedOnUnit)
         {
-            BattleTestTile tile = hit.GetComponent<BattleTestTile>();
-            if (tile != null)
+            BattleTestTile deploymentDestination = ResolveDeploymentPointerDestination(point, clickedTile);
+            if (deploymentDestination != null && TryScoutDeploy(deploymentDestination))
             {
-                clickedTile = tile;
-                break;
+                SetInspectedTarget(null, deploymentDestination, screenPosition);
+                return;
             }
         }
 
-        if (clickedTile == null)
+        if (IsMovementPreviewActive() && !clickedOnUnit)
         {
-            clickedTile = TileAt(WorldToGrid(point));
+            BattleTestTile moveDestination = ResolveMovePointerDestination(activeUnit, point, clickedTile);
+            if (moveDestination != null)
+            {
+                SetInspectedTarget(null, moveDestination, screenPosition);
+                TryMove(activeUnit, moveDestination);
+                return;
+            }
         }
 
         clickedUnit = ResolveClickedUnit(clickedUnit, clickedTile);
+        SetInspectedTarget(clickedUnit, clickedTile, screenPosition);
 
         if (phaseTurn.IsPlayerPhase && clickedUnit != null && clickedUnit.definition.faction == Faction.Ally)
         {
@@ -4171,16 +4316,107 @@ public sealed partial class BattleTestController : MonoBehaviour
         Vector2 point = new Vector2(world.x, world.y);
         Collider2D[] hits = Physics2D.OverlapPointAll(point);
 
-        foreach (Collider2D hit in hits)
+        BattleTestTile clickedTile = ResolveTileFromPointer(point, hits);
+        if (scoutMode && activeUnit != null)
         {
-            BattleTestTile tile = hit.GetComponent<BattleTestTile>();
-            if (tile != null)
+            return ResolveDeploymentPointerDestination(point, clickedTile) ?? clickedTile;
+        }
+
+        return clickedTile;
+    }
+
+    private BattleTestTile ResolveTileFromPointer(Vector2 point, Collider2D[] hits)
+    {
+        if (hits != null)
+        {
+            foreach (Collider2D hit in hits)
             {
-                return tile;
+                BattleTestTile tile = hit.GetComponent<BattleTestTile>();
+                if (tile != null)
+                {
+                    return tile;
+                }
             }
         }
 
         return TileAt(WorldToGrid(point));
+    }
+
+    private BattleTestTile ResolveMovePointerDestination(BattleTestUnit unit, Vector2 point,
+                                                        BattleTestTile clickedTile)
+    {
+        if (unit == null)
+        {
+            return null;
+        }
+
+        Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
+        if (CanUseMoveDestination(unit, clickedTile, reachable, false))
+        {
+            return clickedTile;
+        }
+
+        return FindPointerTile(point, tile => CanUseMoveDestination(unit, tile, reachable, false));
+    }
+
+    private BattleTestTile ResolveDeploymentPointerDestination(Vector2 point, BattleTestTile clickedTile)
+    {
+        if (activeUnit != null && clickedTile != null && clickedTile.cell == activeUnit.cell)
+        {
+            BattleTestTile nearbyDestination =
+                FindPointerTile(point, tile => tile.cell != activeUnit.cell && CanUseDeploymentDestination(tile));
+            if (nearbyDestination != null)
+            {
+                return nearbyDestination;
+            }
+        }
+
+        if (CanUseDeploymentDestination(clickedTile))
+        {
+            return clickedTile;
+        }
+
+        return FindPointerTile(point, CanUseDeploymentDestination);
+    }
+
+    private BattleTestTile FindPointerTile(Vector2 point, Func<BattleTestTile, bool> predicate)
+    {
+        if (tiles == null || predicate == null)
+        {
+            return null;
+        }
+
+        BattleTestTile best = null;
+        float bestScore = 1.10f;
+        float bestDistance = float.MaxValue;
+        float halfWidth = Mathf.Max(0.001f, tileWidth * 0.5f);
+        float halfHeight = Mathf.Max(0.001f, tileHeight * 0.5f);
+
+        foreach (BattleTestTile tile in tiles)
+        {
+            if (tile == null || !predicate(tile))
+            {
+                continue;
+            }
+
+            Vector3 world = GridToWorld(tile.cell);
+            float score = Mathf.Abs(point.x - world.x) / halfWidth +
+                          Mathf.Abs(point.y - world.y) / halfHeight;
+            if (score > 1.10f)
+            {
+                continue;
+            }
+
+            float distance = ((Vector2)world - point).sqrMagnitude;
+            if (score < bestScore || (Mathf.Approximately(score, bestScore) && distance < bestDistance))
+            {
+                best = tile;
+                bestScore = score;
+                bestDistance = distance;
+            }
+        }
+
+        return best;
     }
 
     private void SelectPlayerUnit(BattleTestUnit unit)
@@ -4212,6 +4448,13 @@ public sealed partial class BattleTestController : MonoBehaviour
         }
     }
 
+    private void SetInspectedTarget(BattleTestUnit unit, BattleTestTile tile, Vector3 screenPosition)
+    {
+        inspectedUnit = unit != null && !unit.defeated ? unit : null;
+        inspectedTile = inspectedUnit == null ? tile : null;
+        inspectedScreenPosition = inspectedUnit != null || inspectedTile != null ? screenPosition : Vector3.zero;
+    }
+
     private bool TryScoutDeploy(BattleTestTile destination)
     {
         if (!scoutMode || activeUnit == null || destination == null)
@@ -4237,6 +4480,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         if (activeUnit.view != null)
         {
             activeUnit.view.transform.position = UnitWorldPosition(destination.cell);
+            FaceUnitTowardOpposingSide(activeUnit, true);
         }
 
         AddLog($"[\uBC30\uCE58] {activeUnit.definition.displayName} \uBC30\uCE58 -> ({destination.cell.x},{destination.cell.y})");
@@ -4259,12 +4503,24 @@ public sealed partial class BattleTestController : MonoBehaviour
             return IsBaekduSnowGateDeploymentStartCell(cell.x, cell.y);
         }
 
-        if (string.Equals(tile.laneId, "south_deployment", StringComparison.OrdinalIgnoreCase))
+        return IsFrontDescentDeploymentCell(cell);
+    }
+
+    private static bool IsFrontDescentDeploymentCell(Vector2Int cell)
+    {
+        return cell.y >= 7 && cell.y <= 9 && cell.x >= 5 && cell.x <= 12;
+    }
+
+    private bool CanUseDeploymentDestination(BattleTestTile destination)
+    {
+        if (destination == null || !IsDeploymentCell(destination.cell))
         {
-            return true;
+            return false;
         }
 
-        return cell.y <= 2 && cell.x >= 5 && cell.x <= 13;
+        BattleTestUnit occupant = UnitAt(destination.cell);
+        return CanStandOnTile(destination) && !IsCellBlockedByInteractable(destination.cell) &&
+               (occupant == null || occupant == activeUnit);
     }
 
     private void TryMove(BattleTestUnit unit, BattleTestTile destination)
@@ -4275,15 +4531,15 @@ public sealed partial class BattleTestController : MonoBehaviour
             return;
         }
 
-        if (!CanStandOnTile(destination) || IsCellBlockedByInteractable(destination.cell) ||
-            UnitAt(destination.cell) != null)
+        if (destination == null || destination.cell == unit.cell ||
+            !CanEnterCellForMovement(unit, destination.cell))
         {
             AddLog("[이동] 진입할 수 없는 칸입니다.");
             return;
         }
 
         Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
-        if (!reachable.ContainsKey(destination.cell))
+        if (!CanUseMoveDestination(unit, destination, reachable, false))
         {
             AddLog("[이동] 이동 범위를 벗어났습니다.");
             return;
@@ -7043,7 +7299,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         hoveredUnit = null;
         hoveredTile = null;
 
-        if (Camera.main == null)
+        if (Camera.main == null || PointerOverHud(Input.mousePosition))
         {
             return;
         }
@@ -7072,6 +7328,55 @@ public sealed partial class BattleTestController : MonoBehaviour
         }
     }
 
+    private Dictionary<Vector2Int, int> GetLegalMovePreviewCells(BattleTestUnit unit)
+    {
+        Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
+        Dictionary<Vector2Int, int> legal = new Dictionary<Vector2Int, int>(reachable.Count);
+        foreach (KeyValuePair<Vector2Int, int> pair in reachable)
+        {
+            BattleTestTile tile = TileAt(pair.Key);
+            if (pair.Key == unit.cell || CanUseMoveDestination(unit, tile, reachable, false))
+            {
+                legal[pair.Key] = pair.Value;
+            }
+        }
+
+        return legal;
+    }
+
+    private bool CanUseMoveDestination(BattleTestUnit unit, BattleTestTile destination,
+                                       Dictionary<Vector2Int, int> reachable, bool requirePath)
+    {
+        if (unit == null || destination == null || destination.cell == unit.cell)
+        {
+            return false;
+        }
+
+        if (!CanEnterCellForMovement(unit, destination.cell))
+        {
+            return false;
+        }
+
+        if (reachable != null && !reachable.ContainsKey(destination.cell))
+        {
+            return false;
+        }
+
+        return !requirePath || FindMovePath(unit, destination.cell).Count >= 2;
+    }
+
+    private bool CanEnterCellForMovement(BattleTestUnit unit, Vector2Int cell)
+    {
+        BattleTestTile tile = TileAt(cell);
+        if (!CanStandOnTile(tile) || IsCellBlockedByInteractable(cell))
+        {
+            return false;
+        }
+
+        BattleTestUnit occupant = UnitAt(cell);
+        return occupant == null || occupant == unit;
+    }
+
     private Dictionary<Vector2Int, int> GetReachableCells(BattleTestUnit unit)
     {
         Dictionary<Vector2Int, int> cost = new Dictionary<Vector2Int, int>();
@@ -7085,18 +7390,7 @@ public sealed partial class BattleTestController : MonoBehaviour
             foreach (Vector2Int next in Neighbors(current))
             {
                 BattleTestTile tile = TileAt(next);
-                if (!CanStandOnTile(tile))
-                {
-                    continue;
-                }
-
-                if (IsCellBlockedByInteractable(next))
-                {
-                    continue;
-                }
-
-                BattleTestUnit occupant = UnitAt(next);
-                if (occupant != null && occupant != unit)
+                if (!CanEnterCellForMovement(unit, next))
                 {
                     continue;
                 }
@@ -7148,18 +7442,7 @@ public sealed partial class BattleTestController : MonoBehaviour
             foreach (Vector2Int next in Neighbors(current))
             {
                 BattleTestTile tile = TileAt(next);
-                if (!CanStandOnTile(tile))
-                {
-                    continue;
-                }
-
-                if (IsCellBlockedByInteractable(next))
-                {
-                    continue;
-                }
-
-                BattleTestUnit occupant = UnitAt(next);
-                if (occupant != null && occupant != unit)
+                if (!CanEnterCellForMovement(unit, next))
                 {
                     continue;
                 }
@@ -7397,7 +7680,7 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private void HighlightMoveReachability(BattleTestUnit unit)
     {
-        Dictionary<Vector2Int, int> reachable = GetReachableCells(unit);
+        Dictionary<Vector2Int, int> reachable = GetLegalMovePreviewCells(unit);
         HashSet<Vector2Int> boundary = new HashSet<Vector2Int>();
         int moveRange = Mathf.Max(1, EffectiveMoveRange(unit));
 
@@ -7407,7 +7690,7 @@ public sealed partial class BattleTestController : MonoBehaviour
             if (cell != unit.cell)
             {
                 BattleTestTile tile = TileAt(cell);
-                if (tile != null)
+                if (CanUseMoveDestination(unit, tile, reachable, false))
                 {
                     float costRatio = Mathf.Clamp01(pair.Value / (float)moveRange);
                     float alpha = Mathf.Lerp(0.62f, 0.48f, costRatio);
@@ -8896,8 +9179,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         if (IsBaekduSnowGateDeploymentStartCell(x, y))
         {
             return new TerrainProfile(TerrainType.Road, new Color(0.58f, 0.53f, 0.44f, 1f), 0, 0, 1, true,
-                                      false, x >= 7 && x <= 9, false, false, "south_deployment",
-                                      "Painted starting lane: clear stone-and-snow ground for player deployment.");
+                                      false, x >= 7 && x <= 9, false, false, "gate_ascent_deployment",
+                                      "Gate ascent starting lane: clear stone-and-snow ground for player deployment.");
         }
 
         if ((x == 5 || x == 6) && y == 2)
@@ -8918,24 +9201,16 @@ public sealed partial class BattleTestController : MonoBehaviour
                                       "Lower painted approach: clear ground between banners and braziers.");
         }
 
-        if (y <= 7)
+        if (y <= 4)
         {
-            bool stair = (x >= 7 && x <= 11 && y >= 4) || (x >= 8 && x <= 12 && y >= 6);
-            bool rubble = (x == 9 && y == 7) || (x == 10 && y == 7) || (x == 11 && y == 6);
-            bool objective = x == 12 && y == 7;
-            int elevation = y >= 6 ? 2 : y >= 4 ? 1 : 0;
-            return new TerrainProfile(objective ? TerrainType.Gate : stair ? TerrainType.Road : rubble ? TerrainType.Rubble : TerrainType.Stone,
-                                      objective ? new Color(0.70f, 0.58f, 0.34f, 1f)
-                                                : stair ? new Color(0.60f, 0.55f, 0.48f, 1f)
-                                                        : rubble ? new Color(0.42f, 0.39f, 0.35f, 1f)
-                                                                 : new Color(0.52f, 0.48f, 0.42f, 1f),
-                                      elevation, rubble ? 3 : objective ? 1 : 0, rubble ? 2 : 1, true, rubble, stair,
-                                      objective, rubble, "gate_stair",
-                                      objective
-                                          ? "Visible gate threshold objective on walkable stone, below the wall line."
-                                          : rubble
-                                          ? "Painted fallen masonry beside the gate: slow cover, not a standing prop."
-                                          : "Central painted stairs and stone lanes aligned to the backdrop.");
+            bool stair = y == 4;
+            return new TerrainProfile(stair ? TerrainType.Road : TerrainType.Stone,
+                                      stair ? new Color(0.60f, 0.55f, 0.48f, 1f)
+                                            : new Color(0.52f, 0.48f, 0.42f, 1f),
+                                      stair ? 1 : 0, 0, 1, true, false, stair, false, false, "gate_stair",
+                                      stair
+                                          ? "Lowest visible gate stair cells only; upper painted wall art is blocked."
+                                          : "Central painted stone lane aligned to the backdrop.");
         }
 
         return BaekduSnowGatePaintedBlockerProfile(x, y);
@@ -8953,22 +9228,19 @@ public sealed partial class BattleTestController : MonoBehaviour
             return false;
         }
 
+        // This mask follows the painted stone approach only. The upper gate art is a backdrop wall.
         switch (y)
         {
         case 0:
+            return x >= 4 && x <= 7;
         case 1:
-            return x >= 4 && x <= 11;
+            return x >= 4 && x <= 8;
         case 2:
+            return x >= 5 && x <= 9;
         case 3:
-            return x >= 4 && x <= 12;
+            return x >= 6 && x <= 9;
         case 4:
-            return x >= 5 && x <= 10;
-        case 5:
-            return x >= 6 && x <= 11;
-        case 6:
-            return x >= 7 && x <= 12;
-        case 7:
-            return x >= 8 && x <= 12;
+            return x >= 7 && x <= 8;
         default:
             return false;
         }
@@ -8982,6 +9254,20 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private static TerrainProfile BaekduSnowGatePaintedBlockerProfile(int x, int y)
     {
+        if ((y >= 5 && x >= 7 && x <= 12) || (y >= 4 && x >= 9 && x <= 12))
+        {
+            return new TerrainProfile(TerrainType.Wall, new Color(0.24f, 0.23f, 0.22f, 1f), 2, 0, 99, false,
+                                      true, false, false, true, "painted_gate_wall",
+                                      "Painted gate wall, palisade, and upper stair facade: impassable backdrop obstacle.");
+        }
+
+        if (x >= 10 && y <= 3)
+        {
+            return new TerrainProfile(TerrainType.Forest, new Color(0.08f, 0.17f, 0.14f, 1f), 1, 0, 99, false,
+                                      true, false, false, false, "painted_right_gate_edge",
+                                      "Painted right-side fence and pine edge: outside the usable stone approach.");
+        }
+
         if (x <= 3 && y >= 4)
         {
             return new TerrainProfile(TerrainType.DeepWater, new Color(0.08f, 0.22f, 0.31f, 1f), 0, 0, 99, false,
@@ -10115,6 +10401,9 @@ public sealed class BattleTestUnitView : MonoBehaviour
     private const float SelectedHpBackScaleX = 1.10f;
     private const float SelectedHpFillScaleX = 1.04f;
     private const float WorldHpSpriteHalfWidth = 0.31f;
+    private const float StatusAnchorFallbackY = 0.62f;
+    private const float StatusAnchorHeadGap = 0.055f;
+    private const float StatusLabelGap = 0.082f;
 
     private TextMesh label;
     private MeshRenderer labelRenderer;
@@ -10150,6 +10439,7 @@ public sealed class BattleTestUnitView : MonoBehaviour
 
     private void LateUpdate()
     {
+        UpdateStatusAttachmentPosition();
         UpdateAttachmentSorting();
         if (turnMarkerRoot == null || !turnMarkerRoot.gameObject.activeSelf)
         {
@@ -10422,10 +10712,10 @@ public sealed class BattleTestUnitView : MonoBehaviour
         turnGroundRing.sortingLayerName = "Default";
         turnGroundRing.gameObject.SetActive(false);
 
-        selectedHpBarBack = CreateBarSprite("Selected HP Bar Back", new Vector3(0f, -0.245f, -0.055f),
+        selectedHpBarBack = CreateBarSprite("Selected HP Bar Back", new Vector3(0f, StatusAnchorFallbackY, -0.055f),
                                             new Color(0.010f, 0.014f, 0.014f, 0.82f));
         selectedHpBarBack.transform.localScale = new Vector3(SelectedHpBackScaleX, 0.92f, 1f);
-        selectedHpBarFill = CreateBarSprite("Selected HP Bar Fill", new Vector3(0f, -0.245f, -0.065f),
+        selectedHpBarFill = CreateBarSprite("Selected HP Bar Fill", new Vector3(0f, StatusAnchorFallbackY, -0.065f),
                                             SelectedHpHealthyColor);
         selectedHpBarFill.transform.localScale = new Vector3(SelectedHpFillScaleX, 0.66f, 1f);
         selectedHpBarBack.gameObject.SetActive(false);
@@ -10506,11 +10796,50 @@ public sealed class BattleTestUnitView : MonoBehaviour
         }
     }
 
+    private void UpdateStatusAttachmentPosition()
+    {
+        float hpY = StatusAnchorY();
+        SetLocalY(hpBarBack, hpY);
+        SetLocalY(hpBarFill, hpY);
+        SetLocalY(selectedHpBarBack, hpY);
+        SetLocalY(selectedHpBarFill, hpY);
+        if (label != null)
+        {
+            Transform labelTransform = label.transform;
+            Vector3 local = labelTransform.localPosition;
+            labelTransform.localPosition = new Vector3(local.x, hpY - StatusLabelGap, local.z);
+        }
+    }
+
+    private float StatusAnchorY()
+    {
+        if (visualController == null || visualController.bodyRenderer == null || visualController.bodyRenderer.sprite == null)
+        {
+            return StatusAnchorFallbackY;
+        }
+
+        Bounds bounds = visualController.bodyRenderer.bounds;
+        float localTop = transform.InverseTransformPoint(new Vector3(bounds.center.x, bounds.max.y, transform.position.z)).y;
+        return Mathf.Clamp(localTop + StatusAnchorHeadGap, 0.42f, 1.34f);
+    }
+
+    private static void SetLocalY(SpriteRenderer renderer, float y)
+    {
+        if (renderer == null)
+        {
+            return;
+        }
+
+        Transform t = renderer.transform;
+        Vector3 local = t.localPosition;
+        t.localPosition = new Vector3(local.x, y, local.z);
+    }
+
     private void CreateLabel()
     {
         GameObject labelObject = new GameObject("Unit Label");
         labelObject.transform.SetParent(transform, false);
-        labelObject.transform.localPosition = new Vector3(0f, -0.405f, -0.04f);
+        labelObject.transform.localPosition = new Vector3(0f, StatusAnchorFallbackY - StatusLabelGap, -0.04f);
 
         label = labelObject.AddComponent<TextMesh>();
         label.anchor = TextAnchor.MiddleCenter;
@@ -10522,9 +10851,9 @@ public sealed class BattleTestUnitView : MonoBehaviour
         labelRenderer = labelObject.GetComponent<MeshRenderer>();
         labelRenderer.sortingLayerName = "Default";
 
-        hpBarBack = CreateBarSprite("HP Bar Back", new Vector3(0f, -0.305f, -0.03f), WorldHpBackColor);
+        hpBarBack = CreateBarSprite("HP Bar Back", new Vector3(0f, StatusAnchorFallbackY, -0.03f), WorldHpBackColor);
         hpBarBack.transform.localScale = new Vector3(WorldHpBackScaleX, 0.82f, 1f);
-        hpBarFill = CreateBarSprite("HP Bar Fill", new Vector3(0f, -0.305f, -0.04f),
+        hpBarFill = CreateBarSprite("HP Bar Fill", new Vector3(0f, StatusAnchorFallbackY, -0.04f),
                                     Unit != null && Unit.definition.faction == Faction.Enemy
                                         ? WorldHpEnemyColor
                                         : WorldHpAllyColor);

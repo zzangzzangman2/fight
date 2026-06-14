@@ -63,9 +63,13 @@ public static class VisualUpgradeV1Installer
         BattleTestController controller = Object.FindAnyObjectByType<BattleTestController>();
         if (controller != null)
         {
+            controller.battleVisualProfile = AssetDatabase.LoadAssetAtPath<BattleVisualProfile>(BattleVisualProfilePath);
+            controller.battleVfxLibrary = AssetDatabase.LoadAssetAtPath<BattleVfxLibrary>(BattleVfxLibraryPath);
+            controller.battleUiSkin = AssetDatabase.LoadAssetAtPath<BattleUiSkinData>(BattleUiSkinPath);
             EnsureComponent<BattleCameraFx>(controller.gameObject);
             EnsureComponent<DamagePopupPresenter>(controller.gameObject);
             EnsureComponent<BattleImpactPresenter>(controller.gameObject);
+            EditorUtility.SetDirty(controller);
             EditorUtility.SetDirty(controller.gameObject);
             EditorSceneManager.MarkSceneDirty(controller.gameObject.scene);
             EditorSceneManager.SaveScene(controller.gameObject.scene);
