@@ -104,15 +104,18 @@ public static class BattleMapTileAssetGenerator
             tile.walkable = DefaultWalkable(pair.Key);
             tile.blocksMovement = !tile.walkable;
             tile.blocksLineOfSight = DefaultBlocksLineOfSight(pair.Key);
+            tile.blocksProjectiles = tile.blocksLineOfSight;
             tile.isChokePoint = pair.Key == TerrainType.Bridge || pair.Key == TerrainType.Gate;
             tile.capacity = tile.isChokePoint ? 1 : 2;
             tile.elevation = DefaultElevation(pair.Key);
             tile.coverType = DefaultCover(pair.Key);
+            tile.coverBonus = DefaultCoverBonus(tile.coverType);
             tile.hazardType = DefaultHazard(pair.Key);
             tile.northEdge = DefaultEdge(pair.Key);
             tile.eastEdge = DefaultEdge(pair.Key);
             tile.southEdge = DefaultEdge(pair.Key);
             tile.westEdge = DefaultEdge(pair.Key);
+            tile.occupyAllowed = tile.walkable;
             EditorUtility.SetDirty(tile);
         }
     }
@@ -300,6 +303,21 @@ public static class BattleMapTileAssetGenerator
             return CoverType.Light;
         default:
             return CoverType.None;
+        }
+    }
+
+    private static int DefaultCoverBonus(CoverType coverType)
+    {
+        switch (coverType)
+        {
+        case CoverType.Full:
+            return 4;
+        case CoverType.Heavy:
+            return 2;
+        case CoverType.Light:
+            return 1;
+        default:
+            return 0;
         }
     }
 

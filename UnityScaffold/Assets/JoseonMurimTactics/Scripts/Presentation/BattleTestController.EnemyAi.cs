@@ -122,8 +122,7 @@ public sealed partial class BattleTestController
     {
         BattleTestTile fromTile = TileAt(from);
         int range = EffectiveAttackRange(unit, fromTile);
-        int distance = GridDistance(from, target.cell);
-        return distance <= range && (range <= 1 || HasLineOfSight(from, target.cell));
+        return BattleTargetingService.CanAttackFrom(from, target.cell, range, TileAt, IsInside).canTarget;
     }
 
     // 1회 공격으로 줄 수 있는 대략적 최대 피해(치명·고저는 제외, 무공·방어는 반영) — 처치각 판단용.

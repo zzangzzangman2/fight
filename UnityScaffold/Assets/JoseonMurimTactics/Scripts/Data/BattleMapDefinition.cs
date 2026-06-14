@@ -44,9 +44,11 @@ public sealed class BattleGridCellData
     public bool walkable = true;
     public bool blocksMovement;
     public bool blocksLineOfSight;
+    public bool blocksProjectiles;
     public bool isChokePoint;
     public int capacity = 1;
     public CoverType coverType;
+    public int coverBonus;
     public EdgeType northEdge;
     public EdgeType eastEdge;
     public EdgeType southEdge;
@@ -54,8 +56,11 @@ public sealed class BattleGridCellData
     public HazardType hazard;
     public string zoneId;
     public string laneId;
+    public int deployZone;
+    public bool occupyAllowed = true;
     public string visualTileKey;
     public string decorSetKey;
+    public List<string> tags = new List<string>();
 }
 
 [Serializable]

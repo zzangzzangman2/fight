@@ -14,6 +14,9 @@ public sealed class BattleMapData : ScriptableObject
     public string briefingText;
     public Vector2Int origin;
     public Vector2Int size = new Vector2Int(8, 8);
+    public float tileWidth = 1.16f;
+    public float tileHeight = 0.62f;
+    public bool isIsometric = true;
     public List<BattleCellData> cells = new List<BattleCellData>();
     public List<InteractableObjectData> objects = new List<InteractableObjectData>();
     public MapQualityTarget qualityTarget = new MapQualityTarget();
@@ -30,9 +33,11 @@ public sealed class BattleCellData
     public bool walkable = true;
     public bool blocksMovement;
     public bool blocksLineOfSight;
+    public bool blocksProjectiles;
     public bool isChokePoint;
     public int capacity = 1;
     public int elevation;
+    public int coverBonus;
     public CoverType coverType;
     public HazardType hazardType;
     public EdgeType northEdge;
@@ -41,8 +46,11 @@ public sealed class BattleCellData
     public EdgeType westEdge;
     public string zoneId;
     public string laneId;
+    public int deployZone;
+    public bool occupyAllowed = true;
     public string visualTileKey;
     public string decorSetKey;
+    public List<string> tags = new List<string>();
 }
 
 [Serializable]

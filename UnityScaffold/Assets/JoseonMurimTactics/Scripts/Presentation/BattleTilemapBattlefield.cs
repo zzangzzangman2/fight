@@ -160,9 +160,11 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
             walkable = walkable,
             blocksMovement = !walkable,
             blocksLineOfSight = blocksLineOfSight,
+            blocksProjectiles = blocksLineOfSight,
             isChokePoint = isChokePoint,
             capacity = isChokePoint ? 1 : 2,
             elevation = elevation,
+            coverBonus = coverBonus,
             coverType = CoverFromBonus(coverBonus),
             hazardType = HazardForTerrain(terrainType, danger, walkable),
             northEdge = EdgeForTerrain(terrainType, danger),
@@ -171,6 +173,7 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
             westEdge = EdgeForTerrain(terrainType, danger),
             zoneId = objective ? "objective" : danger ? "danger" : string.Empty,
             laneId = laneId,
+            occupyAllowed = walkable,
             visualTileKey = terrainType.ToString(),
             decorSetKey = tacticalNote,
         });
@@ -396,11 +399,14 @@ public sealed class BattleTilemapBattlefield : MonoBehaviour
         tile.walkable = walkable;
         tile.blocksMovement = !walkable;
         tile.blocksLineOfSight = blocksLineOfSight;
+        tile.blocksProjectiles = blocksLineOfSight;
         tile.isChokePoint = isChokePoint;
         tile.capacity = isChokePoint ? 1 : 2;
         tile.elevation = elevation;
+        tile.coverBonus = coverBonus;
         tile.coverType = CoverFromBonus(coverBonus);
         tile.hazardType = HazardForTerrain(terrainType, danger, walkable);
+        tile.occupyAllowed = walkable;
         tile.northEdge = EdgeForTerrain(terrainType, danger);
         tile.eastEdge = EdgeForTerrain(terrainType, danger);
         tile.southEdge = EdgeForTerrain(terrainType, danger);

@@ -11,15 +11,19 @@ public sealed class TerrainTileData : Tile
     public bool walkable = true;
     public bool blocksMovement;
     public bool blocksLineOfSight;
+    public bool blocksProjectiles;
     public bool isChokePoint;
     public int capacity = 1;
     public int elevation;
+    public int coverBonus;
     public CoverType coverType;
     public HazardType hazardType;
     public EdgeType northEdge;
     public EdgeType eastEdge;
     public EdgeType southEdge;
     public EdgeType westEdge;
+    public int deployZone;
+    public bool occupyAllowed = true;
     public string zoneId;
     public string laneId;
 }

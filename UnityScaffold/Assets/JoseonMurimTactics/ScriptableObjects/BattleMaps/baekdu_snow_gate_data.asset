@@ -1,0 +1,5545 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ca7566f099f8614da708e0ffad94703, type: 3}
+  m_Name: baekdu_snow_gate_data
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleMapData
+  mapId: baekdu_snow_gate
+  displayName: "\uBC31\uB450\uC0B0 \uC124\uBB38 \uAD00\uBB38\uC804"
+  oneLineConcept: "\uB208 \uB36E\uC778 \uAD00\uBB38 \uACC4\uB2E8\uC744 \uB530\uB77C
+    \uC624\uB974\uB294 \uCCAB SRPG \uAE30\uC900 \uC804\uC7A5"
+  briefingText: "\uBCF4\uC774\uB294 \uC11D\uB3C4\uC640 \uACC4\uB2E8\uC740 \uC774\uB3D9
+    \uAC00\uB2A5, \uBCBD/\uD39C\uC2A4/\uC808\uBCBD/\uBE59\uD310 \uC678\uACFD\uC740
+    \uBA85\uC2DC \uCC28\uB2E8\uB41C\uB2E4."
+  origin: {x: 0, y: 0}
+  size: {x: 16, y: 12}
+  tileWidth: 1.16
+  tileHeight: 0.62
+  isIsometric: 1
+  cells:
+  - cell: {x: 0, y: 0}
+    displayName: Cliff 0,0
+    worldPosition: {x: 0, y: 0, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 0}
+    displayName: Wall 1,0
+    worldPosition: {x: 0.58, y: 0.31, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 2, y: 0}
+    displayName: Wall 2,0
+    worldPosition: {x: 1.16, y: 0.62, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 3, y: 0}
+    displayName: Wall 3,0
+    worldPosition: {x: 1.74, y: 0.93, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 4, y: 0}
+    displayName: Road 4,0
+    worldPosition: {x: 2.32, y: 1.24, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_ascent_deployment
+    laneId: south_approach
+    deployZone: 1
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Player deployment lane: packed snow and visible stone road.'
+    tags:
+    - road
+    - deploy
+    - visible_path
+  - cell: {x: 5, y: 0}
+    displayName: Road 5,0
+    worldPosition: {x: 2.8999999, y: 1.55, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_ascent_deployment
+    laneId: south_approach
+    deployZone: 1
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Player deployment lane: packed snow and visible stone road.'
+    tags:
+    - road
+    - deploy
+    - visible_path
+  - cell: {x: 6, y: 0}
+    displayName: Road 6,0
+    worldPosition: {x: 3.48, y: 1.86, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_ascent_deployment
+    laneId: south_approach
+    deployZone: 1
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Player deployment lane: packed snow and visible stone road.'
+    tags:
+    - road
+    - deploy
+    - visible_path
+  - cell: {x: 7, y: 0}
+    displayName: Road 7,0
+    worldPosition: {x: 4.06, y: 2.17, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_ascent_deployment
+    laneId: south_approach
+    deployZone: 1
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Player deployment lane: packed snow and visible stone road.'
+    tags:
+    - road
+    - deploy
+    - visible_path
+  - cell: {x: 8, y: 0}
+    displayName: Wall 8,0
+    worldPosition: {x: 4.64, y: 2.48, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 9, y: 0}
+    displayName: Wall 9,0
+    worldPosition: {x: 5.22, y: 2.79, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 10, y: 0}
+    displayName: Wall 10,0
+    worldPosition: {x: 5.7999997, y: 3.1, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 11, y: 0}
+    displayName: Wall 11,0
+    worldPosition: {x: 6.3799996, y: 3.41, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 12, y: 0}
+    displayName: Wall 12,0
+    worldPosition: {x: 6.96, y: 3.72, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 13, y: 0}
+    displayName: Forest 13,0
+    worldPosition: {x: 7.54, y: 4.03, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 14, y: 0}
+    displayName: Wall 14,0
+    worldPosition: {x: 8.12, y: 4.34, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 15, y: 0}
+    displayName: Cliff 15,0
+    worldPosition: {x: 8.7, y: 4.65, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 1}
+    displayName: Cliff 0,1
+    worldPosition: {x: -0.58, y: 0.31, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 1}
+    displayName: Wall 1,1
+    worldPosition: {x: 0, y: 0.62, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 2, y: 1}
+    displayName: Wall 2,1
+    worldPosition: {x: 0.58, y: 0.93, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 3, y: 1}
+    displayName: Wall 3,1
+    worldPosition: {x: 1.16, y: 1.24, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 4, y: 1}
+    displayName: Road 4,1
+    worldPosition: {x: 1.74, y: 1.55, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_ascent_deployment
+    laneId: south_approach
+    deployZone: 1
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Player deployment lane: packed snow and visible stone road.'
+    tags:
+    - road
+    - deploy
+    - visible_path
+  - cell: {x: 5, y: 1}
+    displayName: Road 5,1
+    worldPosition: {x: 2.32, y: 1.86, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_ascent_deployment
+    laneId: south_approach
+    deployZone: 1
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Player deployment lane: packed snow and visible stone road.'
+    tags:
+    - road
+    - deploy
+    - visible_path
+  - cell: {x: 6, y: 1}
+    displayName: Road 6,1
+    worldPosition: {x: 2.8999999, y: 2.17, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 7, y: 1}
+    displayName: Road 7,1
+    worldPosition: {x: 3.48, y: 2.48, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 8, y: 1}
+    displayName: Road 8,1
+    worldPosition: {x: 4.06, y: 2.79, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 9, y: 1}
+    displayName: Wall 9,1
+    worldPosition: {x: 4.64, y: 3.1, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 10, y: 1}
+    displayName: Wall 10,1
+    worldPosition: {x: 5.22, y: 3.41, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 11, y: 1}
+    displayName: Wall 11,1
+    worldPosition: {x: 5.7999997, y: 3.72, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 12, y: 1}
+    displayName: Wall 12,1
+    worldPosition: {x: 6.3799996, y: 4.03, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 13, y: 1}
+    displayName: Forest 13,1
+    worldPosition: {x: 6.96, y: 4.34, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 14, y: 1}
+    displayName: Wall 14,1
+    worldPosition: {x: 7.54, y: 4.65, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 15, y: 1}
+    displayName: Cliff 15,1
+    worldPosition: {x: 8.12, y: 4.96, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 2}
+    displayName: Cliff 0,2
+    worldPosition: {x: -1.16, y: 0.62, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 2}
+    displayName: Wall 1,2
+    worldPosition: {x: -0.58, y: 0.93, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 2, y: 2}
+    displayName: Wall 2,2
+    worldPosition: {x: 0, y: 1.24, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 3, y: 2}
+    displayName: Wall 3,2
+    worldPosition: {x: 0.58, y: 1.55, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 4, y: 2}
+    displayName: Snow 4,2
+    worldPosition: {x: 1.16, y: 1.86, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_snow_shoulder
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: 'Snow shoulder beside the visible road: passable, slower than stone.'
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 5, y: 2}
+    displayName: Fire 5,2
+    worldPosition: {x: 1.74, y: 2.17, z: 0}
+    terrainType: 20
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 1
+    coverType: 1
+    hazardType: 3
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Fire
+    decorSetKey: 'Brazier-lit road: passable but slow and dangerous around the prop.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 6, y: 2}
+    displayName: Fire 6,2
+    worldPosition: {x: 2.32, y: 2.48, z: 0}
+    terrainType: 20
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 1
+    coverType: 1
+    hazardType: 3
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Fire
+    decorSetKey: 'Brazier-lit road: passable but slow and dangerous around the prop.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 7, y: 2}
+    displayName: Road 7,2
+    worldPosition: {x: 2.8999999, y: 2.79, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 8, y: 2}
+    displayName: Road 8,2
+    worldPosition: {x: 3.48, y: 3.1, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 9, y: 2}
+    displayName: Road 9,2
+    worldPosition: {x: 4.06, y: 3.41, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 10, y: 2}
+    displayName: Wall 10,2
+    worldPosition: {x: 4.64, y: 3.72, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 11, y: 2}
+    displayName: Rubble 11,2
+    worldPosition: {x: 5.22, y: 4.03, z: 0}
+    terrainType: 23
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 2
+    coverType: 2
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_static_obstacle
+    laneId: rubble
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Rubble
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - rubble
+    - decorativeBlocker
+  - cell: {x: 12, y: 2}
+    displayName: Wall 12,2
+    worldPosition: {x: 5.7999997, y: 4.34, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 13, y: 2}
+    displayName: Forest 13,2
+    worldPosition: {x: 6.3799996, y: 4.65, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 14, y: 2}
+    displayName: Wall 14,2
+    worldPosition: {x: 6.96, y: 4.96, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 15, y: 2}
+    displayName: Cliff 15,2
+    worldPosition: {x: 7.54, y: 5.27, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 3}
+    displayName: Cliff 0,3
+    worldPosition: {x: -1.74, y: 0.93, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 3}
+    displayName: Wall 1,3
+    worldPosition: {x: -1.16, y: 1.24, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 2, y: 3}
+    displayName: Wall 2,3
+    worldPosition: {x: -0.58, y: 1.55, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 3, y: 3}
+    displayName: Snow 3,3
+    worldPosition: {x: 0, y: 1.86, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_snow_shoulder
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: 'Snow shoulder beside the visible road: passable, slower than stone.'
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 4, y: 3}
+    displayName: Road 4,3
+    worldPosition: {x: 0.58, y: 2.17, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 5, y: 3}
+    displayName: Road 5,3
+    worldPosition: {x: 1.16, y: 2.48, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 6, y: 3}
+    displayName: Road 6,3
+    worldPosition: {x: 1.74, y: 2.79, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 7, y: 3}
+    displayName: Road 7,3
+    worldPosition: {x: 2.32, y: 3.1, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 8, y: 3}
+    displayName: Road 8,3
+    worldPosition: {x: 2.8999999, y: 3.41, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 9, y: 3}
+    displayName: Road 9,3
+    worldPosition: {x: 3.48, y: 3.72, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 10, y: 3}
+    displayName: Road 10,3
+    worldPosition: {x: 4.06, y: 4.03, z: 0}
+    terrainType: 9
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_approach
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Road
+    decorSetKey: 'Lower visible stone road: clear approach toward the snow gate.'
+    tags:
+    - road
+    - visible_path
+  - cell: {x: 11, y: 3}
+    displayName: Snow 11,3
+    worldPosition: {x: 4.64, y: 4.34, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: south_snow_shoulder
+    laneId: south_approach
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: 'Snow shoulder beside the visible road: passable, slower than stone.'
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 12, y: 3}
+    displayName: Snow 12,3
+    worldPosition: {x: 5.22, y: 4.65, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: right_snow_path
+    laneId: right_flank
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: Right visible snow path beside the palisade.
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 13, y: 3}
+    displayName: Forest 13,3
+    worldPosition: {x: 5.7999997, y: 4.96, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 14, y: 3}
+    displayName: Forest 14,3
+    worldPosition: {x: 6.3799996, y: 5.27, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 15, y: 3}
+    displayName: Cliff 15,3
+    worldPosition: {x: 6.96, y: 5.58, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 4}
+    displayName: Cliff 0,4
+    worldPosition: {x: -2.32, y: 1.24, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 4}
+    displayName: DeepWater 1,4
+    worldPosition: {x: -1.74, y: 1.55, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 2, y: 4}
+    displayName: DeepWater 2,4
+    worldPosition: {x: -1.16, y: 1.86, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 3, y: 4}
+    displayName: DeepWater 3,4
+    worldPosition: {x: -0.58, y: 2.17, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 4, y: 4}
+    displayName: Wall 4,4
+    worldPosition: {x: 0, y: 2.48, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 5, y: 4}
+    displayName: Rubble 5,4
+    worldPosition: {x: 0.58, y: 2.79, z: 0}
+    terrainType: 23
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 2
+    coverType: 2
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_static_obstacle
+    laneId: rubble
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Rubble
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - rubble
+    - decorativeBlocker
+  - cell: {x: 6, y: 4}
+    displayName: Stone 6,4
+    worldPosition: {x: 1.16, y: 3.1, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 7, y: 4}
+    displayName: Stone 7,4
+    worldPosition: {x: 1.74, y: 3.41, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 8, y: 4}
+    displayName: Stone 8,4
+    worldPosition: {x: 2.32, y: 3.72, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 9, y: 4}
+    displayName: Stone 9,4
+    worldPosition: {x: 2.8999999, y: 4.03, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 10, y: 4}
+    displayName: Stone 10,4
+    worldPosition: {x: 3.48, y: 4.34, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 11, y: 4}
+    displayName: Wall 11,4
+    worldPosition: {x: 4.06, y: 4.65, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 12, y: 4}
+    displayName: Snow 12,4
+    worldPosition: {x: 4.64, y: 4.96, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: right_snow_path
+    laneId: right_flank
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: Right visible snow path beside the palisade.
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 13, y: 4}
+    displayName: Snow 13,4
+    worldPosition: {x: 5.22, y: 5.27, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: right_snow_path
+    laneId: right_flank
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: Right visible snow path beside the palisade.
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 14, y: 4}
+    displayName: Forest 14,4
+    worldPosition: {x: 5.7999997, y: 5.58, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 15, y: 4}
+    displayName: Cliff 15,4
+    worldPosition: {x: 6.3799996, y: 5.89, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 5}
+    displayName: Cliff 0,5
+    worldPosition: {x: -2.8999999, y: 1.55, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 5}
+    displayName: DeepWater 1,5
+    worldPosition: {x: -2.32, y: 1.86, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 2, y: 5}
+    displayName: DeepWater 2,5
+    worldPosition: {x: -1.74, y: 2.17, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 3, y: 5}
+    displayName: DeepWater 3,5
+    worldPosition: {x: -1.16, y: 2.48, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 4, y: 5}
+    displayName: Wall 4,5
+    worldPosition: {x: -0.58, y: 2.79, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 5, y: 5}
+    displayName: Wall 5,5
+    worldPosition: {x: 0, y: 3.1, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 6, y: 5}
+    displayName: Stone 6,5
+    worldPosition: {x: 0.58, y: 3.41, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 7, y: 5}
+    displayName: Stone 7,5
+    worldPosition: {x: 1.16, y: 3.72, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 8, y: 5}
+    displayName: Stone 8,5
+    worldPosition: {x: 1.74, y: 4.03, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 9, y: 5}
+    displayName: Stone 9,5
+    worldPosition: {x: 2.32, y: 4.34, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 10, y: 5}
+    displayName: Stone 10,5
+    worldPosition: {x: 2.8999999, y: 4.65, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 11, y: 5}
+    displayName: Wall 11,5
+    worldPosition: {x: 3.48, y: 4.96, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 12, y: 5}
+    displayName: Snow 12,5
+    worldPosition: {x: 4.06, y: 5.27, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: right_snow_path
+    laneId: right_flank
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: Right visible snow path beside the palisade.
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 13, y: 5}
+    displayName: Snow 13,5
+    worldPosition: {x: 4.64, y: 5.58, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: right_snow_path
+    laneId: right_flank
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: Right visible snow path beside the palisade.
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 14, y: 5}
+    displayName: Forest 14,5
+    worldPosition: {x: 5.22, y: 5.89, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 15, y: 5}
+    displayName: Cliff 15,5
+    worldPosition: {x: 5.7999997, y: 6.2, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 6}
+    displayName: Cliff 0,6
+    worldPosition: {x: -3.48, y: 1.86, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 6}
+    displayName: DeepWater 1,6
+    worldPosition: {x: -2.8999999, y: 2.17, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 2, y: 6}
+    displayName: DeepWater 2,6
+    worldPosition: {x: -2.32, y: 2.48, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 3, y: 6}
+    displayName: DeepWater 3,6
+    worldPosition: {x: -1.74, y: 2.79, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 4, y: 6}
+    displayName: Wall 4,6
+    worldPosition: {x: -1.16, y: 3.1, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 5, y: 6}
+    displayName: Wall 5,6
+    worldPosition: {x: -0.58, y: 3.41, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 6, y: 6}
+    displayName: Wall 6,6
+    worldPosition: {x: 0, y: 3.72, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 7, y: 6}
+    displayName: Stone 7,6
+    worldPosition: {x: 0.58, y: 4.03, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 8, y: 6}
+    displayName: Stone 8,6
+    worldPosition: {x: 1.16, y: 4.34, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 9, y: 6}
+    displayName: Stone 9,6
+    worldPosition: {x: 1.74, y: 4.65, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 10, y: 6}
+    displayName: Stone 10,6
+    worldPosition: {x: 2.32, y: 4.96, z: 0}
+    terrainType: 0
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 11, y: 6}
+    displayName: Wall 11,6
+    worldPosition: {x: 2.8999999, y: 5.27, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 12, y: 6}
+    displayName: Snow 12,6
+    worldPosition: {x: 3.48, y: 5.58, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: right_snow_path
+    laneId: right_flank
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: Right visible snow path beside the palisade.
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 13, y: 6}
+    displayName: Snow 13,6
+    worldPosition: {x: 4.06, y: 5.89, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: right_snow_path
+    laneId: right_flank
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: Right visible snow path beside the palisade.
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 14, y: 6}
+    displayName: Forest 14,6
+    worldPosition: {x: 4.64, y: 6.2, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 15, y: 6}
+    displayName: Cliff 15,6
+    worldPosition: {x: 5.22, y: 6.51, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 7}
+    displayName: Cliff 0,7
+    worldPosition: {x: -4.06, y: 2.17, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 7}
+    displayName: DeepWater 1,7
+    worldPosition: {x: -3.48, y: 2.48, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 2, y: 7}
+    displayName: DeepWater 2,7
+    worldPosition: {x: -2.8999999, y: 2.79, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 3, y: 7}
+    displayName: DeepWater 3,7
+    worldPosition: {x: -2.32, y: 3.1, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 4, y: 7}
+    displayName: Wall 4,7
+    worldPosition: {x: -1.74, y: 3.41, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 5, y: 7}
+    displayName: Wall 5,7
+    worldPosition: {x: -1.16, y: 3.72, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 6, y: 7}
+    displayName: Wall 6,7
+    worldPosition: {x: -0.58, y: 4.03, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 7, y: 7}
+    displayName: Stone 7,7
+    worldPosition: {x: 0, y: 4.34, z: 0}
+    terrainType: 0
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 8, y: 7}
+    displayName: Stone 8,7
+    worldPosition: {x: 0.58, y: 4.65, z: 0}
+    terrainType: 0
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 9, y: 7}
+    displayName: Stone 9,7
+    worldPosition: {x: 1.16, y: 4.96, z: 0}
+    terrainType: 0
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 10, y: 7}
+    displayName: Stone 10,7
+    worldPosition: {x: 1.74, y: 5.27, z: 0}
+    terrainType: 0
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 11, y: 7}
+    displayName: Stone 11,7
+    worldPosition: {x: 2.32, y: 5.58, z: 0}
+    terrainType: 0
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_stair_ramp
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Stone
+    decorSetKey: 'Continuous snow-covered stone stairs: legal ramp connection for
+      movement and melee.'
+    tags:
+    - stairs
+    - ramp
+    - visible_path
+    - choke
+  - cell: {x: 12, y: 7}
+    displayName: Snow 12,7
+    worldPosition: {x: 2.8999999, y: 5.89, z: 0}
+    terrainType: 15
+    moveCost: 2
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: right_snow_path
+    laneId: right_flank
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Snow
+    decorSetKey: Right visible snow path beside the palisade.
+    tags:
+    - snow
+    - visible_path
+  - cell: {x: 13, y: 7}
+    displayName: Forest 13,7
+    worldPosition: {x: 3.48, y: 6.2, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 14, y: 7}
+    displayName: Forest 14,7
+    worldPosition: {x: 4.06, y: 6.51, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 15, y: 7}
+    displayName: Cliff 15,7
+    worldPosition: {x: 4.64, y: 6.82, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 8}
+    displayName: Cliff 0,8
+    worldPosition: {x: -4.64, y: 2.48, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 8}
+    displayName: DeepWater 1,8
+    worldPosition: {x: -4.06, y: 2.79, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 2, y: 8}
+    displayName: DeepWater 2,8
+    worldPosition: {x: -3.48, y: 3.1, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 3, y: 8}
+    displayName: DeepWater 3,8
+    worldPosition: {x: -2.8999999, y: 3.41, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 4, y: 8}
+    displayName: Wall 4,8
+    worldPosition: {x: -2.32, y: 3.72, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 5, y: 8}
+    displayName: Wall 5,8
+    worldPosition: {x: -1.74, y: 4.03, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 6, y: 8}
+    displayName: Wall 6,8
+    worldPosition: {x: -1.16, y: 4.34, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 7, y: 8}
+    displayName: Wall 7,8
+    worldPosition: {x: -0.58, y: 4.65, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 8, y: 8}
+    displayName: Gate 8,8
+    worldPosition: {x: 0, y: 4.96, z: 0}
+    terrainType: 18
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 1
+    coverType: 1
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_landing
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Gate
+    decorSetKey: 'Upper gate landing: narrow high ground connected by stairs.'
+    tags:
+    - gate
+    - stairs
+    - ramp
+    - visible_path
+    - cover
+  - cell: {x: 9, y: 8}
+    displayName: Gate 9,8
+    worldPosition: {x: 0.58, y: 5.27, z: 0}
+    terrainType: 18
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 1
+    coverType: 1
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_landing
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Gate
+    decorSetKey: 'Upper gate landing: narrow high ground connected by stairs.'
+    tags:
+    - gate
+    - stairs
+    - ramp
+    - visible_path
+    - cover
+  - cell: {x: 10, y: 8}
+    displayName: Gate 10,8
+    worldPosition: {x: 1.16, y: 5.58, z: 0}
+    terrainType: 18
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 1
+    coverType: 1
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_landing
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Gate
+    decorSetKey: 'Upper gate landing: narrow high ground connected by stairs.'
+    tags:
+    - gate
+    - stairs
+    - ramp
+    - visible_path
+    - cover
+  - cell: {x: 11, y: 8}
+    displayName: Wall 11,8
+    worldPosition: {x: 1.74, y: 5.89, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 12, y: 8}
+    displayName: Wall 12,8
+    worldPosition: {x: 2.32, y: 6.2, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 13, y: 8}
+    displayName: Forest 13,8
+    worldPosition: {x: 2.8999999, y: 6.51, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 14, y: 8}
+    displayName: Forest 14,8
+    worldPosition: {x: 3.48, y: 6.82, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 15, y: 8}
+    displayName: Cliff 15,8
+    worldPosition: {x: 4.06, y: 7.13, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 9}
+    displayName: Cliff 0,9
+    worldPosition: {x: -5.22, y: 2.79, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 9}
+    displayName: DeepWater 1,9
+    worldPosition: {x: -4.64, y: 3.1, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 2, y: 9}
+    displayName: DeepWater 2,9
+    worldPosition: {x: -4.06, y: 3.41, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 3, y: 9}
+    displayName: DeepWater 3,9
+    worldPosition: {x: -3.48, y: 3.72, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 4, y: 9}
+    displayName: Wall 4,9
+    worldPosition: {x: -2.8999999, y: 4.03, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 5, y: 9}
+    displayName: Wall 5,9
+    worldPosition: {x: -2.32, y: 4.34, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 6, y: 9}
+    displayName: Wall 6,9
+    worldPosition: {x: -1.74, y: 4.65, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 7, y: 9}
+    displayName: Wall 7,9
+    worldPosition: {x: -1.16, y: 4.96, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 8, y: 9}
+    displayName: Wall 8,9
+    worldPosition: {x: -0.58, y: 5.27, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 2
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_backdrop_obstacle
+    laneId: backdrop
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - decorativeBlocker
+  - cell: {x: 9, y: 9}
+    displayName: Gate 9,9
+    worldPosition: {x: 0, y: 5.58, z: 0}
+    terrainType: 18
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 1
+    coverType: 1
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_landing
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Gate
+    decorSetKey: 'Upper gate landing: narrow high ground connected by stairs.'
+    tags:
+    - gate
+    - stairs
+    - ramp
+    - visible_path
+    - cover
+  - cell: {x: 10, y: 9}
+    displayName: Gate 10,9
+    worldPosition: {x: 0.58, y: 5.89, z: 0}
+    terrainType: 18
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 1
+    coverType: 1
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_landing
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Gate
+    decorSetKey: 'Upper gate landing: narrow high ground connected by stairs.'
+    tags:
+    - gate
+    - stairs
+    - ramp
+    - visible_path
+    - cover
+  - cell: {x: 11, y: 9}
+    displayName: Gate 11,9
+    worldPosition: {x: 1.16, y: 6.2, z: 0}
+    terrainType: 18
+    moveCost: 1
+    walkable: 1
+    blocksMovement: 0
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 1
+    capacity: 1
+    elevation: 3
+    coverBonus: 1
+    coverType: 1
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: gate_landing
+    laneId: central_stairs
+    deployZone: 0
+    occupyAllowed: 1
+    visualTileKey: Gate
+    decorSetKey: 'Upper gate landing: narrow high ground connected by stairs.'
+    tags:
+    - gate
+    - stairs
+    - ramp
+    - visible_path
+    - cover
+  - cell: {x: 12, y: 9}
+    displayName: Wall 12,9
+    worldPosition: {x: 1.74, y: 6.51, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 13, y: 9}
+    displayName: Forest 13,9
+    worldPosition: {x: 2.32, y: 6.82, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 14, y: 9}
+    displayName: Forest 14,9
+    worldPosition: {x: 2.8999999, y: 7.13, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 15, y: 9}
+    displayName: Cliff 15,9
+    worldPosition: {x: 3.48, y: 7.44, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 10}
+    displayName: Cliff 0,10
+    worldPosition: {x: -5.7999997, y: 3.1, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 10}
+    displayName: DeepWater 1,10
+    worldPosition: {x: -5.22, y: 3.41, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 2, y: 10}
+    displayName: DeepWater 2,10
+    worldPosition: {x: -4.64, y: 3.72, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 3, y: 10}
+    displayName: DeepWater 3,10
+    worldPosition: {x: -4.06, y: 4.03, z: 0}
+    terrainType: 13
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 0
+    blocksProjectiles: 0
+    isChokePoint: 0
+    capacity: 2
+    elevation: 0
+    coverBonus: 0
+    coverType: 0
+    hazardType: 9
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_left_ice_water
+    laneId: left_ice
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: DeepWater
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - ice
+    - water
+    - cliff
+  - cell: {x: 4, y: 10}
+    displayName: Wall 4,10
+    worldPosition: {x: -3.48, y: 4.34, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 5, y: 10}
+    displayName: Wall 5,10
+    worldPosition: {x: -2.8999999, y: 4.65, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 6, y: 10}
+    displayName: Wall 6,10
+    worldPosition: {x: -2.32, y: 4.96, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 7, y: 10}
+    displayName: Wall 7,10
+    worldPosition: {x: -1.74, y: 5.27, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 8, y: 10}
+    displayName: Wall 8,10
+    worldPosition: {x: -1.16, y: 5.58, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 9, y: 10}
+    displayName: Wall 9,10
+    worldPosition: {x: -0.58, y: 5.89, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 10, y: 10}
+    displayName: Wall 10,10
+    worldPosition: {x: 0, y: 6.2, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 11, y: 10}
+    displayName: Wall 11,10
+    worldPosition: {x: 0.58, y: 6.51, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 12, y: 10}
+    displayName: Wall 12,10
+    worldPosition: {x: 1.16, y: 6.82, z: 0}
+    terrainType: 7
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_gate_wall
+    laneId: gate_wall
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Wall
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - wall
+    - palisade
+    - decorativeBlocker
+  - cell: {x: 13, y: 10}
+    displayName: Forest 13,10
+    worldPosition: {x: 1.74, y: 7.13, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 14, y: 10}
+    displayName: Forest 14,10
+    worldPosition: {x: 2.32, y: 7.44, z: 0}
+    terrainType: 11
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 1
+    coverBonus: 0
+    coverType: 0
+    hazardType: 0
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_right_forest
+    laneId: right_forest
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Forest
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - forest
+    - decorativeBlocker
+  - cell: {x: 15, y: 10}
+    displayName: Cliff 15,10
+    worldPosition: {x: 2.8999999, y: 7.75, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 0, y: 11}
+    displayName: Cliff 0,11
+    worldPosition: {x: -6.3799996, y: 3.41, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 1, y: 11}
+    displayName: Cliff 1,11
+    worldPosition: {x: -5.7999997, y: 3.72, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 2, y: 11}
+    displayName: Cliff 2,11
+    worldPosition: {x: -5.22, y: 4.03, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 3, y: 11}
+    displayName: Cliff 3,11
+    worldPosition: {x: -4.64, y: 4.34, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 4, y: 11}
+    displayName: Cliff 4,11
+    worldPosition: {x: -4.06, y: 4.65, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 5, y: 11}
+    displayName: Cliff 5,11
+    worldPosition: {x: -3.48, y: 4.96, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 6, y: 11}
+    displayName: Cliff 6,11
+    worldPosition: {x: -2.8999999, y: 5.27, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 7, y: 11}
+    displayName: Cliff 7,11
+    worldPosition: {x: -2.32, y: 5.58, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 8, y: 11}
+    displayName: Cliff 8,11
+    worldPosition: {x: -1.74, y: 5.89, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 9, y: 11}
+    displayName: Cliff 9,11
+    worldPosition: {x: -1.16, y: 6.2, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 10, y: 11}
+    displayName: Cliff 10,11
+    worldPosition: {x: -0.58, y: 6.51, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 11, y: 11}
+    displayName: Cliff 11,11
+    worldPosition: {x: 0, y: 6.82, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 12, y: 11}
+    displayName: Cliff 12,11
+    worldPosition: {x: 0.58, y: 7.13, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 13, y: 11}
+    displayName: Cliff 13,11
+    worldPosition: {x: 1.16, y: 7.44, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 14, y: 11}
+    displayName: Cliff 14,11
+    worldPosition: {x: 1.74, y: 7.75, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  - cell: {x: 15, y: 11}
+    displayName: Cliff 15,11
+    worldPosition: {x: 2.32, y: 8.06, z: 0}
+    terrainType: 6
+    moveCost: 99
+    walkable: 0
+    blocksMovement: 1
+    blocksLineOfSight: 1
+    blocksProjectiles: 1
+    isChokePoint: 0
+    capacity: 2
+    elevation: 3
+    coverBonus: 0
+    coverType: 0
+    hazardType: 5
+    northEdge: 0
+    eastEdge: 0
+    southEdge: 0
+    westEdge: 0
+    zoneId: painted_cliff_edge
+    laneId: outer_edge
+    deployZone: 0
+    occupyAllowed: 0
+    visualTileKey: Cliff
+    decorSetKey: 'Blocked visual mass: impassable tactical cell.'
+    tags:
+    - cliff
+    - map_edge
+  objects: []
+  qualityTarget:
+    maxOpenAreaRatio: 0.45
+    minLanes: 3
+    minChokePoints: 3
+    minElevationLevels: 2
+    minInteractables: 6
+    minObjectiveCells: 2
+    minHighGroundZones: 1
+    minLineOfSightBlockerZones: 1
+    requiresDestructibleOrTransformableTerrain: 1

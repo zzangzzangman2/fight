@@ -404,6 +404,7 @@ public static class BattleMapTilemapSmokeCheck
                 "Default battle entry should select the BaekduSnowGate map variant.");
         ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduSnowGate);
         VerifySnowGateWalkabilityAlignment(controller);
+        VerifySnowGateRuntimeRules(controller);
         VerifyUnitsFaceOpposingSide(controller, "snow gate ascent spawn");
         VerifyAscentDeployment(controller, "snow gate ascent spawn");
         VerifySnowGateEnemyApproachCells(controller, "snow gate ascent spawn");
@@ -486,12 +487,35 @@ public static class BattleMapTilemapSmokeCheck
             new Vector2Int(9, 2),
             new Vector2Int(6, 3),
             new Vector2Int(9, 3),
-            new Vector2Int(7, 4),
-            new Vector2Int(8, 4)
+            new Vector2Int(6, 4),
+            new Vector2Int(10, 4),
+            new Vector2Int(6, 5),
+            new Vector2Int(10, 5),
+            new Vector2Int(7, 6),
+            new Vector2Int(10, 6),
+            new Vector2Int(7, 7),
+            new Vector2Int(11, 7),
+            new Vector2Int(8, 8),
+            new Vector2Int(10, 8),
+            new Vector2Int(9, 9),
+            new Vector2Int(11, 9),
+            new Vector2Int(12, 5),
+            new Vector2Int(13, 5)
         };
         foreach (Vector2Int cell in paintedApproach)
         {
             RequireStandable(controller, tiles, cell, "snow gate painted stone approach");
+        }
+
+        foreach (Vector2Int stairCell in new[]
+                 {
+                     new Vector2Int(6, 4), new Vector2Int(9, 5), new Vector2Int(8, 6),
+                     new Vector2Int(10, 7), new Vector2Int(9, 8)
+                 })
+        {
+            BattleTestTile tile = RequireTile(tiles, stairCell, "snow gate stair runtime data");
+            Require(tile.HasTag("stairs") || tile.HasTag("ramp"),
+                    $"snow gate stair cell {stairCell} should carry stairs/ramp tags.");
         }
 
         Vector2Int[] paintedBlockers =
@@ -499,12 +523,11 @@ public static class BattleMapTilemapSmokeCheck
             new Vector2Int(8, 0),
             new Vector2Int(9, 1),
             new Vector2Int(10, 2),
-            new Vector2Int(10, 3),
-            new Vector2Int(9, 4),
-            new Vector2Int(8, 5),
-            new Vector2Int(10, 5),
-            new Vector2Int(7, 6),
-            new Vector2Int(12, 7),
+            new Vector2Int(14, 3),
+            new Vector2Int(5, 4),
+            new Vector2Int(5, 5),
+            new Vector2Int(4, 6),
+            new Vector2Int(12, 8),
             new Vector2Int(13, 8),
             new Vector2Int(1, 5),
             new Vector2Int(7, 10)
@@ -525,6 +548,28 @@ public static class BattleMapTilemapSmokeCheck
                 $"{label} at {cell} should pass runtime standing checks.");
         Require(!(bool)InvokePrivate(controller, "IsCellBlockedByInteractable", cell),
                 $"{label} at {cell} should not be blocked by an interactable prop.");
+    }
+
+    private static void VerifySnowGateRuntimeRules(BattleTestController controller)
+    {
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        BattleTestTile lowerRoad = RequireTile(tiles, new Vector2Int(8, 3), "snow gate lower road");
+        BattleTestTile stairStart = RequireTile(tiles, new Vector2Int(8, 4), "snow gate stair start");
+        BattleTestTile stairMid = RequireTile(tiles, new Vector2Int(8, 5), "snow gate stair mid");
+        BattleTestTile wall = RequireTile(tiles, new Vector2Int(5, 5), "snow gate wall blocker");
+
+        Require(StepMoveCost(controller, lowerRoad, stairStart) == stairStart.moveCost + 1,
+                "Snow gate first stair step should cost base move plus one elevation climb.");
+        Require(StepMoveCost(controller, stairStart, stairMid) == stairMid.moveCost + 1,
+                "Snow gate stair ramp should allow the next elevation climb.");
+        Require(StepMoveCost(controller, stairMid, wall) == int.MaxValue,
+                "Snow gate wall blocker should reject movement through the shared path service.");
+        Require(BattleTargetingService.CanAttackFrom(stairStart.cell, stairMid.cell, 1,
+                                                     cell => tiles[cell.x, cell.y],
+                                                     cell => cell.x >= 0 && cell.x < controller.width &&
+                                                             cell.y >= 0 && cell.y < controller.height)
+                                         .canTarget,
+                "Adjacent stair cells should be melee-reachable through the shared targeting service.");
     }
 
     private static void VerifySnowGateEnemyApproachCells(BattleTestController controller, string context)

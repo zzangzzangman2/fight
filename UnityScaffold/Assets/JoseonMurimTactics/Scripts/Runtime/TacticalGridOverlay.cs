@@ -82,9 +82,11 @@ public sealed class TacticalGridOverlay : MonoBehaviour
                 walkable = source.walkable,
                 blocksMovement = source.blocksMovement,
                 blocksLineOfSight = source.blocksLineOfSight,
+                blocksProjectiles = source.blocksProjectiles,
                 isChokePoint = source.isChokePoint,
                 capacity = source.capacity,
                 elevation = source.elevation,
+                coverBonus = source.coverBonus,
                 coverType = source.coverType,
                 hazardType = source.hazardType,
                 northEdge = source.northEdge,
@@ -93,8 +95,11 @@ public sealed class TacticalGridOverlay : MonoBehaviour
                 westEdge = source.westEdge,
                 zoneId = source.zoneId,
                 laneId = source.laneId,
+                deployZone = source.deployZone,
+                occupyAllowed = source.occupyAllowed,
                 visualTileKey = source.visualTileKey,
                 decorSetKey = source.decorSetKey,
+                tags = new List<string>(source.tags),
             });
         }
     }
@@ -123,9 +128,11 @@ public sealed class TacticalGridCellData
     public bool walkable = true;
     public bool blocksMovement;
     public bool blocksLineOfSight;
+    public bool blocksProjectiles;
     public bool isChokePoint;
     public int capacity = 1;
     public int elevation;
+    public int coverBonus;
     public CoverType coverType;
     public HazardType hazardType;
     public EdgeType northEdge;
@@ -134,7 +141,10 @@ public sealed class TacticalGridCellData
     public EdgeType westEdge;
     public string zoneId;
     public string laneId;
+    public int deployZone;
+    public bool occupyAllowed = true;
     public string visualTileKey;
     public string decorSetKey;
+    public List<string> tags = new List<string>();
 }
 }

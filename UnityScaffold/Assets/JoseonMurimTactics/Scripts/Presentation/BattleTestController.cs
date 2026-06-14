@@ -1249,6 +1249,7 @@ public sealed partial class BattleTestController : MonoBehaviour
 
         EnsureMapVisualSprites();
         CreateTerrain();
+        EnsureMapDebugOverlay();
         SpawnUnits();
         units.Sort((left, right) => right.initiative.CompareTo(left.initiative));
         CenterCamera();
@@ -1268,6 +1269,22 @@ public sealed partial class BattleTestController : MonoBehaviour
         {
             FocusCameraOnDeploymentOverview(0f);
         }
+    }
+
+    private void EnsureMapDebugOverlay()
+    {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        BattleMapDebugOverlay overlay = GetComponent<BattleMapDebugOverlay>();
+        if (overlay == null)
+        {
+            overlay = gameObject.AddComponent<BattleMapDebugOverlay>();
+        }
+
+        overlay.Bind(this);
     }
 
     private void ClearGeneratedObjects()
@@ -2564,11 +2581,56 @@ public sealed partial class BattleTestController : MonoBehaviour
         bool danger = data.hazardType != HazardType.None || data.northEdge == EdgeType.CliffDrop ||
                       data.eastEdge == EdgeType.CliffDrop || data.southEdge == EdgeType.CliffDrop ||
                       data.westEdge == EdgeType.CliffDrop;
-        return new TerrainProfile(data.terrainType, Color.white, data.elevation, CoverBonusFromCoverType(data.coverType),
+        int coverBonus = data.coverBonus > 0 ? data.coverBonus : CoverBonusFromCoverType(data.coverType);
+        return new TerrainProfile(data.terrainType, Color.white, data.elevation, coverBonus,
                                   Mathf.Max(1, data.moveCost), data.walkable && !data.blocksMovement,
                                   data.blocksLineOfSight, data.isChokePoint, objective, danger,
                                   string.IsNullOrEmpty(data.laneId) ? "authored" : data.laneId,
                                   string.IsNullOrEmpty(data.decorSetKey) ? data.displayName : data.decorSetKey);
+    }
+
+    private TerrainProfile TerrainProfileFromRuntimeCell(BattleMapRuntimeCell data)
+    {
+        if (data == null)
+        {
+            return new TerrainProfile(TerrainType.Wall, new Color(0.18f, 0.18f, 0.18f, 1f), 0, 0, 99,
+                                      false, true, false, false, true, "missing",
+                                      "Missing runtime map data: blocked by default.");
+        }
+
+        return new TerrainProfile(data.terrainType, RuntimeTerrainColor(data), data.elevation,
+                                  data.coverBonus, Mathf.Max(1, data.moveCost),
+                                  data.walkable && data.occupyAllowed, data.blocksLineOfSight,
+                                  data.isChokePoint, data.objective, data.danger,
+                                  data.laneId, data.tacticalNote);
+    }
+
+    private static Color RuntimeTerrainColor(BattleMapRuntimeCell data)
+    {
+        switch (data.terrainType)
+        {
+        case TerrainType.Road:
+            return new Color(0.58f, 0.53f, 0.44f, 1f);
+        case TerrainType.Stone:
+        case TerrainType.Gate:
+            return new Color(0.56f, 0.52f, 0.47f, 1f);
+        case TerrainType.Snow:
+            return new Color(0.78f, 0.82f, 0.83f, 1f);
+        case TerrainType.Forest:
+            return new Color(0.08f, 0.17f, 0.14f, 1f);
+        case TerrainType.DeepWater:
+            return new Color(0.08f, 0.22f, 0.31f, 1f);
+        case TerrainType.Rubble:
+            return new Color(0.34f, 0.34f, 0.32f, 1f);
+        case TerrainType.Fire:
+            return new Color(0.84f, 0.28f, 0.12f, 1f);
+        case TerrainType.Cliff:
+            return new Color(0.18f, 0.20f, 0.23f, 1f);
+        case TerrainType.Wall:
+            return new Color(0.24f, 0.23f, 0.22f, 1f);
+        default:
+            return new Color(0.62f, 0.62f, 0.58f, 1f);
+        }
     }
 
     private void CreateAuthoredTacticalCellCollider(Transform parent, Vector2Int cell, TerrainProfile profile,
@@ -2592,9 +2654,12 @@ public sealed partial class BattleTestController : MonoBehaviour
         tile.baseCoverBonus = profile.coverBonus;
         tile.baseColor = Color.white;
         tile.blocksLineOfSight = profile.blocksLineOfSight;
+        tile.blocksProjectiles = cellData != null && cellData.blocksProjectiles;
         tile.isChokePoint = profile.isChokePoint;
         tile.objective = profile.objective;
         tile.danger = profile.danger;
+        tile.occupyAllowed = cellData == null || cellData.occupyAllowed;
+        tile.deployZone = cellData == null ? 0 : cellData.deployZone;
         tile.hazardType = cellData == null ? HazardType.None : cellData.hazardType;
         tile.northEdge = cellData == null ? EdgeType.None : cellData.northEdge;
         tile.eastEdge = cellData == null ? EdgeType.None : cellData.eastEdge;
@@ -2602,8 +2667,13 @@ public sealed partial class BattleTestController : MonoBehaviour
         tile.westEdge = cellData == null ? EdgeType.None : cellData.westEdge;
         tile.laneId = profile.laneId;
         tile.tacticalNote = profile.tacticalNote;
+        if (cellData != null && cellData.tags != null)
+        {
+            tile.tags.AddRange(cellData.tags);
+        }
         tile.tilemapBattlefield = tilemapBattlefield;
         tile.nameLabel = CreateTileNameLabel(tileObject.transform, profile);
+        ApplyRuntimeCellMetadata(tile);
         tiles[cell.x, cell.y] = tile;
     }
 
@@ -2692,6 +2762,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         tile.tacticalNote = profile.tacticalNote;
         tile.tilemapBattlefield = tilemapBattlefield;
         tile.nameLabel = CreateTileNameLabel(tileObject.transform, profile);
+        ApplyRuntimeCellMetadata(tile);
         tiles[cell.x, cell.y] = tile;
     }
 
@@ -2763,11 +2834,39 @@ public sealed partial class BattleTestController : MonoBehaviour
                 tile.terrainRenderer = renderer;
                 tile.highlightRenderer = highlightRenderer;
                 tile.nameLabel = CreateTileNameLabel(tileObject.transform, profile);
+                ApplyRuntimeCellMetadata(tile);
                 tiles[x, y] = tile;
             }
         }
 
         CreateInteractables(terrainRoot);
+    }
+
+    private void ApplyRuntimeCellMetadata(BattleTestTile tile)
+    {
+        if (tile == null || !BattleMapRuntimeCatalog.TryGetCell(mapVariant, tile.cell, out BattleMapRuntimeCell data))
+        {
+            return;
+        }
+
+        tile.terrain = data.terrainType;
+        tile.elevation = data.elevation;
+        tile.walkable = data.walkable && data.occupyAllowed;
+        tile.moveCost = Mathf.Max(1, data.moveCost);
+        tile.coverBonus = data.coverBonus;
+        tile.baseCoverBonus = data.coverBonus;
+        tile.blocksLineOfSight = data.blocksLineOfSight;
+        tile.blocksProjectiles = data.blocksProjectiles;
+        tile.isChokePoint = data.isChokePoint;
+        tile.objective = data.objective;
+        tile.danger = data.danger;
+        tile.occupyAllowed = data.occupyAllowed;
+        tile.deployZone = data.deployZone;
+        tile.hazardType = data.hazardType;
+        tile.laneId = data.laneId;
+        tile.tacticalNote = data.tacticalNote;
+        tile.tags.Clear();
+        tile.tags.AddRange(data.tags);
     }
 
     private void CreateInteractables(Transform terrainRoot)
@@ -3998,20 +4097,7 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private bool CanStandOnTile(BattleTestTile tile)
     {
-        if (tile == null || !tile.walkable || tile.moveCost >= 90)
-        {
-            return false;
-        }
-
-        if (tile.terrain == TerrainType.DeepWater || tile.terrain == TerrainType.Cliff ||
-            tile.terrain == TerrainType.Wall || tile.hazardType == HazardType.DeepWater ||
-            tile.hazardType == HazardType.Fall)
-        {
-            return false;
-        }
-
-        return mapVariant != BattleTestMapVariant.BaekduSnowGate ||
-               !IsBaekduSnowGatePaintedNoStandCell(tile.cell);
+        return BattlePathService.CanStandOnTile(tile);
     }
 
     private static bool IsLargeInitialSpawnAvoidanceProp(BattleTestInteractable interactable)
@@ -4498,6 +4584,11 @@ public sealed partial class BattleTestController : MonoBehaviour
             return false;
         }
 
+        if (tile.deployZone > 0)
+        {
+            return true;
+        }
+
         if (mapVariant == BattleTestMapVariant.BaekduSnowGate)
         {
             return IsBaekduSnowGateDeploymentStartCell(cell.x, cell.y);
@@ -4592,6 +4683,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         }
         else
         {
+            FaceUnitAlongPath(unit, path);
             unit.view.transform.position = UnitWorldPosition(destination.cell);
             FocusCameraOnUnit(unit, 0f);
             RefreshHighlights();
@@ -4683,17 +4775,11 @@ public sealed partial class BattleTestController : MonoBehaviour
             return false;
         }
 
-        int range = EffectiveAttackRange(attacker);
-        int distance = GridDistance(attacker.cell, target.cell);
-        if (distance > range)
+        BattleTargetingForecast forecast =
+            BattleTargetingService.CanAttack(attacker, target, EffectiveAttackRange(attacker), TileAt, IsInside);
+        if (!forecast.canTarget)
         {
-            AddLog("[공격] 대상이 사거리 밖입니다.");
-            return false;
-        }
-
-        if (range > 1 && !HasLineOfSight(attacker.cell, target.cell))
-        {
-            AddLog("[공격] 대나무숲/연막/담장에 시야가 막혔습니다.");
+            AddLog("[공격] " + TargetingReasonText(forecast.reason));
             return false;
         }
 
@@ -4740,9 +4826,8 @@ public sealed partial class BattleTestController : MonoBehaviour
             return false;
         }
 
-        int range = EffectiveAttackRange(attacker);
-        int distance = GridDistance(attacker.cell, target.cell);
-        return distance <= range && (range <= 1 || HasLineOfSight(attacker.cell, target.cell));
+        return BattleTargetingService.CanAttack(attacker, target, EffectiveAttackRange(attacker), TileAt, IsInside)
+                                     .canTarget;
     }
 
     private bool ResolveAttack(BattleTestUnit attacker, BattleTestUnit target, bool special)
@@ -5189,25 +5274,19 @@ public sealed partial class BattleTestController : MonoBehaviour
             return false;
         }
 
-        int range = EffectiveSpecialRange(actor);
-        int distance = GridDistance(actor.cell, target.cell);
-        if (distance > range)
+        bool hostileAttackLike = IsHostileAttackSpecial(actor.definition.specialEffect);
+        BattleTargetingForecast forecast =
+            BattleTargetingService.CanUseSkill(actor, target, EffectiveSpecialRange(actor), hostileAttackLike,
+                                               TileAt, IsInside);
+        if (!forecast.canTarget)
         {
-            AddLog("[무공] 대상이 사거리 밖입니다.");
-            return false;
-        }
-
-        if (range > 1 && IsHostileAttackSpecial(actor.definition.specialEffect) &&
-            !HasLineOfSight(actor.cell, target.cell))
-        {
-            AddLog("[무공] 시야가 막혀 펼칠 수 없습니다.");
+            AddLog("[무공] " + TargetingReasonText(forecast.reason));
             return false;
         }
 
         CommitPendingMove(actor);
 
-        bool specialAttackLike = IsHostileAttackSpecial(actor.definition.specialEffect);
-        if (Application.isPlaying && specialAttackLike)
+        if (Application.isPlaying && hostileAttackLike)
         {
             StartCoroutine(RunAttackCommand(actor, target, true, false));
             return true;
@@ -5392,24 +5471,18 @@ public sealed partial class BattleTestController : MonoBehaviour
         }
 
         int attackRange = EffectiveAttackRange(defender);
-        if (distance <= attackRange)
+        if (BattleTargetingService.CanAttack(defender, attacker, attackRange, TileAt, IsInside).canTarget)
         {
-            if (attackRange > 1 && !HasLineOfSight(defender.cell, attacker.cell))
-            {
-                return BattleTestCounterMove.None;
-            }
-
             return new BattleTestCounterMove(false, "기본 공격");
         }
 
         int specialRange = EffectiveSpecialRange(defender);
-        if (CanUseCounterSpecial(defender) && distance <= specialRange)
+        if (CanUseCounterSpecial(defender) &&
+            BattleTargetingService
+                .CanUseSkill(defender, attacker, specialRange,
+                             IsHostileAttackSpecial(defender.definition.specialEffect), TileAt, IsInside)
+                .canTarget)
         {
-            if (specialRange > 1 && !HasLineOfSight(defender.cell, attacker.cell))
-            {
-                return BattleTestCounterMove.None;
-            }
-
             return new BattleTestCounterMove(true, defender.definition.specialName);
         }
 
@@ -5748,6 +5821,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         }
 
         unit.view.PlayIdle();
+        FaceUnitAlongPath(unit, path);
         if (unit.definition.faction == Faction.Ally && phaseTurn.IsPlayerPhase)
         {
             ShowHudNotice("이동 완료: 공격 또는 대기");
@@ -5767,6 +5841,18 @@ public sealed partial class BattleTestController : MonoBehaviour
         busy = false;
         RefreshHighlights();
         RefreshUnits();
+    }
+
+    private void FaceUnitAlongPath(BattleTestUnit unit, IList<Vector2Int> path)
+    {
+        if (unit == null || unit.view == null || path == null || path.Count < 2)
+        {
+            return;
+        }
+
+        Vector3 from = UnitWorldPosition(path[path.Count - 2]);
+        Vector3 to = UnitWorldPosition(path[path.Count - 1]);
+        unit.view.FaceDirection(new Vector2(to.x - from.x, to.y - from.y));
     }
 
     private IEnumerator RunEnemyPhase()
@@ -5812,15 +5898,17 @@ public sealed partial class BattleTestController : MonoBehaviour
             }
 
             bool specialReadyWithoutMoving = CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) &&
-                                             GridDistance(activeUnit.cell, target.cell) <=
-                                             EffectiveSpecialRange(activeUnit) &&
-                                             (!IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
-                                              EffectiveSpecialRange(activeUnit) <= 1 ||
-                                              HasLineOfSight(activeUnit.cell, target.cell));
+                                             BattleTargetingService
+                                                 .CanUseSkill(activeUnit, target, EffectiveSpecialRange(activeUnit),
+                                                              IsHostileAttackSpecial(activeUnit.definition.specialEffect),
+                                                              TileAt, IsInside)
+                                                 .canTarget;
             int desiredRange = specialReadyWithoutMoving ? EffectiveSpecialRange(activeUnit) : EffectiveAttackRange(activeUnit);
-            if ((GridDistance(activeUnit.cell, target.cell) > desiredRange ||
-                 (desiredRange > 1 && !HasLineOfSight(activeUnit.cell, target.cell))) &&
-                !activeUnit.moved)
+            bool canActFromCurrentCell = specialReadyWithoutMoving ||
+                                         BattleTargetingService
+                                             .CanAttack(activeUnit, target, desiredRange, TileAt, IsInside)
+                                             .canTarget;
+            if (!canActFromCurrentCell && !activeUnit.moved)
             {
                 BattleTestTile best = FindBestMoveToward(activeUnit, target.cell);
                 if (best != null)
@@ -5857,17 +5945,22 @@ public sealed partial class BattleTestController : MonoBehaviour
             }
 
             bool useSpecial = CanUseSpecial(activeUnit) && IsValidSpecialTarget(activeUnit, target) &&
-                              GridDistance(activeUnit.cell, target.cell) <= EffectiveSpecialRange(activeUnit) &&
-                              (!IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
-                               EffectiveSpecialRange(activeUnit) <= 1 ||
-                               HasLineOfSight(activeUnit.cell, target.cell));
+                              BattleTargetingService
+                                  .CanUseSkill(activeUnit, target, EffectiveSpecialRange(activeUnit),
+                                               IsHostileAttackSpecial(activeUnit.definition.specialEffect),
+                                               TileAt, IsInside)
+                                  .canTarget;
 
             // 사거리/시야 밖이면 공격하지 않는다 — 플레이어 TryAttack과 동일한 규칙. 접근만 한 뒤 대기.
             int actionRange = useSpecial ? EffectiveSpecialRange(activeUnit) : EffectiveAttackRange(activeUnit);
-            bool needsLineOfSight = actionRange > 1 &&
-                                    (!useSpecial || IsHostileAttackSpecial(activeUnit.definition.specialEffect));
-            bool canReachTarget = GridDistance(activeUnit.cell, target.cell) <= actionRange &&
-                                  (!needsLineOfSight || HasLineOfSight(activeUnit.cell, target.cell));
+            bool canReachTarget = useSpecial
+                                      ? BattleTargetingService
+                                          .CanUseSkill(activeUnit, target, actionRange,
+                                                       IsHostileAttackSpecial(activeUnit.definition.specialEffect),
+                                                       TileAt, IsInside)
+                                          .canTarget
+                                      : BattleTargetingService.CanAttack(activeUnit, target, actionRange, TileAt, IsInside)
+                                                              .canTarget;
             if (canReachTarget)
             {
                 yield return RunEnemyActionCommand(activeUnit, target, useSpecial);
@@ -5974,7 +6067,7 @@ public sealed partial class BattleTestController : MonoBehaviour
             }
 
             int range = EffectiveAttackRange(unit, tile);
-            if (distance <= range && (range <= 1 || HasLineOfSight(pair.Key, targetCell)))
+            if (BattleTargetingService.CanAttackFrom(pair.Key, targetCell, range, TileAt, IsInside).canTarget)
             {
                 score += 18;
             }
@@ -6203,17 +6296,16 @@ public sealed partial class BattleTestController : MonoBehaviour
                                           "아군은 공격 대상이 아닙니다.", distance, range, costText);
         }
 
-        if (distance > range)
+        BattleTargetingForecast targeting = special
+                                                ? BattleTargetingService
+                                                    .CanUseSkill(actor, target, range,
+                                                                 IsHostileAttackSpecial(actor.definition.specialEffect),
+                                                                 TileAt, IsInside)
+                                                : BattleTargetingService.CanAttack(actor, target, range, TileAt, IsInside);
+        if (!targeting.canTarget)
         {
             return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName,
-                                          "사거리 밖입니다.", distance, range, costText);
-        }
-
-        if (range > 1 && (!special || IsHostileAttackSpecial(actor.definition.specialEffect)) &&
-            !HasLineOfSight(actor.cell, target.cell))
-        {
-            return BattleForecast.Invalid(actor.definition.displayName, target.definition.displayName, commandName,
-                                          "시야가 막혔습니다.", distance, range, costText);
+                                          TargetingReasonText(targeting.reason), distance, range, costText);
         }
 
         BattleTestTile from = TileAt(actor.cell);
@@ -6263,6 +6355,25 @@ public sealed partial class BattleTestController : MonoBehaviour
             range, distance <= range ? "사거리 안" : "사거리 밖", attackBonus, heightBonus, terrainBonus, defense,
             neededRollText, damageText, hpAfterText, CounterForecastText(target, actor, counter, attackLike),
             followUp ? $"추격: 가능 (민첩 {AgilityValue(actor)} vs {AgilityValue(target)})" : "추격: 불가", costText);
+    }
+
+    private static string TargetingReasonText(string reason)
+    {
+        switch (reason)
+        {
+        case "out of range":
+            return "사거리 밖입니다.";
+        case "line of sight blocked":
+            return "시야가 막혔습니다.";
+        case "height or edge blocked":
+            return "고저차나 장애물 때문에 닿지 않습니다.";
+        case "same faction":
+            return "대상 진영이 맞지 않습니다.";
+        case "invalid":
+            return "대상을 지정할 수 없습니다.";
+        default:
+            return string.IsNullOrEmpty(reason) ? "대상을 지정할 수 없습니다." : reason;
+        }
     }
 
     private string CounterSummary(BattleTestUnit unit)
@@ -7368,132 +7479,20 @@ public sealed partial class BattleTestController : MonoBehaviour
     private bool CanEnterCellForMovement(BattleTestUnit unit, Vector2Int cell)
     {
         BattleTestTile tile = TileAt(cell);
-        if (!CanStandOnTile(tile) || IsCellBlockedByInteractable(cell))
-        {
-            return false;
-        }
-
         BattleTestUnit occupant = UnitAt(cell);
-        return occupant == null || occupant == unit;
+        return BattlePathService.CanEnterCell(unit, tile, occupant, IsCellBlockedByInteractable(cell));
     }
 
     private Dictionary<Vector2Int, int> GetReachableCells(BattleTestUnit unit)
     {
-        Dictionary<Vector2Int, int> cost = new Dictionary<Vector2Int, int>();
-        List<Vector2Int> frontier = new List<Vector2Int>();
-        cost[unit.cell] = 0;
-        frontier.Add(unit.cell);
-
-        while (frontier.Count > 0)
-        {
-            Vector2Int current = PopLowestCost(frontier, cost);
-            foreach (Vector2Int next in Neighbors(current))
-            {
-                BattleTestTile tile = TileAt(next);
-                if (!CanEnterCellForMovement(unit, next))
-                {
-                    continue;
-                }
-
-                int stepCost = StepMoveCost(TileAt(current), tile);
-                if (stepCost == int.MaxValue)
-                {
-                    continue;
-                }
-
-                int nextCost = cost[current] + stepCost;
-                if (nextCost > EffectiveMoveRange(unit))
-                {
-                    continue;
-                }
-
-                if (cost.TryGetValue(next, out int oldCost) && oldCost <= nextCost)
-                {
-                    continue;
-                }
-
-                cost[next] = nextCost;
-                if (!frontier.Contains(next))
-                {
-                    frontier.Add(next);
-                }
-            }
-        }
-
-        return cost;
+        return BattlePathService.GetReachableCells(unit, EffectiveMoveRange(unit), TileAt, Neighbors,
+                                                   CanEnterCellForMovement);
     }
 
     private List<Vector2Int> FindMovePath(BattleTestUnit unit, Vector2Int destination)
     {
-        Dictionary<Vector2Int, int> cost = new Dictionary<Vector2Int, int>();
-        Dictionary<Vector2Int, Vector2Int> cameFrom = new Dictionary<Vector2Int, Vector2Int>();
-        List<Vector2Int> frontier = new List<Vector2Int>();
-        cost[unit.cell] = 0;
-        frontier.Add(unit.cell);
-
-        while (frontier.Count > 0)
-        {
-            Vector2Int current = PopLowestCost(frontier, cost);
-            if (current == destination)
-            {
-                break;
-            }
-
-            foreach (Vector2Int next in Neighbors(current))
-            {
-                BattleTestTile tile = TileAt(next);
-                if (!CanEnterCellForMovement(unit, next))
-                {
-                    continue;
-                }
-
-                int stepCost = StepMoveCost(TileAt(current), tile);
-                if (stepCost == int.MaxValue)
-                {
-                    continue;
-                }
-
-                int nextCost = cost[current] + stepCost;
-                if (nextCost > EffectiveMoveRange(unit))
-                {
-                    continue;
-                }
-
-                if (cost.TryGetValue(next, out int oldCost) && oldCost <= nextCost)
-                {
-                    continue;
-                }
-
-                cost[next] = nextCost;
-                cameFrom[next] = current;
-                if (!frontier.Contains(next))
-                {
-                    frontier.Add(next);
-                }
-            }
-        }
-
-        if (!cost.ContainsKey(destination))
-        {
-            return new List<Vector2Int>();
-        }
-
-        List<Vector2Int> path = new List<Vector2Int>();
-        Vector2Int cell = destination;
-        path.Add(cell);
-        while (cell != unit.cell)
-        {
-            if (!cameFrom.TryGetValue(cell, out Vector2Int previous))
-            {
-                return new List<Vector2Int>();
-            }
-
-            cell = previous;
-            path.Add(cell);
-        }
-
-        path.Reverse();
-        return path;
+        return BattlePathService.FindMovePath(unit, destination, EffectiveMoveRange(unit), TileAt, Neighbors,
+                                              CanEnterCellForMovement);
     }
 
     private static Vector2Int PopLowestCost(List<Vector2Int> frontier, Dictionary<Vector2Int, int> cost)
@@ -7518,29 +7517,7 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private int StepMoveCost(BattleTestTile from, BattleTestTile to)
     {
-        if (!CanStandOnTile(to))
-        {
-            return int.MaxValue;
-        }
-
-        int elevationDiff = from == null ? 0 : to.elevation - from.elevation;
-        if (elevationDiff >= 3)
-        {
-            return int.MaxValue;
-        }
-
-        int cost = Mathf.Max(1, to.moveCost);
-        if (elevationDiff > 0)
-        {
-            cost += elevationDiff;
-        }
-
-        if (to.fireTurns > 0)
-        {
-            cost += 1;
-        }
-
-        return cost;
+        return BattlePathService.StepMoveCost(from, to);
     }
 
     private IEnumerable<Vector2Int> Neighbors(Vector2Int cell)
@@ -7610,8 +7587,7 @@ public sealed partial class BattleTestController : MonoBehaviour
                     continue;
                 }
 
-                if (GridDistance(activeUnit.cell, target.cell) <= range &&
-                    (range <= 1 || HasLineOfSight(activeUnit.cell, target.cell)))
+                if (BattleTargetingService.CanAttack(activeUnit, target, range, TileAt, IsInside).canTarget)
                 {
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
@@ -7632,9 +7608,10 @@ public sealed partial class BattleTestController : MonoBehaviour
                     continue;
                 }
 
-                if (GridDistance(activeUnit.cell, target.cell) <= range &&
-                    (range <= 1 || !IsHostileAttackSpecial(activeUnit.definition.specialEffect) ||
-                     HasLineOfSight(activeUnit.cell, target.cell)))
+                if (BattleTargetingService
+                    .CanUseSkill(activeUnit, target, range,
+                                 IsHostileAttackSpecial(activeUnit.definition.specialEffect), TileAt, IsInside)
+                    .canTarget)
                 {
                     BattleTestTile tile = TileAt(target.cell);
                     if (tile != null)
@@ -7932,7 +7909,7 @@ public sealed partial class BattleTestController : MonoBehaviour
                 continue;
             }
 
-            if (range > 1 && !HasLineOfSight(standCell, targetCell))
+            if (!BattleTargetingService.CanAttackFrom(standCell, targetCell, range, TileAt, IsInside).canTarget)
             {
                 continue;
             }
@@ -8246,50 +8223,7 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private bool HasLineOfSight(Vector2Int fromCell, Vector2Int toCell)
     {
-        if (!IsInside(fromCell) || !IsInside(toCell))
-        {
-            return false;
-        }
-
-        if (GridDistance(fromCell, toCell) <= 1)
-        {
-            return true;
-        }
-
-        BattleTestTile source = TileAt(fromCell);
-        int sourceElevation = source == null ? 0 : source.elevation;
-        foreach (Vector2Int cell in CellsOnLine(fromCell, toCell))
-        {
-            if (cell == fromCell || cell == toCell)
-            {
-                continue;
-            }
-
-            BattleTestTile tile = TileAt(cell);
-            if (tile == null)
-            {
-                return false;
-            }
-
-            if (tile.smokeTurns > 0)
-            {
-                return false;
-            }
-
-            if (!tile.blocksLineOfSight)
-            {
-                continue;
-            }
-
-            if (sourceElevation >= tile.elevation + 2)
-            {
-                continue;
-            }
-
-            return false;
-        }
-
-        return true;
+        return BattleTargetingService.HasLineOfSight(fromCell, toCell, TileAt, IsInside);
     }
 
     private IEnumerable<Vector2Int> CellsOnLine(Vector2Int fromCell, Vector2Int toCell)
@@ -9171,49 +9105,14 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private TerrainProfile ResolveBaekduSnowGateTerrain(int x, int y)
     {
-        if (!IsBaekduSnowGatePaintedStandCell(x, y))
+        if (BattleMapRuntimeCatalog.TryGetCell(mapVariant, new Vector2Int(x, y), out BattleMapRuntimeCell data))
         {
-            return BaekduSnowGatePaintedBlockerProfile(x, y);
+            return TerrainProfileFromRuntimeCell(data);
         }
 
-        if (IsBaekduSnowGateDeploymentStartCell(x, y))
-        {
-            return new TerrainProfile(TerrainType.Road, new Color(0.58f, 0.53f, 0.44f, 1f), 0, 0, 1, true,
-                                      false, x >= 7 && x <= 9, false, false, "gate_ascent_deployment",
-                                      "Gate ascent starting lane: clear stone-and-snow ground for player deployment.");
-        }
-
-        if ((x == 5 || x == 6) && y == 2)
-        {
-            return new TerrainProfile(TerrainType.Fire, new Color(0.84f, 0.28f, 0.12f, 1f), 0, 0, 2, true, false,
-                                      false, false, true, "south_approach",
-                                      "Brazier light on the lower approach. The prop blocks standing directly on it.");
-        }
-
-        if (y <= 3)
-        {
-            bool cartLane = (x == 4 || x == 5) && y == 3;
-            return new TerrainProfile(cartLane ? TerrainType.Mud : TerrainType.Road,
-                                      cartLane ? new Color(0.40f, 0.33f, 0.25f, 1f)
-                                               : new Color(0.55f, 0.50f, 0.42f, 1f),
-                                      0, cartLane ? 1 : 0, cartLane ? 2 : 1, true, false, x == 8 && y == 3,
-                                      false, false, "south_approach",
-                                      "Lower painted approach: clear ground between banners and braziers.");
-        }
-
-        if (y <= 4)
-        {
-            bool stair = y == 4;
-            return new TerrainProfile(stair ? TerrainType.Road : TerrainType.Stone,
-                                      stair ? new Color(0.60f, 0.55f, 0.48f, 1f)
-                                            : new Color(0.52f, 0.48f, 0.42f, 1f),
-                                      stair ? 1 : 0, 0, 1, true, false, stair, false, false, "gate_stair",
-                                      stair
-                                          ? "Lowest visible gate stair cells only; upper painted wall art is blocked."
-                                          : "Central painted stone lane aligned to the backdrop.");
-        }
-
-        return BaekduSnowGatePaintedBlockerProfile(x, y);
+        return new TerrainProfile(TerrainType.Wall, new Color(0.18f, 0.18f, 0.18f, 1f), 2, 0, 99, false, true,
+                                  false, false, true, "missing_runtime_cell",
+                                  "Missing runtime cell: blocked by default.");
     }
 
     private static bool IsBaekduSnowGatePaintedNoStandCell(Vector2Int cell)
@@ -9223,33 +9122,12 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private static bool IsBaekduSnowGatePaintedStandCell(int x, int y)
     {
-        if (x < 0 || x > 15 || y < 0 || y > 11)
-        {
-            return false;
-        }
-
-        // This mask follows the painted stone approach only. The upper gate art is a backdrop wall.
-        switch (y)
-        {
-        case 0:
-            return x >= 4 && x <= 7;
-        case 1:
-            return x >= 4 && x <= 8;
-        case 2:
-            return x >= 5 && x <= 9;
-        case 3:
-            return x >= 6 && x <= 9;
-        case 4:
-            return x >= 7 && x <= 8;
-        default:
-            return false;
-        }
+        return BaekduSnowGateBattleMapData.IsWalkableCell(x, y);
     }
 
     private static bool IsBaekduSnowGateDeploymentStartCell(int x, int y)
     {
-        return (y == 0 && x >= 4 && x <= 7) ||
-               (y == 1 && (x == 4 || x == 5));
+        return BaekduSnowGateBattleMapData.IsDeploymentCell(x, y);
     }
 
     private static TerrainProfile BaekduSnowGatePaintedBlockerProfile(int x, int y)
@@ -10356,9 +10234,12 @@ public sealed class BattleTestTile : MonoBehaviour
     public int fireTurns;
     public bool extraCover;
     public bool blocksLineOfSight;
+    public bool blocksProjectiles;
     public bool isChokePoint;
     public bool objective;
     public bool danger;
+    public bool occupyAllowed = true;
+    public int deployZone;
     public HazardType hazardType;
     public EdgeType northEdge;
     public EdgeType eastEdge;
@@ -10366,6 +10247,7 @@ public sealed class BattleTestTile : MonoBehaviour
     public EdgeType westEdge;
     public string laneId;
     public string tacticalNote;
+    public List<string> tags = new List<string>();
     public TextMesh nameLabel;
     public SpriteRenderer terrainRenderer;
     public SpriteRenderer highlightRenderer;
@@ -10383,6 +10265,24 @@ public sealed class BattleTestTile : MonoBehaviour
         {
             highlightRenderer.color = color;
         }
+    }
+
+    public bool HasTag(string tag)
+    {
+        if (string.IsNullOrEmpty(tag) || tags == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < tags.Count; i++)
+        {
+            if (string.Equals(tags[i], tag, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 
