@@ -72,6 +72,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     private float nextBlinkAt = -1f;
     private float blinkUntil = -1f;
     private CharacterSpriteAnimationClipData activeCueClip;
+    private bool pixelMode;
     private int activeCueLoopIndex = -1;
     private readonly HashSet<string> firedClipCues = new HashSet<string>();
     private Sprite cueEffectSprite;
@@ -603,6 +604,7 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
     public void ApplyVisual()
     {
         EnsureRenderers();
+        pixelMode = visual != null && visual.pixelSpriteMode;
 
         if (visual == null)
         {
@@ -691,6 +693,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         effectRenderer.enabled = false;
         effectRenderer.color = Color.white;
         ClearMotionTrail();
+        if (pixelMode)
+        {
+            ConfigurePixelMode();
+        }
         ScheduleNextBlink(Time.time);
         visualState = defeated ? CharacterBattleVisualState.Defeat :
                       selected ? CharacterBattleVisualState.SelectedIdle :
@@ -980,20 +986,29 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         Color integratedTint = ApplySceneTint(tint);
         bodyRenderer.flipX = facingSign < 0f;
         bodyRenderer.color = integratedTint;
-        ApplyLayerFlip(facingSign < 0f);
-        ApplyLayerTint(integratedTint);
-        UpdateEmotionFace(time, integratedTint);
+        if (!pixelMode)
+        {
+            ApplyLayerFlip(facingSign < 0f);
+            ApplyLayerTint(integratedTint);
+            UpdateEmotionFace(time, integratedTint);
+        }
         bodyTransform.localPosition = localPosition;
         bodyTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
         bodyTransform.localScale = localScale;
-        ApplyLayerSway(time, progress, footStride01);
-        UpdateFootContacts(visualState == CharacterBattleVisualState.Move, footStride01);
+        if (!pixelMode)
+        {
+            ApplyLayerSway(time, progress, footStride01);
+            UpdateFootContacts(visualState == CharacterBattleVisualState.Move, footStride01);
+        }
 
         UpdateShadowPose(localPosition, shadowAlpha);
-        UpdateCastShadow(shadowAlpha);
-        UpdateGroundBlendOverlay();
-        UpdateInkRim();
-        UpdateFootOcclusion();
+        if (!pixelMode)
+        {
+            UpdateCastShadow(shadowAlpha);
+            UpdateGroundBlendOverlay();
+            UpdateInkRim();
+            UpdateFootOcclusion();
+        }
         if (selectionRenderer != null)
         {
             selectionRenderer.enabled = selected && !defeated;
@@ -1002,7 +1017,10 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         }
 
         UpdateEffect(showEffect, effectSprite, effectPosition, effectScale, effectRotation, effectColor);
-        UpdateMotionTrail(time);
+        if (!pixelMode)
+        {
+            UpdateMotionTrail(time);
+        }
     }
 
     private void ApplyStateEnterMotion(float stateAge, ref Vector3 localPosition, ref Vector3 localScale,
@@ -2314,6 +2332,43 @@ public sealed class CharacterVisualController : MonoBehaviour, ICombatAnimationE
         if (bodyRenderer != null && bodyRenderer.sprite != sprite)
         {
             bodyRenderer.sprite = sprite;
+            if (pixelMode && sprite != null && sprite.texture != null)
+            {
+                // 픽셀 스프라이트는 또렷하게(보간 끔). 시트 텍스처 한 번만 바꿔도 모든 프레임에 적용됨.
+                sprite.texture.filterMode = FilterMode.Point;
+            }
+        }
+    }
+
+    // 픽셀 스프라이트 모드: 리빙2D 코스메틱 레이어/이펙트를 끄고 body 프레임만 또렷이 렌더한다.
+    // (그림자/선택링/body는 유지. 플래그 기본 false라 기존 캐릭터엔 영향 없음.)
+    private void ConfigurePixelMode()
+    {
+        DisablePixelLayer(baseLayerRenderer);
+        DisablePixelLayer(outfitLayerRenderer);
+        DisablePixelLayer(hairLayerRenderer);
+        DisablePixelLayer(faceLayerRenderer);
+        DisablePixelLayer(emotionFaceRenderer);
+        DisablePixelLayer(weaponLayerRenderer);
+        DisablePixelLayer(accessoryLayerRenderer);
+        DisablePixelLayer(inkRimRenderer);
+        DisablePixelLayer(groundBlendRenderer);
+        DisablePixelLayer(footOcclusionRenderer);
+        DisablePixelLayer(castShadowRenderer);
+        DisablePixelLayer(motionTrailRenderer);
+        DisablePixelLayer(leftFootRenderer);
+        DisablePixelLayer(rightFootRenderer);
+        if (bodyRenderer != null && bodyRenderer.sprite != null && bodyRenderer.sprite.texture != null)
+        {
+            bodyRenderer.sprite.texture.filterMode = FilterMode.Point;
+        }
+    }
+
+    private static void DisablePixelLayer(SpriteRenderer renderer)
+    {
+        if (renderer != null)
+        {
+            renderer.enabled = false;
         }
     }
 

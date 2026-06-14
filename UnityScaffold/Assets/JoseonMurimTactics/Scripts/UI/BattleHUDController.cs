@@ -23,7 +23,7 @@ public sealed class BattleHUDController : MonoBehaviour
     private static readonly Color InnerFill = new Color(0.135f, 0.600f, 0.560f, 0.98f);
     private static readonly Color GaugeBg = new Color(0.012f, 0.014f, 0.013f, 0.94f);
 
-    private const int MaxRosterSlots = 6;
+    private const int MaxRosterSlots = 7;
     private const float ReferenceWidth = 1600f;
     private const float ReferenceHeight = 900f;
     private const int CommandMoveIndex = 0;
@@ -47,7 +47,9 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private Text phaseTitle;
     private Text phaseInstruction;
+    private RectTransform phasePanel;
 
+    private RectTransform objectiveButton;
     private RectTransform objectivePanel;
     private Text objectiveText;
     private Text objectiveMiniLabel;
@@ -90,17 +92,21 @@ public sealed class BattleHUDController : MonoBehaviour
     private RectTransform logToastPanel;
     private Text logToastText;
     private RectTransform logPanel;
+    private RectTransform logMiniButton;
     private Text logText;
     private Text logMiniLabel;
     private string lastLogLine;
     private float logToastUntil;
 
+    private RectTransform helpButton;
     private RectTransform helpPanel;
     private Text helpText;
     private bool helpVisible;
 
     private RectTransform noticePanel;
     private Text noticeText;
+    private bool runtimeMapEditorMode;
+    private bool runtimeMapEditorDeploymentVisible;
 
     public void Initialize(BattleTestController controller)
     {
@@ -117,6 +123,13 @@ public sealed class BattleHUDController : MonoBehaviour
     {
         if (canvas == null)
         {
+            return;
+        }
+
+        if (runtimeMapEditorMode)
+        {
+            helpVisible = false;
+            ApplyRuntimeMapEditorHudMask();
             return;
         }
 
@@ -142,6 +155,13 @@ public sealed class BattleHUDController : MonoBehaviour
             return;
         }
 
+        if (runtimeMapEditorMode)
+        {
+            UpdateDeployment(snapshot);
+            ApplyRuntimeMapEditorHudMask();
+            return;
+        }
+
         phaseTitle.text = (snapshot.scoutMode ? "\uCE90\uB9AD\uD130 \uBC30\uCE58" : PhaseText(snapshot.phase, snapshot.battleOver)) + "  |  " +
                           "\uB77C\uC6B4\uB4DC " + snapshot.round.ToString() + "/" +
                           Mathf.Max(1, snapshot.turnLimit).ToString();
@@ -161,6 +181,26 @@ public sealed class BattleHUDController : MonoBehaviour
         UpdateTooltip(snapshot);
         UpdateNotice(snapshot);
         UpdateTransientPanels();
+    }
+
+    public void SetRuntimeMapEditorMode(bool active, bool showDeploymentPanel)
+    {
+        runtimeMapEditorMode = active;
+        runtimeMapEditorDeploymentVisible = showDeploymentPanel;
+
+        if (canvas == null)
+        {
+            return;
+        }
+
+        if (!runtimeMapEditorMode)
+        {
+            RestoreRuntimeMapEditorHudMask();
+            return;
+        }
+
+        helpVisible = false;
+        ApplyRuntimeMapEditorHudMask();
     }
 
     public bool PointerOverHud(Vector3 screenPosition)
@@ -217,6 +257,44 @@ public sealed class BattleHUDController : MonoBehaviour
         return false;
     }
 
+    private void ApplyRuntimeMapEditorHudMask()
+    {
+        if (!runtimeMapEditorMode)
+        {
+            return;
+        }
+
+        helpVisible = false;
+        SetActive(phasePanel, false);
+        SetActive(objectiveButton, false);
+        SetActive(objectivePanel, false);
+        SetActive(helpButton, false);
+        SetActive(helpPanel, false);
+        SetActive(selectedUnitCard, false);
+        SetActive(selectedPromptCard, false);
+        SetActive(commandPanel, false);
+        SetActive(rosterPanel, false);
+        SetActive(forecastPanel, false);
+        SetActive(hoverPanel, false);
+        SetActive(logMiniButton, false);
+        SetActive(logToastPanel, false);
+        SetActive(logPanel, false);
+        SetActive(noticePanel, false);
+        if (deploymentPanel != null)
+        {
+            deploymentPanel.gameObject.SetActive(runtimeMapEditorDeploymentVisible &&
+                                                 deploymentPanel.gameObject.activeSelf);
+        }
+    }
+
+    private static void SetActive(RectTransform rect, bool active)
+    {
+        if (rect != null)
+        {
+            rect.gameObject.SetActive(active);
+        }
+    }
+
     private void Build()
     {
         GameObject canvasObject = new GameObject("BattleHUD_Canvas");
@@ -233,9 +311,9 @@ public sealed class BattleHUDController : MonoBehaviour
         canvasObject.AddComponent<GraphicRaycaster>();
         RectTransform root = canvasObject.GetComponent<RectTransform>();
 
-        RectTransform phasePanel = PanelRect("TopPhaseRibbon", root, TopCenter(), new Vector2(820f, 74f),
-                                             new Vector2(0f, -14f), Color.white, false,
-                                             "ui_phase_banner_imagegen");
+        phasePanel = PanelRect("TopPhaseRibbon", root, TopCenter(), new Vector2(820f, 74f),
+                               new Vector2(0f, -14f), Color.white, false,
+                               "ui_phase_banner_imagegen");
         AddAccentLine("PhaseAccent", phasePanel, BottomLeft(), BottomRight(), new Vector2(16f, 6f),
                       new Vector2(-16f, 9f), new Color(LineGold.r, LineGold.g, LineGold.b, 0.55f));
         phaseTitle = MakeText("PhaseTitleText", phasePanel, StretchMin(), StretchMax(),
@@ -245,9 +323,9 @@ public sealed class BattleHUDController : MonoBehaviour
                                     new Vector2(44f, 7f), new Vector2(-44f, -42f), 16, FontStyle.Normal,
                                     TextAnchor.MiddleCenter, TextSub);
 
-        RectTransform objectiveButton = MakeButton("ObjectiveMiniButton", root, TopLeft(), new Vector2(112f, 38f),
-                                                   new Vector2(24f, -24f), () => owner.HudToggleObjective(),
-                                                   out objectiveMiniLabel);
+        objectiveButton = MakeButton("ObjectiveMiniButton", root, TopLeft(), new Vector2(112f, 38f),
+                                     new Vector2(24f, -24f), () => owner.HudToggleObjective(),
+                                     out objectiveMiniLabel);
         objectiveMiniLabel.fontSize = 15;
         objectiveMiniLabel.text = "\uBAA9\uD45C O";
 
@@ -257,9 +335,9 @@ public sealed class BattleHUDController : MonoBehaviour
                                  new Vector2(18f, 14f), new Vector2(-18f, -14f), 17, FontStyle.Normal,
                                  TextAnchor.UpperLeft, TextMain);
 
-        RectTransform helpButton = MakeButton("HelpMiniButton", root, TopRight(), new Vector2(108f, 38f),
-                                              new Vector2(-24f, -24f), () => helpVisible = !helpVisible,
-                                              out Text helpMiniLabel);
+        helpButton = MakeButton("HelpMiniButton", root, TopRight(), new Vector2(108f, 38f),
+                                new Vector2(-24f, -24f), () => helpVisible = !helpVisible,
+                                out Text helpMiniLabel);
         helpMiniLabel.fontSize = 15;
         helpMiniLabel.text = "F1 \uB3C4\uC6C0";
 
@@ -308,7 +386,7 @@ public sealed class BattleHUDController : MonoBehaviour
                                       new Vector2(24f, 9f), new Vector2(-24f, 30f), 12, FontStyle.Normal,
                                       TextAnchor.MiddleLeft, TextDim);
 
-        rosterPanel = PanelRect("RosterStrip", root, TopRight(), new Vector2(520f, 88f), new Vector2(-24f, -260f),
+        rosterPanel = PanelRect("RosterStrip", root, TopRight(), new Vector2(610f, 88f), new Vector2(-24f, -260f),
                                 Panel, true, "ui_turn_order_card");
         AddAccentLine("RosterAccent", rosterPanel, TopLeft(), TopRight(),
                       new Vector2(16f, -9f), new Vector2(-16f, -6f), new Color(LineGold.r, LineGold.g, LineGold.b, 0.62f));
@@ -346,8 +424,9 @@ public sealed class BattleHUDController : MonoBehaviour
         hoverBody = MakeText("HoverBody", hoverPanel, StretchMin(), StretchMax(), new Vector2(14f, 10f),
                              new Vector2(-14f, -36f), 14, FontStyle.Normal, TextAnchor.UpperLeft, TextMain);
 
-        MakeButton("LogMiniButton", root, BottomRight(), new Vector2(92f, 32f), new Vector2(-28f, 304f),
-                   () => owner.HudToggleLog(), out logMiniLabel).gameObject.SetActive(true);
+        logMiniButton = MakeButton("LogMiniButton", root, BottomRight(), new Vector2(92f, 32f),
+                                   new Vector2(-28f, 304f), () => owner.HudToggleLog(), out logMiniLabel);
+        logMiniButton.gameObject.SetActive(true);
         logMiniLabel.fontSize = 14;
         logMiniLabel.text = "\uAE30\uB85D L";
 
@@ -669,7 +748,8 @@ public sealed class BattleHUDController : MonoBehaviour
 
     private void UpdateDeployment(BattleHudSnapshot snapshot)
     {
-        bool show = snapshot.scoutMode && !snapshot.battleOver;
+        bool show = (snapshot.scoutMode || (runtimeMapEditorMode && runtimeMapEditorDeploymentVisible)) &&
+                    !snapshot.battleOver;
         deploymentPanel.gameObject.SetActive(show);
         if (!show)
         {
@@ -1020,6 +1100,18 @@ public sealed class BattleHUDController : MonoBehaviour
         if (visible)
         {
             noticeText.text = snapshot.noticeText;
+        }
+    }
+
+    private void RestoreRuntimeMapEditorHudMask()
+    {
+        SetActive(phasePanel, true);
+        SetActive(objectiveButton, true);
+        SetActive(helpButton, true);
+        SetActive(logMiniButton, true);
+        if (helpPanel != null)
+        {
+            helpPanel.gameObject.SetActive(helpVisible);
         }
     }
 
@@ -1441,6 +1533,8 @@ public sealed class BattleHUDController : MonoBehaviour
         switch (unit.definition.id)
         {
         case "park_sungjun":
+        case "park_sungjun_sd_test":
+        case "park_sungjun_pixel_test":
             return "SkillIcons/skill_park_sungjun_baekdu_light_sword";
         case "baek_ryeon":
             return "SkillIcons/skill_baek_ryeon_snow_spear";

@@ -48,11 +48,18 @@ namespace JoseonMurimTactics
     {
         public const string BaekduSnowGateMapId = "baekdu_snow_gate";
         public const string BaekduSnowGateResourcePath = "BattleMaps/baekdu_snow_gate_data";
+        public const string BaekduSnowfieldGridMapId = "baekdu_snowfield_grid";
+        public const string BaekduSnowfieldGridResourcePath = "BattleMaps/baekdu_snowfield_grid_data";
 
         private static readonly Dictionary<
             BattleTestMapVariant,
             BattleMapRuntimeSnapshot
         > SnapshotCache = new Dictionary<BattleTestMapVariant, BattleMapRuntimeSnapshot>();
+        private static readonly Dictionary<
+            BattleTestMapVariant,
+            Dictionary<Vector2Int, BattleMapRuntimeCellEdit>
+        > RuntimeEditCache =
+            new Dictionary<BattleTestMapVariant, Dictionary<Vector2Int, BattleMapRuntimeCellEdit>>();
 
         public static bool TryGetCell(
             BattleTestMapVariant variant,
@@ -65,7 +72,13 @@ namespace JoseonMurimTactics
                 return snapshot.TryGetCell(cell, out data);
             }
 
-            return TryGetFallbackCell(variant, cell, out data);
+            if (!TryGetFallbackCell(variant, cell, out data))
+            {
+                return false;
+            }
+
+            ApplyRuntimeEditIfAny(variant, data);
+            return true;
         }
 
         public static IEnumerable<BattleMapRuntimeCell> Cells(BattleTestMapVariant variant)
@@ -77,7 +90,12 @@ namespace JoseonMurimTactics
 
             if (variant == BattleTestMapVariant.BaekduSnowGate)
             {
-                return BaekduSnowGateBattleMapData.Cells();
+                return RuntimeEditedFallbackCells(variant, BaekduSnowGateBattleMapData.Cells());
+            }
+
+            if (variant == BattleTestMapVariant.BaekduSnowfieldGrid)
+            {
+                return RuntimeEditedFallbackCells(variant, BaekduSnowfieldTileBattleMapData.Cells());
             }
 
             return Array.Empty<BattleMapRuntimeCell>();
@@ -102,9 +120,14 @@ namespace JoseonMurimTactics
                 return snapshot.SourceName;
             }
 
-            return variant == BattleTestMapVariant.BaekduSnowGate
-                ? "RuntimeCatalogFallback"
-                : "GeneratedProfile";
+            if (IsFallbackBackedVariant(variant))
+            {
+                return HasRuntimeEdits(variant)
+                    ? "RuntimeCatalogFallback+RuntimeEditCsv"
+                    : "RuntimeCatalogFallback";
+            }
+
+            return "GeneratedProfile";
         }
 
         public static int CellCount(BattleTestMapVariant variant)
@@ -126,6 +149,7 @@ namespace JoseonMurimTactics
         public static void ClearCache()
         {
             SnapshotCache.Clear();
+            RuntimeEditCache.Clear();
         }
 
         public static bool ValidateAssetAgainstFallback(
@@ -186,12 +210,26 @@ namespace JoseonMurimTactics
 
         private static BattleMapRuntimeSnapshot LoadSnapshot(BattleTestMapVariant variant)
         {
-            if (variant != BattleTestMapVariant.BaekduSnowGate)
+            string resourcePath;
+            switch (variant)
+            {
+            case BattleTestMapVariant.BaekduSnowGate:
+                resourcePath = BaekduSnowGateResourcePath;
+                break;
+            case BattleTestMapVariant.BaekduSnowfieldGrid:
+                resourcePath = BaekduSnowfieldGridResourcePath;
+                break;
+            default:
+                resourcePath = string.Empty;
+                break;
+            }
+
+            if (string.IsNullOrEmpty(resourcePath))
             {
                 return null;
             }
 
-            BattleMapData mapData = Resources.Load<BattleMapData>(BaekduSnowGateResourcePath);
+            BattleMapData mapData = Resources.Load<BattleMapData>(resourcePath);
             if (mapData == null)
             {
                 return null;
@@ -227,8 +265,93 @@ namespace JoseonMurimTactics
                 return BaekduSnowGateBattleMapData.TryGetCell(cell, out data);
             }
 
+            if (variant == BattleTestMapVariant.BaekduSnowfieldGrid)
+            {
+                return BaekduSnowfieldTileBattleMapData.TryGetCell(cell, out data);
+            }
+
             data = null;
             return false;
+        }
+
+        private static bool IsFallbackBackedVariant(BattleTestMapVariant variant)
+        {
+            return variant == BattleTestMapVariant.BaekduSnowGate ||
+                   variant == BattleTestMapVariant.BaekduSnowfieldGrid;
+        }
+
+        private static IEnumerable<BattleMapRuntimeCell> RuntimeEditedFallbackCells(
+            BattleTestMapVariant variant,
+            IEnumerable<BattleMapRuntimeCell> source
+        )
+        {
+            List<BattleMapRuntimeCell> cells = new List<BattleMapRuntimeCell>();
+            if (source != null)
+            {
+                foreach (BattleMapRuntimeCell cell in source)
+                {
+                    if (cell != null)
+                    {
+                        ApplyRuntimeEditIfAny(variant, cell);
+                        cells.Add(cell);
+                    }
+                }
+            }
+
+            return cells;
+        }
+
+        private static void ApplyRuntimeEditIfAny(
+            BattleTestMapVariant variant,
+            BattleMapRuntimeCell data
+        )
+        {
+            if (data == null || !TryGetRuntimeEditMap(variant, out Dictionary<Vector2Int, BattleMapRuntimeCellEdit> edits))
+            {
+                return;
+            }
+
+            if (edits.TryGetValue(data.cell, out BattleMapRuntimeCellEdit edit))
+            {
+                edit.ApplyTo(data);
+            }
+        }
+
+        private static bool HasRuntimeEdits(BattleTestMapVariant variant)
+        {
+            return TryGetRuntimeEditMap(variant, out Dictionary<Vector2Int, BattleMapRuntimeCellEdit> edits)
+                && edits.Count > 0;
+        }
+
+        private static bool TryGetRuntimeEditMap(
+            BattleTestMapVariant variant,
+            out Dictionary<Vector2Int, BattleMapRuntimeCellEdit> editsByCell
+        )
+        {
+            if (RuntimeEditCache.TryGetValue(variant, out editsByCell))
+            {
+                return editsByCell.Count > 0;
+            }
+
+            editsByCell = new Dictionary<Vector2Int, BattleMapRuntimeCellEdit>();
+            if (
+                BattleMapRuntimeEditStore.TryLoadBestOverride(
+                    variant,
+                    out List<BattleMapRuntimeCellEdit> edits,
+                    out _,
+                    out _
+                )
+            )
+            {
+                for (int i = 0; i < edits.Count; i++)
+                {
+                    BattleMapRuntimeCellEdit edit = edits[i];
+                    editsByCell[edit.cell] = edit;
+                }
+            }
+
+            RuntimeEditCache[variant] = editsByCell;
+            return editsByCell.Count > 0;
         }
 
         private static bool RuntimeCellsEqual(

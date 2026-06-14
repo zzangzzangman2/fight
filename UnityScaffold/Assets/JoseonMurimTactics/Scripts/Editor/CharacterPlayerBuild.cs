@@ -33,6 +33,7 @@ public static class CharacterPlayerBuild
     public static void BuildWindowsBattleTest()
     {
         BattleTestSceneLauncher.RebuildBattleTestScene();
+        AndroidPixelBattleTestSampleBuilder.InstallSamples();
         BuildWindowsPlayer(BattleTestSceneLauncher.ScenePath, BattleBuildFolder, BattleExeName);
     }
 

@@ -1,0 +1,126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95fb2a208870457687ddbb0bb4f0dd12, type: 3}
+  m_Name: park_sungjun_pixel_visual
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualData
+  visualId: park_sungjun_pixel
+  fullBodySprite: {fileID: 21300000, guid: 07ffd8c84a697dc47b667b9fd2f2dddc, type: 3}
+  bustSprite: {fileID: 0}
+  portraitSprite: {fileID: 0}
+  faceIconSprite: {fileID: 0}
+  animatorController: {fileID: 0}
+  idlePoseSprite: {fileID: 21300000, guid: 07ffd8c84a697dc47b667b9fd2f2dddc, type: 3}
+  movePoseSprite: {fileID: 21300000, guid: 5939c0aa971bedb4887a813ebc4ff640, type: 3}
+  attackPoseSprite: {fileID: 21300000, guid: e2983bbac6f7d014dad5513a1e747f2f, type: 3}
+  skillPoseSprite: {fileID: 21300000, guid: 202dc2e5532e24143a31d2900f5abe27, type: 3}
+  hitPoseSprite: {fileID: 21300000, guid: 2da78897ea17b2b419e85ce3275e59c9, type: 3}
+  defeatedPoseSprite: {fileID: 21300000, guid: 466eacc0bb41e1a43b86eb42916f9cf5, type: 3}
+  actedPoseSprite: {fileID: 21300000, guid: 22f4032322c28e644809f8cf32f057c0, type: 3}
+  idleSidePoseSprite: {fileID: 21300000, guid: 07ffd8c84a697dc47b667b9fd2f2dddc, type: 3}
+  idleBackPoseSprite: {fileID: 21300000, guid: 07ffd8c84a697dc47b667b9fd2f2dddc, type: 3}
+  moveSidePoseSprite: {fileID: 21300000, guid: 5939c0aa971bedb4887a813ebc4ff640, type: 3}
+  moveBackPoseSprite: {fileID: 21300000, guid: 5939c0aa971bedb4887a813ebc4ff640, type: 3}
+  idleFrames:
+  - {fileID: 21300000, guid: 07ffd8c84a697dc47b667b9fd2f2dddc, type: 3}
+  - {fileID: 21300000, guid: 49181636d2bda84489ab8c277eed7cfb, type: 3}
+  - {fileID: 21300000, guid: 84df47c079c971247bada60fa622025c, type: 3}
+  - {fileID: 21300000, guid: 46a288ef88f5bdb48b79ed795e4a6e3a, type: 3}
+  moveFrames:
+  - {fileID: 21300000, guid: 5939c0aa971bedb4887a813ebc4ff640, type: 3}
+  - {fileID: 21300000, guid: 3fd8eb552a982fe459f43f6245317140, type: 3}
+  - {fileID: 21300000, guid: 939ce14ea1e71544ea075d53e62faefb, type: 3}
+  - {fileID: 21300000, guid: 9279953014b7f5c44a0675854d234895, type: 3}
+  - {fileID: 21300000, guid: 85a28cff79b43364dbd5730e5c5716ab, type: 3}
+  - {fileID: 21300000, guid: 50d4d238952db894ba58d8cdc8dbb7c3, type: 3}
+  moveSideFrames:
+  - {fileID: 21300000, guid: 5939c0aa971bedb4887a813ebc4ff640, type: 3}
+  - {fileID: 21300000, guid: 3fd8eb552a982fe459f43f6245317140, type: 3}
+  - {fileID: 21300000, guid: 939ce14ea1e71544ea075d53e62faefb, type: 3}
+  - {fileID: 21300000, guid: 9279953014b7f5c44a0675854d234895, type: 3}
+  - {fileID: 21300000, guid: 85a28cff79b43364dbd5730e5c5716ab, type: 3}
+  - {fileID: 21300000, guid: 50d4d238952db894ba58d8cdc8dbb7c3, type: 3}
+  moveBackFrames:
+  - {fileID: 21300000, guid: 5939c0aa971bedb4887a813ebc4ff640, type: 3}
+  - {fileID: 21300000, guid: 3fd8eb552a982fe459f43f6245317140, type: 3}
+  - {fileID: 21300000, guid: 939ce14ea1e71544ea075d53e62faefb, type: 3}
+  - {fileID: 21300000, guid: 9279953014b7f5c44a0675854d234895, type: 3}
+  - {fileID: 21300000, guid: 85a28cff79b43364dbd5730e5c5716ab, type: 3}
+  - {fileID: 21300000, guid: 50d4d238952db894ba58d8cdc8dbb7c3, type: 3}
+  attackFrames:
+  - {fileID: 21300000, guid: 3ba96465a78e77547b960c2b55536664, type: 3}
+  - {fileID: 21300000, guid: 8bdd44ae179bc764b86c016688908752, type: 3}
+  - {fileID: 21300000, guid: 800b67ee86aad664696868a1917cb4bb, type: 3}
+  - {fileID: 21300000, guid: e2983bbac6f7d014dad5513a1e747f2f, type: 3}
+  - {fileID: 21300000, guid: 02dd8fe55d7f1bc4b9c73bd06ef1d345, type: 3}
+  - {fileID: 21300000, guid: e6c424b601cabc749950709b31dc0f4e, type: 3}
+  skillFrames:
+  - {fileID: 21300000, guid: 3dac252d43402e24bb0b9675d50b6837, type: 3}
+  - {fileID: 21300000, guid: 5c8faa4bed1ca4b40879b1f0eb479852, type: 3}
+  - {fileID: 21300000, guid: 7a743b0cac480e543b537204b1a1f507, type: 3}
+  - {fileID: 21300000, guid: 202dc2e5532e24143a31d2900f5abe27, type: 3}
+  - {fileID: 21300000, guid: d80e9c107712bfe439d37e800f075e87, type: 3}
+  - {fileID: 21300000, guid: 3fadcc2bed26e924d9cae0a97016af43, type: 3}
+  hitFrames:
+  - {fileID: 21300000, guid: 2da78897ea17b2b419e85ce3275e59c9, type: 3}
+  - {fileID: 21300000, guid: 6c70943b700e8f44e9b028ddaef08a42, type: 3}
+  idleFrameRate: 4
+  pixelSpriteMode: 1
+  livingMotion: {fileID: 0}
+  idleClip: {fileID: 0}
+  selectedIdleClip: {fileID: 0}
+  moveClip: {fileID: 0}
+  attackClip: {fileID: 0}
+  skillClip: {fileID: 0}
+  hitClip: {fileID: 0}
+  guardClip: {fileID: 0}
+  waitClip: {fileID: 0}
+  defeatClip: {fileID: 0}
+  victoryClip: {fileID: 0}
+  turnStartClip: {fileID: 0}
+  lowHpClip: {fileID: 0}
+  blinkFaceSprite: {fileID: 0}
+  happyFaceSprite: {fileID: 0}
+  angryFaceSprite: {fileID: 0}
+  painFaceSprite: {fileID: 0}
+  seriousFaceSprite: {fileID: 0}
+  emotionFaceOffset: {x: 0, y: 0}
+  emotionFaceScale: {x: 1, y: 1}
+  emotionFaceSortingOffset: 6
+  enableBlink: 0
+  enableLayerSway: 0
+  enableFootDust: 1
+  enableSelectionPop: 1
+  enableImpactFreeze: 1
+  defaultOutfit: {fileID: 0}
+  outfitOptions: []
+  defaultWeaponType: 0
+  weaponAnimationSet: {fileID: 0}
+  heightInTiles: 1.02
+  spriteOffset: {x: 0, y: 0.01}
+  sortingOffset: 0
+  idleAmplitude: 0.018
+  idleSpeed: 0.8
+  breathingScale: 0.006
+  shadowWidth: 0.58
+  shadowHeight: 0.15
+  normalTint: {r: 1, g: 1, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.9496, b: 0.804, a: 1}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 1}
+  hitTint: {r: 0.9928, g: 0.6848, b: 0.6556, a: 1}
+  guardTint: {r: 1, g: 0.937, b: 0.755, a: 1}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 1}
+  moveSecondsPerTile: 0.2
+  moveSettleTime: 0.08
+  moveLeanDegrees: 0
+  attackLunge: 0.06
+  skillPulseScale: 0.04
+  hitRecoil: 0.06

@@ -36,6 +36,8 @@ public sealed partial class BattleTestController : MonoBehaviour
     private const int DefaultPoisonTurns = 2;
     private const int DefaultChilledTurns = 2;
     private const string RequiredHeroUnitId = "park_sungjun";
+    private const string RequiredHeroSdUnitId = "park_sungjun_sd_test";
+    private const string RequiredHeroPixelUnitId = "park_sungjun_pixel_test";
     private const float EnemyPhaseStartDelay = 0.15f;
     private const float EnemyFocusSeconds = 0.12f;
     private const float EnemyFocusSettleDelay = 0.12f;
@@ -49,6 +51,7 @@ public sealed partial class BattleTestController : MonoBehaviour
     private const string LeopardCliffPaintedBattleMapResource = "MapAssets/Backgrounds/sobaek_leopard_cliff_srpg_ground";
     private const string SnowGateMapDisplayName = "백두산 설문 관문전";
     private const string SnowfieldMapDisplayName = "백두산 천지 설산로";
+    private const string SnowfieldGridMapDisplayName = "백두산 타일 설산로";
     private const string BanditLairMapDisplayName = "소백촌 도적 소굴";
     private const string WolfPassMapDisplayName = "소백촌 늑대 고개";
     private const string TigerRavineMapDisplayName = "백호 바위골";
@@ -58,6 +61,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         "중앙 1칸 협로, 좌측 설죽림 우회로, 우측 절벽 고지, 얼어붙은 여울과 붕괴 가능한 다리 밧줄을 쓰는 대표 수작업 전장";
     private const string SnowfieldMapConcept =
         "설송림, 현무암 절벽, 얼음 물길, 온천 증기를 따라 움직이는 백두산 설산 SRPG 전장";
+    private const string SnowfieldGridMapConcept =
+        "중앙 석계단, 좌측 얼음다리 계단, 우측 눈길 램프가 모두 연결된 타일 기준 백두 설산 전장";
     private const string BanditLairMapConcept =
         "벌목길, 폐광 동굴, 통나무 장애물, 진흙 웅덩이, 덫, 망루 고지로 구성된 자유시간 반복 의뢰 전장";
     private const string WolfPassMapConcept =
@@ -76,7 +81,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         new Vector2Int(6, 7),
         new Vector2Int(7, 7),
         new Vector2Int(8, 7),
-        new Vector2Int(9, 7)
+        new Vector2Int(9, 7),
+        new Vector2Int(10, 7)
     };
     private static readonly Vector2Int[] BanditFrontDescentAllyStartCells =
     {
@@ -85,7 +91,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         new Vector2Int(11, 7),
         new Vector2Int(12, 7),
         new Vector2Int(8, 8),
-        new Vector2Int(8, 9)
+        new Vector2Int(8, 9),
+        new Vector2Int(9, 9)
     };
     private static readonly Vector2Int[] WolfFrontDescentAllyStartCells =
     {
@@ -94,7 +101,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         new Vector2Int(7, 8),
         new Vector2Int(8, 8),
         new Vector2Int(7, 7),
-        new Vector2Int(8, 7)
+        new Vector2Int(8, 7),
+        new Vector2Int(9, 7)
     };
     private static readonly Vector2Int[] TigerFrontDescentAllyStartCells =
     {
@@ -103,7 +111,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         new Vector2Int(10, 8),
         new Vector2Int(8, 7),
         new Vector2Int(9, 7),
-        new Vector2Int(10, 7)
+        new Vector2Int(10, 7),
+        new Vector2Int(11, 7)
     };
     private static readonly Vector2Int[] LeopardFrontDescentAllyStartCells =
     {
@@ -112,7 +121,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         new Vector2Int(10, 8),
         new Vector2Int(8, 7),
         new Vector2Int(8, 9),
-        new Vector2Int(9, 9)
+        new Vector2Int(9, 9),
+        new Vector2Int(10, 9)
     };
     private static readonly Vector2Int[] FrontDescentEnemyStartCells =
     {
@@ -130,7 +140,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         new Vector2Int(6, 0),
         new Vector2Int(7, 0),
         new Vector2Int(4, 1),
-        new Vector2Int(5, 1)
+        new Vector2Int(5, 1),
+        new Vector2Int(6, 1)
     };
     private static readonly Vector2Int[] SnowGateAscentEnemyStartCells =
     {
@@ -140,6 +151,32 @@ public sealed partial class BattleTestController : MonoBehaviour
         new Vector2Int(7, 3),
         new Vector2Int(8, 3),
         new Vector2Int(9, 3)
+    };
+    private static readonly Vector2Int[] SnowfieldGridAllyStartCells =
+    {
+        new Vector2Int(5, 0),
+        new Vector2Int(6, 0),
+        new Vector2Int(7, 0),
+        new Vector2Int(8, 0),
+        new Vector2Int(9, 0),
+        new Vector2Int(10, 0),
+        new Vector2Int(5, 1),
+        new Vector2Int(6, 1),
+        new Vector2Int(7, 1),
+        new Vector2Int(8, 1),
+        new Vector2Int(9, 1),
+        new Vector2Int(10, 1)
+    };
+    private static readonly Vector2Int[] SnowfieldGridEnemyStartCells =
+    {
+        new Vector2Int(6, 9),
+        new Vector2Int(7, 9),
+        new Vector2Int(8, 9),
+        new Vector2Int(9, 9),
+        new Vector2Int(6, 10),
+        new Vector2Int(7, 10),
+        new Vector2Int(8, 10),
+        new Vector2Int(9, 10)
     };
     private const float TacticalCameraMinSize = 3.05f;
     private const float TacticalCameraMaxSize = 3.45f;
@@ -152,6 +189,8 @@ public sealed partial class BattleTestController : MonoBehaviour
             {
             case BattleTestMapVariant.BaekduMountainSnowfield:
                 return SnowfieldPaintedBattleMapResource;
+            case BattleTestMapVariant.BaekduSnowfieldGrid:
+                return string.Empty;
             case BattleTestMapVariant.BanditLair:
                 return BanditLairPaintedBattleMapResource;
             case BattleTestMapVariant.WolfPass:
@@ -176,6 +215,8 @@ public sealed partial class BattleTestController : MonoBehaviour
             {
             case BattleTestMapVariant.BaekduMountainSnowfield:
                 return SnowfieldMapDisplayName;
+            case BattleTestMapVariant.BaekduSnowfieldGrid:
+                return SnowfieldGridMapDisplayName;
             case BattleTestMapVariant.BanditLair:
                 return BanditLairMapDisplayName;
             case BattleTestMapVariant.WolfPass:
@@ -200,6 +241,8 @@ public sealed partial class BattleTestController : MonoBehaviour
             {
             case BattleTestMapVariant.BaekduMountainSnowfield:
                 return SnowfieldMapConcept;
+            case BattleTestMapVariant.BaekduSnowfieldGrid:
+                return SnowfieldGridMapConcept;
             case BattleTestMapVariant.BanditLair:
                 return BanditLairMapConcept;
             case BattleTestMapVariant.WolfPass:
@@ -293,6 +336,8 @@ public sealed partial class BattleTestController : MonoBehaviour
     private MovementUndoState pendingMovementUndo;
     private bool runtimeMapEditorForcedMap;
     private BattleTestMapVariant runtimeMapEditorVariant = BattleTestMapVariant.BaekduSnowGate;
+    private bool runtimeMapEditorHudActive;
+    private bool runtimeMapEditorHudDeploymentVisible;
     private readonly Dictionary<Vector2Int, BattleMapRuntimeCellEdit> runtimeMapEditOverrides =
         new Dictionary<Vector2Int, BattleMapRuntimeCellEdit>();
 
@@ -313,8 +358,7 @@ public sealed partial class BattleTestController : MonoBehaviour
             return;
         }
 
-        BattleMapRuntimeEditorOverlay mapEditor = GetComponent<BattleMapRuntimeEditorOverlay>();
-        if (mapEditor != null && mapEditor.IsEditing)
+        if (RuntimeMapEditorActive)
         {
             return;
         }
@@ -1405,6 +1449,7 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private void ApplyBattleEntryConfiguration()
     {
+        runtimeMapEditOverrides.Clear();
         if (baselineUnitDefinitions == null)
         {
             baselineUnitDefinitions = CloneUnitDefinitions(unitDefinitions);
@@ -1509,6 +1554,9 @@ public sealed partial class BattleTestController : MonoBehaviour
             break;
         case BattleTestMapVariant.BaekduSnowGate:
             unitDefinitions = BuildBaekduSnowGateUnitDefinitions(baselineUnitDefinitions);
+            break;
+        case BattleTestMapVariant.BaekduSnowfieldGrid:
+            unitDefinitions = BuildBaekduSnowfieldGridUnitDefinitions(baselineUnitDefinitions);
             break;
         default:
             unitDefinitions = CloneUnitDefinitions(baselineUnitDefinitions);
@@ -1645,9 +1693,34 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private static BattleTestUnitDefinition[] BuildBaekduSnowGateUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
+        return BuildRuntimeSpawnUnitDefinitions(
+            baseDefinitions,
+            BattleTestMapVariant.BaekduSnowGate,
+            SnowGateAscentAllyStartCells,
+            SnowGateAscentEnemyStartCells
+        );
+    }
+
+    private static BattleTestUnitDefinition[] BuildBaekduSnowfieldGridUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
+    {
+        return BuildRuntimeSpawnUnitDefinitions(
+            baseDefinitions,
+            BattleTestMapVariant.BaekduSnowfieldGrid,
+            SnowfieldGridAllyStartCells,
+            SnowfieldGridEnemyStartCells
+        );
+    }
+
+    private static BattleTestUnitDefinition[] BuildRuntimeSpawnUnitDefinitions(
+        BattleTestUnitDefinition[] baseDefinitions,
+        BattleTestMapVariant variant,
+        Vector2Int[] fallbackAllyCells,
+        Vector2Int[] fallbackEnemyCells
+    )
+    {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        Vector2Int[] allyCells = RuntimeBaekduDeploymentCellsOrDefault(SnowGateAscentAllyStartCells);
-        Vector2Int[] enemyCells = RuntimeBaekduEnemySpawnCellsOrDefault(SnowGateAscentEnemyStartCells);
+        Vector2Int[] allyCells = RuntimeDeploymentCellsOrDefault(variant, fallbackAllyCells);
+        Vector2Int[] enemyCells = RuntimeEnemySpawnCellsOrDefault(variant, fallbackEnemyCells);
 
         int allyIndex = 0;
         int enemyIndex = 0;
@@ -1677,24 +1750,27 @@ public sealed partial class BattleTestController : MonoBehaviour
         return result.ToArray();
     }
 
-    private static Vector2Int[] RuntimeBaekduDeploymentCellsOrDefault(Vector2Int[] fallback)
+    private static Vector2Int[] RuntimeDeploymentCellsOrDefault(BattleTestMapVariant variant, Vector2Int[] fallback)
     {
-        return RuntimeBaekduCellsOrDefault(cell => cell.deployZone > 0 && cell.walkable && cell.occupyAllowed,
-                                          fallback);
+        return RuntimeCellsOrDefault(variant,
+                                     cell => cell.deployZone > 0 && cell.walkable && cell.occupyAllowed,
+                                     fallback);
     }
 
-    private static Vector2Int[] RuntimeBaekduEnemySpawnCellsOrDefault(Vector2Int[] fallback)
+    private static Vector2Int[] RuntimeEnemySpawnCellsOrDefault(BattleTestMapVariant variant, Vector2Int[] fallback)
     {
-        return RuntimeBaekduCellsOrDefault(cell => cell.walkable && cell.occupyAllowed &&
-                                                   cell.HasTag(BattleMapRuntimeEditStore.EnemySpawnTag),
-                                          fallback);
+        return RuntimeCellsOrDefault(variant,
+                                     cell => cell.walkable && cell.occupyAllowed &&
+                                             cell.HasTag(BattleMapRuntimeEditStore.EnemySpawnTag),
+                                     fallback);
     }
 
-    private static Vector2Int[] RuntimeBaekduCellsOrDefault(Predicate<BattleMapRuntimeCell> predicate,
-                                                           Vector2Int[] fallback)
+    private static Vector2Int[] RuntimeCellsOrDefault(BattleTestMapVariant variant,
+                                                      Predicate<BattleMapRuntimeCell> predicate,
+                                                      Vector2Int[] fallback)
     {
         List<Vector2Int> cells = new List<Vector2Int>();
-        foreach (BattleMapRuntimeCell cell in BattleMapRuntimeCatalog.Cells(BattleTestMapVariant.BaekduSnowGate))
+        foreach (BattleMapRuntimeCell cell in BattleMapRuntimeCatalog.Cells(variant))
         {
             if (cell != null && predicate(cell))
             {
@@ -1845,8 +1921,27 @@ public sealed partial class BattleTestController : MonoBehaviour
     private static BattleTestUnitDefinition[] BuildSeorakPassRescueUnitDefinitions(BattleTestUnitDefinition[] baseDefinitions)
     {
         List<BattleTestUnitDefinition> result = new List<BattleTestUnitDefinition>();
-        AddNamedAlly(result, baseDefinitions, "park_sungjun", LeopardFrontDescentAllyStartCells[0]);
-        AddNamedAlly(result, baseDefinitions, "baek_ryeon", LeopardFrontDescentAllyStartCells[1]);
+        int allyIndex = 0;
+        if (AddNamedAlly(result, baseDefinitions, RequiredHeroSdUnitId,
+                         LeopardFrontDescentAllyStartCells[allyIndex]))
+        {
+            allyIndex++;
+        }
+
+        if (AddNamedAlly(result, baseDefinitions, RequiredHeroPixelUnitId,
+                         LeopardFrontDescentAllyStartCells[Mathf.Min(allyIndex, LeopardFrontDescentAllyStartCells.Length - 1)]))
+        {
+            allyIndex++;
+        }
+
+        if (allyIndex == 0 && AddNamedAlly(result, baseDefinitions, RequiredHeroUnitId,
+                                           LeopardFrontDescentAllyStartCells[allyIndex]))
+        {
+            allyIndex++;
+        }
+
+        AddNamedAlly(result, baseDefinitions, "baek_ryeon",
+                     LeopardFrontDescentAllyStartCells[Mathf.Min(allyIndex, LeopardFrontDescentAllyStartCells.Length - 1)]);
 
         BattleTestUnitDefinition guard = FindDefinition(baseDefinitions, "bandit_guard_1") ??
                                         FindDefinition(baseDefinitions, "iron_wolf_guard_1") ??
@@ -1915,18 +2010,19 @@ public sealed partial class BattleTestController : MonoBehaviour
         }
     }
 
-    private static void AddNamedAlly(List<BattleTestUnitDefinition> result, BattleTestUnitDefinition[] baseDefinitions,
+    private static bool AddNamedAlly(List<BattleTestUnitDefinition> result, BattleTestUnitDefinition[] baseDefinitions,
                                      string id, Vector2Int cell)
     {
         BattleTestUnitDefinition definition = FindDefinition(baseDefinitions, id);
         if (definition == null || definition.faction != Faction.Ally)
         {
-            return;
+            return false;
         }
 
         BattleTestUnitDefinition ally = CloneUnitDefinition(definition);
         ally.startCell = cell;
         result.Add(ally);
+        return true;
     }
 
     private static BattleTestUnitDefinition BanditUnit(BattleTestUnitDefinition template, string id, string displayName,
@@ -2255,6 +2351,40 @@ public sealed partial class BattleTestController : MonoBehaviour
         ClearHighlights();
     }
 
+    public bool RuntimeMapEditorActive
+    {
+        get
+        {
+            BattleMapRuntimeEditorOverlay mapEditor = GetComponent<BattleMapRuntimeEditorOverlay>();
+            return mapEditor != null && mapEditor.IsEditing;
+        }
+    }
+
+    public void SetRuntimeMapEditorHudMode(bool active, bool showDeploymentPanel)
+    {
+        if (!useCanvasHud)
+        {
+            return;
+        }
+
+        if (runtimeMapEditorHudActive == active &&
+            runtimeMapEditorHudDeploymentVisible == showDeploymentPanel &&
+            battleHud != null)
+        {
+            return;
+        }
+
+        runtimeMapEditorHudActive = active;
+        runtimeMapEditorHudDeploymentVisible = showDeploymentPanel;
+        EnsureBattleHud();
+        if (battleHud != null)
+        {
+            battleHud.SetRuntimeMapEditorMode(active, showDeploymentPanel);
+        }
+
+        RefreshBattleHud();
+    }
+
     private string BuildHudObjectiveText()
     {
         if (scoutMode)
@@ -2418,17 +2548,32 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     public void HudSetCommand(BattleCommandMode mode)
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         SetCommandMode(mode);
         ShowHudNotice(CommandLabel(mode));
     }
 
     public void HudGuard()
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         GuardActiveUnit();
     }
 
     public void HudWait()
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         if (scoutMode)
         {
             ExitScoutMode();
@@ -2572,6 +2717,11 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     public void HudToggleThreat()
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         showThreatOverlay = !showThreatOverlay;
         ShowHudNotice(showThreatOverlay ? "위협 범위 표시" : "위협 범위 숨김");
         RefreshHighlights();
@@ -2579,6 +2729,11 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     public void HudToggleCover()
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         showCoverOverlay = !showCoverOverlay;
         ShowHudNotice(showCoverOverlay ? "엄폐 표시" : "엄폐 숨김");
         RefreshHighlights();
@@ -2586,11 +2741,21 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     public void HudToggleLog()
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         showHudLog = !showHudLog;
     }
 
     public void HudToggleObjective()
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         showObjectiveOverlay = !showObjectiveOverlay;
         ShowHudNotice(showObjectiveOverlay ? "목표 표시" : "목표 접힘");
         RefreshHighlights();
@@ -2598,16 +2763,31 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     public void HudResetBattle()
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         BuildBattle();
     }
 
     public void HudSelectUnit(BattleTestUnit unit)
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         SelectPlayerUnit(unit);
     }
 
     public void HudBeginDeploymentDrag(BattleTestUnit unit)
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         if (!scoutMode || unit == null || unit.defeated)
         {
             return;
@@ -2626,6 +2806,11 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     public void HudDropDeploymentUnit(BattleTestUnit unit, Vector2 screenPosition)
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         if (!scoutMode || unit == null || unit.defeated)
         {
             return;
@@ -3035,7 +3220,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         Transform propRoot = new GameObject("Interactables").transform;
         propRoot.SetParent(propParent, false);
 
-        if (mapVariant == BattleTestMapVariant.BaekduMountainSnowfield)
+        if (mapVariant == BattleTestMapVariant.BaekduMountainSnowfield ||
+            mapVariant == BattleTestMapVariant.BaekduSnowfieldGrid)
         {
             CreateBaekduMountainSnowfieldInteractables(propRoot);
             return;
@@ -3628,7 +3814,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         Transform atmosphereRoot = new GameObject("Painted Atmosphere").transform;
         atmosphereRoot.SetParent(terrainRoot, false);
 
-        if (mapVariant == BattleTestMapVariant.BaekduMountainSnowfield)
+        if (mapVariant == BattleTestMapVariant.BaekduMountainSnowfield ||
+            mapVariant == BattleTestMapVariant.BaekduSnowfieldGrid)
         {
             CreateBaekduSnowfieldAtmosphere(atmosphereRoot);
             return;
@@ -3684,6 +3871,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         {
         case BattleTestMapVariant.BaekduSnowGate:
         case BattleTestMapVariant.BaekduMountainSnowfield:
+        case BattleTestMapVariant.BaekduSnowfieldGrid:
         case BattleTestMapVariant.SeorakPassRescue:
             return new Color(0.78f, 0.82f, 0.90f, 1f);
         case BattleTestMapVariant.BanditLair:
@@ -3701,6 +3889,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         {
         case BattleTestMapVariant.BaekduSnowGate:
         case BattleTestMapVariant.BaekduMountainSnowfield:
+        case BattleTestMapVariant.BaekduSnowfieldGrid:
         case BattleTestMapVariant.SeorakPassRescue:
             return new Color(0.25f, 0.31f, 0.42f, 0.22f);
         case BattleTestMapVariant.BanditLair:
@@ -3718,6 +3907,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         {
         case BattleTestMapVariant.BaekduSnowGate:
         case BattleTestMapVariant.BaekduMountainSnowfield:
+        case BattleTestMapVariant.BaekduSnowfieldGrid:
         case BattleTestMapVariant.SeorakPassRescue:
             return new Color(0.74f, 0.82f, 0.92f, 0.38f);
         case BattleTestMapVariant.BanditLair:
@@ -3735,6 +3925,7 @@ public sealed partial class BattleTestController : MonoBehaviour
         {
         case BattleTestMapVariant.BaekduSnowGate:
         case BattleTestMapVariant.BaekduMountainSnowfield:
+        case BattleTestMapVariant.BaekduSnowfieldGrid:
         case BattleTestMapVariant.SeorakPassRescue:
             return new Color(0.88f, 0.92f, 1f, 1f);
         case BattleTestMapVariant.BanditLair:
@@ -4413,6 +4604,11 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private void HandlePointer(Vector3 screenPosition)
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         Vector3 world = Camera.main.ScreenToWorldPoint(screenPosition);
         Vector2 point = new Vector2(world.x, world.y);
         Collider2D[] hits = Physics2D.OverlapPointAll(point);
@@ -4746,9 +4942,10 @@ public sealed partial class BattleTestController : MonoBehaviour
             return true;
         }
 
-        if (mapVariant == BattleTestMapVariant.BaekduSnowGate)
+        if (mapVariant == BattleTestMapVariant.BaekduSnowGate ||
+            mapVariant == BattleTestMapVariant.BaekduSnowfieldGrid)
         {
-            return IsBaekduSnowGateDeploymentStartCell(cell.x, cell.y);
+            return IsRuntimeDeploymentStartCell(mapVariant, cell.x, cell.y);
         }
 
         return IsFrontDescentDeploymentCell(cell);
@@ -7706,6 +7903,11 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private void RefreshHighlights()
     {
+        if (RuntimeMapEditorActive)
+        {
+            return;
+        }
+
         ClearHighlights();
 
         if (scoutMode)
@@ -8167,7 +8369,7 @@ public sealed partial class BattleTestController : MonoBehaviour
                 continue;
             }
 
-            if (unit.definition.id == RequiredHeroUnitId && unit.defeated)
+            if (IsRequiredHeroUnitId(unit.definition.id) && unit.defeated)
             {
                 requiredHeroDefeated = true;
             }
@@ -8255,10 +8457,18 @@ public sealed partial class BattleTestController : MonoBehaviour
         return true;
     }
 
+    private static bool IsRequiredHeroUnitId(string unitId)
+    {
+        return unitId == RequiredHeroUnitId ||
+               unitId == RequiredHeroSdUnitId ||
+               unitId == RequiredHeroPixelUnitId;
+    }
+
     private static bool HasEnemyBreachObjective(BattleTestMapVariant variant)
     {
         return variant == BattleTestMapVariant.BaekduSnowGate ||
-               variant == BattleTestMapVariant.BaekduMountainSnowfield;
+               variant == BattleTestMapVariant.BaekduMountainSnowfield ||
+               variant == BattleTestMapVariant.BaekduSnowfieldGrid;
     }
 
     // 해당 전투에서 반드시 생존해야 하는 아군(쓰러지면 패배). 없으면 null.
@@ -8730,6 +8940,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         {
         case BattleTestMapVariant.BaekduMountainSnowfield:
             return ResolveBaekduMountainSnowfieldTerrain(x, y);
+        case BattleTestMapVariant.BaekduSnowfieldGrid:
+            return ResolveBaekduSnowGateTerrain(x, y);
         case BattleTestMapVariant.BanditLair:
             return ResolveBanditLairTerrain(x, y);
         case BattleTestMapVariant.WolfPass:
@@ -9294,7 +9506,12 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private static bool IsBaekduSnowGateDeploymentStartCell(int x, int y)
     {
-        if (BattleMapRuntimeCatalog.TryGetCell(BattleTestMapVariant.BaekduSnowGate, new Vector2Int(x, y),
+        return IsRuntimeDeploymentStartCell(BattleTestMapVariant.BaekduSnowGate, x, y);
+    }
+
+    private static bool IsRuntimeDeploymentStartCell(BattleTestMapVariant variant, int x, int y)
+    {
+        if (BattleMapRuntimeCatalog.TryGetCell(variant, new Vector2Int(x, y),
                                                out BattleMapRuntimeCell data))
         {
             return data.deployZone > 0 && data.walkable && data.occupyAllowed;
@@ -9675,7 +9892,8 @@ public sealed partial class BattleTestController : MonoBehaviour
         interactableAssetSprites["smoke"] = LoadMapSprite("Objects/smoke_wisp");
         interactableAssetSprites["rockfall"] = LoadMapSprite("Objects/falling_boulder");
 
-        if (mapVariant == BattleTestMapVariant.BaekduMountainSnowfield)
+        if (mapVariant == BattleTestMapVariant.BaekduMountainSnowfield ||
+            mapVariant == BattleTestMapVariant.BaekduSnowfieldGrid)
         {
             ApplyBaekduSnowfieldSprites();
         }
@@ -9719,7 +9937,9 @@ public sealed partial class BattleTestController : MonoBehaviour
 
     private bool UseBattleVisualProfileSprites()
     {
-        return battleVisualProfile != null && mapVariant == BattleTestMapVariant.BaekduMountainSnowfield;
+        return battleVisualProfile != null &&
+               (mapVariant == BattleTestMapVariant.BaekduMountainSnowfield ||
+                mapVariant == BattleTestMapVariant.BaekduSnowfieldGrid);
     }
 
     private void ApplyBattleVisualProfileSprites()
@@ -10314,7 +10534,8 @@ public enum BattleTestMapVariant
     WolfPass,
     TigerRavine,
     LeopardCliff,
-    SeorakPassRescue
+    SeorakPassRescue,
+    BaekduSnowfieldGrid
 }
 
 public enum BattleSpecialEffect

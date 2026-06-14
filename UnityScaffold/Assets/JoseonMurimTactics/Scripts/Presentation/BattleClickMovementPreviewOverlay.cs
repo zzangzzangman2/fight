@@ -105,6 +105,14 @@ namespace JoseonMurimTactics
                 controller = UnityEngine.Object.FindAnyObjectByType<BattleTestController>();
             }
 
+            if (IsRuntimeMapEditorActive())
+            {
+                clickedUnit = null;
+                clickedFrame = -1;
+                HideOverlay();
+                return;
+            }
+
             if (!Input.GetMouseButtonDown(0))
             {
                 return;
@@ -116,6 +124,12 @@ namespace JoseonMurimTactics
         private void LateUpdate()
         {
             if (controller == null)
+            {
+                HideOverlay();
+                return;
+            }
+
+            if (IsRuntimeMapEditorActive())
             {
                 HideOverlay();
                 return;
@@ -230,6 +244,11 @@ namespace JoseonMurimTactics
 
         private bool ShouldShow(BattleTestUnit activeUnit)
         {
+            if (IsRuntimeMapEditorActive())
+            {
+                return false;
+            }
+
             if (activeUnit == null || controller.PreviewBattleOver)
             {
                 return false;
@@ -281,6 +300,11 @@ namespace JoseonMurimTactics
         private bool IsPlayerPhase()
         {
             return controller != null && controller.PreviewIsPlayerPhase;
+        }
+
+        private bool IsRuntimeMapEditorActive()
+        {
+            return controller != null && controller.RuntimeMapEditorActive;
         }
 
         private bool IsMoveCommand()

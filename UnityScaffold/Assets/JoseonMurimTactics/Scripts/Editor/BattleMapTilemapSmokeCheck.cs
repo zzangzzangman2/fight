@@ -11,6 +11,9 @@ namespace JoseonMurimTactics.Editor
 public static class BattleMapTilemapSmokeCheck
 {
     private const string BattleTestScenePath = "Assets/JoseonMurimTactics/Scenes/BattleTest.unity";
+    private const string OriginalHeroUnitId = "park_sungjun";
+    private const string SdHeroUnitId = "park_sungjun_sd_test";
+    private const string PixelHeroUnitId = "park_sungjun_pixel_test";
 
     [MenuItem("Joseon Murim Tactics/Battle Maps/Smoke Check Tilemap Battlefield")]
     public static void Run()
@@ -231,12 +234,12 @@ public static class BattleMapTilemapSmokeCheck
     {
         ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduMountainSnowfield);
         List<BattleTestUnit> units = GetPrivate<List<BattleTestUnit>>(controller, "units");
-        BattleTestUnit hero = FindUnit(units, "park_sungjun");
-        Require(hero != null, "Expected Park Sungjun for hero defeat rule.");
+        BattleTestUnit hero = FindProtagonistUnit(units);
+        Require(hero != null, "Expected a Park Sungjun prototype for hero defeat rule.");
         hero.defeated = true;
         hero.view.SetDefeated(true);
         Require((bool)InvokePrivate(controller, "CheckBattleEnd"),
-                "Park Sungjun defeat should immediately end the battle.");
+                "Park Sungjun prototype defeat should immediately end the battle.");
         Require(GetPrivate<bool>(controller, "battleOver"), "Hero defeat should set battleOver.");
 
         ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduMountainSnowfield);
@@ -249,7 +252,7 @@ public static class BattleMapTilemapSmokeCheck
 
         ResetControllerForBattleRuleSmoke(controller, BattleTestMapVariant.BaekduMountainSnowfield);
         units = GetPrivate<List<BattleTestUnit>>(controller, "units");
-        BattleTestUnit statusTarget = FindUnit(units, "han_biyeon") ?? FindUnit(units, "park_sungjun");
+        BattleTestUnit statusTarget = FindUnit(units, "han_biyeon") ?? FindProtagonistUnit(units);
         Require(statusTarget != null, "Expected an ally for status duration smoke test.");
         int startHp = statusTarget.hp;
         statusTarget.poisoned = true;
@@ -839,7 +842,8 @@ public static class BattleMapTilemapSmokeCheck
         BattleTestTile supplyCache = RequireTile(tiles, new Vector2Int(8, 10), "bandit stolen supply cache");
 
         Require(ropeBridge.walkable && ropeBridge.moveCost == 1, "Bandit rope bridge should be the fast crossing.");
-        Require(muddyBank.walkable && muddyBank.moveCost == 3, "Bandit muddy bank should be slow but passable.");
+        Require(muddyBank.walkable && muddyBank.moveCost == 3,
+                "Bandit muddy bank should be slow but passable. Actual: " + DescribeTile(muddyBank));
         Require(snareTrap.walkable && snareTrap.danger && snareTrap.moveCost == 3,
                 "Bandit trap should be passable, dangerous, and costly.");
         Require(slope.walkable && slope.elevation == 1, "Bandit watchtower slope should be walkable elevation 1.");
@@ -1128,6 +1132,25 @@ public static class BattleMapTilemapSmokeCheck
         }
 
         return null;
+    }
+
+    private static BattleTestUnit FindProtagonistUnit(List<BattleTestUnit> units)
+    {
+        return FindUnit(units, SdHeroUnitId) ??
+               FindUnit(units, PixelHeroUnitId) ??
+               FindUnit(units, OriginalHeroUnitId);
+    }
+
+    private static string DescribeTile(BattleTestTile tile)
+    {
+        if (tile == null)
+        {
+            return "null";
+        }
+
+        return $"cell={tile.cell} terrain={tile.terrain} walkable={tile.walkable} " +
+               $"occupy={tile.occupyAllowed} moveCost={tile.moveCost} elevation={tile.elevation} " +
+               $"hazard={tile.hazardType} lane={tile.laneId}";
     }
 
     private static BattleTestTile FindReachableDestination(BattleTestUnit unit, Dictionary<Vector2Int, int> reachable,

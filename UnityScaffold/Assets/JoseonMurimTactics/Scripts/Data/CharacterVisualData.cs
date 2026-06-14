@@ -37,6 +37,9 @@ public sealed class CharacterVisualData : ScriptableObject
     public Sprite[] hitFrames;
     public float idleFrameRate = 4f;
 
+    [Header("Pixel Sprite Mode (켜면 리빙2D 레이어/모션/블링크 끄고 픽셀 프레임만 또렷이 렌더)")]
+    public bool pixelSpriteMode;
+
     [Header("Living 2D")]
     public CharacterLivingMotionProfile livingMotion;
     public CharacterSpriteAnimationClipData idleClip;

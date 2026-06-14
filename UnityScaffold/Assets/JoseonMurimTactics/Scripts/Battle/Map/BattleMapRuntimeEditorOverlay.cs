@@ -46,6 +46,11 @@ namespace JoseonMurimTactics
                 "main painted gate battlefield"
             ),
             new BattleMapRuntimeEditorEntry(
+                BattleTestMapVariant.BaekduSnowfieldGrid,
+                "\uBC31\uB450 \uD0C0\uC77C \uC124\uC0B0\uB85C",
+                "NEW tile-first map: center/left/right routes"
+            ),
+            new BattleMapRuntimeEditorEntry(
                 BattleTestMapVariant.BaekduMountainSnowfield,
                 "Baekdu Snowfield",
                 "snowfield free battle"
@@ -100,6 +105,7 @@ namespace JoseonMurimTactics
         private float overlayAlpha = 0.34f;
         private bool initializedThisSession;
         private bool checkedCommandLine;
+        private bool showDeploymentHudInEditor;
         private BattleTestMapVariant activeVariant = BattleTestMapVariant.BaekduSnowGate;
 
         public bool IsEditing { get; private set; }
@@ -153,6 +159,8 @@ namespace JoseonMurimTactics
                 return;
             }
 
+            ApplyEditorIsolation();
+
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 SetEditing(false);
@@ -165,10 +173,11 @@ namespace JoseonMurimTactics
                 return;
             }
 
+            HandleCameraPan();
             hoverTile = ResolveTileAtMouse();
             HandleHotkeys();
 
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && !PointerOverPaintHud())
             {
                 ToggleTile(hoverTile);
             }
@@ -204,6 +213,7 @@ namespace JoseonMurimTactics
             RestoreUnits();
             if (controller != null)
             {
+                controller.SetRuntimeMapEditorHudMode(false, false);
                 controller.ClearPreviewHighlights();
             }
         }
@@ -284,7 +294,7 @@ namespace JoseonMurimTactics
         private void DrawPaintHud()
         {
             EnsureStyles();
-            Rect panelRect = new Rect(16f, 52f, 560f, 226f);
+            Rect panelRect = new Rect(16f, 52f, 600f, 258f);
             GUI.Box(panelRect, GUIContent.none, panelStyle);
             GUI.Label(
                 new Rect(32f, 66f, 500f, 26f),
@@ -306,19 +316,26 @@ namespace JoseonMurimTactics
                 "Left click toggles selected marker  |  [ / ] opacity  |  S save  |  R reload",
                 textStyle
             );
-            GUI.Label(new Rect(32f, 178f, 510f, 24f), CurrentToolText(), textStyle);
-            GUI.Label(new Rect(32f, 204f, 510f, 24f), HoverText(), textStyle);
-            if (GUI.Button(new Rect(32f, 232f, 128f, 28f), "Map List"))
+            GUI.Label(new Rect(32f, 178f, 540f, 24f), "Arrow keys pan map  |  H deployment panel", textStyle);
+            GUI.Label(new Rect(32f, 204f, 540f, 24f), CurrentToolText(), textStyle);
+            GUI.Label(new Rect(32f, 230f, 540f, 24f), HoverText(), textStyle);
+            if (GUI.Button(new Rect(32f, 264f, 128f, 28f), "Map List"))
             {
                 stage = BattleMapRuntimeEditorStage.MapList;
                 controller.ClearPreviewHighlights();
                 HideUnits();
             }
 
+            string hudLabel = showDeploymentHudInEditor ? "Hide Deploy" : "Show Deploy";
+            if (GUI.Button(new Rect(170f, 264f, 128f, 28f), hudLabel))
+            {
+                ToggleDeploymentHud();
+            }
+
             string status = Time.realtimeSinceStartup < statusUntil ? statusText : string.Empty;
             if (!string.IsNullOrEmpty(status))
             {
-                GUI.Label(new Rect(174f, 234f, 360f, 22f), status, textStyle);
+                GUI.Label(new Rect(310f, 266f, 270f, 22f), status, textStyle);
             }
         }
 
@@ -326,12 +343,14 @@ namespace JoseonMurimTactics
         {
             IsEditing = true;
             stage = BattleMapRuntimeEditorStage.MapList;
+            showDeploymentHudInEditor = false;
             activeVariant =
                 controller == null ? BattleTestMapVariant.BaekduSnowGate : controller.mapVariant;
             hoverTile = null;
             HideUnits();
             if (controller != null)
             {
+                controller.SetRuntimeMapEditorHudMode(true, false);
                 controller.ClearPreviewHighlights();
             }
 
@@ -353,6 +372,7 @@ namespace JoseonMurimTactics
             {
                 HideUnits();
                 stage = BattleMapRuntimeEditorStage.MapList;
+                showDeploymentHudInEditor = false;
             }
             else
             {
@@ -361,6 +381,7 @@ namespace JoseonMurimTactics
 
             if (controller != null)
             {
+                controller.SetRuntimeMapEditorHudMode(editing, false);
                 controller.ClearPreviewHighlights();
             }
 
@@ -384,6 +405,7 @@ namespace JoseonMurimTactics
             }
 
             HideUnits();
+            ApplyEditorIsolation();
             InitializeEditableMapIfNeeded();
         }
 
@@ -446,6 +468,10 @@ namespace JoseonMurimTactics
             {
                 SaveCurrentMap();
             }
+            else if (Input.GetKeyDown(KeyCode.H))
+            {
+                ToggleDeploymentHud();
+            }
             else if (Input.GetKeyDown(KeyCode.R))
             {
                 LoadSavedMap();
@@ -456,6 +482,62 @@ namespace JoseonMurimTactics
                 controller.ClearPreviewHighlights();
                 HideUnits();
             }
+        }
+
+        private void HandleCameraPan()
+        {
+            Camera camera = Camera.main;
+            if (camera == null)
+            {
+                return;
+            }
+
+            Vector2 input = Vector2.zero;
+            if (Input.GetKey(KeyCode.LeftArrow))
+            {
+                input.x -= 1f;
+            }
+            if (Input.GetKey(KeyCode.RightArrow))
+            {
+                input.x += 1f;
+            }
+            if (Input.GetKey(KeyCode.DownArrow))
+            {
+                input.y -= 1f;
+            }
+            if (Input.GetKey(KeyCode.UpArrow))
+            {
+                input.y += 1f;
+            }
+
+            if (input.sqrMagnitude <= 0.001f)
+            {
+                return;
+            }
+
+            float sizeSpeed = camera.orthographic ? Mathf.Max(5f, camera.orthographicSize * 1.25f) : 8f;
+            float speed = sizeSpeed * Time.unscaledDeltaTime;
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            {
+                speed *= 2.2f;
+            }
+
+            Vector2 delta = input.normalized * speed;
+            camera.transform.position += new Vector3(delta.x, delta.y, 0f);
+        }
+
+        private void ToggleDeploymentHud()
+        {
+            showDeploymentHudInEditor = !showDeploymentHudInEditor;
+            ApplyEditorIsolation();
+            SetStatus(showDeploymentHudInEditor ? "Deployment panel shown." : "Deployment panel hidden.");
+        }
+
+        private static bool PointerOverPaintHud()
+        {
+            Rect panelRect = new Rect(16f, 52f, 600f, 258f);
+            Vector2 guiPoint = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
+            return panelRect.Contains(guiPoint);
         }
 
         private BattleTestTile ResolveTileAtMouse()
@@ -695,6 +777,17 @@ namespace JoseonMurimTactics
                 : hoverTile.deployZone > 0 ? "ALLY START"
                 : "WALKABLE";
             return $"Hover: {hoverTile.cell.x},{hoverTile.cell.y} {state}";
+        }
+
+        private void ApplyEditorIsolation()
+        {
+            if (controller == null)
+            {
+                return;
+            }
+
+            HideUnits();
+            controller.SetRuntimeMapEditorHudMode(true, showDeploymentHudInEditor);
         }
 
         private void HideUnits()

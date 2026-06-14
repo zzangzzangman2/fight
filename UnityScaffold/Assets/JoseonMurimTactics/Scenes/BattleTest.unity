@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &604375332
+--- !u!1 &170433542
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 604375334}
-  - component: {fileID: 604375333}
+  - component: {fileID: 170433544}
+  - component: {fileID: 170433543}
   m_Layer: 0
   m_Name: Battle Character Key Light
   m_TagString: Untagged
@@ -136,13 +136,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!108 &604375333
+--- !u!108 &170433543
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604375332}
+  m_GameObject: {fileID: 170433542}
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 1
@@ -201,13 +201,13 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!4 &604375334
+--- !u!4 &170433544
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 604375332}
+  m_GameObject: {fileID: 170433542}
   serializedVersion: 2
   m_LocalRotation: {x: 0.3444854, y: -0.25732967, z: 0.098779604, w: 0.8974151}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -216,7 +216,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &844909568
+--- !u!1 &481562685
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -224,11 +224,11 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 844909573}
-  - component: {fileID: 844909572}
-  - component: {fileID: 844909571}
-  - component: {fileID: 844909570}
-  - component: {fileID: 844909569}
+  - component: {fileID: 481562690}
+  - component: {fileID: 481562689}
+  - component: {fileID: 481562688}
+  - component: {fileID: 481562687}
+  - component: {fileID: 481562686}
   m_Layer: 0
   m_Name: Battle Test Controller
   m_TagString: Untagged
@@ -236,67 +236,67 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &844909569
+--- !u!114 &481562686
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 844909568}
+  m_GameObject: {fileID: 481562685}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a626c091998de545a83ecbf2ccb5465, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleImpactPresenter
   cameraFx: {fileID: 0}
   damagePopups: {fileID: 0}
   hitFlashColor: {r: 1, g: 0.42, b: 0.22, a: 1}
   counterFlashColor: {r: 0.82, g: 0.94, b: 1, a: 1}
---- !u!114 &844909570
+--- !u!114 &481562687
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 844909568}
+  m_GameObject: {fileID: 481562685}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b470ff56f2f733b40839d22d95cacd0b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.DamagePopupPresenter
   font: {fileID: 0}
   lifetime: 0.7
---- !u!114 &844909571
+--- !u!114 &481562688
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 844909568}
+  m_GameObject: {fileID: 481562685}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79a426a5581604845bfc7d47704b9b01, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleCameraFx
   targetCamera: {fileID: 0}
   focusLerpSeconds: 0.16
---- !u!114 &844909572
+--- !u!114 &481562689
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 844909568}
+  m_GameObject: {fileID: 481562685}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62f2a742e6ce4fe3af7c040e2c21817f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.BattleTestController
   width: 16
   height: 12
   tileWidth: 1.16
   tileHeight: 0.62
-  useAuthoredSceneMap: 1
+  useAuthoredSceneMap: 0
   useTilemapBattlefield: 1
   useLegacyDiamondTerrain: 0
   useCanvasHud: 1
@@ -305,10 +305,122 @@ MonoBehaviour:
   battleVfxLibrary: {fileID: 11400000, guid: 2b5d7b9df3ca1174d8cffd00fd580d0e, type: 2}
   battleUiSkin: {fileID: 11400000, guid: a40ec18ce87ff3149948d9260c8f41cc, type: 2}
   unitDefinitions:
-  - id: park_sungjun
-    displayName: "\uBC15\uC131\uC900"
+  - id: android_pixel_test_paladin
+    displayName: Pixel Paladin
     faction: 0
-    visual: {fileID: 11400000, guid: 81f8b992e3a3c8a488ac523bb2308932, type: 2}
+    visual: {fileID: 11400000, guid: e25f23d9f6f09e24e913d1aa31e16500, type: 2}
+    startCell: {x: 4, y: 0}
+    sectName: Android Pixel
+    age: 18
+    mbti: TEST
+    elementName: Light
+    weaponName: Sword
+    speechTone: Imported pixel BattleTest sample
+    maxHp: 36
+    maxInner: 4
+    initiative: 17
+    agility: -1
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 5
+    defense: 15
+    damageMin: 8
+    damageMax: 12
+    specialName: Pixel Test
+    specialRange: 2
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 1
+    specialEffect: 5
+  - id: android_pixel_test_camelot
+    displayName: Pixel King
+    faction: 0
+    visual: {fileID: 11400000, guid: 3b89a5677b349824a8c018a98fb53a79, type: 2}
+    startCell: {x: 5, y: 0}
+    sectName: Android Pixel
+    age: 18
+    mbti: TEST
+    elementName: Fire
+    weaponName: Dao
+    speechTone: Imported pixel BattleTest sample
+    maxHp: 40
+    maxInner: 4
+    initiative: 15
+    agility: -1
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 5
+    defense: 16
+    damageMin: 9
+    damageMax: 14
+    specialName: Pixel Test
+    specialRange: 2
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 1
+    specialEffect: 6
+  - id: android_pixel_test_prince
+    displayName: Pixel Prince
+    faction: 0
+    visual: {fileID: 11400000, guid: 926f9069b38594c4ca8976342afda1e7, type: 2}
+    startCell: {x: 6, y: 0}
+    sectName: Android Pixel
+    age: 18
+    mbti: TEST
+    elementName: Ice
+    weaponName: Spear
+    speechTone: Imported pixel BattleTest sample
+    maxHp: 34
+    maxInner: 4
+    initiative: 14
+    agility: -1
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 5
+    defense: 15
+    damageMin: 7
+    damageMax: 11
+    specialName: Pixel Test
+    specialRange: 2
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 1
+    specialEffect: 4
+  - id: android_pixel_test_sophia
+    displayName: Pixel Sophia
+    faction: 0
+    visual: {fileID: 11400000, guid: 158134fbfbf2ebc4b937082e9a4cbde2, type: 2}
+    startCell: {x: 7, y: 0}
+    sectName: Android Pixel
+    age: 18
+    mbti: TEST
+    elementName: WindFlower
+    weaponName: Fan
+    speechTone: Imported pixel BattleTest sample
+    maxHp: 30
+    maxInner: 4
+    initiative: 13
+    agility: -1
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 5
+    defense: 14
+    damageMin: 6
+    damageMax: 10
+    specialName: Pixel Test
+    specialRange: 2
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 4
+    specialAttackBonus: 1
+    specialEffect: 2
+  - id: park_sungjun_sd_test
+    displayName: "\uBC15\uC131\uC900 SD"
+    faction: 0
+    visual: {fileID: 11400000, guid: 4a28d59e1ec745cfb89cceb3fd1b579a, type: 2}
     startCell: {x: 5, y: 8}
     sectName: "\uBC31\uB450 \uB8E8\uBA58\uC624\uB354"
     age: 17
@@ -318,7 +430,35 @@ MonoBehaviour:
     speechTone: "\uCE68\uCC29\uD558\uACE0 \uB2E4\uC815\uD55C \uC8FC\uC778\uACF5 \uB9D0\uD22C"
     maxHp: 36
     maxInner: 5
-    initiative: 15
+    initiative: 14
+    agility: 16
+    moveRange: 4
+    attackRange: 1
+    attackBonus: 7
+    defense: 15
+    damageMin: 6
+    damageMax: 10
+    specialName: "\uBC31\uB450\uAD11\uAC80"
+    specialRange: 1
+    specialCost: 1
+    specialCooldown: 2
+    specialPower: 5
+    specialAttackBonus: 2
+    specialEffect: 5
+  - id: park_sungjun_pixel_test
+    displayName: "\uBC15\uC131\uC900 Pixel"
+    faction: 0
+    visual: {fileID: 11400000, guid: 5cfb0a4ee66f2c242b8f3d6cdf7e3dd4, type: 2}
+    startCell: {x: 6, y: 8}
+    sectName: "\uBC31\uB450 \uB8E8\uBA58\uC624\uB354"
+    age: 17
+    mbti: ENFJ
+    elementName: "\uBE5B"
+    weaponName: "\uAC80"
+    speechTone: "\uCE68\uCC29\uD558\uACE0 \uB2E4\uC815\uD55C \uC8FC\uC778\uACF5 \uB9D0\uD22C"
+    maxHp: 36
+    maxInner: 5
+    initiative: 13
     agility: 16
     moveRange: 4
     attackRange: 1
@@ -558,13 +698,13 @@ MonoBehaviour:
     specialPower: 0
     specialAttackBonus: 0
     specialEffect: 5
---- !u!4 &844909573
+--- !u!4 &481562690
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 844909568}
+  m_GameObject: {fileID: 481562685}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -573,7 +713,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &955723722
+--- !u!1 &1330047237
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -581,9 +721,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 955723725}
-  - component: {fileID: 955723724}
-  - component: {fileID: 955723723}
+  - component: {fileID: 1330047240}
+  - component: {fileID: 1330047239}
+  - component: {fileID: 1330047238}
   m_Layer: 0
   m_Name: Battle Camera
   m_TagString: MainCamera
@@ -591,21 +731,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &955723723
+--- !u!81 &1330047238
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 955723722}
+  m_GameObject: {fileID: 1330047237}
   m_Enabled: 1
---- !u!20 &955723724
+--- !u!20 &1330047239
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 955723722}
+  m_GameObject: {fileID: 1330047237}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -650,13 +790,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &955723725
+--- !u!4 &1330047240
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 955723722}
+  m_GameObject: {fileID: 1330047237}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.1, y: 4.2, z: -10}
@@ -669,6 +809,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 955723725}
-  - {fileID: 604375334}
-  - {fileID: 844909573}
+  - {fileID: 1330047240}
+  - {fileID: 170433544}
+  - {fileID: 481562690}

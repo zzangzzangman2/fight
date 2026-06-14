@@ -24,6 +24,7 @@ public static class ProjectSmokeCheck
         coreFailures += Core("전투 변형별 유닛 생성", VerifyBattleVariantGeneration);
         coreFailures += Core("무림 스탯 전투 통합", () => MurimStatIntegrationSmokeCheck.Run());
         coreFailures += Core("장비/성장 보너스 idempotency", () => BattleStatIdempotencySmokeCheck.Run());
+        coreFailures += Core("BattleTest protagonist prototype wiring", () => BattleTestSdPrototypeSmokeCheck.Run());
 
         // --- 베스트에포트: 씬/에셋 상태에 의존, 로그만 남김 ---
         BestEffort("에셋 검증", () =>

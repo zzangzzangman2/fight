@@ -22,6 +22,12 @@ public static class TeamCharacterAssetBuilder
     private const float PortraitPixelsPerUnit = 420f;
     private const float IconPixelsPerUnit = 220f;
     private const float EnemyPosePixelsPerUnit = PosePixelsPerUnit;
+    private const string TacticalSdPrototypeUnitId = "park_sungjun_sd_test";
+    private const string PixelPrototypeUnitId = "park_sungjun_pixel_test";
+    private const string TacticalSdPrototypeVisualPath =
+        CharacterRoot + "/park_sungjun/VisualData/park_sungjun_tactical_sd_v1_visual.asset";
+    private const string PixelPrototypeVisualPath =
+        CharacterRoot + "/park_sungjun/VisualData/park_sungjun_pixel_visual.asset";
     private static readonly Vector2 BattlePosePivot = new Vector2(0.5f, 32f / 384f);
     private static readonly Vector2 EnemyPosePivot = new Vector2(0.5f, 0.03f);
 
@@ -225,6 +231,13 @@ public static class TeamCharacterAssetBuilder
         List<BattleTestUnitDefinition> units = new List<BattleTestUnitDefinition>();
         foreach (Spec spec in Team)
         {
+            if (spec.id == "park_sungjun")
+            {
+                AddTacticalSdPrototype(units, spec);
+                AddPixelPrototype(units, spec);
+                continue;
+            }
+
             units.Add(Unit(spec, Faction.Ally, spec.startCell, GetBattleSceneVisual(spec.id)));
         }
 
@@ -241,6 +254,44 @@ public static class TeamCharacterAssetBuilder
                        "흑립방", 31, "ENTJ", "압박", "철봉", "거칠고 얕보는 말투", 38, 4, 13, 13, 4, 2, 7, 16, 6,
                        11, "흑랑표식", 4, 1, 2, 0, 0, BattleSpecialEffect.Mark));
         return units.ToArray();
+    }
+
+    private static void AddTacticalSdPrototype(List<BattleTestUnitDefinition> units, Spec source)
+    {
+        CharacterVisualData visual =
+            AssetDatabase.LoadAssetAtPath<CharacterVisualData>(TacticalSdPrototypeVisualPath);
+        if (visual == null)
+        {
+            return;
+        }
+
+        units.Add(Unit(TacticalSdPrototypeUnitId, "\uBC15\uC131\uC900 SD", Faction.Ally, visual,
+                       source.startCell,
+                       source.sectName, source.age, source.mbti, source.elementName, source.weaponName,
+                       source.speechTone, source.maxHp, source.maxInner, source.initiative - 1,
+                       source.agility, source.moveRange, source.attackRange, source.attackBonus,
+                       source.defense, source.damageMin, source.damageMax, source.specialName,
+                       source.specialRange, source.specialCost, source.specialCooldown, source.specialPower,
+                       source.specialAttackBonus, source.specialEffect));
+    }
+
+    private static void AddPixelPrototype(List<BattleTestUnitDefinition> units, Spec source)
+    {
+        CharacterVisualData visual =
+            AssetDatabase.LoadAssetAtPath<CharacterVisualData>(PixelPrototypeVisualPath);
+        if (visual == null)
+        {
+            return;
+        }
+
+        units.Add(Unit(PixelPrototypeUnitId, "\uBC15\uC131\uC900 Pixel", Faction.Ally, visual,
+                       new Vector2Int(source.startCell.x + 1, source.startCell.y),
+                       source.sectName, source.age, source.mbti, source.elementName, source.weaponName,
+                       source.speechTone, source.maxHp, source.maxInner, source.initiative - 2,
+                       source.agility, source.moveRange, source.attackRange, source.attackBonus,
+                       source.defense, source.damageMin, source.damageMax, source.specialName,
+                       source.specialRange, source.specialCost, source.specialCooldown, source.specialPower,
+                       source.specialAttackBonus, source.specialEffect));
     }
 
     private static void ApplyWeaponTiming(Spec spec, WeaponAnimationSet set)

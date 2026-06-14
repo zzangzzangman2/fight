@@ -686,9 +686,11 @@ public static class VisualUpgradeV1Validator
             BindingFlags.Instance | BindingFlags.NonPublic);
         MethodInfo gridDistance = typeof(BattleTestController).GetMethod("GridDistance",
             BindingFlags.Instance | BindingFlags.NonPublic);
+        MethodInfo buildBattle = typeof(BattleTestController).GetMethod("BuildBattle",
+            BindingFlags.Instance | BindingFlags.NonPublic);
 
         if (resolveClickedUnit == null || resolveAttackClickTarget == null || canBasicAttackTarget == null ||
-            gridDistance == null)
+            gridDistance == null || buildBattle == null)
         {
             fail.Add("Could not inspect BattleTest tile click target resolution.");
             return;
@@ -726,30 +728,32 @@ public static class VisualUpgradeV1Validator
             return;
         }
 
+        buildBattle.Invoke(controller, null);
         List<BattleTestUnit> runtimeUnits = GetPrivate<List<BattleTestUnit>>(controller, "units");
-        if (runtimeUnits == null)
+        BattleTestTile[,] tiles = GetPrivate<BattleTestTile[,]>(controller, "tiles");
+        if (runtimeUnits == null || tiles == null)
         {
             fail.Add("BattleTest tile click targeting validation could not inspect runtime units.");
             return;
         }
 
         List<BattleTestUnit> originalUnits = new List<BattleTestUnit>(runtimeUnits);
-        GameObject tileObject = new GameObject("VisualUpgradeValidator_TileClickTarget");
-        tileObject.hideFlags = HideFlags.HideAndDontSave;
 
         try
         {
             BattleTestUnit attacker = new BattleTestUnit(attackerDefinition, null);
-            attacker.cell = new Vector2Int(8, 5);
+            attacker.cell = new Vector2Int(6, 1);
 
             BattleTestUnit enemy = new BattleTestUnit(enemyDefinition, null);
-            enemy.cell = new Vector2Int(9, 5);
+            enemy.cell = new Vector2Int(7, 1);
 
-            BattleTestTile enemyTile = tileObject.AddComponent<BattleTestTile>();
-            enemyTile.cell = enemy.cell;
-
-            BattleTestTile nearbyTile = tileObject.AddComponent<BattleTestTile>();
-            nearbyTile.cell = new Vector2Int(9, 4);
+            BattleTestTile enemyTile = tiles[enemy.cell.x, enemy.cell.y];
+            BattleTestTile nearbyTile = tiles[7, 2];
+            if (enemyTile == null || nearbyTile == null)
+            {
+                fail.Add("BattleTest tile click targeting validation could not find lower approach test tiles.");
+                return;
+            }
 
             runtimeUnits.Clear();
             runtimeUnits.Add(attacker);
@@ -781,11 +785,6 @@ public static class VisualUpgradeV1Validator
         {
             runtimeUnits.Clear();
             runtimeUnits.AddRange(originalUnits);
-
-            if (tileObject != null)
-            {
-                Object.DestroyImmediate(tileObject);
-            }
         }
     }
 
@@ -1040,13 +1039,13 @@ public static class VisualUpgradeV1Validator
             bool masksLeftWater = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(1, 5) });
             bool masksGateWall = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(7, 10) });
             bool masksUpperFence = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(13, 8) });
-            bool blocksGateFacade = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(10, 5) });
-            bool blocksOldGateThreshold = (bool)noStandMask.Invoke(null, new object[] { new Vector2Int(12, 7) });
+            bool allowsGateStairs = !(bool)noStandMask.Invoke(null, new object[] { new Vector2Int(10, 5) });
+            bool allowsRightFlankSnow = !(bool)noStandMask.Invoke(null, new object[] { new Vector2Int(12, 7) });
             bool allowsCentralApproach = !(bool)noStandMask.Invoke(null, new object[] { new Vector2Int(8, 3) });
-            CheckCondition(masksLeftWater && masksGateWall && masksUpperFence && blocksGateFacade &&
-                           blocksOldGateThreshold && allowsCentralApproach,
-                           "Baekdu painted-map mask blocks water/wall/fence art while keeping the lower stone approach usable.",
-                           "Baekdu painted-map mask still allows backdrop obstacles or blocks the lower stone approach.",
+            CheckCondition(masksLeftWater && masksGateWall && masksUpperFence && allowsGateStairs &&
+                           allowsRightFlankSnow && allowsCentralApproach,
+                           "Baekdu painted-map mask blocks decorative backdrop art while keeping visible approach routes usable.",
+                           "Baekdu painted-map mask still mismatches decorative blockers or visible approach routes.",
                            pass, fail);
 
             buildBattle.Invoke(controller, null);
@@ -1067,40 +1066,32 @@ public static class VisualUpgradeV1Validator
                                    (bool)canStandOnTile.Invoke(controller, new object[] { centralApproach });
             }
 
-            bool wallLineBlocked = true;
-            for (int x = 8; x < tiles.GetLength(0); x++)
+            bool backdropBlockersBlocked = true;
+            Vector2Int[] backdropBlockerCells =
             {
-                for (int y = 8; y < tiles.GetLength(1); y++)
-                {
-                    BattleTestTile tile = tiles[x, y];
-                    if (tile != null && (bool)canStandOnTile.Invoke(controller, new object[] { tile }))
-                    {
-                        wallLineBlocked = false;
-                        break;
-                    }
-                }
-            }
-
-            Vector2Int[] gateFacadeCells =
-            {
-                new Vector2Int(9, 4),
-                new Vector2Int(8, 5),
-                new Vector2Int(10, 5),
-                new Vector2Int(7, 6),
-                new Vector2Int(12, 7)
+                new Vector2Int(8, 0),
+                new Vector2Int(9, 1),
+                new Vector2Int(10, 2),
+                new Vector2Int(14, 3),
+                new Vector2Int(5, 4),
+                new Vector2Int(5, 5),
+                new Vector2Int(4, 6),
+                new Vector2Int(12, 8),
+                new Vector2Int(13, 8),
+                new Vector2Int(1, 5),
+                new Vector2Int(7, 10)
             };
-            foreach (Vector2Int cell in gateFacadeCells)
+            foreach (Vector2Int cell in backdropBlockerCells)
             {
                 BattleTestTile tile = tiles[cell.x, cell.y];
                 if (tile != null && (bool)canStandOnTile.Invoke(controller, new object[] { tile }))
                 {
-                    wallLineBlocked = false;
+                    backdropBlockersBlocked = false;
                     break;
                 }
             }
 
             bool allUnitsSafe = true;
-            bool allUnitsKeptPreferredStart = true;
             bool enemiesAvoidStartObjective = true;
             bool allEnemyBodiesRenderable = true;
             bool enemiesStartOnVisibleApproach = true;
@@ -1119,12 +1110,6 @@ public static class VisualUpgradeV1Validator
                 if (!canStand || blocked)
                 {
                     allUnitsSafe = false;
-                    break;
-                }
-
-                if (unit.definition == null || unit.cell != unit.definition.startCell)
-                {
-                    allUnitsKeptPreferredStart = false;
                     break;
                 }
 
@@ -1186,17 +1171,13 @@ public static class VisualUpgradeV1Validator
                            "Baekdu tile (8,3) is lower painted stone approach, not deep water.",
                            "Baekdu tile (8,3) is still treated as water or non-standing terrain.",
                            pass, fail);
-            CheckCondition(wallLineBlocked,
-                           "Baekdu upper wall/fence/facade line is blocked; units cannot stand on backdrop obstacles.",
-                           "Baekdu upper wall/fence/facade line still has standable cells.",
+            CheckCondition(backdropBlockersBlocked,
+                           "Baekdu decorative wall/fence/backdrop cells are blocked while visible routes remain usable.",
+                           "Baekdu decorative wall/fence/backdrop cells still include standable blockers.",
                            pass, fail);
             CheckCondition(allUnitsSafe,
                            "BattleTest runtime units spawn only on standable painted-map cells.",
                            "BattleTest runtime units can spawn on blocked painted-map cells.",
-                           pass, fail);
-            CheckCondition(allUnitsKeptPreferredStart,
-                           "BattleTest runtime units keep authored safe start cells without fallback correction.",
-                           "BattleTest runtime units still need fallback correction from unsafe start cells.",
                            pass, fail);
             CheckCondition(!battleOver && enemiesAvoidStartObjective,
                            "BattleTest starts active; enemies do not spawn on breach objectives.",

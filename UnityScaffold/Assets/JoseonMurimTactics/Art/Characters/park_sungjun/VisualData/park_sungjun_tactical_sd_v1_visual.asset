@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95fb2a208870457687ddbb0bb4f0dd12, type: 3}
+  m_Name: park_sungjun_tactical_sd_v1_visual
+  m_EditorClassIdentifier: Assembly-CSharp::JoseonMurimTactics.CharacterVisualData
+  visualId: park_sungjun_tactical_sd_v1
+  fullBodySprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  bustSprite: {fileID: 21300000, guid: f2b33e9330229d84a8355330e66c25df, type: 3}
+  portraitSprite: {fileID: 21300000, guid: f2b33e9330229d84a8355330e66c25df, type: 3}
+  faceIconSprite: {fileID: 21300000, guid: c86955db79e7366449b861f10c23317b, type: 3}
+  animatorController: {fileID: 0}
+  idlePoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  movePoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  attackPoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  skillPoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  hitPoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  defeatedPoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  actedPoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  idleSidePoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  idleBackPoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  moveSidePoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  moveBackPoseSprite: {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  idleFrames:
+  - {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  moveFrames:
+  - {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  moveSideFrames:
+  - {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  moveBackFrames:
+  - {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  attackFrames:
+  - {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  skillFrames:
+  - {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  hitFrames:
+  - {fileID: 21300000, guid: ebcd3f3f16cd45a0a932f103ac28eca4, type: 3}
+  idleFrameRate: 4
+  pixelSpriteMode: 1
+  livingMotion: {fileID: 0}
+  idleClip: {fileID: 0}
+  selectedIdleClip: {fileID: 0}
+  moveClip: {fileID: 0}
+  attackClip: {fileID: 0}
+  skillClip: {fileID: 0}
+  hitClip: {fileID: 0}
+  guardClip: {fileID: 0}
+  waitClip: {fileID: 0}
+  defeatClip: {fileID: 0}
+  victoryClip: {fileID: 0}
+  turnStartClip: {fileID: 0}
+  lowHpClip: {fileID: 0}
+  blinkFaceSprite: {fileID: 0}
+  happyFaceSprite: {fileID: 0}
+  angryFaceSprite: {fileID: 0}
+  painFaceSprite: {fileID: 0}
+  seriousFaceSprite: {fileID: 0}
+  emotionFaceOffset: {x: 0, y: 0.42}
+  emotionFaceScale: {x: 0.6, y: 0.6}
+  emotionFaceSortingOffset: 8
+  enableBlink: 0
+  enableLayerSway: 0
+  enableFootDust: 1
+  enableSelectionPop: 1
+  enableImpactFreeze: 1
+  defaultOutfit: {fileID: 0}
+  outfitOptions: []
+  defaultWeaponType: 0
+  weaponAnimationSet: {fileID: 0}
+  heightInTiles: 1.02
+  spriteOffset: {x: 0, y: 0.01}
+  sortingOffset: 0
+  idleAmplitude: 0.018
+  idleSpeed: 0.8
+  breathingScale: 0.006
+  shadowWidth: 0.58
+  shadowHeight: 0.15
+  normalTint: {r: 1, g: 1, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.9496, b: 0.804, a: 1}
+  actedTint: {r: 0.72, g: 0.78, b: 0.86, a: 1}
+  hitTint: {r: 0.9928, g: 0.6848, b: 0.6556, a: 1}
+  guardTint: {r: 1, g: 0.937, b: 0.755, a: 1}
+  defeatedTint: {r: 0.55, g: 0.55, b: 0.55, a: 1}
+  moveSecondsPerTile: 0.2
+  moveSettleTime: 0.08
+  moveLeanDegrees: 4
+  attackLunge: 0.1
+  skillPulseScale: 0.06
+  hitRecoil: 0.08

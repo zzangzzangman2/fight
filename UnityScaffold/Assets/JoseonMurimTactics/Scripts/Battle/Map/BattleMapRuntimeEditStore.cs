@@ -154,6 +154,8 @@ namespace JoseonMurimTactics
                     return "baekdu_snow_gate";
                 case BattleTestMapVariant.BaekduMountainSnowfield:
                     return "baekdu_mountain_snowfield";
+                case BattleTestMapVariant.BaekduSnowfieldGrid:
+                    return "baekdu_snowfield_grid";
                 case BattleTestMapVariant.BanditLair:
                     return "bandit_lair";
                 case BattleTestMapVariant.WolfPass:
